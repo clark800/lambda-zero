@@ -1,0 +1,115 @@
+id(x) = x
+f <> g = x -> f(g(x))
+a |> b = b(a)
+a <| b = a(b)
+const(x, y) = x
+flip(f) = x -> y -> f(y, x)
+mirror(f) = x -> f(x, x)
+double(f) = x -> f(f(x))
+
+true(x, y) = x
+false(x, y) = y
+if(c, a, b) = c(a, b)
+and(x, y) = if (x) then y else false
+or(x, y) = if (x) then true else y
+not(x) = if (x) then false else true
+(/\) = and
+(\/) = or
+
+nil = const(true)
+null(a) = a(const(const(false)))
+head(a) = a(true)
+tail(a) = a(false)
+x :: y = f -> f(x, y)
+c ? p = if (c) then head(p) else tail(p)
+
+while(p, f, x) = if (p(x)) then while(p, f, f(x)) else x
+last(a) = head(while(not <> null <> tail, tail, a))
+loop(n, f, x) = if (n == 0) then x else f(loop(n - 1, f, x))
+a @ n = head(loop(n, tail, a))
+iterate(f, x) = x :: iterate(f, f(x))
+repeat(x) = x :: repeat(x)
+replicate(n, x) = loop(n, (x ::), nil)
+x ~ y = if (x > y) then nil else x :: (x + 1 ~ y)
+
+fold(f, z, a) = (
+    if (null(a)) then (
+        z
+    ) else (
+        f(head(a), fold(f, z, tail(a)))
+    )
+)
+fold'(f, z, a) = (
+    if (null(a)) then (
+        z
+    ) else (
+        z' = f(z, head(a))
+        fold'(f, z', tail(a))
+    )
+)
+map(f) = fold((::) <> f, nil)
+(<:>) = map
+filter(p) = fold((x, xs) -> if (p(x)) then x :: xs else xs, nil)
+a | p = filter(p, a)
+(++) = flip(fold(::))
+
+length = fold(const(+ 1), 0)
+any = fold((\/), false)
+all = fold((/\), true)
+in(x, a) = any((== x) <:> a)
+reverse = fold'(flip(::), nil)
+take(n, a) = if (n == 0) then nil else (
+    head(a) :: take(n - 1, tail(a))
+)
+drop(n) = loop(n, tail)
+a ?: f = if (null(a)) then nil else f(head(a), tail(a))
+sort(a) = a ?: (x, xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
+a \ b = a | not <> (`in` b)
+a \\ b = a ?: (x, xs) -> (
+    if (null(b)) then a else (
+        if (head(b) > x) then (
+            x :: (xs \\ b)
+        ) else (
+            if (head(b) == x) then (
+                xs \\ b
+            ) else (
+                (x :: nil \\ tail(b)) ++ (\\)(xs, b)
+            )
+        )
+    )
+)
+
+sum = fold((+), 0)
+product = fold((*), 1)
+min = head <> sort
+max = last <> sort
+even(x) = x `mod` 2 == 0
+odd(x) = x `mod` 2 =/= 0
+naturals = iterate((+ 1), 0)
+squares = mirror(*) <:> naturals
+evens = naturals | even
+odds = naturals | odd
+negate(x) = 0 - x
+factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
+factorial'(n) = product(1 ~ n)
+eulersSieve(a) = head(a) :: eulersSieve(tail(a) \\ ((* head(a)) <:> a))
+eulerPrimes = 2 :: eulersSieve(tail(odds))
+filterPrime a = a ?: (x, xs) -> x :: filterPrime(xs | y -> y `mod` x =/= 0)
+primes = filterPrime(2 :: tail(odds))
+showNatural(n) = (
+    showReversedNatural(n) = if (n == 0) then nil else (
+        ((head "0") + (n `mod` 10)) :: showReversedNatural(n / 10)
+    )
+    if (n == 0) then "0" else reverse(showReversedNatural(n))
+)
+showInteger(n) = if (n < 0) then (
+    "-" ++ showNatural(negate(n))) else showNatural(n)
+
+intersperse(x, a) = if (null(a)) then nil else (
+    if (null(tail(a))) then a else head(a) :: x :: intersperse(x, tail(a)))
+
+intercalate(s, a) = if (null(a)) then nil else (
+    if (null(tail(a))) then head(a) else (
+        head(a) ++ s ++ intercalate(s, tail(a))))
+
+showIntegerList(a) = "[" ++ intercalate(", ", showInteger <:> a) ++ "]"

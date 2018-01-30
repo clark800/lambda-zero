@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [[ `uname` == "Linux" ]]; then
+    FORMAT=elf64
+elif [[ `uname` == "Darwin" ]]; then
+    FORMAT=macho64
+fi
+
+echoexec() {
+    echo "$@"
+    "$@"
+}
+
+assemble() {
+    if [[ ! -f "$1" || `find . -name "*.s" -newer "$1"` != "" ]]; then
+        cat x86-64.s | sed 's/;.*//' |
+          gcc -E -ftrack-macro-expansion=0 \
+            -imacros unistd.h -imacros sys/syscall.h - |
+          sed '/^\#/d' | grep -v '^[ ]*$' > sys.tmp
+        echoexec nasm -f $FORMAT -o "$1" sys.tmp
+        rm sys.tmp
+        return 0
+    fi
+    return 1
+}
+
+assemble sys.o || echo "sys.o up-to-date"
