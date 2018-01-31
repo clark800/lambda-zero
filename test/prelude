@@ -1,115 +1,131 @@
-id(x) = x
-f <> g = x -> f(g(x))
-a |> b = b(a)
-a <| b = a(b)
-const(x, y) = x
-flip(f) = x -> y -> f(y, x)
-mirror(f) = x -> f(x, x)
-double(f) = x -> f(f(x))
+-- utilities --
+id(x) = x                       -- identity function
+f <> g = x -> f(g(x))           -- function composition
+a |> b = b(a)                   -- pipeline (shell style)
+a <| b = a(b)                   -- reverse pipeline
+const(x, _) = x                 -- ignore second parameter
+flip(f) = x -> y -> f(y, x)     -- flip binary function argument order
+mirror(f) = x -> f(x, x)        -- convert binary function to unary function
+double(f) = x -> f(f(x))        -- apply function twice
 
+-- boolean logic --
 true(x, y) = x
 false(x, y) = y
 if(c, a, b) = c(a, b)
 and(x, y) = if (x) then y else false
 or(x, y) = if (x) then true else y
 not(x) = if (x) then false else true
+xor(x, y) = if (x) then not(y) else y
+x <=> y = if (x) then y else not(y)
 (/\) = and
 (\/) = or
 
-nil = const(true)
-null(a) = a(const(const(false)))
-head(a) = a(true)
-tail(a) = a(false)
-x :: y = f -> f(x, y)
-c ? p = if (c) then head(p) else tail(p)
-
-while(p, f, x) = if (p(x)) then while(p, f, f(x)) else x
-last(a) = head(while(not <> null <> tail, tail, a))
-loop(n, f, x) = if (n == 0) then x else f(loop(n - 1, f, x))
-a @ n = head(loop(n, tail, a))
-iterate(f, x) = x :: iterate(f, f(x))
-repeat(x) = x :: repeat(x)
-replicate(n, x) = loop(n, (x ::), nil)
-x ~ y = if (x > y) then nil else x :: (x + 1 ~ y)
-
-fold(f, z, a) = (
-    if (null(a)) then (
-        z
-    ) else (
-        f(head(a), fold(f, z, tail(a)))
-    )
-)
-fold'(f, z, a) = (
-    if (null(a)) then (
-        z
-    ) else (
-        z' = f(z, head(a))
-        fold'(f, z', tail(a))
-    )
-)
-map(f) = fold((::) <> f, nil)
-(<:>) = map
-filter(p) = fold((x, xs) -> if (p(x)) then x :: xs else xs, nil)
-a | p = filter(p, a)
-(++) = flip(fold(::))
-
-length = fold(const(+ 1), 0)
-any = fold((\/), false)
-all = fold((/\), true)
-in(x, a) = any((== x) <:> a)
-reverse = fold'(flip(::), nil)
-take(n, a) = if (n == 0) then nil else (
-    head(a) :: take(n - 1, tail(a))
-)
-drop(n) = loop(n, tail)
-a ?: f = if (null(a)) then nil else f(head(a), tail(a))
-sort(a) = a ?: (x, xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
-a \ b = a | not <> (`in` b)
-a \\ b = a ?: (x, xs) -> (
-    if (null(b)) then a else (
-        if (head(b) > x) then (
-            x :: (xs \\ b)
-        ) else (
-            if (head(b) == x) then (
-                xs \\ b
-            ) else (
-                (x :: nil \\ tail(b)) ++ (\\)(xs, b)
-            )
-        )
-    )
-)
-
-sum = fold((+), 0)
-product = fold((*), 1)
-min = head <> sort
-max = last <> sort
+-- math --
+negate(x) = 0 - x
+min(x, y) = if (x <= y) then x else y
+max(x, y) = if (x >= y) then x else y
 even(x) = x `mod` 2 == 0
 odd(x) = x `mod` 2 =/= 0
+factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
+
+-- looping --
+while(p, f, x) = if (p(x)) then while(p, f, f(x)) else x
+loop(n, f, x) = if (n == 0) then x else f(loop(n - 1, f, x))
+
+-- list basics --
+x :: y = f -> f(x, y)               -- prepend element to list (cons)
+nil = const(true)                   -- empty list
+null(a) = a(const(const(false)))    -- test for empty list
+head(a) = a(true)                   -- get first element of list
+tail(a) = a(false)                  -- drop first element of list
+last(a) = head(while(not <> null <> tail, tail, a)) -- get last element of list
+a @ n = head(loop(n, tail, a))      -- get element of list at index
+
+-- syntactic helpers --
+c ? p = if (c) then head(p) else tail(p)    -- C style ternary conditional
+a ?: f = if (null(a)) then nil else f(head(a), tail(a))
+
+-- list folds --
+foldr(f, z, a) = if (null(a)) then z else f(head(a), foldr(f, z, tail(a)))
+foldl(f, z, a) = if (null(a)) then z else foldl(f, f(z, head(a)), tail(a))
+reducer(f, a) = foldr(f, head(a), tail(a))
+reducel(f, a) = foldl(f, head(a), tail(a))
+
+-- list fold operations --
+(++) = flip(foldr(::))               -- concatenate lists
+length = foldr(const(+ 1), 0)        -- get length of list
+
+-- generic list constructors --
+iterate(f, x) = x :: iterate(f, f(x))       -- iteratively apply f
+repeat(x) = x :: repeat(x)                  -- infinitely repeat one element
+replicate(n, x) = loop(n, (x ::), nil)      -- replicate one element n times
+cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
+
+-- generic list transformations --
+a | p = foldr((x, xs) -> if (p(x)) then x :: xs else xs, nil, a)  -- filter
+f <:> a = foldr((::) <> f, nil, a)   -- map function over list
+-- drop all elements beyond the first n elements
+take(n, a) = if (n == 0) then nil else head(a) :: take(n - 1, tail(a))
+drop(n, a) = loop(n, tail, a)       -- drop n elements from front of list
+concat = foldr((++), nil)            -- concatenate list of lists
+reverse = foldl(flip(::), nil)       -- reverse a list
+intersperse(x, a) = a ?: (y, ys) -> (
+    if (null(ys)) then a else y :: x :: intersperse(x, ys))
+intercalate(s, a) = a ?: (x, xs) -> (
+    if (null(xs)) then x else x ++ s ++ intercalate(s, xs))
+
+-- generic list reducers --
+any(p, a) = foldr((\/), false, p <:> a)     -- test if any element satisfies p
+all(p, a) = foldr((/\), true, p <:> a)      -- test if all elements satisfy p
+-- find first element satisfying p, or return nil
+find(p, a) = a ?: (x, xs) -> if (p(x)) then x else find(p, xs)
+
+-- integer list basics --
+in(x, a) = any((== x), a)                       -- test if element is in list
+inSortedList(x, a) = (
+    not(null(a)) /\ x >= head(a) /\ (x == head(a) \/ inSortedList(x, tail(a))))
+a === b = if (null(a) \/ null(b)) then null(a) <=> null(b) else (
+    head(a) == head(b) /\ tail(a) === tail(b)       -- integer list equality
+)
+
+-- integer list constructors --
+x ~ y = if (x > y) then nil else x :: (x + 1 ~ y)       -- range of integers
+
+-- integer list transformations --
+sort(a) = a ?: (x, xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
+nub(a) = a ?: (x, xs) -> x :: nub(xs | (=/= x))     -- remove duplicates
+a \ b = a | not <> (`in` b)                         -- list difference
+a \\ b = a | not <> (`inSortedList` b)              -- sorted list difference
+union(a, b) = a ++ (b \ a)
+intersect(a, b) = a | (`in` b)
+
+-- integer list reducers --
+sum = foldl((+), 0)
+product = foldl((*), 1)
+minimum = reducel(min)
+maximum = reducel(max)
+
+-- infinite lists --
 naturals = iterate((+ 1), 0)
 squares = mirror(*) <:> naturals
-evens = naturals | even
-odds = naturals | odd
-negate(x) = 0 - x
-factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
-factorial'(n) = product(1 ~ n)
-eulersSieve(a) = head(a) :: eulersSieve(tail(a) \\ ((* head(a)) <:> a))
-eulerPrimes = 2 :: eulersSieve(tail(odds))
-filterPrime a = a ?: (x, xs) -> x :: filterPrime(xs | y -> y `mod` x =/= 0)
-primes = filterPrime(2 :: tail(odds))
+primes = (
+    filterPrime a = a ?: (x, xs) -> x :: filterPrime(xs | y -> y `mod` x =/= 0)
+    2 :: filterPrime(tail(naturals | odd))
+)
+primes' = (
+    eulersSieve(a) = head(a) :: eulersSieve(tail(a) \\ ((* head(a)) <:> a))
+    2 :: eulersSieve(tail(naturals | odd))
+)
+
+-- serialization --
 showNatural(n) = (
     showReversedNatural(n) = if (n == 0) then nil else (
         ((head "0") + (n `mod` 10)) :: showReversedNatural(n / 10)
     )
     if (n == 0) then "0" else reverse(showReversedNatural(n))
 )
+
 showInteger(n) = if (n < 0) then (
     "-" ++ showNatural(negate(n))) else showNatural(n)
-
-intersperse(x, a) = if (null(a)) then nil else (
-    if (null(tail(a))) then a else head(a) :: x :: intersperse(x, tail(a)))
-
-intercalate(s, a) = if (null(a)) then nil else (
-    if (null(tail(a))) then head(a) else (
-        head(a) ++ s ++ intercalate(s, tail(a))))
 
 showIntegerList(a) = "[" ++ intercalate(", ", showInteger <:> a) ++ "]"
