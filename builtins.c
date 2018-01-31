@@ -76,10 +76,18 @@ static inline int sgn(long long n) {
 // impossible to recover from
 static inline long long add(long long left, long long right) {
     if (left > 0 && right > 0 && left > LLONG_MAX - right)
-        error("Integer overflow", "addition/subtraction");
+        error("Integer overflow", "addition");
     if (left < 0 && right < 0 && left < LLONG_MIN - right)
-        error("Integer overflow", "addition/subtraction");
+        error("Integer overflow", "addition");
     return left + right;
+}
+
+static inline long long subtract(long long left, long long right) {
+    if (left > 0 && right < 0 && left > LLONG_MAX + right)
+        error("Integer overflow", "subtraction");
+    if (left < 0 && right > 0 && left < LLONG_MIN + right)
+        error("Integer overflow", "subtraction");
+    return left - right;
 }
 
 static inline long long multiply(long long left, long long right) {
@@ -102,15 +110,17 @@ static inline long long divide(long long left, long long right) {
 }
 
 static inline long long modulo(long long left, long long right) {
-    divide(left, right); // check for errors
-    long long remainder = left % right;
-    return remainder >= 0 ? remainder : add(remainder, right);
+    if (right == 0)
+        error("Integer arithmetic", "modulo by zero");
+    if (left == LLONG_MIN && right == -1)
+        return 0;
+    return left % right;
 }
 
 Node* calculate(unsigned long long code, long long left, long long right) {
     switch (code) {
         case PLUS: return newComputedInteger(add(left, right));
-        case MINUS: return newComputedInteger(add(left, -right));
+        case MINUS: return newComputedInteger(subtract(left, right));
         case TIMES: return newComputedInteger(multiply(left, right));
         case DIVIDE: return newComputedInteger(divide(left, right));
         case MODULUS: return newComputedInteger(modulo(left, right));
