@@ -1,7 +1,7 @@
 # Introduction
 
 - Lambda Zero is a minimalist pure lazy functional programming language.
-- The language is the untyped lambda caculus plus integers, integer arithmetic,
+- The language is the untyped lambda calculus plus integers, integer arithmetic,
   and a few Haskell-inspired syntactic sugars evaluated by a Lazy Krivine
   Machine.
 - Every Lambda Zero program is a single expression; there are no statements
@@ -63,7 +63,7 @@ The intended use case of Lambda Zero is to bootstrap a future higher level
 language "Lambda One" i.e. Lambda Zero is a sublanguage of Lambda One and the
 Lambda One compiler is written entirely in Lambda Zero.
 
-Lambda Zero is not a general purpose langauge; the interpreter is optimized
+Lambda Zero is not a general purpose language; the interpreter is optimized
 for simplicity over performance and the language does not allow any I/O
 besides accepting stdio as a string and returning a string which is sent to
 stdout by the interpreter.
