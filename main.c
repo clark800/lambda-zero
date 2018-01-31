@@ -13,14 +13,6 @@
 #include "evaluate.h"
 #include "serialize.h"
 
-static inline size_t getTotalAllocatedMemory(void) {
-    #ifdef LIBC_H
-    return mstats();
-    #else
-    return 0;
-    #endif
-}
-
 void memoryError(const char* label, long long bytes) {
     errorArray(4, (strings){"MEMORY LEAK IN \"", label, "\":", " "});
     serializeInteger(bytes, stderr);
@@ -36,12 +28,6 @@ void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
     if (usage != expectedUsage)
         memoryError(label, (long long)(usage - expectedUsage));
-}
-
-void checkForMallocMemoryLeak(void) {
-    size_t memory = getTotalAllocatedMemory();
-    if (memory != 0)
-        memoryError("malloc", (long long)memory);
 }
 
 void interpret(const char* input) {
@@ -91,6 +77,5 @@ int main(int argc, char* argv[]) {
     deleteBuiltins();
     checkForMemoryLeak("main", 0);
     destroyNodeAllocator();
-    checkForMallocMemoryLeak();
     return 0;
 }

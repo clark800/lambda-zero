@@ -11,10 +11,14 @@
 - The interpreter can also be built for Linux x86-64 without the C standard
   library in which case it is under 2100 lines of strict ANSI C99 and generates
   a 22KB statically linked stripped binary.
-- The interpreter includes reference-counting garbage collection, error
-  messaging, and simple built-in debugging and profiling features.
+- The interpreter includes reference-counting garbage collection on a free list
+  memory allocator, error messaging, and rudimental built-in debugging and
+  profiling features.
 
 # Sample Code
+
+Note: To run these samples, you'll have to copy the [prelude](test/prelude) file
+and insert it before the sample code since there is no import/include mechanism.
 
 ### Hello World
 
@@ -33,12 +37,15 @@
 ### Infinite list of natural numbers
 
     iterate(f, x) = x :: iterate(f, f(x))
-    naturals = iterate((+ 1), 0)
+    enumFrom = iterate(+ 1)
+    naturals = enumFrom(0)
 
 ### Infinite list of prime numbers
 
-    filterPrime a = a ?: (x, xs) -> x :: filterPrime(xs | y -> y `mod` x =/= 0)
-    primes = filterPrime(2 :: tail(naturals | x -> x `mod` 2 =/= 0))
+    primes = (
+        filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> divides(x))
+        filterPrime(enumFrom(2))
+    )
 
 # Motivation
 
@@ -103,13 +110,13 @@ an operator name expression.
 
 - Left associative spaces: `x y z => ((x y) z)`
 - Right associative newlines: `x \n y \n z => (z (y z))`
-- Parenthesization: `(x) => x` unless `x` is an operator
+- Redundant Parentheses: `(x) => x` unless `x` is an operator
  (see Un-infixify sugar below)
-- Multiparameter lambda: `x y -> z => x -> y -> z`
-- Definition: `(f = x) y => (f -> y) x`
-- Function definition: `f x y = z => f = x -> y -> z`
+- Multiparameter lambdas: `x y -> z => x -> y -> z`
+- Definitions (Let expressions): `(f = x) y => (f -> y) x`
+- Function definitions: `f x y = z => f = x -> y -> z`
 - Comma separators: `, => )(` so `f(x, y) => f(x)(y) => f x y`
-- Recursive definition: The right hand sise of a function definition can refer
+- Recursive definitions: The right hand sise of a function definition can refer
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
 - Infix operators: `x op y => op x y` where `op` is a non-alphanumeric symbol
@@ -117,7 +124,7 @@ When operators are chained like `x op y op z` there are precedence rules that
 determine how it is parsed.
 - Infixify: `` `f` `` enables the infix operator sugar on `f`
 - Un-infixify: `(op)` disabled infix operate sugar on `op`
-- Section: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
+- Sections: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
 - If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument
 - String literals: `"abc"` desugars to a linked list of ascii character codes
 
@@ -132,7 +139,7 @@ list is constructed in the standard way for the Lambda Calculus.
 
 ### Conclusion
 
-That's the whole language! Take a look at the prelude in the test directory
+That's the whole language! Take a look at the [prelude](test/prelude)
 for more examples.
 
 # Building and Running
@@ -142,6 +149,10 @@ only work on systems with bash or compatible shells.
 
 Then you can run `main` by either passing it a script filename on the command
 line or typing the script on stdin and ending with two Ctrl-D's.
+
+**Note** *There is no import/include mechanism and the prelude is not included*
+so to use the prelude you should copy the [prelude](test/prelude) file and add
+your code to the bottom, then pass this file to `main`.
 
 # Stability
 

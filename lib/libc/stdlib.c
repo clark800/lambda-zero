@@ -1,7 +1,5 @@
 #include "libc.h"
 
-size_t MEMORY_USAGE = 0;
-
 void exit(int status) {
     _exit(status);
 }
@@ -72,7 +70,6 @@ void* malloc(size_t size) {
     if ((unsigned long)result >= (unsigned long)(-125))
         return NULL;    /* out of memory */
     ((Header*)result)->size = size;
-    MEMORY_USAGE += size;
     return BLOCK(result);
 }
 
@@ -94,12 +91,7 @@ void* realloc(void *ptr, size_t size) {
 
 void free(void* ptr) {
     assert(ptr != NULL);
-    MEMORY_USAGE -= HEADER(ptr)->size;
     munmap(HEADER(ptr), mmapSize(HEADER(ptr)->size));
-}
-
-size_t mstats() {
-     return MEMORY_USAGE;
 }
 
 /*void* calloc(size_t count, size_t size) {

@@ -26,6 +26,7 @@ min(x, y) = if (x <= y) then x else y
 max(x, y) = if (x >= y) then x else y
 even(x) = x `mod` 2 == 0
 odd(x) = x `mod` 2 =/= 0
+divides(x, y) = y `mod` x == 0
 factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
 
 -- looping --
@@ -106,11 +107,12 @@ minimum = reducel(min)
 maximum = reducel(max)
 
 -- infinite lists --
-naturals = iterate((+ 1), 0)
+enumFrom = iterate(+ 1)
+naturals = enumFrom(0)
 squares = mirror(*) <:> naturals
 primes = (
-    filterPrime a = a ?: (x, xs) -> x :: filterPrime(xs | y -> y `mod` x =/= 0)
-    2 :: filterPrime(tail(naturals | odd))
+    filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> divides(x))
+    filterPrime(enumFrom(2))
 )
 primes' = (
     eulersSieve(a) = head(a) :: eulersSieve(tail(a) \\ ((* head(a)) <:> a))

@@ -38,7 +38,6 @@ void exit(int status);
 void* malloc(size_t size);
 void* realloc(void *ptr, size_t size);
 void free(void* ptr);
-size_t mstats(void);
 //void* calloc(size_t count, size_t size);
 
 // stdio.h
