@@ -43,8 +43,8 @@ and insert it before the sample code since there is no import/include mechanism.
 ### Infinite list of prime numbers
 
     primes = (
-        filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> divides(x))
-        filterPrime(enumFrom(2))
+      filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> (x `divides`))
+      filterPrime(enumFrom(2))
     )
 
 # Motivation

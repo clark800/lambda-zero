@@ -111,7 +111,7 @@ enumFrom = iterate(+ 1)
 naturals = enumFrom(0)
 squares = mirror(*) <:> naturals
 primes = (
-    filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> divides(x))
+    filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> (x `divides`))
     filterPrime(enumFrom(2))
 )
 primes' = (
