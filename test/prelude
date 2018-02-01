@@ -1,4 +1,5 @@
 -- utilities --
+undefined = 0 / 0
 id(x) = x                       -- identity function
 f <> g = x -> f(g(x))           -- function composition
 a |> b = b(a)                   -- pipeline (shell style)
@@ -19,6 +20,14 @@ xor(x, y) = if (x) then not(y) else y
 x <=> y = if (x) then y else not(y)
 (/\) = and
 (\/) = or
+
+-- maybe --
+nothing = n -> j -> n
+just(x) = n -> j -> j(x)
+isNothing(m) = m(true, const(false))
+isJust(m) = m(false, const(true))
+fromJust(m) = m(undefined, id)
+maybe(default, f, m) = m(default, f)
 
 -- math --
 negate(x) = 0 - x
@@ -78,8 +87,9 @@ intercalate(s, a) = a ?: (x, xs) -> (
 -- generic list reducers --
 any(p, a) = foldr((\/), false, p <:> a)     -- test if any element satisfies p
 all(p, a) = foldr((/\), true, p <:> a)      -- test if all elements satisfy p
--- find first element satisfying p, or return nil
-find(p, a) = a ?: (x, xs) -> if (p(x)) then x else find(p, xs)
+-- find first element satisfying p, or return nothing
+find(p, a) = if (null(a)) then nothing else (
+    if (p(head(a))) then just(head(a)) else find(p, tail(a)))
 
 -- integer list basics --
 in(x, a) = any((== x), a)                       -- test if element is in list
