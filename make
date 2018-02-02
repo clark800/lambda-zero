@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Shell
 
 OUT="main"

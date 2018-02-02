@@ -1,0 +1,10 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:stretch
+    steps:
+      - run: apt-get update
+      - run: apt-get -y install gcc
+      - checkout
+      - run: ./make test
