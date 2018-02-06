@@ -138,7 +138,7 @@ bool isNewBlock(Stack* stack) {
 
 Hold* parseString(const char* input) {
     Stack* stack = newStack(NULL);
-    push(stack, newOperator(-1));   // open parentheses
+    push(stack, newOperator(-1));   // open parenthesis
 
     for (Hold* tokenHold = getFirstToken(input); true;
                tokenHold = replaceHold(tokenHold, getNextToken(tokenHold))) {
@@ -153,6 +153,9 @@ Hold* parseString(const char* input) {
                 collapseParentheses(stack, token);
                 release(tokenHold);
                 break;
+            } else if (isComma(token)) {
+                int openLocation = collapseParentheses(stack, token);
+                push(stack, newOperator(openLocation));
             } else if (isBacktick(token)) {
                 tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
                 token = getNode(tokenHold);
