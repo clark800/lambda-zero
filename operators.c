@@ -1,6 +1,5 @@
 #include "lex.h"
 #include "ast.h"
-#include "parse.h"
 #include "desugar.h"
 #include "operators.h"
 
@@ -19,20 +18,13 @@ void lambda(Stack* stack, Node* operator, Node* left, Node* right) {
     push(stack, transformLambdaSugar(operator, left, right));
 }
 
-void split(Stack* stack, Node* operator, Node* left, Node* right) {
-    push(stack, left);
-    int openLocation = collapseParentheses(stack, operator);
-    push(stack, newOperator(openLocation));
-    push(stack, right); // leave right on stack so parens won't be empty
-}
-
 Operator DEFAULT = {"", 150, 150, L, infix};
 
 Operator OPERATORS[] = {
     {"(", 10, 10, R, NULL},
     {")", 10, 10, R, NULL},
     {"\0", 10, 10, R, NULL},
-    {",", 20, 20, L, split},
+    {",", 20, 20, L, NULL},
     {"\n", 30, 30, R, apply},
     {"=", 40, 40, N, apply},
     {"|>", 50, 50, L, infix},
