@@ -3,19 +3,13 @@
 #include "desugar.h"
 #include "operators.h"
 
-void infix(Stack* stack, Node* operator, Node* left, Node* right) {
-    int location = getLocation(operator);
+Node* apply(Node* operator, Node* left, Node* right) {
+    return newApplication(getLocation(operator), left, right);
+}
+
+Node* infix(Node* operator, Node* left, Node* right) {
     convertOperatorToName(operator);
-    push(stack, newBranchNode(location,
-        newBranchNode(location, operator, left), right));
-}
-
-void apply(Stack* stack, Node* operator, Node* left, Node* right) {
-    push(stack, newBranchNode(getLocation(operator), left, right));
-}
-
-void lambda(Stack* stack, Node* operator, Node* left, Node* right) {
-    push(stack, transformLambdaSugar(operator, left, right));
+    return apply(operator, apply(operator, operator, left), right);
 }
 
 Operator DEFAULT = {"", 150, 150, L, infix};
@@ -30,7 +24,7 @@ Operator OPERATORS[] = {
     {"|>", 50, 50, L, infix},
     {"<|", 50, 50, R, infix},
     {"!", 50, 50, R, infix},
-    {"->", 240, 60, R, lambda},
+    {"->", 240, 60, R, transformLambdaSugar},
     {"?", 70, 70, L, infix},
     {"then", 70, 70, L, apply},
     {"else", 70, 70, L, apply},
