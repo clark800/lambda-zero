@@ -162,7 +162,7 @@ Node* newString(int location, const char* start) {
     for (int i = length - 1; i >= 0; i--)
         string = newLambda(location, PARAMETERX,
             newApplication(location, newApplication(location, REFERENCEX,
-                newComputedInteger((unsigned char)start[i])), string));
+                newInteger(location, (unsigned char)start[i])), string));
     return string;
 }
 

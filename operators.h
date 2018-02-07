@@ -11,7 +11,7 @@ typedef struct Operator {
     Precedence leftPrecedence;
     Precedence rightPrecedence;
     Associativity associativity;
-    void (*collapse)(Stack* stack, Node* operator, Node* left, Node* right);
+    Node* (*collapse)(Node* operator, Node* left, Node* right);
 } Operator;
 
 Operator getOperator(Node* token);

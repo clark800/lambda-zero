@@ -34,12 +34,12 @@ Node* transformLambdaSugar(Node* operator, Node* left, Node* right) {
         syntaxErrorIf(!isName(parameterName), parameterName,
             "expected name but got");
         Node* parameter = newParameter(getLocation(parameterName));
-        right = newBranchNode(location, parameter, right);
+        right = newLambda(location, parameter, right);
         left = getLeft(left);
     }
     syntaxErrorIf(!isName(left), left, "expected name but got");
     Node* parameter = newParameter(getLocation(left));
-    return newBranchNode(location, parameter, right);
+    return newLambda(location, parameter, right);
 }
 
 void swapRight(Node* a, Node* b) {
@@ -55,8 +55,8 @@ void transformRecursion(Node* definition) {
     if (hasRecursiveCalls(value, name)) {
         // value ==> (Y (name -> value))
         int location = getLocation(definition);
-        setRight(definition, newBranchNode(location, YCOMBINATOR,
-            newBranchNode(location, newParameter(getLocation(name)), value)));
+        setRight(definition, newApplication(location, YCOMBINATOR,
+            newLambda(location, newParameter(getLocation(name)), value)));
     }
 }
 

@@ -28,14 +28,14 @@ void pushLeftAssociative(Stack* stack, Node* node) {
             push(stack, node);
         } else {
             Hold* left = pop(stack);
-            push(stack, newBranchNode(getLocation(node), getNode(left), node));
+            push(stack, newApplication(getLocation(node), getNode(left), node));
             release(left);
         }
     }
 }
 
 void collapseOperator(Stack* stack, Node* operator, Node* left, Node* right) {
-    getOperator(operator).collapse(stack, operator, left, right);
+    push(stack, getOperator(operator).collapse(operator, left, right));
 }
 
 void collapseInfixOperator(Stack* stack) {

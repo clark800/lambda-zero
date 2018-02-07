@@ -14,6 +14,6 @@ extern Node* PRINTRETURN;
 void initBuiltins(void);
 void deleteBuiltins(void);
 unsigned long long lookupBuiltinCode(Node* token);
-Hold* computeBuiltin(unsigned long long code, long long left, long long right);
+Node* computeBuiltin(Node* builtin, long long left, long long right);
 
 #endif

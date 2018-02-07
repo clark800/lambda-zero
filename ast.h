@@ -139,10 +139,6 @@ static inline Node* newInteger(int location, long long value) {
     return result;
 }
 
-static inline Node* newComputedInteger(long long value) {
-    return newInteger(-1, value);
-}
-
 static inline Node* newName(int location) {
     return newLeafNode(location, NAME);
 }
@@ -155,8 +151,8 @@ static inline Node* newOperator(int location) {
     return newLeafNode(location, OPERATOR);
 }
 
-static inline Node* newReference(unsigned long long debruijn) {
-    return newLeafNode(-1, -(long long)debruijn);
+static inline Node* newReference(int location, unsigned long long debruijn) {
+    return newLeafNode(location, -(long long)debruijn);
 }
 
 static inline Node* newLambda(int location, Node* parameter, Node* body) {

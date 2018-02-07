@@ -117,13 +117,15 @@ static inline long long modulo(long long left, long long right) {
     return left % right;
 }
 
-Node* calculate(unsigned long long code, long long left, long long right) {
+Node* computeBuiltin(Node* builtin, long long left, long long right) {
+    int location = getLocation(builtin);
+    unsigned long long code = getBuiltinCode(builtin);
     switch (code) {
-        case PLUS: return newComputedInteger(add(left, right));
-        case MINUS: return newComputedInteger(subtract(left, right));
-        case TIMES: return newComputedInteger(multiply(left, right));
-        case DIVIDE: return newComputedInteger(divide(left, right));
-        case MODULUS: return newComputedInteger(modulo(left, right));
+        case PLUS: return newInteger(location, add(left, right));
+        case MINUS: return newInteger(location, subtract(left, right));
+        case TIMES: return newInteger(location, multiply(left, right));
+        case DIVIDE: return newInteger(location, divide(left, right));
+        case MODULUS: return newInteger(location, modulo(left, right));
         case EQUAL: return toBoolean(left == right);
         case NOTEQUAL: return toBoolean(left != right);
         case LESSTHAN: return toBoolean(left < right);
@@ -132,8 +134,4 @@ Node* calculate(unsigned long long code, long long left, long long right) {
         case GREATERTHANOREQUAL: return toBoolean(left >= right);
         default: assert(false); return NULL;
     }
-}
-
-Hold* computeBuiltin(unsigned long long code, long long left, long long right) {
-    return hold(calculate(code, left, right));
 }

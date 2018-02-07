@@ -133,10 +133,7 @@ void evaluateBuiltin(State* state) {
     moveStackItem(state->stack, state->env);
     long long left = evaluateToInteger(getHead(state->env), 2, state->node);
     long long right = evaluateToInteger(getHead(state->env), 1, state->node);
-    unsigned long long code = getBuiltinCode(getNode(state->node));
-    Hold* result = computeBuiltin(code, left, right);
-    setNode(state, getNode(result));
-    release(result);
+    setNode(state, computeBuiltin(getNode(state->node), left, right));
 }
 
 Node* getInputClosure(Node* token) {
@@ -196,7 +193,7 @@ Hold* evaluateWithEnv(Node* root, Node* env) {
 }
 
 Hold* evaluateDebruijn(Node* env, unsigned long long debruijn) {
-    Hold* reference = hold(newReference(debruijn));
+    Hold* reference = hold(newReference(-1, debruijn));
     Hold* result = evaluateWithEnv(getNode(reference), env);
     release(reference);
     return result;

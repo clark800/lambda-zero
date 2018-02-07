@@ -16,11 +16,11 @@ static inline Node* getClosureEnv(Node* closure) {
 }
 
 static inline Node* newUpdateClosure(Node* closure) {
-    return newBranchNode(0, NULL, closure);
+    return newClosure(NULL, closure);
 }
 
-static inline bool isUpdateClosure(Node* node) {
-    return getLeft(node) == NULL && getRight(node) != NULL;
+static inline bool isUpdateClosure(Node* closure) {
+    return getLeft(closure) == NULL && getRight(closure) != NULL;
 }
 
 #endif
