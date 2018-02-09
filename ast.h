@@ -64,6 +64,10 @@ static inline bool isAbstraction(Node* node) {
     return isBranchNode(node) && isParameter(getLeft(node));
 }
 
+static inline bool isCommaBranch(Node* node) {
+    return isBranchNode(node) && isThisToken(node, ",");
+}
+
 static inline bool isComma(Node* node) {
     return isLeafNode(node) && isThisToken(node, ",");
 }

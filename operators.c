@@ -18,7 +18,7 @@ Operator OPERATORS[] = {
     {"(", 10, 10, R, NULL},
     {")", 10, 10, R, NULL},
     {"\0", 10, 10, R, NULL},
-    {",", 20, 20, L, NULL},
+    {",", 20, 20, R, apply},
     {"\n", 30, 30, R, apply},
     {"=", 40, 40, N, apply},
     {"|>", 50, 50, L, infix},

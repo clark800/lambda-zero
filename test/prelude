@@ -43,7 +43,7 @@ while(p, f, x) = if (p(x)) then while(p, f, f(x)) else x
 loop(n, f, x) = if (n == 0) then x else f(loop(n - 1, f, x))
 
 -- list basics --
-x :: y = f -> f(x, y)               -- prepend element to list (cons)
+x :: y = (x, y)                     -- prepend element to list (cons)
 nil = const(true)                   -- empty list
 null(a) = a(const(const(false)))    -- test for empty list
 head(a) = a(true)                   -- get first element of list
@@ -72,16 +72,16 @@ replicate(n, x) = loop(n, (x ::), nil)      -- replicate one element n times
 cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
 
 -- generic list transformations --
-a | p = foldr((x, xs) -> if (p(x)) then x :: xs else xs, nil, a)  -- filter
+a | p = foldr((x xs) -> if (p(x)) then x :: xs else xs, nil, a)  -- filter
 f <:> a = foldr((::) <> f, nil, a)   -- map function over list
 -- drop all elements beyond the first n elements
 take(n, a) = if (n == 0) then nil else head(a) :: take(n - 1, tail(a))
 drop(n, a) = loop(n, tail, a)       -- drop n elements from front of list
 concat = foldr((++), nil)            -- concatenate list of lists
 reverse = foldl(flip(::), nil)       -- reverse a list
-intersperse(x, a) = a ?: (y, ys) -> (
+intersperse(x, a) = a ?: (y ys) -> (
     if (null(ys)) then a else y :: x :: intersperse(x, ys))
-intercalate(s, a) = a ?: (x, xs) -> (
+intercalate(s, a) = a ?: (x xs) -> (
     if (null(xs)) then x else x ++ s ++ intercalate(s, xs))
 
 -- generic list reducers --
@@ -103,8 +103,8 @@ a === b = if (null(a) \/ null(b)) then null(a) <=> null(b) else (
 x ~ y = if (x > y) then nil else x :: (x + 1 ~ y)       -- range of integers
 
 -- integer list transformations --
-sort(a) = a ?: (x, xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
-nub(a) = a ?: (x, xs) -> x :: nub(xs | (=/= x))     -- remove duplicates
+sort(a) = a ?: (x xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
+nub(a) = a ?: (x xs) -> x :: nub(xs | (=/= x))     -- remove duplicates
 a \ b = a | not <> (`in` b)                         -- list difference
 a \\ b = a | not <> (`inSortedList` b)              -- sorted list difference
 union(a, b) = a ++ (b \ a)
@@ -121,7 +121,7 @@ enumFrom = iterate(+ 1)
 naturals = enumFrom(0)
 squares = mirror(*) <:> naturals
 primes = (
-    filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> (x `divides`))
+    filterPrime(a) = a ?: (x xs) -> x :: filterPrime(xs | not <> (x `divides`))
     filterPrime(enumFrom(2))
 )
 primes' = (
