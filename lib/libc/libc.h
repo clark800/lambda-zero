@@ -52,6 +52,7 @@ size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream);
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
 int fputs(const char* str, FILE* stream);
 int putchar(int c);
+void setbuf(FILE* stream, char* buffer);
 //int fflush(FILE* stream);
 
 // ctype.h

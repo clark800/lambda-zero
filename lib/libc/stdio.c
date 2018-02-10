@@ -34,6 +34,10 @@ int putchar(int c) {
     return fwrite(&ch, 1, 1, stdout) == 1 ? c : EOF;
 }
 
+void setbuf(FILE* stream, char* buffer) {
+    assert(stream != NULL && buffer == NULL);
+}
+
 /*
 int fflush(FILE* stream) {
     return fsync(fileno(stream));

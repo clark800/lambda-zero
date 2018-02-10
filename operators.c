@@ -15,17 +15,18 @@ Node* infix(Node* operator, Node* left, Node* right) {
 Operator DEFAULT = {"", 150, 150, L, infix};
 
 Operator OPERATORS[] = {
+    {"\0", 0, 0, R, NULL},
     {"(", 10, 10, R, NULL},
     {")", 10, 10, R, NULL},
-    {"\0", 10, 10, R, NULL},
-    {",", 20, 20, L, NULL},
+    {",", 20, 20, R, apply},
     {"\n", 30, 30, R, apply},
     {"=", 40, 40, N, apply},
     {"|>", 50, 50, L, infix},
     {"<|", 50, 50, R, infix},
     {"!", 50, 50, R, infix},
     {"->", 240, 60, R, transformLambdaSugar},
-    {"?", 70, 70, L, infix},
+    {"?", 70, 70, R, infix},
+    {"?:", 70, 70, R, infix},
     {"then", 70, 70, L, apply},
     {"else", 70, 70, L, apply},
     {"\\/", 80, 80, R, infix},

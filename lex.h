@@ -14,5 +14,6 @@ bool isThisToken(Node* token, const char* tokenString);
 void printToken(Node* token, FILE* stream);
 void throwTokenError(const char* type, const char* message, Node* token);
 Node* newString(int location, const char* start);
+Node* newEOF(void);
 
 #endif

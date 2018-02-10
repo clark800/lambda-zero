@@ -21,16 +21,12 @@ static inline bool isValidOperand(Node* node) {
 }
 
 void pushLeftAssociative(Stack* stack, Node* node) {
-    if (isEmpty(stack)) {
+    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
         push(stack, node);
     } else {
-        if (isOperator(peek(stack, 0))) {
-            push(stack, node);
-        } else {
-            Hold* left = pop(stack);
-            push(stack, newApplication(getLocation(node), getNode(left), node));
-            release(left);
-        }
+        Hold* left = pop(stack);
+        push(stack, newApplication(getLocation(node), getNode(left), node));
+        release(left);
     }
 }
 
@@ -107,10 +103,19 @@ void collapseSection(Stack* stack, Node* closeParen) {
     release(right);
 }
 
-int collapseParentheses(Stack* stack, Node* token) {
+Node* applyCommaTree(int location, Node* base, Node* commaTree) {
+    for (; isCommaBranch(commaTree); commaTree = getRight(commaTree))
+        base = newApplication(location, base, getLeft(commaTree));
+    return newApplication(location, base, commaTree);
+}
+
+void eraseNewlines(Stack* stack) {
     if (!isEmpty(stack) && isNewline(peek(stack, 0)))
         release(pop(stack));    // ignore newline before close paren
-    syntaxErrorIf(isEmpty(stack), token, "missing '(' for");
+}
+
+void collapseParentheses(Stack* stack, Node* token) {
+    eraseNewlines(stack);
     syntaxErrorIf(isOpenParen(peek(stack, 0)), token, "empty parentheses");
     collapseLeftOperand(stack, token);
     Node* third = peekSafe(stack, 2);
@@ -123,13 +128,27 @@ int collapseParentheses(Stack* stack, Node* token) {
     int location = getLocation(getNode(openParen));
     release(openParen);
     if (isOperator(getNode(result))) {
-        syntaxErrorIf(isSpecialOperator(getNode(result)), getNode(result),
-            "operator cannot be parenthesized");
-        convertOperatorToName(getNode(result));
+        Node* operator = getNode(result);
+        syntaxErrorIf(isSpecialOperator(operator) && !isComma(operator),
+            operator, "operator cannot be parenthesized");
+        convertOperatorToName(operator);
     }
-    pushLeftAssociative(stack, getNode(result));
+    if (isCommaBranch(getNode(result))) {
+        if (isEmpty(stack) || isOperator(peek(stack, 0))) {
+            // create tuple
+            push(stack, newLambda(location, PARAMETERX,
+                applyCommaTree(location, REFERENCEX, getNode(result))));
+        } else {
+            // create function call
+            Hold* function = pop(stack);
+            push(stack, applyCommaTree(location,
+                getNode(function), getNode(result)));
+            release(function);
+        }
+    } else {
+        pushLeftAssociative(stack, getNode(result));
+    }
     release(result);
-    return location;
 }
 
 bool isNewBlock(Stack* stack) {
@@ -138,7 +157,7 @@ bool isNewBlock(Stack* stack) {
 
 Hold* parseString(const char* input) {
     Stack* stack = newStack(NULL);
-    push(stack, newOperator(-1));   // open parenthesis
+    push(stack, newEOF());
 
     for (Hold* tokenHold = getFirstToken(input); true;
                tokenHold = replaceHold(tokenHold, getNextToken(tokenHold))) {
@@ -150,12 +169,14 @@ Hold* parseString(const char* input) {
             } else if (isCloseParen(token)) {
                 collapseParentheses(stack, token);
             } else if (isEOF(token)) {
-                collapseParentheses(stack, token);
+                eraseNewlines(stack);
+                collapseLeftOperand(stack, token);
+                syntaxErrorIf(isEOF(peek(stack, 0)), token, "no input");
+                Hold* result = pop(stack);
+                assert(isEOF(peek(stack, 0)));
+                deleteStack(stack);
                 release(tokenHold);
-                break;
-            } else if (isComma(token)) {
-                int openLocation = collapseParentheses(stack, token);
-                push(stack, newOperator(openLocation));
+                return result;
             } else if (isBacktick(token)) {
                 tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
                 token = getNode(tokenHold);
@@ -175,12 +196,6 @@ Hold* parseString(const char* input) {
             pushLeftAssociative(stack, token);
         }
     }
-
-    syntaxErrorIf(isEmpty(stack), NULL, "no input");
-    Hold* result = pop(stack);
-    syntaxErrorIf(!isEmpty(stack), NULL, "extra '('");
-    deleteStack(stack);
-    return result;
 }
 
 static unsigned long long findDebruijnIndex(Node* symbol, Stack* parameters) {
