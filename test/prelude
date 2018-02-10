@@ -8,6 +8,7 @@ const(x, _) = x                 -- ignore second parameter
 flip(f) = x -> y -> f(y, x)     -- flip binary function argument order
 mirror(f) = x -> f(x, x)        -- convert binary function to unary function
 double(f) = x -> f(f(x))        -- apply function twice
+on(f, g) = x -> y -> f(g(x), g(y))  -- apply binary f with unary g applied first
 
 -- boolean logic --
 true(x, y) = x
@@ -28,6 +29,8 @@ isNothing(m) = m(true, const(false))
 isJust(m) = m(false, const(true))
 fromJust(m) = m(undefined, id)
 maybe(default, f, m) = m(default, f)
+m ? f = m(nothing, f)                   -- maybe chaining (bind)
+m || default = m(default, id)           -- just value or default
 
 -- pairs --
 (,) a b = (a, b)
@@ -57,8 +60,7 @@ last(a) = head(while(not <> null <> tail, tail, a)) -- get last element of list
 a @ n = head(loop(n, tail, a))      -- get element of list at index
 
 -- syntactic helpers --
-c ? p = if (c) then first(p) else second(p)    -- ternary conditional
-a ?: f = null(a) ? (nil, f(head(a), tail(a)))
+a ?: f = if (null(a)) then nil else f(head(a), tail(a))
 
 -- list folds --
 foldr(f, z, a) = if (null(a)) then z else f(head(a), foldr(f, z, tail(a)))
@@ -80,7 +82,7 @@ cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
 a | p = foldr((x xs) -> if (p(x)) then x :: xs else xs, nil, a)  -- filter
 f <:> a = foldr((::) <> f, nil, a)   -- map function over list
 zipWith(f, a, b) = a ?: (x xs) -> b ?: (y ys) -> f(x, y) :: zipWith(f, xs, ys)
-zip(a, b) = zipWith((,), a, b)
+a <+> b = zipWith((,), a, b)
 unzip(a) = (first <:> a, second <:> a)
 -- drop all elements beyond the first n elements
 take(n, a) = if (n == 0) then nil else head(a) :: take(n - 1, tail(a))
@@ -136,6 +138,7 @@ primes = (
 )
 
 -- serialization --
+showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
     showReversedNatural(n) = if (n == 0) then nil else (
         ((head "0") + (n `mod` 10)) :: showReversedNatural(n / 10)
