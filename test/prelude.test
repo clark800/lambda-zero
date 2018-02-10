@@ -96,10 +96,10 @@ main(input) = showIntegerList(negate <:> take(5, primes)) \n main
 maximum(take(7, squares) | odd)
 25
 ===============================================================================
-maybe(-1, id, find(even, "aceswild"))
+find(even, "aceswild") || -1
 108
 ===============================================================================
-maybe(-1, id, find(even, "aces"))
+find(even, "aces") || -1
 -1
 ===============================================================================
 main(input) = union("abc", "bbd") \n main
@@ -129,6 +129,9 @@ isNothing(nothing)
 isNothing(just(10))
 (x -> (y -> y))
 ===============================================================================
-maybe(-1, id, lookup(7, zip(naturals, take(10, primes))))
+lookup(7, naturals <+> take(10, primes)) || -1
 19
+===============================================================================
+main(input) = showBoolean((just(2) ? x -> just(2 * x) || 0) == 4)\n main
+true
 ===============================================================================

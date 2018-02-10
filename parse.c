@@ -20,6 +20,11 @@ static inline bool isValidOperand(Node* node) {
         isApplication(node) || isAbstraction(node);
 }
 
+void eraseNewlines(Stack* stack) {
+    while (!isEmpty(stack) && isNewline(peek(stack, 0)))
+        release(pop(stack));
+}
+
 void pushLeftAssociative(Stack* stack, Node* node) {
     if (isEmpty(stack) || isOperator(peek(stack, 0))) {
         push(stack, node);
@@ -28,10 +33,6 @@ void pushLeftAssociative(Stack* stack, Node* node) {
         push(stack, newApplication(getLocation(node), getNode(left), node));
         release(left);
     }
-}
-
-void collapseOperator(Stack* stack, Node* operator, Node* left, Node* right) {
-    push(stack, getOperator(operator).collapse(operator, left, right));
 }
 
 void collapseInfixOperator(Stack* stack) {
@@ -43,7 +44,8 @@ void collapseInfixOperator(Stack* stack) {
     Hold* left = pop(stack);
     syntaxErrorIf(!isValidOperand(getNode(left)), getNode(operator),
         "missing or invalid left operand of");
-    collapseOperator(stack, getNode(operator), getNode(left), getNode(right));
+    push(stack, getOperator(getNode(operator)).collapse(
+        getNode(operator), getNode(left), getNode(right)));
     release(left);
     release(right);
     release(operator);
@@ -82,10 +84,8 @@ void collapseLeftOperand(Stack* stack, Node* token) {
 void pushSection(Stack* stack, Node* operator, Node* left, Node* right) {
     syntaxErrorIf(isSpecialOperator(operator), operator,
         "invalid operator in section");
-    collapseOperator(stack, operator, left, right);
-    Hold* body = pop(stack);
-    push(stack, newLambda(getLocation(operator), PARAMETERX, getNode(body)));
-    release(body);
+    push(stack, newLambda(getLocation(operator), PARAMETERX,
+        getOperator(operator).collapse(operator, left, right)));
 }
 
 void collapseSection(Stack* stack, Node* closeParen) {
@@ -103,52 +103,51 @@ void collapseSection(Stack* stack, Node* closeParen) {
     release(right);
 }
 
-Node* applyCommaTree(int location, Node* base, Node* commaTree) {
+Node* applyToCommaTree(int location, Node* base, Node* commaTree) {
     for (; isCommaBranch(commaTree); commaTree = getRight(commaTree))
         base = newApplication(location, base, getLeft(commaTree));
     return newApplication(location, base, commaTree);
 }
 
-void eraseNewlines(Stack* stack) {
-    if (!isEmpty(stack) && isNewline(peek(stack, 0)))
-        release(pop(stack));    // ignore newline before close paren
+void collapseCommaTree(Stack* stack, Node* commaTree, int location) {
+    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
+        // create tuple
+        push(stack, newLambda(location, PARAMETERX,
+            applyToCommaTree(location, REFERENCEX, commaTree)));
+    } else {
+        // create function call
+        Hold* function = pop(stack);
+        push(stack, applyToCommaTree(location, getNode(function), commaTree));
+        release(function);
+    }
 }
 
-void collapseParentheses(Stack* stack, Node* token) {
+void convertParenthesizedOperator(Node* operator) {
+    syntaxErrorIf(isSpecialOperator(operator) && !isComma(operator),
+        operator, "operator cannot be parenthesized");
+    convertOperatorToName(operator);
+}
+
+void collapseParentheses(Stack* stack, Node* close) {
     eraseNewlines(stack);
-    syntaxErrorIf(isOpenParen(peek(stack, 0)), token, "empty parentheses");
-    collapseLeftOperand(stack, token);
+    syntaxErrorIf(isOpenParen(peek(stack, 0)), close, "empty parentheses");
+    collapseLeftOperand(stack, close);
     Node* third = peekSafe(stack, 2);
     if (third != NULL && isOpenParen(third) && !isOpenParen(peekSafe(stack, 1)))
-        collapseSection(stack, token);
-    Hold* result = pop(stack);
-    syntaxErrorIf(isEmpty(stack), token, "missing '(' for");
+        collapseSection(stack, close);
+    Hold* contents = pop(stack);
+    syntaxErrorIf(isEmpty(stack), close, "missing '(' for");
     Hold* openParen = pop(stack);
-    syntaxErrorIf(!isOpenParen(getNode(openParen)), token, "missing '(' for");
+    syntaxErrorIf(!isOpenParen(getNode(openParen)), close, "missing '(' for");
     int location = getLocation(getNode(openParen));
     release(openParen);
-    if (isOperator(getNode(result))) {
-        Node* operator = getNode(result);
-        syntaxErrorIf(isSpecialOperator(operator) && !isComma(operator),
-            operator, "operator cannot be parenthesized");
-        convertOperatorToName(operator);
-    }
-    if (isCommaBranch(getNode(result))) {
-        if (isEmpty(stack) || isOperator(peek(stack, 0))) {
-            // create tuple
-            push(stack, newLambda(location, PARAMETERX,
-                applyCommaTree(location, REFERENCEX, getNode(result))));
-        } else {
-            // create function call
-            Hold* function = pop(stack);
-            push(stack, applyCommaTree(location,
-                getNode(function), getNode(result)));
-            release(function);
-        }
-    } else {
-        pushLeftAssociative(stack, getNode(result));
-    }
-    release(result);
+    if (isOperator(getNode(contents)))
+        convertParenthesizedOperator(getNode(contents));
+    if (isCommaBranch(getNode(contents)))
+        collapseCommaTree(stack, getNode(contents), location);
+    else
+        pushLeftAssociative(stack, getNode(contents));
+    release(contents);
 }
 
 bool isNewBlock(Stack* stack) {
@@ -179,19 +178,15 @@ Hold* parseString(const char* input) {
                 return result;
             } else if (isBacktick(token)) {
                 tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
-                token = getNode(tokenHold);
-                collapseLeftOperand(stack, token);
-                push(stack, newOperator(getLocation(token)));
+                collapseLeftOperand(stack, getNode(tokenHold));
+                push(stack, newOperator(getLocation(getNode(tokenHold))));
                 tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
-                token = getNode(tokenHold);
-                syntaxErrorIf(!isBacktick(token), token,
-                    "expected backtick but got");
-            } else if (isNewline(token) && isNewBlock(stack)) {
-                continue;   // ignore newlines at start or following open paren
-            } else {
+                syntaxErrorIf(!isBacktick(getNode(tokenHold)),
+                    getNode(tokenHold), "expected backtick but got");
+            } else if (!(isNewline(token) && isNewBlock(stack))) {
                 collapseLeftOperand(stack, token);
                 push(stack, token);
-            }
+            } // ignore newlines at the beginning of a block
         } else {
             pushLeftAssociative(stack, token);
         }
@@ -203,18 +198,17 @@ static unsigned long long findDebruijnIndex(Node* symbol, Stack* parameters) {
     for (Iterator* it = iterate(parameters); !end(it); it = next(it), i++)
         if (isSameToken(cursor(it), symbol))
             return i + 1;
+    syntaxErrorIf(true, symbol, "undefined symbol");
     return 0;
 }
 
 static void processSymbol(Node* symbol, Stack* parameterStack) {
     unsigned long long code = lookupBuiltinCode(symbol);
-    if (code > 0) {
+    if (code > 0)
         convertSymbolToBuiltin(symbol, code);
-    } else {
-        unsigned long long debruijn = findDebruijnIndex(symbol, parameterStack);
-        syntaxErrorIf(debruijn == 0, symbol, "undefined symbol");
-        convertSymbolToReference(symbol, debruijn);
-    }
+    else
+        convertSymbolToReference(symbol,
+            findDebruijnIndex(symbol, parameterStack));
 }
 
 static void process(Node* node, Stack* parameterStack) {
