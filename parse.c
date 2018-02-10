@@ -109,10 +109,13 @@ Node* applyCommaTree(int location, Node* base, Node* commaTree) {
     return newApplication(location, base, commaTree);
 }
 
-void collapseParentheses(Stack* stack, Node* token) {
+void eraseNewlines(Stack* stack) {
     if (!isEmpty(stack) && isNewline(peek(stack, 0)))
         release(pop(stack));    // ignore newline before close paren
-    syntaxErrorIf(isEmpty(stack), token, "missing '(' for");
+}
+
+void collapseParentheses(Stack* stack, Node* token) {
+    eraseNewlines(stack);
     syntaxErrorIf(isOpenParen(peek(stack, 0)), token, "empty parentheses");
     collapseLeftOperand(stack, token);
     Node* third = peekSafe(stack, 2);
@@ -153,7 +156,7 @@ bool isNewBlock(Stack* stack) {
 
 Hold* parseString(const char* input) {
     Stack* stack = newStack(NULL);
-    push(stack, newOperator(-1));   // open parenthesis
+    push(stack, newEOF());
 
     for (Hold* tokenHold = getFirstToken(input); true;
                tokenHold = replaceHold(tokenHold, getNextToken(tokenHold))) {
@@ -165,9 +168,14 @@ Hold* parseString(const char* input) {
             } else if (isCloseParen(token)) {
                 collapseParentheses(stack, token);
             } else if (isEOF(token)) {
-                collapseParentheses(stack, token);
+                eraseNewlines(stack);
+                collapseLeftOperand(stack, token);
+                syntaxErrorIf(isEOF(peek(stack, 0)), token, "no input");
+                Hold* result = pop(stack);
+                assert(isEOF(peek(stack, 0)));
+                deleteStack(stack);
                 release(tokenHold);
-                break;
+                return result;
             } else if (isBacktick(token)) {
                 tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
                 token = getNode(tokenHold);
@@ -187,12 +195,6 @@ Hold* parseString(const char* input) {
             pushLeftAssociative(stack, token);
         }
     }
-
-    syntaxErrorIf(isEmpty(stack), NULL, "no input");
-    Hold* result = pop(stack);
-    syntaxErrorIf(!isEmpty(stack), NULL, "extra '('");
-    deleteStack(stack);
-    return result;
 }
 
 static unsigned long long findDebruijnIndex(Node* symbol, Stack* parameters) {

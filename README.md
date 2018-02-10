@@ -9,7 +9,7 @@
 - The interpreter is less than 1800 lines of strict ANSI C99 and the binary is
   just 32KB dynamically linked and stripped.
 - The interpreter can also be built for Linux x86-64 without the C standard
-  library in which case it is under 2100 lines of strict ANSI C99 and generates
+  library in which case it is about 2100 lines of strict ANSI C99 and generates
   a 22KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
   memory allocator, error messaging, and rudimental built-in debugging and
@@ -32,7 +32,7 @@ and insert it before the sample code since there is no import/include mechanism.
 ### Quicksort
 
     a ?: f = if (null(a)) then nil else f(head(a), tail(a))
-    sort(a) = a ?: (x, xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
+    sort(a) = a ?: (x xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
 
 ### Infinite list of natural numbers
 
@@ -43,7 +43,7 @@ and insert it before the sample code since there is no import/include mechanism.
 ### Infinite list of prime numbers
 
     primes = (
-      filterPrime(a) = a ?: (x, xs) -> x :: filterPrime(xs | not <> (x `divides`))
+      filterPrime(a) = a ?: (x xs) -> x :: filterPrime(xs | not <> (x `divides`))
       filterPrime(enumFrom(2))
     )
 
@@ -115,7 +115,8 @@ an operator name expression.
 - Multiparameter lambdas: `x y -> z => x -> y -> z`
 - Definitions (Let expressions): `(f = x) y => (f -> y) x`
 - Function definitions: `f x y = z => f = x -> y -> z`
-- Comma separators: `, => )(` so `f(x, y) => f(x)(y) => f x y`
+- Function calls: `f(x, y) => f(x)(y) => f x y`
+- Tuples: `(x, y, z) => f -> f x y z`
 - Recursive definitions: The right hand sise of a function definition can refer
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
@@ -123,7 +124,7 @@ an operator name expression.
 When operators are chained like `x op y op z` there are precedence rules that
 determine how it is parsed.
 - Infixify: `` `f` `` enables the infix operator sugar on `f`
-- Un-infixify: `(op)` disabled infix operate sugar on `op`
+- Un-infixify: `(op)` disables the infix operator sugar on `op`
 - Sections: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
 - If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument
 - String literals: `"abc"` desugars to a linked list of ascii character codes
@@ -142,17 +143,21 @@ list is constructed in the standard way for the Lambda Calculus.
 That's the whole language! Take a look at the [prelude](test/prelude)
 for more examples.
 
-# Building and Running
+# Building
 
-Make sure gcc is installed and run the `make` script. The `make` script will
-only work on systems with bash or compatible shells.
+Make sure gcc and bash are installed and run the `make` script.
 
-Then you can run `main` by either passing it a script filename on the command
-line or typing the script on stdin and ending with two Ctrl-D's.
+# Running
 
-**Note** *There is no import/include mechanism and the prelude is not included*
-so to use the prelude you should copy the [prelude](test/prelude) file and add
-your code to the bottom, then pass this file to `main`.
+    echo -n "INPUT" | run SOURCEFILE
+
+For example, try this sample program that prints out an infinite list of prime
+numbers:
+
+    echo -n "" | run test/samples/showprimes
+
+The `run` script prepends the [prelude](test/prelude) to the `SOURCEFILE` and
+passes the result to `main`.
 
 # Stability
 

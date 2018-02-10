@@ -58,6 +58,7 @@ char* readScript(const char* filename) {
 }
 
 int main(int argc, char* argv[]) {
+    setbuf(stdout, NULL);
     initNodeAllocator();
     initBuiltins();
     char* program = argv[0];

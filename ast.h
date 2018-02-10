@@ -97,7 +97,7 @@ static inline bool isAssignment(Node* node) {
 }
 
 static inline bool isBlockOpener(Node* node) {
-    return isOpenParen(node) || isComma(node) || isNewline(node);
+    return isOpenParen(node) || isComma(node) || isNewline(node) || isEOF(node);
 }
 
 static inline bool isPrint(Node* node) {

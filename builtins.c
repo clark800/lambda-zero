@@ -6,8 +6,7 @@
 #include "parse.h"
 #include "builtins.h"
 
-// first char must be space, second char must be open parentheses
-const char* OBJECTS = " "               // offset locations from zero
+const char* OBJECTS =
     "($x -> $x)\n"                      // identity
     "($x -> $y -> $y)\n"                // false
     "($z -> ($x -> $y -> $x))\n"        // nil

@@ -15,9 +15,9 @@ Node* infix(Node* operator, Node* left, Node* right) {
 Operator DEFAULT = {"", 150, 150, L, infix};
 
 Operator OPERATORS[] = {
+    {"\0", 0, 0, R, NULL},
     {"(", 10, 10, R, NULL},
     {")", 10, 10, R, NULL},
-    {"\0", 10, 10, R, NULL},
     {",", 20, 20, R, apply},
     {"\n", 30, 30, R, apply},
     {"=", 40, 40, N, apply},

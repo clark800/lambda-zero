@@ -23,12 +23,13 @@ struct Position {
 };
 
 static inline int getLexemeLocation(const char* lexeme) {
-    return (int)(lexeme - INPUT);
+    return (int)(lexeme - INPUT + 1);
 }
 
 const char* getLexemeByLocation(int location) {
-    const char* start = location < 0 ? INTERNAL_INPUT : INPUT;
-    return &start[abs(location)];
+    const char* start = location == 0 ? "\0" :
+        location < 0 ? INTERNAL_INPUT : INPUT;
+    return &start[abs(location) - 1];
 }
 
 const char* getLexeme(Node* node) {
@@ -49,7 +50,7 @@ void printToken(Node* token, FILE* stream) {
 
 struct Position getPosition(unsigned int location) {
     struct Position position = {1, 1};  // use 1-based indexing
-    for (unsigned int i = 0; i < location; i++) {
+    for (unsigned int i = 0; i < location - 1; i++) {
         position.column += 1;
         if (INPUT[i] == '\n') {
             position.line += 1;
@@ -231,4 +232,8 @@ bool isSameToken(Node* tokenA, Node* tokenB) {
 
 bool isThisToken(Node* token, const char* lexeme) {
     return isSameLexeme(getLexeme(token), lexeme);
+}
+
+Node* newEOF() {
+    return newOperator(0);
 }

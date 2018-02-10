@@ -124,10 +124,6 @@ primes = (
     filterPrime(a) = a ?: (x xs) -> x :: filterPrime(xs | not <> (x `divides`))
     filterPrime(enumFrom(2))
 )
-primes' = (
-    eulersSieve(a) = head(a) :: eulersSieve(tail(a) \\ ((* head(a)) <:> a))
-    2 :: eulersSieve(tail(naturals | odd))
-)
 
 -- serialization --
 showNatural(n) = (
