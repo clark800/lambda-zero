@@ -128,9 +128,10 @@ void collapseParentheses(Stack* stack, Node* token) {
     int location = getLocation(getNode(openParen));
     release(openParen);
     if (isOperator(getNode(result))) {
-        syntaxErrorIf(isSpecialOperator(getNode(result)), getNode(result),
-            "operator cannot be parenthesized");
-        convertOperatorToName(getNode(result));
+        Node* operator = getNode(result);
+        syntaxErrorIf(isSpecialOperator(operator) && !isComma(operator),
+            operator, "operator cannot be parenthesized");
+        convertOperatorToName(operator);
     }
     if (isCommaBranch(getNode(result))) {
         if (isEmpty(stack) || isOperator(peek(stack, 0))) {

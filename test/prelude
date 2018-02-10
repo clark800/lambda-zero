@@ -29,6 +29,11 @@ isJust(m) = m(false, const(true))
 fromJust(m) = m(undefined, id)
 maybe(default, f, m) = m(default, f)
 
+-- pairs --
+(,) a b = (a, b)
+first(a) = a(true)
+second(a) = a(false)
+
 -- math --
 negate(x) = 0 - x
 min(x, y) = if (x <= y) then x else y
@@ -46,14 +51,14 @@ loop(n, f, x) = if (n == 0) then x else f(loop(n - 1, f, x))
 x :: y = (x, y)                     -- prepend element to list (cons)
 nil = const(true)                   -- empty list
 null(a) = a(const(const(false)))    -- test for empty list
-head(a) = a(true)                   -- get first element of list
-tail(a) = a(false)                  -- drop first element of list
+head(a) = first(a)                  -- get first element of list
+tail(a) = second(a)                 -- drop first element of list
 last(a) = head(while(not <> null <> tail, tail, a)) -- get last element of list
 a @ n = head(loop(n, tail, a))      -- get element of list at index
 
 -- syntactic helpers --
-c ? p = if (c) then head(p) else tail(p)    -- C style ternary conditional
-a ?: f = if (null(a)) then nil else f(head(a), tail(a))
+c ? p = if (c) then first(p) else second(p)    -- ternary conditional
+a ?: f = null(a) ? (nil, f(head(a), tail(a)))
 
 -- list folds --
 foldr(f, z, a) = if (null(a)) then z else f(head(a), foldr(f, z, tail(a)))
@@ -74,6 +79,9 @@ cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
 -- generic list transformations --
 a | p = foldr((x xs) -> if (p(x)) then x :: xs else xs, nil, a)  -- filter
 f <:> a = foldr((::) <> f, nil, a)   -- map function over list
+zipWith(f, a, b) = a ?: (x xs) -> b ?: (y ys) -> f(x, y) :: zipWith(f, xs, ys)
+zip(a, b) = zipWith((,), a, b)
+unzip(a) = (first <:> a, second <:> a)
 -- drop all elements beyond the first n elements
 take(n, a) = if (n == 0) then nil else head(a) :: take(n - 1, tail(a))
 drop(n, a) = loop(n, tail, a)       -- drop n elements from front of list
@@ -90,6 +98,8 @@ all(p, a) = foldr((/\), true, p <:> a)      -- test if all elements satisfy p
 -- find first element satisfying p, or return nothing
 find(p, a) = if (null(a)) then nothing else (
     if (p(head(a))) then just(head(a)) else find(p, tail(a)))
+lookup(n, a) = if (null(a)) then nothing else (
+    if (first(head(a)) == n) then just(second(head(a))) else lookup(n, tail(a)))
 
 -- integer list basics --
 in(x, a) = any((== x), a)                       -- test if element is in list
@@ -137,3 +147,6 @@ showInteger(n) = if (n < 0) then (
     "-" ++ showNatural(negate(n))) else showNatural(n)
 
 showIntegerList(a) = "[" ++ intercalate(", ", showInteger <:> a) ++ "]"
+showIntegerPair(a) = (
+    "(" ++ showInteger(first(a)) ++ ", " ++ showInteger(second(a)) ++ ")")
+showIntegerPairList(a) = "[" ++ intercalate(", ", showIntegerPair <:> a) ++ "]"
