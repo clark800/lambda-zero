@@ -90,7 +90,9 @@ static inline long long subtract(long long left, long long right) {
 }
 
 static inline long long multiply(long long left, long long right) {
-    if (right != 0) {
+    if (right == -1 && left == LLONG_MIN)
+        error("Integer overflow", "multiplication");
+    if (right != 0 && right != 1 && right != -1) {
         // todo: fix this
         if (sgn(left) == sgn(right) && llabs(left) > llabs(LLONG_MAX / right))
             error("Integer overflow", "multiplication");
