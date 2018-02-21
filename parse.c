@@ -198,23 +198,34 @@ static unsigned long long findDebruijnIndex(Node* symbol, Stack* parameters) {
     for (Iterator* it = iterate(parameters); !end(it); it = next(it), i++)
         if (isSameToken(cursor(it), symbol))
             return i + 1;
-    syntaxErrorIf(true, symbol, "undefined symbol");
     return 0;
 }
 
 static void processSymbol(Node* symbol, Stack* parameterStack) {
     unsigned long long code = lookupBuiltinCode(symbol);
-    if (code > 0)
+    if (code > 0) {
         convertSymbolToBuiltin(symbol, code);
-    else
-        convertSymbolToReference(symbol,
-            findDebruijnIndex(symbol, parameterStack));
+        return;
+    }
+    unsigned long long index = findDebruijnIndex(symbol, parameterStack);
+    syntaxErrorIf(index == 0, symbol, "undefined symbol");
+    convertSymbolToReference(symbol, index);
+}
+
+static bool isDefined(Node* symbol, Stack* parameterStack) {
+    // PARAMETERX is always considered to be a fresh variable so that we
+    // can allow tuples inside tuples
+    return (PARAMETERX == NULL || !isSameToken(symbol, PARAMETERX)) &&
+        (lookupBuiltinCode(symbol) != 0 ||
+        findDebruijnIndex(symbol, parameterStack) != 0);
 }
 
 static void process(Node* node, Stack* parameterStack) {
     if (isSymbol(node)) {
         processSymbol(node, parameterStack);
     } else if (isAbstraction(node)) {
+        syntaxErrorIf(isDefined(getParameter(node), parameterStack),
+            getParameter(node), "symbol already defined");
         push(parameterStack, getParameter(node));
         process(getBody(node), parameterStack);
         release(pop(parameterStack));
