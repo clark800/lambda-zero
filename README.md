@@ -10,15 +10,12 @@
   just 32KB dynamically linked and stripped.
 - The interpreter can also be built for Linux x86-64 without the C standard
   library in which case it is about 2100 lines of strict ANSI C99 and generates
-  a 22KB statically linked stripped binary.
+  a 23KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
   memory allocator, error messaging, and rudimental built-in debugging and
   profiling features.
 
 # Sample Code
-
-Note: To run these samples, you'll have to copy the [prelude](test/prelude) file
-and insert it before the sample code since there is no import/include mechanism.
 
 ### Hello World
 
@@ -57,11 +54,15 @@ Lambda Zero allows you to program in the Lambda Calculus with just the
 minimal amount of added features to make it practical and readable.
 Lambda Zero combines the elegance of Haskell with the simplicity of LISP.
 
-# Use Case
+# Use Cases
 
-The intended use case of Lambda Zero is to bootstrap a future higher level
+The primary use case of Lambda Zero is to bootstrap a future higher level
 language "Lambda One" i.e. Lambda Zero is a sublanguage of Lambda One and the
 Lambda One compiler is written entirely in Lambda Zero.
+
+Lambda Zero is also a good way to learn about functional programming since it
+is much simpler than other langauges like Haskell, but operates on the same
+foundation.
 
 Lambda Zero is not a general purpose language; the interpreter is optimized
 for simplicity over performance and the language does not allow any I/O
@@ -99,7 +100,7 @@ The desugared language can be described by the grammar rules below
 grammar ignores some error cases):
 
     integer = [-]?[0-9]+
-    builtin = '+' | '-' | '*' | '/' | 'mod' | '==' | '=/=' | '<' | '>' | '<=' | '>= 
+    builtin = '+' | '-' | '*' | '/' | 'mod' | '==' | '=/=' | '<' | '>' | '<=' | '>='
     name = ("a token that is not an integer, builtin, delimiter, or arrow")
     expr = integer | builtin | name | (name -> expr) | (expr expr)
 
@@ -158,6 +159,9 @@ numbers:
 
 The `run` script prepends the [prelude](test/prelude) to the `SOURCEFILE` and
 passes the result to `main`.
+
+Note that when using the `run` script, line numbers in error messages will be
+offset by the number of lines in the prelude.
 
 # Stability
 

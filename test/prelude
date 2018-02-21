@@ -146,8 +146,8 @@ primes = (
 -- serialization --
 showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
-    showReversedNatural(n) = if (n == 0) then nil else (
-        ((head "0") + (n `mod` 10)) :: showReversedNatural(n / 10)
+    showReversedNatural(m) = if (m == 0) then nil else (
+        ((head "0") + (m `mod` 10)) :: showReversedNatural(m / 10)
     )
     if (n == 0) then "0" else reverse(showReversedNatural(n))
 )

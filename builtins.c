@@ -8,10 +8,10 @@
 
 const char* OBJECTS =
     "($x -> $x)\n"                      // identity
-    "($x -> $y -> $y)\n"                // false
-    "($z -> ($x -> $y -> $x))\n"        // nil
-    "($f -> ($x -> $f ($x $x)) ($x -> $f ($x $x)))\n"  // Y combinator
-    "($print -> ($f -> $f $print))\n"   // print
+    "($t -> $f -> $f)\n"                // false
+    "($z -> ($t -> $f -> $t))\n"        // nil
+    "($y -> ($c -> $y ($c $c)) ($c -> $y ($c $c)))\n"  // Y combinator
+    "($print -> ($p -> $p $print))\n"   // print
     "($ -> $)";                         // terminator
 
 Hold* OBJECTS_HOLD = NULL;

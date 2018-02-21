@@ -44,7 +44,7 @@ function oneline_suite {
     while read -r line; do
         read expected_output
         local input="$prelude$line"
-        local output=$(echo -e "$input" | $CMD 2>&1)
+        local output=$(echo "$input" | sed 's/\\n/\n/g' | $CMD 2>&1)
         check "$line" "$expected_output" "$output" || ((failures++)) || true
     done < <(grep -v "====" "$testcases_path")
     if [[ $failures -eq 0 ]]; then return 0; else return 1; fi
