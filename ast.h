@@ -100,8 +100,8 @@ static inline bool isBlockOpener(Node* node) {
     return isOpenParen(node) || isComma(node) || isNewline(node) || isEOF(node);
 }
 
-static inline bool isPrint(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "$print");
+static inline bool isPut(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "$put");
 }
 
 // ====================================

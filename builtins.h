@@ -10,7 +10,6 @@ extern Node* YCOMBINATOR;
 extern Node* PARAMETERX;
 extern Node* REFERENCEX;
 extern Node* PRINT;
-extern Node* PRINTRETURN;
 void initBuiltins(void);
 void deleteBuiltins(void);
 unsigned long long lookupBuiltinCode(Node* token);

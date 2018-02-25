@@ -78,11 +78,27 @@ void applyUpdates(State* state) {
         applyUpdate(state);
 }
 
+long long evaluateToInteger(Node* env, unsigned long long debruijn,
+        Node* node) {
+    Hold* value = evaluateDebruijn(env, debruijn);
+    Node* integer = getClosureTerm(getNode(value));
+    evaluationErrorIf(!isInteger(integer), node, "expected integer argument");
+    long long result = getInteger(integer);
+    release(value);
+    return result;
+}
+
+Node* getArgumentClosure(Node* argument, Stack* env) {
+    if (isReference(argument))     // short-circuit optimization
+        return peek(env, getDebruijnIndex(argument) - 1);
+    return newClosure(argument, getHead(env));
+}
+
 void evaluateApplication(State* state) {
-    Node* closure = newClosure(getRight(getNode(state->node)),
-        getHead(state->env));
-    push(state->stack, closure);
-    setNode(state, getLeft(getNode(state->node)));
+    Node* function = getLeft(getNode(state->node));
+    Node* argument = getRight(getNode(state->node));
+    push(state->stack, getArgumentClosure(argument, state->env));
+    setNode(state, function);
 }
 
 void evaluateAbstraction(State* state) {
@@ -91,7 +107,13 @@ void evaluateAbstraction(State* state) {
         return;
     }
     moveStackItem(state->stack, state->env);
-    setNode(state, getBody(getNode(state->node)));
+    Node* function = getNode(state->node);
+    if (isPut(getParameter(function))) {
+        long long c = evaluateToInteger(getHead(state->env), 1, function);
+        evaluationErrorIf(c < 0 || c >= 256, function, "expected byte value");
+        putchar((int)c);
+    }
+    setNode(state, getBody(function));
 }
 
 void evaluateReference(State* state) {
@@ -114,25 +136,15 @@ static inline Hold* getResult(State* state, bool doIO) {
     return hold(newClosure(getNode(state->node), getHead(state->env)));
 }
 
-long long evaluateToInteger(Node* env, unsigned long long debruijn,
-        Hold* operator) {
-    Hold* value = evaluateDebruijn(env, debruijn);
-    Node* integer = getClosureTerm(getNode(value));
-    evaluationErrorIf(!isInteger(integer), getNode(operator),
-        "non-integer parameter to operator");
-    long long result = getInteger(integer);
-    release(value);
-    return result;
-}
-
 void evaluateBuiltin(State* state) {
     // simulate evaluating two abstractions
     applyUpdates(state);
     moveStackItem(state->stack, state->env);
     applyUpdates(state);
     moveStackItem(state->stack, state->env);
-    long long left = evaluateToInteger(getHead(state->env), 2, state->node);
-    long long right = evaluateToInteger(getHead(state->env), 1, state->node);
+    Node* operator = getNode(state->node);
+    long long left = evaluateToInteger(getHead(state->env), 2, operator);
+    long long right = evaluateToInteger(getHead(state->env), 1, operator);
     setNode(state, computeBuiltin(getNode(state->node), left, right));
 }
 
@@ -162,16 +174,6 @@ Hold* evaluateNode(State* state) {
                 return getResult(state, doIO);
             }
             evaluateAbstraction(state);
-        } else if (isPrint(node)) {
-            applyUpdates(state);
-            moveStackItem(state->stack, state->env);
-            long long c = evaluateToInteger(
-                getHead(state->env), 1, state->node);
-            release(pop(state->env));
-            evaluationErrorIf(c < 0 || c >= 256, node, "expected byte value");
-            putchar((int)c);
-            // print(n) = f -> f print  (so that it prints the whole string)
-            setNode(state, PRINTRETURN);
         } else if (isInteger(node)) {
             return getResult(state, doIO);
         } else if (isReference(node)) {
