@@ -6,12 +6,17 @@
 #include "parse.h"
 #include "builtins.h"
 
+// put(c) = id              -- with side effect of printing the character c
+// print(c) = (put c) (cs -> cs print)   -- pass this into a string to print it
+// print = c -> (put c) (cs -> cs print)                 -- desugar
+// print = Y (print -> c -> (put c) (cs -> cs print))    -- desugar
+
 const char* OBJECTS =
     "($x -> $x)\n"                      // identity
     "($t -> $f -> $f)\n"                // false
     "($z -> ($t -> $f -> $t))\n"        // nil
-    "($y -> ($c -> $y ($c $c)) ($c -> $y ($c $c)))\n"  // Y combinator
-    "($print -> ($p -> $p $print))\n"   // print
+    "($y -> ($q -> $y ($q $q)) ($q -> $y ($q $q))) "  // Y combinator
+    "($print -> $c -> ((($put -> $p -> $p) $c) ($cs -> $cs $print)))\n"
     "($ -> $)";                         // terminator
 
 Hold* OBJECTS_HOLD = NULL;
@@ -22,7 +27,6 @@ Node* YCOMBINATOR = NULL;
 Node* PARAMETERX = NULL;
 Node* REFERENCEX = NULL;
 Node* PRINT = NULL;
-Node* PRINTRETURN = NULL;
 
 enum {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS, EQUAL, NOTEQUAL,
       LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL};
@@ -46,9 +50,8 @@ void initBuiltins() {
     FALSE = getElement(objects, 1);
     NIL = getElement(objects, 2);
     TRUE = getBody(NIL);
-    YCOMBINATOR = getElement(objects, 3);
-    PRINTRETURN = getBody(getElement(objects, 4));
-    PRINT = getRight(getBody(PRINTRETURN));
+    PRINT = getElement(objects, 3);
+    YCOMBINATOR = getLeft(PRINT);
 }
 
 void deleteBuiltins() {
