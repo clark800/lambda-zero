@@ -88,9 +88,13 @@ long long evaluateToInteger(Node* env, unsigned long long debruijn,
     return result;
 }
 
+static inline Node* getReferencedClosure(Node* reference, Stack* env) {
+    return peek(env, getDebruijnIndex(reference) - 1);
+}
+
 Node* getArgumentClosure(Node* argument, Stack* env) {
     if (isReference(argument))     // short-circuit optimization
-        return peek(env, getDebruijnIndex(argument) - 1);
+        return getReferencedClosure(argument, env);
     return newClosure(argument, getHead(env));
 }
 
@@ -117,13 +121,11 @@ void evaluateAbstraction(State* state) {
 }
 
 void evaluateReference(State* state) {
-    Hold* closure = hold(peek(state->env,
-        getDebruijnIndex(getNode(state->node)) - 1));
-    setNode(state, getClosureTerm(getNode(closure)));
-    setHead(state->env, getClosureEnv(getNode(closure)));
-    if (LAZY)
-        push(state->stack, newUpdateClosure(getNode(closure)));
-    release(closure);
+    Node* closure = getReferencedClosure(getNode(state->node), state->env);
+    if (LAZY && !isAbstraction(getClosureTerm(closure)))
+        push(state->stack, newUpdateClosure(closure));
+    setNode(state, getClosureTerm(closure));
+    setHead(state->env, getClosureEnv(closure));
 }
 
 static inline Hold* getResult(State* state, bool doIO) {
