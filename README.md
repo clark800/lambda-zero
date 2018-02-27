@@ -61,7 +61,7 @@ language "Lambda One" i.e. Lambda Zero is a sublanguage of Lambda One and the
 Lambda One compiler is written entirely in Lambda Zero.
 
 Lambda Zero is also a good way to learn about functional programming since it
-is much simpler than other langauges like Haskell, but operates on the same
+is much simpler than other languages like Haskell, but operates on the same
 foundation.
 
 Lambda Zero is not a general purpose language; the interpreter is optimized
