@@ -176,6 +176,15 @@ Hold* parseString(const char* input) {
                 deleteStack(stack);
                 release(tokenHold);
                 return result;
+            } else if (isDot(token)) {
+                Hold* leftHold = pop(stack);
+                Node* left = getNode(leftHold);
+                syntaxErrorIf(!isValidOperand(left), left, "expected operand");
+                tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
+                Node* right = getNode(tokenHold);
+                syntaxErrorIf(!isName(right), right, "expected function name");
+                push(stack, newApplication(getLocation(token), right, left));
+                release(leftHold);
             } else if (isBacktick(token)) {
                 tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
                 collapseLeftOperand(stack, getNode(tokenHold));

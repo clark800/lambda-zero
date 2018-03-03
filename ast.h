@@ -92,6 +92,10 @@ static inline bool isBacktick(Node* node) {
     return isLeafNode(node) && isThisToken(node, "`");
 }
 
+static inline bool isDot(Node* node) {
+    return isLeafNode(node) && isThisToken(node, ".");
+}
+
 static inline bool isAssignment(Node* node) {
     return isBranchNode(node) && !isAbstraction(node) && isThisToken(node, "=");
 }

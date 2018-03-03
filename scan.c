@@ -25,7 +25,7 @@ static const char* skipSpaces(const char* str) {
 }
 
 static const char* skipToDelimiter(const char* str) {
-    return skipTo(str, " \t\n(),`");
+    return skipTo(str, " \t\n(),.`");
 }
 
 static const char* skipToNewline(const char* str) {
@@ -58,6 +58,8 @@ const char* skipLexeme(const char* lexeme) {
     assert(lexeme[0] != '\0');
     if (lexeme[0] == '"')
         return skipStringLiteral(lexeme);
+    if (lexeme[0] == '.')
+        return skipPast(lexeme, ".");
     const char* delimiter = skipToDelimiter(lexeme);
     return delimiter == lexeme ? delimiter + 1 : delimiter;
 }
