@@ -33,6 +33,7 @@ right(xy) = xy(false)
 swap(xy) = (right(xy), left(xy))
 
 -- function methods --
+x.f = f(x)                      -- uniform function call syntax
 f <> g = x -> f(g(x))           -- function composition
 compose = (<>)
 flip(f) = x -> y -> f(y, x)     -- flip binary function argument order

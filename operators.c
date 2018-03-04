@@ -16,8 +16,8 @@ Operator DEFAULT = {"", 150, 150, L, infix};
 
 Operator OPERATORS[] = {
     {"\0", 0, 0, R, NULL},
-    {"(", 10, 10, R, NULL},
-    {")", 10, 10, R, NULL},
+    {"(", 240, 10, R, NULL},
+    {")", 10, 240, R, NULL},
     {",", 20, 20, R, apply},
     {"\n", 30, 30, R, apply},
     {"=", 40, 40, N, apply},
@@ -51,7 +51,8 @@ Operator OPERATORS[] = {
     {"*", 210, 210, L, infix},
     {"/", 210, 210, L, infix},
     {"^", 220, 220, R, infix},
-    {"<>", 230, 230, R, infix}
+    {"<>", 230, 230, R, infix},
+    {".", 250, 250, L, infix}
 };
 
 Operator getOperator(Node* token) {

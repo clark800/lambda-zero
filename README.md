@@ -117,7 +117,6 @@ an operator name expression.
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
 - Function calls: `f(x, y) => f x y`
-- Uniform function call syntax: `x.f(y, z) => f x y z`
 - Tuples: `(x, y, z) => f -> f x y z`
 - Infix operators: `x op y => op x y` where `op` is a non-alphanumeric symbol
 When operators are chained like `x op y op z` there are precedence rules that
