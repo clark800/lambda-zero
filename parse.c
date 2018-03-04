@@ -163,9 +163,7 @@ Hold* parseString(const char* input) {
         Node* token = getNode(tokenHold);
         debugParseState(token, stack);
         if (isOperator(token)) {
-            if (isOpenParen(token)) {
-                push(stack, token);
-            } else if (isCloseParen(token)) {
+            if (isCloseParen(token)) {
                 collapseParentheses(stack, token);
             } else if (isEOF(token)) {
                 eraseNewlines(stack);
@@ -176,15 +174,6 @@ Hold* parseString(const char* input) {
                 deleteStack(stack);
                 release(tokenHold);
                 return result;
-            } else if (isDot(token)) {
-                Hold* leftHold = pop(stack);
-                Node* left = getNode(leftHold);
-                syntaxErrorIf(!isValidOperand(left), left, "expected operand");
-                tokenHold = replaceHold(tokenHold, getNextToken(tokenHold));
-                Node* right = getNode(tokenHold);
-                syntaxErrorIf(!isName(right), right, "expected function name");
-                push(stack, newApplication(getLocation(token), right, left));
-                release(leftHold);
             } else if (!(isNewline(token) && isNewBlock(stack))) {
                 collapseLeftOperand(stack, token);
                 push(stack, token);
