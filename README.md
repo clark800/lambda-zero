@@ -122,8 +122,7 @@ an operator name expression.
 - Infix operators: `x op y => op x y` where `op` is a non-alphanumeric symbol
 When operators are chained like `x op y op z` there are precedence rules that
 determine how it is parsed.
-- Infixify: `` `f` `` enables the infix operator sugar on `f`
-- Un-infixify: `(op)` disables the infix operator sugar on `op`
+- Operator names: `(op)` disables the infix operator sugar on `op`
 - Sections: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
 - If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument
 - String literals: `"abc"` desugars to a linked list of ascii character codes

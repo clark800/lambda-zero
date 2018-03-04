@@ -205,7 +205,7 @@ Node* createToken(const char* lexeme) {
 
     int location = getLexemeLocation(lexeme);
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
-    if (INTERNAL_INPUT != INPUT && findInLexeme(lexeme, "[]{};!@#$%") != NULL)
+    if (INTERNAL_INPUT != INPUT && findInLexeme(lexeme, "[]{};`!@#$%") != NULL)
         lexerErrorIf(true, lexeme, "reserved character in");
     if (isIntegerLexeme(lexeme))
         return newInteger(location, parseInteger(lexeme));
