@@ -158,7 +158,8 @@ int unescape(char* dest, const char* start, const char* end) {
 }
 
 Node* newString(int location, const char* start) {
-    Node* string = NIL;
+    Node* nil = newLambda(location, PARAMETERX, TRUE);
+    Node* string = nil;
     int length = (int)strlen(start);
     for (int i = length - 1; i >= 0; i--)
         string = newLambda(location, PARAMETERX,
@@ -204,7 +205,7 @@ Node* createToken(const char* lexeme) {
 
     int location = getLexemeLocation(lexeme);
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
-    if (INTERNAL_INPUT != INPUT && findInLexeme(lexeme, "[]{}.;$%") != NULL)
+    if (INTERNAL_INPUT != INPUT && findInLexeme(lexeme, "[]{};`!@#$%") != NULL)
         lexerErrorIf(true, lexeme, "reserved character in");
     if (isIntegerLexeme(lexeme))
         return newInteger(location, parseInteger(lexeme));

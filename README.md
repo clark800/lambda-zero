@@ -28,21 +28,18 @@
 
 ### Quicksort
 
-    a ?: f = if (null(a)) then nil else f(head(a), tail(a))
-    sort(a) = a ?: (x xs) -> sort(xs | (<= x)) ++ x :: sort(xs | (> x))
+    xs ?: f = if (xs.empty) then nil else f(xs.head, xs.tail)
+    sort(ns) = ns ?: k -> ks -> sort(ks | (<= k)) ++ k :: sort(ks | (> k))
 
 ### Infinite list of natural numbers
 
     iterate(f, x) = x :: iterate(f, f(x))
-    enumFrom = iterate(+ 1)
-    naturals = enumFrom(0)
+    countFrom = iterate(+ 1)
+    naturals = countFrom(0)
 
 ### Infinite list of prime numbers
 
-    primes = (
-      filterPrime(a) = a ?: (x xs) -> x :: filterPrime(xs | not <> (x `divides`))
-      filterPrime(enumFrom(2))
-    )
+    primes = (f(ms) = ms ?: n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 
 # Motivation
 
@@ -116,16 +113,16 @@ an operator name expression.
 - Multiparameter lambdas: `x y -> z => x -> y -> z`
 - Definitions (Let expressions): `(f = x) y => (f -> y) x`
 - Function definitions: `f x y = z => f = x -> y -> z`
-- Function calls: `f(x, y) => f(x)(y) => f x y`
-- Tuples: `(x, y, z) => f -> f x y z`
 - Recursive definitions: The right hand sise of a function definition can refer
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
+- Function calls: `f(x, y) => f x y`
+- Uniform function call syntax: `x.f(y, z) => f x y z`
+- Tuples: `(x, y, z) => f -> f x y z`
 - Infix operators: `x op y => op x y` where `op` is a non-alphanumeric symbol
 When operators are chained like `x op y op z` there are precedence rules that
 determine how it is parsed.
-- Infixify: `` `f` `` enables the infix operator sugar on `f`
-- Un-infixify: `(op)` disables the infix operator sugar on `op`
+- Operator names: `(op)` disables the infix operator sugar on `op`
 - Sections: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
 - If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument
 - String literals: `"abc"` desugars to a linked list of ascii character codes
