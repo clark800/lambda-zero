@@ -122,7 +122,9 @@ determine how it is parsed.
 - Operator names: `(op)` disables the infix operator sugar on `op`
 - Sections: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
 - If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument
-- String literals: `"abc"` desugars to a linked list of ascii character codes
+- String literals: `"abc"` desugars to a list of ascii character codes,
+  using the Church encoding for lists
+- Character literals: `'a'` desugars to the ascii character code
 
 ### I/O
 

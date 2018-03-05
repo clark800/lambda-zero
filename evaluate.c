@@ -152,7 +152,7 @@ void evaluateBuiltin(State* state) {
 
 Node* getInputClosure(Node* token) {
     char* input = readfile(stdin);
-    Node* string = newString(getLocation(token), input);
+    Node* string = newRawString(getLocation(token), input);
     free(input);
     return newClosure(string, NULL);
 }

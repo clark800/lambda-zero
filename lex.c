@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
 #include <ctype.h>
@@ -7,6 +6,7 @@
 #include <stdio.h>
 #include "lib/lltoa.h"
 #include "lib/tree.h"
+#include "lib/stack.h"
 #include "lib/errors.h"
 #include "scan.h"
 #include "ast.h"
@@ -109,6 +109,10 @@ bool isDigitCharacter(char c) {
     return (bool)isdigit(c);
 }
 
+bool isForbiddenCharacter(char c) {
+    return iscntrl(c) && c != '\n';
+}
+
 bool isLexemeType(const char* lexeme, bool (*predicate)(char c)) {
     size_t length = getLexemeLength(lexeme);
     for (size_t i = 0; i < length; i++)
@@ -122,7 +126,8 @@ bool isIfSugarLexeme(const char* lexeme) {
 }
 
 bool isNameLexeme(const char* lexeme) {
-    return isLexemeType(lexeme, isNameCharacter) && !isIfSugarLexeme(lexeme);
+    return isLexemeType(lexeme, isNameCharacter) &&
+        !isIfSugarLexeme(lexeme) && lexeme[0] != '\'';
 }
 
 bool isOperatorLexeme(const char* lexeme) {
@@ -134,50 +139,70 @@ bool isIntegerLexeme(const char* lexeme) {
     return isLexemeType(digits, isDigitCharacter);
 }
 
-char getUnescapedCharacter(char c, const char* lexeme) {
-    switch (c) {
+const char* skipCharacter(const char* start) {
+    return start[0] == '\\' ? start + 2 : start + 1;
+}
+
+char decodeCharacter(const char* start) {
+    if (start[0] != '\\')
+        return start[0];
+    switch (start[1]) {
         case '0': return '\0';
         case 'n': return '\n';
         case '\\': return '\\';
         case '\"': return '\"';
+        case '`': return '`';
         default:
-            lexerErrorIf(true, lexeme, "invalid escape sequence");
+            lexerErrorIf(true, start, "invalid escape sequence");
             return 0;
     }
 }
 
-int unescape(char* dest, const char* start, const char* end) {
-    int i = 0;
-    for (const char* p = start; p != end; p++) {
-        if (p[0] == '\\' && p + 1 != end)
-            dest[i++] = getUnescapedCharacter((++p)[0], start);
-        else dest[i++] = p[0];
-    }
-    dest[i] = '\0';
-    return i;
+Node* newCharacter(const char* lexeme) {
+    char quote = lexeme[0];
+    const char* end = lexeme + getLexemeLength(lexeme) - 1;
+    lexerErrorIf(end[0] != quote, lexeme, "missing end quote");
+    const char* skip = skipCharacter(lexeme + 1);
+    lexerErrorIf(skip != end, lexeme, "invalid character literal");
+    unsigned char code = (unsigned char)decodeCharacter(lexeme + 1);
+    return newInteger(getLexemeLocation(lexeme), code);
 }
 
-Node* newString(int location, const char* start) {
-    Node* nil = newLambda(location, PARAMETERX, TRUE);
-    Node* string = nil;
-    int length = (int)strlen(start);
-    for (int i = length - 1; i >= 0; i--)
-        string = newLambda(location, PARAMETERX,
-            newApplication(location, newApplication(location, REFERENCEX,
-                newInteger(location, (unsigned char)start[i])), string));
+Node* newNil(int location) {
+    return newLambda(location, PARAMETERX, TRUE);
+}
+
+Node* prepend(Node* item, Node* list) {
+    int location = getLocation(list);
+    return newLambda(location, PARAMETERX, newApplication(location,
+            newApplication(location, REFERENCEX, item), list));
+}
+
+Node* newRawString(int location, const char* start) {
+    Node* string = newNil(location);
+    Stack* stack = newStack(NULL);
+    for (const char* p = start; p[0] != 0; p++)
+        push(stack, newInteger(location, p[0]));
+    for (Iterator* it = iterate(stack); !end(it); it = next(it))
+        string = prepend(cursor(it), string);
+    deleteStack(stack);
     return string;
 }
 
-Node* newStringLiteral(const char* open) {
-    assert(open[0] == '"');
-    const char* close = open + getLexemeLength(open) - 1;
-    lexerErrorIf(close[0] != '"', open, "missing end of string literal");
-    int location = getLexemeLocation(open);
-    size_t literalLength = (size_t)(close - open);
-    char* unescaped = (char*)malloc(literalLength * sizeof(char));
-    unescape(unescaped, open + 1, close);
-    Node* string = newString(location, unescaped);
-    free(unescaped);
+Node* newStringLiteral(const char* lexeme) {
+    char quote = lexeme[0];
+    int location = getLexemeLocation(lexeme);
+    const char* close = lexeme + getLexemeLength(lexeme) - 1;
+    lexerErrorIf(close[0] != quote, lexeme, "missing end quote");
+    Node* string = newNil(getLexemeLocation(lexeme));
+    Stack* stack = newStack(NULL);
+    const char* p = lexeme + 1;
+    for (; p < close; p = skipCharacter(p))
+        push(stack, newInteger(location, decodeCharacter(p)));
+    lexerErrorIf(p != close, lexeme, "invalid string literal");
+    for (Iterator* it = iterate(stack); !end(it); it = next(it))
+        string = prepend(cursor(it), string);
+    deleteStack(stack);
     return string;
 }
 
@@ -202,11 +227,14 @@ Node* createToken(const char* lexeme) {
         return newOperator(getLexemeLocation(lexeme));
     if (lexeme[0] == '"')
         return newStringLiteral(lexeme);
+    if (lexeme[0] == '\'')
+        return newCharacter(lexeme);
 
-    int location = getLexemeLocation(lexeme);
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
     if (INTERNAL_INPUT != INPUT && findInLexeme(lexeme, "[]{}`!@#$%") != NULL)
         lexerErrorIf(true, lexeme, "reserved character in");
+
+    int location = getLexemeLocation(lexeme);
     if (isIntegerLexeme(lexeme))
         return newInteger(location, parseInteger(lexeme));
     if (isNameLexeme(lexeme))
@@ -215,10 +243,6 @@ Node* createToken(const char* lexeme) {
         return newOperator(location);
     lexerErrorIf(true, lexeme, "invalid token");
     return NULL;
-}
-
-bool isForbiddenCharacter(char c) {
-    return iscntrl(c) && c != '\n';
 }
 
 Hold* getFirstToken(const char* input) {

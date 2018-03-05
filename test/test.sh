@@ -42,7 +42,7 @@ function oneline_suite {
     fi
     header "$name"
     while read -r line; do
-        read expected_output
+        read -r expected_output
         local input="$prelude$line"
         local output=$(echo "$input" | sed 's/\\n/\n/g' | $CMD 2>&1)
         check "$line" "$expected_output" "$output" || ((failures++)) || true
@@ -70,6 +70,7 @@ function run {
         "lambda.test"
         "arithmetic.test"
         "definition.test"
+        "quote.test"
         "prelude.test prelude"
     )
     for suite in "${suites[@]}"; do

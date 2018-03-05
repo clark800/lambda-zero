@@ -78,10 +78,10 @@ main(input) = showInteger(123) \n main
 main(input) = showInteger(-123) \n main
 -123
 ===============================================================================
-main(input) = "abcdef".interleave(head(",")) \n main
+main(input) = "abcdef".interleave(',') \n main
 a,b,c,d,e,f
 ===============================================================================
-main(input) = showIntegerList(5 .. 9) \n main
+main(input) = showIntegerList(5..9) \n main
 [5, 6, 7, 8, 9]
 ===============================================================================
 main(input) = showIntegerList(primes.take(10)) \n main
@@ -90,7 +90,7 @@ main(input) = showIntegerList(primes.take(10)) \n main
 main(input) = showIntegerList(primes.take(5).map(negate)) \n main
 [-2, -3, -5, -7, -11]
 ===============================================================================
-"abcd" === head("a") .. head("d")
+"abcd" === 'a'..'d'
 (x -> (y -> x))
 ===============================================================================
 maximum(take(squares, 7) | odd)

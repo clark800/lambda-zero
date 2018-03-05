@@ -164,7 +164,7 @@ primes = (f(ms) = ms ?: n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
     showReversedNatural(m) = if (m == 0) then nil else
-        (head("0") + m.mod(10)) :: showReversedNatural(m / 10)
+        ('0' + m.mod(10)) :: showReversedNatural(m / 10)
     if (n == 0) then "0" else reverse(showReversedNatural(n))
 )
 
