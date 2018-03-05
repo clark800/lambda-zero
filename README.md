@@ -109,7 +109,7 @@ an operator name expression.
 - Left associative spaces: `x y z => ((x y) z)`
 - Right associative newlines: `x \n y \n z => (z (y z))`
 - Redundant Parentheses: `(x) => x` unless `x` is an operator
- (see Un-infixify sugar below)
+ (see Operator names sugar below)
 - Multiparameter lambdas: `x y -> z => x -> y -> z`
 - Definitions (Let expressions): `(f = x) y => (f -> y) x`
 - Function definitions: `f x y = z => f = x -> y -> z`
@@ -117,7 +117,6 @@ an operator name expression.
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
 - Function calls: `f(x, y) => f x y`
-- Tuples: `(x, y, z) => f -> f x y z`
 - Infix operators: `x op y => op x y` where `op` is a non-alphanumeric symbol
 When operators are chained like `x op y op z` there are precedence rules that
 determine how it is parsed.

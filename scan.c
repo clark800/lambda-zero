@@ -25,7 +25,7 @@ static const char* skipSpaces(const char* str) {
 }
 
 static const char* skipToDelimiter(const char* str) {
-    return skipTo(str, " \t\n(),.");
+    return skipTo(str, " \t\n();,.");
 }
 
 static const char* skipToNewline(const char* str) {

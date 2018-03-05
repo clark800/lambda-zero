@@ -15,6 +15,10 @@ void syntaxErrorIf(bool condition, Node* token, const char* message) {
         throwTokenError("Syntax", message, token);
 }
 
+bool isOperatorTop(Stack* stack) {
+    return isEmpty(stack) || isOperator(peek(stack, 0));
+}
+
 static inline bool isValidOperand(Node* node) {
     return isName(node) || isInteger(node) ||
         isApplication(node) || isAbstraction(node);
@@ -26,7 +30,7 @@ void eraseNewlines(Stack* stack) {
 }
 
 void pushLeftAssociative(Stack* stack, Node* node) {
-    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
+    if (isOperatorTop(stack)) {
         push(stack, node);
     } else {
         Hold* left = pop(stack);
@@ -110,20 +114,14 @@ Node* applyToCommaTree(int location, Node* base, Node* commaTree) {
 }
 
 void collapseCommaTree(Stack* stack, Node* commaTree, int location) {
-    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
-        // create tuple
-        push(stack, newLambda(location, PARAMETERX,
-            applyToCommaTree(location, REFERENCEX, commaTree)));
-    } else {
-        // create function call
-        Hold* function = pop(stack);
-        push(stack, applyToCommaTree(location, getNode(function), commaTree));
-        release(function);
-    }
+    syntaxErrorIf(isOperatorTop(stack), commaTree, "expected operand before");
+    Hold* function = pop(stack);
+    push(stack, applyToCommaTree(location, getNode(function), commaTree));
+    release(function);
 }
 
 void convertParenthesizedOperator(Node* operator) {
-    syntaxErrorIf(isSpecialOperator(operator) && !isComma(operator),
+    syntaxErrorIf(isSpecialOperator(operator),
         operator, "operator cannot be parenthesized");
     convertOperatorToName(operator);
 }
@@ -150,10 +148,6 @@ void collapseParentheses(Stack* stack, Node* close) {
     release(contents);
 }
 
-bool isNewBlock(Stack* stack) {
-    return isEmpty(stack) || isBlockOpener(peek(stack, 0));
-}
-
 Hold* parseString(const char* input) {
     Stack* stack = newStack(NULL);
     push(stack, newEOF());
@@ -174,10 +168,10 @@ Hold* parseString(const char* input) {
                 deleteStack(stack);
                 release(tokenHold);
                 return result;
-            } else if (!(isNewline(token) && isNewBlock(stack))) {
+            } else if (!(isNewline(token) && isOperatorTop(stack))) {
                 collapseLeftOperand(stack, token);
                 push(stack, token);
-            } // ignore newlines at the beginning of a block
+            } // ignore newlines after operators
         } else {
             pushLeftAssociative(stack, token);
         }
