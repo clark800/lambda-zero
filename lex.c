@@ -217,9 +217,15 @@ Node* createToken(const char* lexeme) {
     return NULL;
 }
 
+bool isForbiddenCharacter(char c) {
+    return iscntrl(c) && c != '\n';
+}
+
 Hold* getFirstToken(const char* input) {
     INTERNAL_INPUT = INPUT == NULL ? input : INPUT;
     INPUT = input;
+    for (const char* p = input; p[0] != '\0'; p++)
+        lexerErrorIf(isForbiddenCharacter(p[0]), p, "foridden character");
     return hold(createToken(getFirstLexeme(input)));
 }
 
