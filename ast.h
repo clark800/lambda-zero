@@ -172,8 +172,8 @@ static inline void convertSymbolToBuiltin(Node* symbol,
     setType(symbol, (long long)code);
 }
 
-static inline void convertSymbolToParameter(Node* symbol) {
-    assert(isSymbol(symbol));
+static inline void convertNameToParameter(Node* symbol) {
+    assert(isName(symbol));
     setType(symbol, PARAMETER);
 }
 

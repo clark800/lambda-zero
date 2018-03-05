@@ -4,6 +4,7 @@
 #include "lex.h"
 #include "parse.h"
 #include "builtins.h"
+#include "operators.h"
 #include "desugar.h"
 
 bool detectDefine(Node* node) {
@@ -28,18 +29,15 @@ bool hasRecursiveCalls(Node* node, Node* name) {
 }
 
 Node* transformLambdaSugar(Node* operator, Node* left, Node* right) {
-    int location = getLocation(operator);
     while (isApplication(left)) {
         Node* parameterName = getRight(left);
         syntaxErrorIf(!isName(parameterName), parameterName,
             "expected name but got");
         Node* parameter = newParameter(getLocation(parameterName));
-        right = newLambda(location, parameter, right);
+        right = newLambda(getLocation(operator), parameter, right);
         left = getLeft(left);
     }
-    syntaxErrorIf(!isName(left), left, "expected name but got");
-    Node* parameter = newParameter(getLocation(left));
-    return newLambda(location, parameter, right);
+    return collapseLambda(operator, left, right);
 }
 
 void swapRight(Node* a, Node* b) {

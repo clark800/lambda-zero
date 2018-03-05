@@ -1,6 +1,6 @@
 #include "lex.h"
 #include "ast.h"
-#include "desugar.h"
+#include "parse.h"
 #include "operators.h"
 
 Node* apply(Node* operator, Node* left, Node* right) {
@@ -10,6 +10,12 @@ Node* apply(Node* operator, Node* left, Node* right) {
 Node* infix(Node* operator, Node* left, Node* right) {
     convertOperatorToName(operator);
     return apply(operator, apply(operator, operator, left), right);
+}
+
+Node* collapseLambda(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isName(left), left, "expected name but got");
+    convertNameToParameter(left);
+    return newLambda(getLocation(operator), left, right);
 }
 
 Operator DEFAULT = {"", 150, 150, L, infix};
@@ -22,7 +28,7 @@ Operator OPERATORS[] = {
     {";", 30, 30, R, infix},
     {"\n", 40, 40, R, apply},
     {"=", 50, 50, N, apply},
-    {"->", 240, 60, R, transformLambdaSugar},
+    {"->", 240, 60, R, collapseLambda},
     {"?|", 80, 80, R, infix},
     {"?", 80, 80, L, infix},
     {"?:", 80, 80, R, infix},

@@ -110,7 +110,6 @@ an operator name expression.
 - Right associative newlines: `x \n y \n z => (z (y z))`
 - Redundant Parentheses: `(x) => x` unless `x` is an operator
  (see Operator names sugar below)
-- Multiparameter lambdas: `x y -> z => x -> y -> z`
 - Definitions (Let expressions): `(f = x) y => (f -> y) x`
 - Function definitions: `f x y = z => f = x -> y -> z`
 - Recursive definitions: The right hand sise of a function definition can refer
