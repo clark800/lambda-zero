@@ -27,10 +27,10 @@ b <=> c = if (b) then c else not(c)
 (\/) = or
 
 -- pairs --
-(,)(x, y) = (x, y)
+(x; y) = f -> f x y
 left(xy) = xy(true)
 right(xy) = xy(false)
-swap(xy) = (right(xy), left(xy))
+swap(xy) = (right(xy); left(xy))
 
 -- function methods --
 x.f = f(x)                      -- uniform function call syntax
@@ -42,11 +42,11 @@ on(f, g) = x -> y -> f(g(x), g(y))  -- apply binary f with unary g applied first
 f ^^ n = z -> if (n == 0) then z else (f ^^ n - 1)(f(z))
 until(f, p, z) = if (p(z)) then z else f.until(p, f(z))
 while(f, p, z) = f.until(not <> p, z)
-curry(f) = x -> y -> f((x, y))
+curry(f) = x -> y -> f(x; y)
 uncurry(f) = xx -> f(left(xx), right(xx))
 
 -- more pairs --
-mapPair(xx, f) = (,).on(f).uncurry(xx)
+mapPair(xx, f) = (;).on(f).uncurry(xx)
 
 -- maybe --
 nothing = z -> f -> z
@@ -56,7 +56,7 @@ isJust(mx) = mx(false, constant(true))
 fromJust(mx) = mx(undefined, identity)
 maybe(x, f, mx) = mx(x, f)
 mx ? f = mx(nothing, f)                   -- maybe chaining (bind)
-mx || x = mx(x, identity)                 -- just value or default
+mx ?| x = mx(x, identity)                 -- just value or default
 
 -- math --
 negate(n) = 0 - n
@@ -68,17 +68,18 @@ odd(n) = n.mod(2) =/= 0
 divides(n, m) = m.mod(n) == 0
 factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
 gcd(n, m) = if (m == 0) then n else gcd(m, n.mod(m))
-n ^ m = (if (m == 0) then 1 else (
-    if (m < 0) then 1 / (n ^ negate(m)) else (
-    if (even(m)) then (*).mirror(n ^ (m / 2)) else n * n ^ (m - 1))))
+n ^ m = if (m == 0) then 1 else
+    if (m < 0) then 1 / n ^ negate(m) else
+    if (even(m)) then (*).mirror(n ^ (m / 2)) else
+    n * n ^ (m - 1)
 
 -- list basics --
-x :: xs = (x, xs)                     -- prepend element to list (cons)
+x :: xs = (x; xs)                     -- prepend element to list (cons)
 prepend = flip(::)
 nil = constant(true)                        -- empty list
 empty(xs) = xs(constant(constant(false)))   -- test for empty list
-head(xs) = left(xs)                  -- get first element of list
-tail(xs) = right(xs)                 -- drop first element of list
+head = left                  -- get first element of list
+tail = right                 -- drop first element of list
 last(xs) = head(tail.until(empty <> tail, xs)) -- get last element of list
 index(xs, n) = head((tail ^^ n)(xs))      -- get element of list at index
 
@@ -106,32 +107,32 @@ filter(xs, p) = xs.foldr(x -> xs' -> if (p(x)) then x :: xs' else xs', nil)
 (|) = filter
 xs |~ p = xs | not <> p
 map(xs, f) = xs.foldr((::) <> f, nil)          -- map function over list
-zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then nil else (
-    f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail))
-zip(xs, ys) = zipWith(xs, (,), ys)
-unzip(xs) = (xs.map(left), xs.map(right))
+zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then nil else
+    f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail)
+zip(xs, ys) = zipWith(xs, (;), ys)
+unzip(xs) = (xs.map(left); xs.map(right))
 -- drop all elements beyond the first n elements
 take(xs, n) = if (n == 0) then nil else xs.head :: xs.tail.take(n - 1)
 drop(xs, n) = (tail ^^ n)(xs)            -- drop n elements from front of list
 concatenate(xss) = xss.foldr((++), nil)     -- concatenate list of lists
 reverse(xs) = xs.foldl(flip(::), nil)       -- reverse a list
-interleave(xs, y) = xs ?: x -> xs' -> (
-    if (xs'.empty) then xs else x :: y :: interleave(xs', y))
+interleave(xs, y) = xs ?: x -> xs' ->
+    if (xs'.empty) then xs else x :: y :: interleave(xs', y)
 join(xss, ys) = concatenate(interleave(xss, ys))
 
 -- generic list reducers --
 any(xs, p) = xs.map(p).foldr((\/), false)     -- test if any element satisfies p
 all(xs, p) = xs.map(p).foldr((/\), true)      -- test if all elements satisfy p
 -- find first element satisfying p, or return nothing
-find(xs, p) = if (xs.empty) then nothing else (
-    if (p(xs.head)) then just(xs.head) else xs.tail.find(p))
-lookup(nxs, n) = if (nxs.empty) then nothing else (
-    if (nxs.head.left == n) then just(nxs.head.right) else nxs.tail.lookup(n))
+find(xs, p) = if (xs.empty) then nothing else
+    if (p(xs.head)) then just(xs.head) else xs.tail.find(p)
+lookup(nxs, n) = if (nxs.empty) then nothing else
+    if (nxs.head.left == n) then just(nxs.head.right) else nxs.tail.lookup(n)
 
 -- integer list basics --
 contains(ns, n) = ns.any((== n))              -- test if element is in list
-containsSorted(ns, n) = (not(ns.empty) /\ n >= ns.head /\ (
-        n == ns.head \/ ns.tail.containsSorted(n)))
+containsSorted(ns, n) = not(ns.empty) /\ n >= ns.head /\
+        (n == ns.head \/ ns.tail.containsSorted(n))
 xs === ys = if (xs.empty \/ ys.empty) then xs.empty <=> ys.empty else (
     xs.head == ys.head /\ xs.tail === ys.tail       -- integer list equality
 )
@@ -162,9 +163,8 @@ primes = (f(ms) = ms ?: n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 -- serialization --
 showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
-    showReversedNatural(m) = if (m == 0) then nil else (
-        (head("0") + m.mod(10)) :: showReversedNatural(m / 10)
-    )
+    showReversedNatural(m) = if (m == 0) then nil else
+        ('0' + m.mod(10)) :: showReversedNatural(m / 10)
     if (n == 0) then "0" else reverse(showReversedNatural(n))
 )
 

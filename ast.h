@@ -68,10 +68,6 @@ static inline bool isCommaBranch(Node* node) {
     return isBranchNode(node) && isThisToken(node, ",");
 }
 
-static inline bool isComma(Node* node) {
-    return isLeafNode(node) && isThisToken(node, ",");
-}
-
 static inline bool isNewline(Node* node) {
     return isLeafNode(node) && isThisToken(node, "\n");
 }
@@ -90,10 +86,6 @@ static inline bool isEOF(Node* node) {
 
 static inline bool isAssignment(Node* node) {
     return isBranchNode(node) && !isAbstraction(node) && isThisToken(node, "=");
-}
-
-static inline bool isBlockOpener(Node* node) {
-    return isOpenParen(node) || isComma(node) || isNewline(node) || isEOF(node);
 }
 
 static inline bool isPut(Node* node) {
@@ -180,8 +172,8 @@ static inline void convertSymbolToBuiltin(Node* symbol,
     setType(symbol, (long long)code);
 }
 
-static inline void convertSymbolToParameter(Node* symbol) {
-    assert(isSymbol(symbol));
+static inline void convertNameToParameter(Node* symbol) {
+    assert(isName(symbol));
     setType(symbol, PARAMETER);
 }
 

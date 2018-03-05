@@ -16,5 +16,6 @@ typedef struct Operator {
 
 Operator getOperator(Node* token);
 bool isSpecialOperator(Node* token);
+Node* collapseLambda(Node* operator, Node* left, Node* right);
 
 #endif
