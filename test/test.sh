@@ -38,13 +38,14 @@ function oneline_suite {
     local failures=0
     local prelude=""
     if [[ "$#" -eq 2 ]]; then
-        prelude="$(cat "$DIR/$2")\n"
+        prelude="$(cat "$DIR/$2")"
     fi
     header "$name"
     while read -r line; do
         read -r expected_output
-        local input="$prelude$line"
-        local output=$(echo "$input" | sed 's/\\n/\n/g' | $CMD 2>&1)
+        local sedline=$(echo "\n$line" | sed 's/\\n/\n/g')
+        local input="$prelude$sedline"
+        local output=$(echo "$input" | $CMD 2>&1)
         check "$line" "$expected_output" "$output" || ((failures++)) || true
     done < <(grep -v "====" "$testcases_path")
     if [[ $failures -eq 0 ]]; then return 0; else return 1; fi

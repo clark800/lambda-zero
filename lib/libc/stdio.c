@@ -34,6 +34,12 @@ int putchar(int c) {
     return fwrite(&ch, 1, 1, stdout) == 1 ? c : EOF;
 }
 
+int getchar(void) {
+    char buffer[2];
+    ssize_t bytes = read(STDIN_FILENO, buffer, 1);
+    return bytes == 1 ? buffer[0] : EOF;
+}
+
 void setbuf(FILE* stream, char* buffer) {
     assert(stream != NULL && buffer == NULL);
 }

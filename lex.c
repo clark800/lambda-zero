@@ -13,8 +13,8 @@
 #include "builtins.h"
 #include "lex.h"
 
-const char* INTERNAL_INPUT = NULL;
-const char* INPUT = NULL;
+const char* INTERNAL_SOURCE_CODE = NULL;
+const char* SOURCE_CODE = NULL;
 bool TEST = false;
 
 struct Position {
@@ -23,12 +23,12 @@ struct Position {
 };
 
 static inline int getLexemeLocation(const char* lexeme) {
-    return (int)(lexeme - INPUT + 1);
+    return (int)(lexeme - SOURCE_CODE + 1);
 }
 
 const char* getLexemeByLocation(int location) {
     const char* start = location == 0 ? "\0" :
-        location < 0 ? INTERNAL_INPUT : INPUT;
+        location < 0 ? INTERNAL_SOURCE_CODE : SOURCE_CODE;
     return &start[abs(location) - 1];
 }
 
@@ -52,7 +52,7 @@ struct Position getPosition(unsigned int location) {
     struct Position position = {1, 1};  // use 1-based indexing
     for (unsigned int i = 0; i < location - 1; i++) {
         position.column += 1;
-        if (INPUT[i] == '\n') {
+        if (SOURCE_CODE[i] == '\n') {
             position.line += 1;
             position.column = 1;
         }
@@ -168,27 +168,6 @@ Node* newCharacter(const char* lexeme) {
     return newInteger(getLexemeLocation(lexeme), code);
 }
 
-Node* newNil(int location) {
-    return newLambda(location, PARAMETERX, TRUE);
-}
-
-Node* prepend(Node* item, Node* list) {
-    int location = getLocation(list);
-    return newLambda(location, PARAMETERX, newApplication(location,
-            newApplication(location, REFERENCEX, item), list));
-}
-
-Node* newRawString(int location, const char* start) {
-    Node* string = newNil(location);
-    Stack* stack = newStack(NULL);
-    for (const char* p = start; p[0] != 0; p++)
-        push(stack, newInteger(location, p[0]));
-    for (Iterator* it = iterate(stack); !end(it); it = next(it))
-        string = prepend(cursor(it), string);
-    deleteStack(stack);
-    return string;
-}
-
 Node* newStringLiteral(const char* lexeme) {
     char quote = lexeme[0];
     int location = getLexemeLocation(lexeme);
@@ -231,7 +210,8 @@ Node* createToken(const char* lexeme) {
         return newCharacter(lexeme);
 
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
-    if (INTERNAL_INPUT != INPUT && findInLexeme(lexeme, "[]{}`!@#$%") != NULL)
+    if (INTERNAL_SOURCE_CODE != SOURCE_CODE &&
+            findInLexeme(lexeme, "[]{}`!@#$%") != NULL)
         lexerErrorIf(true, lexeme, "reserved character in");
 
     int location = getLexemeLocation(lexeme);
@@ -245,12 +225,12 @@ Node* createToken(const char* lexeme) {
     return NULL;
 }
 
-Hold* getFirstToken(const char* input) {
-    INTERNAL_INPUT = INPUT == NULL ? input : INPUT;
-    INPUT = input;
-    for (const char* p = input; p[0] != '\0'; p++)
+Hold* getFirstToken(const char* sourceCode) {
+    INTERNAL_SOURCE_CODE = SOURCE_CODE == NULL ? sourceCode : SOURCE_CODE;
+    SOURCE_CODE = sourceCode;
+    for (const char* p = sourceCode; p[0] != '\0'; p++)
         lexerErrorIf(isForbiddenCharacter(p[0]), p, "foridden character");
-    return hold(createToken(getFirstLexeme(input)));
+    return hold(createToken(getFirstLexeme(sourceCode)));
 }
 
 Hold* getNextToken(Hold* token) {

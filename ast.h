@@ -88,10 +88,6 @@ static inline bool isAssignment(Node* node) {
     return isBranchNode(node) && !isAbstraction(node) && isThisToken(node, "=");
 }
 
-static inline bool isPut(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "$put");
-}
-
 // ====================================
 // Functions to get a value from a node
 // ====================================
