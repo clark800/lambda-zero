@@ -118,14 +118,8 @@ static inline Hold* getResult(State* state, bool doIO) {
 }
 
 void evaluateBuiltinNode(State* state) {
-    Node* builtin = getNode(state->node);
-    Stack* env = newStack(NULL);
-    for (int i = 0; i < getArity(builtin); i++) {
-        applyUpdates(state);
-        moveStackItem(state->stack, env);
-    }
-    setNode(state, evaluateBuiltin(builtin, env));
-    deleteStack(env);
+    applyUpdates(state);
+    setNode(state, evaluateBuiltin(getNode(state->node), state->stack));
 }
 
 Hold* evaluateNode(State* state) {

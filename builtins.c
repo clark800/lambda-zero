@@ -201,15 +201,15 @@ long long evaluateToInteger(Node* builtin, Hold* termClosure) {
     return integer;
 }
 
-Node* evaluateBuiltin(Node* builtin, Stack* env) {
+Node* evaluateBuiltin(Node* builtin, Stack* stack) {
     int arity = getArity(builtin);
     if (arity == 0)
         return computeBuiltin(builtin, 0, 0);
-    evaluationErrorIf(isEmpty(env), builtin, "missing first argument");
-    long long right = evaluateToInteger(builtin, pop(env));
+    evaluationErrorIf(isEmpty(stack), builtin, "missing first argument");
+    long long left = evaluateToInteger(builtin, pop(stack));
     if (arity == 1)
-        return computeBuiltin(builtin, right, 0);
-    evaluationErrorIf(isEmpty(env), builtin, "missing second argument");
-    long long left = evaluateToInteger(builtin, pop(env));
+        return computeBuiltin(builtin, left, 0);
+    evaluationErrorIf(isEmpty(stack), builtin, "missing second argument");
+    long long right = evaluateToInteger(builtin, pop(stack));
     return computeBuiltin(builtin, left, right);
 }
