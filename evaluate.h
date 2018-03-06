@@ -2,7 +2,8 @@
 #define EVALUATE_H
 
 #include "lib/tree.h"
+#include "lib/stack.h"
 
-Hold* evaluate(Node* root);
+Hold* evaluate(Node* closure);
 
 #endif

@@ -24,13 +24,7 @@ struct State {
     Stack* env;
 };
 
-Hold* evaluateDebruijn(Node* env, unsigned long long debruijn);
 Hold* evaluateNode(State* state);
-
-void evaluationErrorIf(bool condition, Node* token, const char* message) {
-    if (condition)
-        throwTokenError("Evaluation", message, token);
-}
 
 static bool isUpdateNext(Stack* stack) {
     return !isEmpty(stack) && isUpdateClosure(peek(stack, 0));
@@ -78,16 +72,6 @@ void applyUpdates(State* state) {
         applyUpdate(state);
 }
 
-long long evaluateToInteger(Node* env, unsigned long long debruijn,
-        Node* node) {
-    Hold* value = evaluateDebruijn(env, debruijn);
-    Node* integer = getClosureTerm(getNode(value));
-    evaluationErrorIf(!isInteger(integer), node, "expected integer argument");
-    long long result = getInteger(integer);
-    release(value);
-    return result;
-}
-
 static inline Node* getReferencedClosure(Node* reference, Stack* env) {
     return peek(env, getDebruijnIndex(reference) - 1);
 }
@@ -98,29 +82,24 @@ Node* getArgumentClosure(Node* argument, Stack* env) {
     return newClosure(argument, getHead(env));
 }
 
-void evaluateApplication(State* state) {
+void evaluateApplicationNode(State* state) {
     Node* function = getLeft(getNode(state->node));
     Node* argument = getRight(getNode(state->node));
     push(state->stack, getArgumentClosure(argument, state->env));
     setNode(state, function);
 }
 
-void evaluateAbstraction(State* state) {
+void evaluateAbstractionNode(State* state) {
     if (isUpdateNext(state->stack)) {
         applyUpdate(state);
         return;
     }
     moveStackItem(state->stack, state->env);
     Node* function = getNode(state->node);
-    if (isPut(getParameter(function))) {
-        long long c = evaluateToInteger(getHead(state->env), 1, function);
-        evaluationErrorIf(c < 0 || c >= 256, function, "expected byte value");
-        putchar((int)c);
-    }
     setNode(state, getBody(function));
 }
 
-void evaluateReference(State* state) {
+void evaluateReferenceNode(State* state) {
     Node* closure = getReferencedClosure(getNode(state->node), state->env);
     if (LAZY && !isAbstraction(getClosureTerm(closure)))
         push(state->stack, newUpdateClosure(closure));
@@ -138,23 +117,15 @@ static inline Hold* getResult(State* state, bool doIO) {
     return hold(newClosure(getNode(state->node), getHead(state->env)));
 }
 
-void evaluateBuiltin(State* state) {
-    // simulate evaluating two abstractions
-    applyUpdates(state);
-    moveStackItem(state->stack, state->env);
-    applyUpdates(state);
-    moveStackItem(state->stack, state->env);
-    Node* operator = getNode(state->node);
-    long long left = evaluateToInteger(getHead(state->env), 2, operator);
-    long long right = evaluateToInteger(getHead(state->env), 1, operator);
-    setNode(state, computeBuiltin(getNode(state->node), left, right));
-}
-
-Node* getInputClosure(Node* token) {
-    char* input = readfile(stdin);
-    Node* string = newRawString(getLocation(token), input);
-    free(input);
-    return newClosure(string, NULL);
+void evaluateBuiltinNode(State* state) {
+    Node* builtin = getNode(state->node);
+    Stack* env = newStack(NULL);
+    for (int i = 0; i < getArity(builtin); i++) {
+        applyUpdates(state);
+        moveStackItem(state->stack, env);
+    }
+    setNode(state, evaluateBuiltin(builtin, env));
+    deleteStack(env);
 }
 
 Hold* evaluateNode(State* state) {
@@ -164,47 +135,35 @@ Hold* evaluateNode(State* state) {
         LOOP_COUNT += 1;
         Node* node = getNode(state->node);
         if (isApplication(node)) {
-            evaluateApplication(state);
+            evaluateApplicationNode(state);
         } else if (isAbstraction(node)) {
             if (isEmpty(state->stack)) {
                 if (isThisToken(getParameter(node), "input")) {
                     evaluationErrorIf(IO, node, "input can only be used once");
-                    push(state->stack, getInputClosure(getParameter(node)));
+                    push(state->stack, newClosure(INPUT, NULL));
                     IO = doIO = true;
                     continue;
                 }
                 return getResult(state, doIO);
             }
-            evaluateAbstraction(state);
+            evaluateAbstractionNode(state);
         } else if (isInteger(node)) {
             return getResult(state, doIO);
         } else if (isReference(node)) {
-            evaluateReference(state);
+            evaluateReferenceNode(state);
         } else if (isBuiltin(node)) {
-            evaluateBuiltin(state);
+            evaluateBuiltinNode(state);
         } else {
             assert(false);
         }
     }
 }
 
-Hold* evaluateWithEnv(Node* root, Node* env) {
+Hold* evaluate(Node* closure) {
     State state;
-    initState(&state, root, env);
+    initState(&state, getClosureTerm(closure), getClosureEnv(closure));
     Hold* result = evaluateNode(&state);
     deleteState(&state);
-    return result;
-}
-
-Hold* evaluateDebruijn(Node* env, unsigned long long debruijn) {
-    Hold* reference = hold(newReference(-1, debruijn));
-    Hold* result = evaluateWithEnv(getNode(reference), env);
-    release(reference);
-    return result;
-}
-
-Hold* evaluate(Node* root) {
-    Hold* result = evaluateWithEnv(root, NULL);
     debugLoopCount(LOOP_COUNT);
     return result;
 }

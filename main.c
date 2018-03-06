@@ -8,6 +8,7 @@
 #include "lib/errors.h"
 #include "lib/lltoa.h"
 #include "lex.h"
+#include "closure.h"
 #include "parse.h"
 #include "builtins.h"
 #include "evaluate.h"
@@ -34,11 +35,13 @@ void interpret(const char* input) {
     size_t memoryUsageAtStart = getMemoryUsage();
     Hold* parsed = parse(input);
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
-    Hold* closure = evaluate(getNode(parsed));
-    if (closure != NULL) {
-        serializeClosure(getNode(closure), stdout);
+    Hold* termClosure = hold(newClosure(getNode(parsed), NULL));
+    Hold* valueClosure = evaluate(getNode(termClosure));
+    release(termClosure);
+    if (valueClosure != NULL) {
+        serializeClosure(getNode(valueClosure), stdout);
         fputs("\n", stdout);
-        release(closure);
+        release(valueClosure);
     }
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
     release(parsed);

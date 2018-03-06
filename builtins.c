@@ -1,9 +1,13 @@
 #include <stddef.h>
 #include <limits.h>
+#include <stdio.h>
 #include "lib/tree.h"
+#include "lib/stack.h"
 #include "lib/errors.h"
 #include "ast.h"
+#include "closure.h"
 #include "parse.h"
+#include "evaluate.h"
 #include "builtins.h"
 
 // put(c) = id              -- with side effect of printing the character c
@@ -12,14 +16,16 @@
 // print = Y (print -> c -> (put c) (cs -> cs print))    -- desugar
 
 const char* OBJECTS =
-    "($x -> $x)\n"                      // identity
-    "($t -> $f -> $f)\n"                // false
-    "($z -> ($t -> $f -> $t))\n"        // nil
-    "($y -> ($q -> $y ($q $q)) ($q -> $y ($q $q))) "  // Y combinator
-    "($print -> $c -> ((($put -> $p -> $p) $c) ($cs -> $cs $print)))\n"
-    "($ -> $)";                         // terminator
+    "($x -> $x)\n"                                          // identity
+    "($t -> $f -> $f)\n"                                    // false
+    "($z -> ($t -> $f -> $t))\n"                            // nil
+    "($y -> ($q -> $y ($q $q)) ($q -> $y ($q $q))) "        // Y combinator
+    "($print -> $c -> (($put $c) ($cs -> $cs $print)))\n"   // string printer
+    "($get 0)\n"                                            // lazy input list
+    "($ -> $)";                                             // terminator
 
 Hold* OBJECTS_HOLD = NULL;
+Node* IDENTITY = NULL;
 Node* NIL = NULL;
 Node* TRUE = NULL;
 Node* FALSE = NULL;
@@ -27,12 +33,25 @@ Node* YCOMBINATOR = NULL;
 Node* PARAMETERX = NULL;
 Node* REFERENCEX = NULL;
 Node* PRINT = NULL;
+Node* INPUT = NULL;
+Node* GET_BUILTIN = NULL;
+long long INPUT_INDEX = 0;
 
 enum {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS, EQUAL, NOTEQUAL,
-      LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL};
+      LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL, PUT, GET};
 
 const char* BUILTINS[] = {"+", "-", "*", "/", "mod",
-    "==", "=/=", "<", ">", "<=", ">="};
+    "==", "=/=", "<", ">", "<=", ">=", "$put", "$get"};
+
+Node* newNil(int location) {
+    return newLambda(location, PARAMETERX, TRUE);
+}
+
+Node* prepend(Node* item, Node* list) {
+    int location = getLocation(list);
+    return newLambda(location, PARAMETERX, newApplication(location,
+            newApplication(location, REFERENCEX, item), list));
+}
 
 Node* getElement(Node* node, unsigned int n) {
     for (unsigned int i = 0; i < n; i++)
@@ -44,18 +63,25 @@ void initBuiltins() {
     OBJECTS_HOLD = parse(OBJECTS);
     Node* objects = getNode(OBJECTS_HOLD); 
     negateLocations(objects);
-    Node* id = getElement(objects, 0);
-    PARAMETERX = getParameter(id);
-    REFERENCEX = getBody(id);
+    IDENTITY = getElement(objects, 0);
+    PARAMETERX = getParameter(IDENTITY);
+    REFERENCEX = getBody(IDENTITY);
     FALSE = getElement(objects, 1);
     NIL = getElement(objects, 2);
     TRUE = getBody(NIL);
     PRINT = getElement(objects, 3);
     YCOMBINATOR = getLeft(PRINT);
+    INPUT = getElement(objects, 4);
+    GET_BUILTIN = getLeft(INPUT);
 }
 
 void deleteBuiltins() {
     release(OBJECTS_HOLD);
+}
+
+void evaluationErrorIf(bool condition, Node* token, const char* message) {
+    if (condition)
+        throwTokenError("Evaluation", message, token);
 }
 
 unsigned long long lookupBuiltinCode(Node* token) {
@@ -121,10 +147,32 @@ static inline long long modulo(long long left, long long right) {
     return left % right;
 }
 
+int getArity(Node* builtin) {
+    switch (getBuiltinCode(builtin)) {
+        case GET: return 1;
+        case PUT: return 1;
+        default: return 2;
+    }
+}
+
+Node* evaluatePut(Node* builtin, long long c) {
+    evaluationErrorIf(c < 0 || c >= 256, builtin, "expected byte value");
+    putchar((int)c);
+    return IDENTITY;
+}
+
+Node* evaluateGet(Node* builtin, long long index) {
+    assert(index == INPUT_INDEX);    // ensure lazy evaluation is working
+    INPUT_INDEX += 1;
+    int c = getchar();
+    int location = getLocation(builtin);
+    return c == EOF ? NIL : prepend(newInteger(location, c), newApplication(
+                location, GET_BUILTIN, newInteger(location, index + 1)));
+}
+
 Node* computeBuiltin(Node* builtin, long long left, long long right) {
     int location = getLocation(builtin);
-    unsigned long long code = getBuiltinCode(builtin);
-    switch (code) {
+    switch (getBuiltinCode(builtin)) {
         case PLUS: return newInteger(location, add(left, right));
         case MINUS: return newInteger(location, subtract(left, right));
         case TIMES: return newInteger(location, multiply(left, right));
@@ -136,6 +184,32 @@ Node* computeBuiltin(Node* builtin, long long left, long long right) {
         case GREATERTHAN: return toBoolean(left > right);
         case LESSTHANOREQUAL: return toBoolean(left <= right);
         case GREATERTHANOREQUAL: return toBoolean(left >= right);
+        case PUT: return evaluatePut(builtin, left);
+        case GET: return evaluateGet(builtin, left);
         default: assert(false); return NULL;
     }
+}
+
+long long evaluateToInteger(Node* builtin, Hold* termClosure) {
+    Hold* valueClosure = evaluate(getNode(termClosure));
+    Node* integerNode = getClosureTerm(getNode(valueClosure));
+    evaluationErrorIf(!isInteger(integerNode), builtin,
+            "expected integer first parameter");
+    long long integer = getInteger(integerNode);
+    release(valueClosure);
+    release(termClosure);
+    return integer;
+}
+
+Node* evaluateBuiltin(Node* builtin, Stack* env) {
+    int arity = getArity(builtin);
+    if (arity == 0)
+        return computeBuiltin(builtin, 0, 0);
+    evaluationErrorIf(isEmpty(env), builtin, "missing first argument");
+    long long right = evaluateToInteger(builtin, pop(env));
+    if (arity == 1)
+        return computeBuiltin(builtin, right, 0);
+    evaluationErrorIf(isEmpty(env), builtin, "missing second argument");
+    long long left = evaluateToInteger(builtin, pop(env));
+    return computeBuiltin(builtin, left, right);
 }

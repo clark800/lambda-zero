@@ -148,6 +148,19 @@ ns \\ ms = ns |~ ms.containsSorted               -- sorted list difference
 union(ns, ms) = ns ++ (ms \ ns)
 intersect(ns, ms) = ns | ms.contains
 
+span(p, ns) = if (ns.empty) then (nil; nil) else
+    if (p(ns.head)) then (
+        nsns = span(p, ns.tail)
+        (ns.head :: nsns.left; nsns.right)
+    ) else (nil; ns)
+
+lines(ns) = (
+    nsns = span((=/= '\n'), ns)
+    nsns.left :: (if (nsns.right.empty) then nil else lines(nsns.right.tail))
+)
+
+repl(in, prompt, f) = prompt ++ in.lines.map(f).join("\n" ++ prompt)
+
 -- integer list reducers --
 sum(ns) = ns.foldl((+), 0)
 product(ns) = ns.foldl((*), 1)
@@ -175,3 +188,5 @@ showIntegerPair(nn) = showStringPair(nn.mapPair(showInteger))
 showStringList(nss) = "[" ++ nss.join(", ") ++ "]"
 showIntegerList(ns) = showStringList(ns.map(showInteger))
 showIntegerPairList(nns) = showStringList(nns.map(showIntegerPair))
+showIntegerListPair(nsns) = showStringPair(nsns.mapPair(showIntegerList))
+showIntegerListList(nss) = showStringList(nss.map(showIntegerList))
