@@ -22,6 +22,6 @@ unsigned long long lookupBuiltinCode(Node* token);
 int getArity(Node* builtin);
 Node* newNil(int location);
 Node* prepend(Node* item, Node* list);
-Node* evaluateBuiltin(Node* builtin, Stack* env);
+Node* evaluateBuiltin(Node* builtin, Stack* stack);
 
 #endif
