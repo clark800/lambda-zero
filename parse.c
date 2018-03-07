@@ -55,12 +55,15 @@ void collapseInfixOperator(Stack* stack) {
     release(operator);
 }
 
-bool shouldCollapseInfixOperator(Stack* stack, Operator collapser) {
+bool shouldCollapseInfixOperator(Stack* stack, Node* collapserNode) {
+    Operator collapser = getOperator(collapserNode);
     if (isEmpty(stack) || isOpenParen(peek(stack, 0)))
         return false;       // don't try to collapse parenthesized operators
     Node* operator = peekSafe(stack, 1);
     if (operator == NULL || !isOperator(operator))
         return false;
+    syntaxErrorIf(isOpenParen(operator) && isEOF(collapserNode), operator,
+        "missing close parenthesis for");
     Node* leftOperand = peekSafe(stack, 2);
     if (leftOperand == NULL || isOpenParen(leftOperand))
         return false;       // don't try to collapse sections
@@ -80,8 +83,7 @@ void collapseLeftOperand(Stack* stack, Node* token) {
     // we collapse right-associatively up to the first operator encountered
     // that has lower precedence than token or equal precedence if token
     // is right associative
-    Operator collapser = getOperator(token);
-    while (shouldCollapseInfixOperator(stack, collapser))
+    while (shouldCollapseInfixOperator(stack, token))
         collapseInfixOperator(stack);
 }
 
