@@ -20,12 +20,15 @@ static const char* skipPast(const char* str, const char* characters) {
     return &(str[strspn(str, characters)]);
 }
 
-static const char* skipSpaces(const char* str) {
-    return skipPast(str, " \t");
+static const char* skipExtraSpaces(const char* str) {
+    if (str[0] == ' ')
+        while (str[1] == ' ')
+            str++;
+    return str;
 }
 
 static const char* skipToDelimiter(const char* str) {
-    return skipTo(str, " \t\n();,.");
+    return skipTo(str, " \n();,.");
 }
 
 static const char* skipToNewline(const char* str) {
@@ -39,7 +42,7 @@ static const char* skipOneCharacter(const char* str) {
 static const char* skipElided(const char* str) {
     while (isComment(str) || isEscapedNewline(str))
         str = isComment(str) ? skipToNewline(str) :
-            skipSpaces(skipOneCharacter(skipToNewline(str)));
+            skipExtraSpaces(skipOneCharacter(skipToNewline(str)));
     return str;
 }
 
@@ -66,11 +69,11 @@ const char* skipLexeme(const char* lexeme) {
 }
 
 const char* getFirstLexeme(const char* input) {
-    return skipElided(skipSpaces(input));
+    return skipElided(skipExtraSpaces(input));
 }
 
 const char* getNextLexeme(const char* lastLexeme) {
-    return skipElided(skipSpaces(skipLexeme(lastLexeme)));
+    return skipElided(skipExtraSpaces(skipLexeme(lastLexeme)));
 }
 
 size_t getLexemeLength(const char* lexeme) {

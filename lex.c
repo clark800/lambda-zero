@@ -202,7 +202,7 @@ const char* findInLexeme(const char* lexeme, const char* characters) {
 }
 
 Node* createToken(const char* lexeme) {
-    if (lexeme[0] == '\0')
+    if (lexeme[0] == '\0' || lexeme[0] == ' ')
         return newOperator(getLexemeLocation(lexeme));
     if (lexeme[0] == '"')
         return newStringLiteral(lexeme);

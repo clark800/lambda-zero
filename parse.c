@@ -19,6 +19,10 @@ bool isOperatorTop(Stack* stack) {
     return isEmpty(stack) || isOperator(peek(stack, 0));
 }
 
+bool isSpaceTop(Stack* stack) {
+    return isEmpty(stack) || isSpace(peek(stack, 0));
+}
+
 static inline bool isValidOperand(Node* node) {
     return isName(node) || isInteger(node) ||
         isApplication(node) || isAbstraction(node);
@@ -29,7 +33,7 @@ void eraseNewlines(Stack* stack) {
         release(pop(stack));
 }
 
-void pushLeftAssociative(Stack* stack, Node* node) {
+void pushOperand(Stack* stack, Node* node) {
     if (isOperatorTop(stack)) {
         push(stack, node);
     } else {
@@ -146,37 +150,51 @@ void collapseParentheses(Stack* stack, Node* close) {
     if (isCommaBranch(getNode(contents)))
         collapseCommaTree(stack, getNode(contents), location);
     else
-        pushLeftAssociative(stack, getNode(contents));
+        pushOperand(stack, getNode(contents));
     release(contents);
+}
+
+Hold* collapseEOF(Stack* stack, Hold* token) {
+    eraseNewlines(stack);
+    collapseLeftOperand(stack, getNode(token));
+    syntaxErrorIf(isEOF(peek(stack, 0)), getNode(token), "no input");
+    Hold* result = pop(stack);
+    assert(isEOF(peek(stack, 0)));
+    deleteStack(stack);
+    release(token);
+    return result;
+}
+
+void pushOperator(Stack* stack, Node* operator) {
+    if (!isOpenParen(operator) && isSpaceTop(stack))
+        release(pop(stack));
+    if ((isSpace(operator) || isNewline(operator)) && isOperatorTop(stack))
+        return;   // note: close parens never appear on the stack
+    if (isCloseParen(operator)) {
+        collapseParentheses(stack, operator);
+    } else {
+        collapseLeftOperand(stack, operator);
+        push(stack, operator);
+    }
+}
+
+static inline void pushToken(Stack* stack, Node* token) {
+    if (isOperator(token))
+        pushOperator(stack, token);
+    else
+        pushOperand(stack, token);
 }
 
 Hold* parseString(const char* input) {
     Stack* stack = newStack(NULL);
     push(stack, newEOF());
 
-    for (Hold* tokenHold = getFirstToken(input); true;
-               tokenHold = replaceHold(tokenHold, getNextToken(tokenHold))) {
-        Node* token = getNode(tokenHold);
-        debugParseState(token, stack);
-        if (isOperator(token)) {
-            if (isCloseParen(token)) {
-                collapseParentheses(stack, token);
-            } else if (isEOF(token)) {
-                eraseNewlines(stack);
-                collapseLeftOperand(stack, token);
-                syntaxErrorIf(isEOF(peek(stack, 0)), token, "no input");
-                Hold* result = pop(stack);
-                assert(isEOF(peek(stack, 0)));
-                deleteStack(stack);
-                release(tokenHold);
-                return result;
-            } else if (!(isNewline(token) && isOperatorTop(stack))) {
-                collapseLeftOperand(stack, token);
-                push(stack, token);
-            } // ignore newlines after operators
-        } else {
-            pushLeftAssociative(stack, token);
-        }
+    for (Hold* token = getFirstToken(input); true;
+               token = replaceHold(token, getNextToken(token))) {
+        debugParseState(getNode(token), stack);
+        if (isEOF(getNode(token)))
+            return collapseEOF(stack, token);
+        pushToken(stack, getNode(token));
     }
 }
 

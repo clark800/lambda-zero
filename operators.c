@@ -59,6 +59,7 @@ Operator OPERATORS[] = {
     {"/", 210, 210, L, infix},
     {"^", 220, 220, R, infix},
     {"<>", 230, 230, R, infix},
+    {" ", 240, 240, L, apply},
     {".", 250, 250, L, infix}
 };
 
