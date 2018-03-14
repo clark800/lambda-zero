@@ -1,10 +1,11 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#include <stdbool.h>
 #include "lib/tree.h"
-#include "lib/stack.h"
+
+extern bool DEBUG;
 
 Hold* parse(const char* input);
-void syntaxErrorIf(bool condition, Node* token, const char* message);
 
 #endif

@@ -3,11 +3,15 @@
 #include "lib/tree.h"
 #include "ast.h"
 #include "lex.h"
-#include "closure.h"
 #include "serialize.h"
 
-bool DEBUG = false;
-bool PROFILE = false;
+static inline bool isDefinition(Node* node) {
+    return isApplication(node) && isThisToken(node, "=");
+}
+
+static inline bool isNewline(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "\n");
+}
 
 void debug(const char* message) {
     fputs(message, stderr);
@@ -23,12 +27,8 @@ void serializeInteger(long long n, FILE* stream) {
     fputs(lltoa(n, buffer, 10), stream);
 }
 
-void debugLoopCount(int loopCount) {
-    if (PROFILE) {
-        debug("Loops: ");
-        serializeInteger(loopCount, stderr);
-        debug("\n");
-    }
+void debugInteger(long long n) {
+    serializeInteger(n, stderr);
 }
 
 void serializeAST(Node* node, FILE* stream) {
@@ -53,61 +53,18 @@ void serializeAST(Node* node, FILE* stream) {
     }
 }
 
-void debugAST(const char* label, Node* node) {
-    if (DEBUG) {
-        debugLine();
-        debug(label);
-        debug(": ");
-        serializeAST(node, stderr);
-        debug("\n");
-    }
+void debugAST(Node* node) {
+    serializeAST(node, stderr);
 }
 
-void serializeParseStack(Stack* stack, FILE* stream) {
-    fputs("[", stream);
+void debugStack(Stack* stack, Node* (*extract)(Node*)) {
+    debug("[");
     for (Iterator* it = iterate(stack); !end(it); it = next(it)) {
-        serializeAST(cursor(it), stream);
-        fputs(", ", stream);
+        debugAST(extract == NULL ? cursor(it) : extract(cursor(it)));
+        if (!end(next(it)))
+            debug(", ");
     }
-    fputs("]", stream);
-}
-
-void debugParseState(Node* token, Stack* stack) {
-    if (DEBUG) {
-        debug("Token: ");
-        serializeAST(token, stderr);
-        debug("  Stack: ");
-        serializeParseStack(stack, stderr);
-        debug("\n");
-    }
-}
-
-void serializeClosureStack(Node* head, FILE* stream) {
-    fputs("[", stream);
-    Stack* stack = newStack(head);
-    for (Iterator* it = iterate(stack); !end(it); it = next(it)) {
-        serializeAST(getClosureTerm(cursor(it)), stream);
-        fputs(", ", stream);
-    }
-    fputs("]", stream);
-    deleteStack(stack);
-}
-
-void serializeEvalState(Node* node, Stack* stack, Stack* env, FILE* stream) {
-    fputs("node: ", stream);
-    serializeAST(node, stream);
-    fputs("\nstack: ", stream);
-    serializeClosureStack(getHead(stack), stream);
-    fputs("\nenv: ", stream);
-    serializeClosureStack(getHead(env), stream);
-    fputs("\n", stream);
-}
-
-void debugEvalState(Node* node, Stack* stack, Stack* env) {
-    if (DEBUG) {
-        debugLine();
-        serializeEvalState(node, stack, env, stderr);
-    }
+    debug("]");
 }
 
 void serializeNode(Node* node, Stack* env, unsigned int depth, FILE* stream) {
@@ -143,9 +100,8 @@ void serializeNode(Node* node, Stack* env, unsigned int depth, FILE* stream) {
     }
 }
 
-void serializeClosure(Node* closure, FILE* stream) {
-    Node* root = getClosureTerm(closure);
-    Stack* env = newStack(getClosureEnv(closure));
-    serializeNode(root, env, 0, stream);
-    deleteStack(env);
+void serialize(Node* root, Node* env, FILE* stream) {
+    Stack* envStack = newStack(env);
+    serializeNode(root, envStack, 0, stream);
+    deleteStack(envStack);
 }

@@ -1,6 +1,8 @@
-#include "lex.h"
+#include <stddef.h>
+#include <stdbool.h>
+#include "lib/tree.h"
 #include "ast.h"
-#include "parse.h"
+#include "lex.h"
 #include "operators.h"
 
 Node* apply(Node* operator, Node* left, Node* right) {

@@ -2,7 +2,7 @@
 #define OPERATORS_H
 
 #include <stdbool.h>
-#include "lib/stack.h"
+#include "lib/tree.h"
 
 typedef unsigned char Precedence;
 typedef enum {L, R, N} Associativity;
@@ -16,6 +16,5 @@ typedef struct Operator {
 
 Operator getOperator(Node* token);
 bool isSpecialOperator(Node* token);
-Node* collapseLambda(Node* operator, Node* left, Node* right);
 
 #endif

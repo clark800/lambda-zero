@@ -1,0 +1,75 @@
+// to build this diagram, install graphviz and run the following command:
+// dot -o architecture.pdf -T pdf architecture.dot
+digraph graphname {
+    size=6;
+    ranksep=1;
+    nodesep=0.5;
+
+    subgraph cluster_interpreter {
+        label="interpreter";
+        main;
+        subgraph cluster_parser {
+            label="parser";
+            desugar;
+            bind;
+            operators;
+            parse;
+            subgraph cluster_lexer {
+                label="lexer";
+                scan;
+                lex;
+                subgraph cluster_shared {
+                    label="shared";
+                    objects;
+                    ast;
+                }
+            }
+        }
+        serialize;
+        subgraph cluster_evaluator {
+            label="evaluator";
+            evaluate;
+            builtins;
+        }
+    }
+
+    bind -> ast;
+    bind -> lex;
+
+    builtins -> ast;
+    builtins -> objects;
+
+    desugar -> ast;
+    desugar -> lex;
+    desugar -> objects;
+
+    evaluate -> ast;
+    evaluate -> lex;
+    evaluate -> serialize;
+    evaluate -> builtins;
+
+    lex -> scan;
+    lex -> ast;
+    lex -> objects;
+
+    main -> parse;
+    main -> evaluate;
+    main -> serialize;
+    main -> objects;
+
+    objects -> ast;
+
+    operators -> ast;
+    operators -> lex;
+
+    parse -> ast;
+    parse -> lex;
+    parse -> operators;
+    parse -> objects;
+    parse -> desugar;
+    parse -> bind;
+    parse -> serialize;
+
+    serialize -> ast;
+    serialize -> lex;
+}

@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include "lib/tree.h"
-#include "lex.h"
 
 // a symbol identifies a thing e.g. the parameter *named* x
 // constructed from (x -> y) is not a symbol
@@ -22,7 +21,10 @@
 // leaf = atom | parameter
 
 // INTEGER must be zero and BUILTIN must be last
-enum {INTEGER, NAME, OPERATOR, PARAMETER, BUILTIN};
+enum LeafTypes {INTEGER, NAME, OPERATOR, PARAMETER, BUILTIN};
+
+enum BuiltinCodes {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS, EQUAL, NOTEQUAL,
+      LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL, PUT, GET};
 
 // =============================================
 // Functions to test if a node is a certain type
@@ -62,30 +64,6 @@ static inline bool isApplication(Node* node) {
 
 static inline bool isAbstraction(Node* node) {
     return isBranchNode(node) && isParameter(getLeft(node));
-}
-
-static inline bool isCommaBranch(Node* node) {
-    return isBranchNode(node) && isThisToken(node, ",");
-}
-
-static inline bool isNewline(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\n");
-}
-
-static inline bool isOpenParen(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "(");
-}
-
-static inline bool isCloseParen(Node* node) {
-    return isLeafNode(node) && isThisToken(node, ")");
-}
-
-static inline bool isEOF(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\0");
-}
-
-static inline bool isDefinition(Node* node) {
-    return isApplication(node) && isThisToken(node, "=");
 }
 
 // ====================================
