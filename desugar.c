@@ -4,17 +4,11 @@
 #include "lex.h"
 #include "parse.h"
 #include "builtins.h"
-#include "operators.h"
 #include "desugar.h"
-
-bool detectDefine(Node* node) {
-    return isApplication(node) && isAssignment(getLeft(node));
-}
 
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isAbstraction(node)) {
-        Node* parameter = getParameter(node);
-        syntaxErrorIf(isSameToken(parameter, name), parameter,
+        syntaxErrorIf(isSameToken(getParameter(node), name), getParameter(node),
             "cannot use definition name as parameter name");
         return hasRecursiveCalls(getBody(node), name);
     }
@@ -22,58 +16,62 @@ bool hasRecursiveCalls(Node* node, Node* name) {
         return hasRecursiveCalls(getLeft(node), name)
             || hasRecursiveCalls(getRight(node), name);
     if (isSymbol(node) || isReference(node))
-        // could have a reference here for the placeholder
         return isSameToken(node, name);
-    assert(isInteger(node));
     return false;
 }
 
-Node* transformLambdaSugar(Node* operator, Node* left, Node* right) {
+Node* transformRecursion(Node* name, Node* value) {
+    if (!hasRecursiveCalls(value, name))
+        return value;
+    // value ==> (Y (name -> value))
+    int location = getLocation(name);
+    return newApplication(location, YCOMBINATOR,
+        newLambda(location, newParameter(getLocation(name)), value));
+}
+
+Node* transformDefine(Node* definition, Node* body) {
+    // simple case: ((name = value) body) ==> ((\name body) value)
+    Node* left = getLeft(definition);
+    Node* right = getRight(definition);
     while (isApplication(left)) {
         Node* parameterName = getRight(left);
         syntaxErrorIf(!isName(parameterName), parameterName,
             "expected name but got");
         Node* parameter = newParameter(getLocation(parameterName));
-        right = newLambda(getLocation(operator), parameter, right);
+        right = newLambda(getLocation(parameter), parameter, right);
         left = getLeft(left);
     }
-    return collapseLambda(operator, left, right);
+    Node* name = left;
+    Node* value = transformRecursion(name, right);
+    int location = getLocation(name);
+    return newBranchNode(location, newLambda(location,
+                newParameter(location), body ? body : name), value);
 }
 
-void swapRight(Node* a, Node* b) {
-    Hold* rightB = hold(getRight(b));
-    setRight(b, getRight(a));
-    setRight(a, getNode(rightB));
-    release(rightB);
-}
-
-void transformRecursion(Node* definition) {
-    Node* name = getLeft(definition);
-    Node* value = getRight(definition);
-    if (hasRecursiveCalls(value, name)) {
-        // value ==> (Y (name -> value))
-        int location = getLocation(definition);
-        setRight(definition, newApplication(location, YCOMBINATOR,
-            newLambda(location, newParameter(getLocation(name)), value)));
+Node* constructDefine(Node* node, Node* left, Node* right) {
+    if (isDefinition(right))
+        right = transformDefine(right, NULL);
+    if (isDefinition(left)) {
+        syntaxErrorIf(isDefinition(node), node, "cannot define a definition");
+        return transformDefine(left, right);
     }
+    return newBranchNode(getLocation(node), left, right);
 }
 
-void transformDefine(Node* node) {
-    // simple case: ((name = value) body) ==> ((\name body) value)
-    Node* definition = getLeft(node);
-    Node* value = getRight(definition);
-    Node* leftHandSide = getLeft(definition);
-    setLeft(node, transformLambdaSugar(definition, leftHandSide, value));
-    transformRecursion(getLeft(node));
-    swapRight(node, getLeft(node));
+Hold* desugarDefine(Node* node) {
+    if (isLeafNode(node))
+        return hold(node);
+    Hold* left = desugarDefine(getLeft(node));
+    Hold* right = desugarDefine(getRight(node));
+    Hold* result = hold(constructDefine(node, getNode(left), getNode(right)));
+    release(left);
+    release(right);
+    return result;
 }
 
-void desugar(Node* node) {
-    if (detectDefine(node))
-        transformDefine(node);
-
-    if (isBranchNode(node)) {
-        desugar(getLeft(node));
-        desugar(getRight(node));
-    }
+Hold* desugar(Node* node) {
+    Hold* result = desugarDefine(node);
+    if (!isDefinition(getNode(result)))
+        return result;
+    return replaceHold(result, hold(transformDefine(getNode(result), NULL)));
 }
