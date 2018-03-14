@@ -11,6 +11,7 @@ Hold* getFirstToken(const char* input);
 Hold* getNextToken(Hold* lastToken);
 bool isSameToken(Node* tokenA, Node* tokenB);
 bool isThisToken(Node* token, const char* tokenString);
+bool isSpace(Node* token);
 void printToken(Node* token, FILE* stream);
 void throwTokenError(const char* type, const char* message, Node* token);
 Node* newRawString(int location, const char* start);

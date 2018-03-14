@@ -20,11 +20,8 @@ static const char* skipPast(const char* str, const char* characters) {
     return &(str[strspn(str, characters)]);
 }
 
-static const char* skipExtraSpaces(const char* str) {
-    if (str[0] == ' ')
-        while (str[1] == ' ')
-            str++;
-    return str;
+static const char* skipPastSameCharacter(const char* str) {
+    return skipPast(str, (char[2]){str[0], '\0'});
 }
 
 static const char* skipToDelimiter(const char* str) {
@@ -42,7 +39,7 @@ static const char* skipOneCharacter(const char* str) {
 static const char* skipElided(const char* str) {
     while (isComment(str) || isEscapedNewline(str))
         str = isComment(str) ? skipToNewline(str) :
-            skipExtraSpaces(skipOneCharacter(skipToNewline(str)));
+            skipOneCharacter(skipToNewline(str));
     return str;
 }
 
@@ -62,18 +59,18 @@ const char* skipLexeme(const char* lexeme) {
     assert(lexeme[0] != '\0');
     if (lexeme[0] == '"' || lexeme[0] == '\'')
         return skipToDelimiter(skipQuote(lexeme));
-    if (lexeme[0] == '.')
-        return skipPast(lexeme, ".");
+    if (lexeme[0] == ' ' || lexeme[0] == '.')
+        return skipPastSameCharacter(lexeme);
     const char* delimiter = skipToDelimiter(lexeme);
     return delimiter == lexeme ? delimiter + 1 : delimiter;
 }
 
 const char* getFirstLexeme(const char* input) {
-    return skipElided(skipExtraSpaces(input));
+    return skipElided(input);
 }
 
 const char* getNextLexeme(const char* lastLexeme) {
-    return skipElided(skipExtraSpaces(skipLexeme(lastLexeme)));
+    return skipElided(skipLexeme(lastLexeme));
 }
 
 size_t getLexemeLength(const char* lexeme) {
