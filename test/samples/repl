@@ -1,2 +1,1 @@
 main(input) = input.repl("> ", reverse)
-main

@@ -84,8 +84,8 @@ static inline bool isEOF(Node* node) {
     return isLeafNode(node) && isThisToken(node, "\0");
 }
 
-static inline bool isAssignment(Node* node) {
-    return isBranchNode(node) && !isAbstraction(node) && isThisToken(node, "=");
+static inline bool isDefinition(Node* node) {
+    return isApplication(node) && isThisToken(node, "=");
 }
 
 // ====================================

@@ -3,7 +3,6 @@
 
 #include "lib/tree.h"
 
-Node* transformLambdaSugar(Node* operator, Node* left, Node* right);
-void desugar(Node* node);
+Hold* desugar(Node* node);
 
 #endif

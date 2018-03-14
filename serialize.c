@@ -37,7 +37,7 @@ void serializeAST(Node* node, FILE* stream) {
     } else if (isBranchNode(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
-        fputs(isAssignment(node) ? " = " : " ", stream);
+        fputs(isDefinition(node) ? " = " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
     } else if (isParameter(node)) {

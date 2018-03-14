@@ -59,35 +59,35 @@ factorial(10)
 head(replicate(10, 7))
 10
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map((2 + 1) *)) \n main
+main(input) = showIntegerList(naturals.take(5).map((2 + 1) *))
 [0, 3, 6, 9, 12]
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map(* (2 + 1))) \n main
+main(input) = showIntegerList(naturals.take(5).map(* (2 + 1)))
 [0, 3, 6, 9, 12]
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map(2 * 2 +)) \n main
+main(input) = showIntegerList(naturals.take(5).map(2 * 2 +))
 [4, 5, 6, 7, 8]
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map(+ 2 * 2)) \n main
+main(input) = showIntegerList(naturals.take(5).map(+ 2 * 2))
 [4, 5, 6, 7, 8]
 ===============================================================================
 ===============================================================================
-main(input) = showInteger(123) \n main
+main(input) = showInteger(123)
 123
 ===============================================================================
-main(input) = showInteger(-123) \n main
+main(input) = showInteger(-123)
 -123
 ===============================================================================
-main(input) = "abcdef".interleave(',') \n main
+main(input) = "abcdef".interleave(',')
 a,b,c,d,e,f
 ===============================================================================
-main(input) = showIntegerList(5..9) \n main
+main(input) = showIntegerList(5..9)
 [5, 6, 7, 8, 9]
 ===============================================================================
-main(input) = showIntegerList(primes.take(10)) \n main
+main(input) = showIntegerList(primes.take(10))
 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 ===============================================================================
-main(input) = showIntegerList(primes.take(5).map(negate)) \n main
+main(input) = showIntegerList(primes.take(5).map(negate))
 [-2, -3, -5, -7, -11]
 ===============================================================================
 "abcd" === 'a'..'d'
@@ -102,13 +102,13 @@ maximum(take(squares, 7) | odd)
 "aces".find(even) ?| -1
 -1
 ===============================================================================
-main(input) = union("abc", "bbd") \n main
+main(input) = union("abc", "bbd")
 abcd
 ===============================================================================
-main(input) = intersect("abbc", "bbcd") \n main
+main(input) = intersect("abbc", "bbcd")
 bbc
 ===============================================================================
-main(input) = deduplicate("acbbcda") \n main
+main(input) = deduplicate("acbbcda")
 acbd
 ===============================================================================
 fromJust(just(10))
@@ -132,10 +132,10 @@ isNothing(just(10))
 zip(naturals, primes.take(10)).lookup(7) ?| -1
 19
 ===============================================================================
-main(input) = showIntegerPairList(zip(naturals, primes.take(8))) \n main
+main(input) = showIntegerPairList(zip(naturals, primes.take(8)))
 [(0, 2), (1, 3), (2, 5), (3, 7), (4, 11), (5, 13), (6, 17), (7, 19)]
 ===============================================================================
-main(input) = showBoolean((just(2) ? x -> just(2 * x) ?| 0) == 4)\n main
+main(input) = showBoolean((just(2) ? x -> just(2 * x) ?| 0) == 4)
 true
 ===============================================================================
 0 ^ 0
@@ -168,10 +168,10 @@ Integer arithmetic error: divide by zero
 gcd(1071, 462)
 21
 ===============================================================================
-main(input) = naturals.take(10).map(showInteger).concatenate \n main
+main(input) = naturals.take(10).map(showInteger).concatenate
 0123456789
 ===============================================================================
-main(input) = naturals.take(10).map(showInteger).join(nil) \n main
+main(input) = naturals.take(10).map(showInteger).join(nil)
 0123456789
 ===============================================================================
 length("")
@@ -186,7 +186,7 @@ left(1 ; (* 2) ^^ 2)
 10.(* 2)
 20
 ===============================================================================
-main(input) = showIntegerListPair(span((< 3), (1; 2; 3; 4; 5; nil)))\n main
+main(input) = showIntegerListPair(span((< 3), (1; 2; 3; 4; 5; nil)))
 ([1, 2], [3, 4, 5])
 ===============================================================================
 head naturals.tail

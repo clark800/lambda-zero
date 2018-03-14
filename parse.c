@@ -252,7 +252,7 @@ void preprocess(Node* root) {
 Hold* parse(const char* input) {
     Hold* result = parseString(input);
     debugAST("Parsed", getNode(result));
-    desugar(getNode(result));
+    result = replaceHold(result, desugar(getNode(result)));
     debugAST("Desugared", getNode(result));
     preprocess(getNode(result));
     debugAST("Preprocessed", getNode(result));

@@ -1,2 +1,1 @@
 main(input) = showIntegerList(primes)
-main
