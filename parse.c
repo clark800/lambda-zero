@@ -239,7 +239,7 @@ static void process(Node* node, Stack* parameterStack) {
         process(getRight(node), parameterStack);
     } else {
         // allow references so we can paste parsed trees in with sugars
-        assert(isReference(node) || isInteger(node));
+        assert(isReference(node) || isInteger(node) || isBuiltin(node));
     }
 }
 

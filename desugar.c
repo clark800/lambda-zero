@@ -6,6 +6,8 @@
 #include "builtins.h"
 #include "desugar.h"
 
+bool IO = false;
+
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isAbstraction(node)) {
         syntaxErrorIf(isSameToken(getParameter(node), name), getParameter(node),
@@ -29,8 +31,19 @@ Node* transformRecursion(Node* name, Node* value) {
         newLambda(location, newParameter(getLocation(name)), value));
 }
 
-Node* transformDefine(Node* definition, Node* body) {
-    // simple case: ((name = value) body) ==> ((\name body) value)
+Node* getScope(Node* explicitScope, Node* name) {
+    if (explicitScope != NULL)
+        return explicitScope;
+    if (!isThisToken(name, "main"))
+        return name;
+    IO = true;
+    int location = getLocation(name);
+    return newApplication(location,
+            newApplication(location, name, INPUT), PRINT);
+}
+
+Node* transformDefine(Node* definition, Node* explicitScope) {
+    // simple case: ((name = value) scope) ==> ((\name scope) value)
     Node* left = getLeft(definition);
     Node* right = getRight(definition);
     while (isApplication(left)) {
@@ -45,7 +58,7 @@ Node* transformDefine(Node* definition, Node* body) {
     Node* value = transformRecursion(name, right);
     int location = getLocation(name);
     return newBranchNode(location, newLambda(location,
-                newParameter(location), body ? body : name), value);
+                newParameter(location), getScope(explicitScope, name)), value);
 }
 
 Node* constructDefine(Node* node, Node* left, Node* right) {

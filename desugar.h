@@ -3,6 +3,7 @@
 
 #include "lib/tree.h"
 
+extern bool IO;
 Hold* desugar(Node* node);
 
 #endif
