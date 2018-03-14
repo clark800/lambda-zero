@@ -12,6 +12,7 @@
 #include "parse.h"
 #include "builtins.h"
 #include "evaluate.h"
+#include "desugar.h"
 #include "serialize.h"
 
 void memoryError(const char* label, long long bytes) {
@@ -38,11 +39,11 @@ void interpret(const char* input) {
     Hold* termClosure = hold(newClosure(getNode(parsed), NULL));
     Hold* valueClosure = evaluate(getNode(termClosure));
     release(termClosure);
-    if (valueClosure != NULL) {
+    if (!IO) {
         serializeClosure(getNode(valueClosure), stdout);
         fputs("\n", stdout);
-        release(valueClosure);
     }
+    release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
     release(parsed);
     checkForMemoryLeak("interpret", memoryUsageAtStart);

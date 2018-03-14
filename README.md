@@ -6,11 +6,11 @@
   Machine.
 - Every Lambda Zero program is a single expression; there are no statements
   or variables in the language.
-- The interpreter is less than 1800 lines of strict ANSI C99 and the binary is
-  just 32KB dynamically linked and stripped.
+- The interpreter is less than 2000 lines of strict ANSI C99 and the binary is
+  just 33KB dynamically linked and stripped.
 - The interpreter can also be built for Linux x86-64 without the C standard
-  library in which case it is about 2100 lines of strict ANSI C99 and generates
-  a 23KB statically linked stripped binary.
+  library in which case it is less than 2200 lines of strict ANSI C99 and
+  generates a 23KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
   memory allocator, error messaging, and rudimental built-in debugging and
   profiling features.
@@ -130,12 +130,21 @@ determine how it is parsed.
 
 ### I/O
 
-There is one type of expression that is treated specially. A function with
-the parameter name of `input`, when evaluated, is passed stdin as a string
-and the return value is assumed to be a string which is passed to stdout.
+There is no I/O in the lambda zero _language_, but there is some basic I/O
+support in the lambda zero _interpreter_. In other words, there is no
+syntax in a lamda zero program that actually performs I/O itself, but there is a
+special function `main` that the interpreter treats differently to allow I/O.
+
+When the last function definition of a program defines the symbol `main`, the
+interpreter assumes that it is a function and passes it a string corresponding
+to `stdin` and then assumes that the return value of `main` is a string and
+prints it to `stdout`. An error will occur if these assumptions aren't true.
 
 A string is a linked list of integers in the range 0-255, where the linked
-list is constructed in the standard way for the Lambda Calculus.
+list is constructed according to the standard Church encoding.
+
+The input and output are both evaluated lazily, which allows for non-terminating
+output and interactive programs. See the samples below for examples of this.
 
 ### Conclusion
 

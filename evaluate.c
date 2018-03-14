@@ -13,7 +13,6 @@
 
 static const bool LAZY = true;     // for debugging
 int LOOP_COUNT = 0;
-bool IO = false;
 
 typedef struct State State;
 
@@ -107,12 +106,7 @@ void evaluateReferenceNode(State* state) {
     setHead(state->env, getClosureEnv(closure));
 }
 
-static inline Hold* getResult(State* state, bool doIO) {
-    if (doIO) {
-        push(state->stack, newClosure(PRINT, NULL));
-        release(evaluateNode(state));
-        return NULL;
-    }
+static inline Hold* getResult(State* state) {
     evaluationErrorIf(!isUpdatesOnly(state->stack), NULL, "extra arguments");
     return hold(newClosure(getNode(state->node), getHead(state->env)));
 }
@@ -123,7 +117,6 @@ void evaluateBuiltinNode(State* state) {
 }
 
 Hold* evaluateNode(State* state) {
-    bool doIO = false;
     while (true) {
         debugEvalState(getNode(state->node), state->stack, state->env);
         LOOP_COUNT += 1;
@@ -131,18 +124,11 @@ Hold* evaluateNode(State* state) {
         if (isApplication(node)) {
             evaluateApplicationNode(state);
         } else if (isAbstraction(node)) {
-            if (isEmpty(state->stack)) {
-                if (isThisToken(getParameter(node), "input")) {
-                    evaluationErrorIf(IO, node, "input can only be used once");
-                    push(state->stack, newClosure(INPUT, NULL));
-                    IO = doIO = true;
-                    continue;
-                }
-                return getResult(state, doIO);
-            }
+            if (isEmpty(state->stack))
+                return getResult(state);
             evaluateAbstractionNode(state);
         } else if (isInteger(node)) {
-            return getResult(state, doIO);
+            return getResult(state);
         } else if (isReference(node)) {
             evaluateReferenceNode(state);
         } else if (isBuiltin(node)) {
