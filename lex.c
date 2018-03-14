@@ -245,6 +245,10 @@ bool isThisToken(Node* token, const char* lexeme) {
     return isSameLexeme(getLexeme(token), lexeme);
 }
 
+bool isSpace(Node* token) {
+    return isLeafNode(token) && getLexeme(token)[0] == ' ';
+}
+
 Node* newEOF() {
     return newOperator(0);
 }

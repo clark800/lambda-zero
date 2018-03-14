@@ -18,8 +18,6 @@ Node* collapseLambda(Node* operator, Node* left, Node* right) {
     return newLambda(getLocation(operator), left, right);
 }
 
-Operator DEFAULT = {"", 150, 150, L, infix};
-
 Operator OPERATORS[] = {
     {"\0", 0, 0, R, NULL},
     {"(", 240, 10, R, NULL},
@@ -59,11 +57,15 @@ Operator OPERATORS[] = {
     {"/", 210, 210, L, infix},
     {"^", 220, 220, R, infix},
     {"<>", 230, 230, R, infix},
-    {" ", 240, 240, L, apply},
     {".", 250, 250, L, infix}
 };
 
+Operator DEFAULT = {"", 150, 150, L, infix};
+Operator SPACE = {" ", 240, 240, L, apply};
+
 Operator getOperator(Node* token) {
+    if (isSpace(token))
+        return SPACE;
     for (unsigned int i = 0; i < sizeof(OPERATORS)/sizeof(Operator); i++)
         if (isThisToken(token, OPERATORS[i].symbol))
             return OPERATORS[i];

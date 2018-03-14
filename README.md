@@ -146,12 +146,16 @@ Make sure gcc and bash are installed and run the `make` script.
 
 # Running
 
-    echo -n "INPUT" | run SOURCEFILE
+    ./run SOURCEFILE
 
 For example, try this sample program that prints out an infinite list of prime
 numbers:
 
-    echo -n "" | run test/samples/showprimes
+    ./run test/samples/showprimes
+
+This sample program runs an interactive REPL that reverses each line entered:
+
+    ./run test/samples/repl
 
 The `run` script prepends the [prelude](test/prelude) to the `SOURCEFILE` and
 passes the result to `main`.
