@@ -42,7 +42,7 @@ static bool isDefined(Node* symbol, Stack* parameterStack) {
 static void bindWith(Node* node, Stack* parameterStack) {
     if (isSymbol(node)) {
         bindSymbol(node, parameterStack);
-    } else if (isAbstraction(node)) {
+    } else if (isLambda(node)) {
         syntaxErrorIf(isDefined(getParameter(node), parameterStack),
             getParameter(node), "symbol already defined");
         push(parameterStack, getParameter(node));

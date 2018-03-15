@@ -10,7 +10,7 @@ static inline bool isDefinition(Node* node) {
 }
 
 bool hasRecursiveCalls(Node* node, Node* name) {
-    if (isAbstraction(node)) {
+    if (isLambda(node)) {
         syntaxErrorIf(isSameToken(getParameter(node), name), getParameter(node),
             "cannot use definition name as parameter name");
         return hasRecursiveCalls(getBody(node), name);

@@ -86,3 +86,6 @@ Evaluation error: missing first argument '+'
 (+)
 Evaluation error: missing first argument '+'
 ===============================================================================
+1 + 2 3
+Evaluation error: extra argument '3'
+===============================================================================

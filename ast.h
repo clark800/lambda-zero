@@ -12,7 +12,7 @@
 // a part of the lambda, not an object in it's own right
 
 // node = branch | leaf
-// branch = application | abstraction
+// branch = application | lambda
 // during parsing:
 // symbol = name | operator
 // leaf = symbol | parameter
@@ -62,7 +62,7 @@ static inline bool isApplication(Node* node) {
     return isBranchNode(node) && !isParameter(getLeft(node));
 }
 
-static inline bool isAbstraction(Node* node) {
+static inline bool isLambda(Node* node) {
     return isBranchNode(node) && isParameter(getLeft(node));
 }
 
@@ -85,14 +85,14 @@ static inline long long getInteger(Node* integer) {
     return getValue(integer);
 }
 
-static inline Node* getParameter(Node* abstraction) {
-    assert(isAbstraction(abstraction));
-    return getLeft(abstraction);
+static inline Node* getParameter(Node* lambda) {
+    assert(isLambda(lambda));
+    return getLeft(lambda);
 }
 
-static inline Node* getBody(Node* abstraction) {
-    assert(isAbstraction(abstraction));
-    return getRight(abstraction);
+static inline Node* getBody(Node* lambda) {
+    assert(isLambda(lambda));
+    return getRight(lambda);
 }
 
 // ================================

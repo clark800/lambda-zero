@@ -27,9 +27,8 @@ static inline int getLexemeLocation(const char* lexeme) {
 }
 
 const char* getLexemeByLocation(int location) {
-    const char* start = location == 0 ? "\0" :
-        location < 0 ? INTERNAL_SOURCE_CODE : SOURCE_CODE;
-    return &start[abs(location) - 1];
+    const char* start = location < 0 ? INTERNAL_SOURCE_CODE : SOURCE_CODE;
+    return location == 0 ? "\0" : &start[abs(location) - 1];
 }
 
 const char* getLexeme(Node* node) {
