@@ -2,11 +2,12 @@
 #include "lib/tree.h"
 #include "ast.h"
 #include "lex.h"
-#include "parse.h"
-#include "builtins.h"
+#include "objects.h"
 #include "desugar.h"
 
-bool IO = false;
+static inline bool isDefinition(Node* node) {
+    return isApplication(node) && isThisToken(node, "=");
+}
 
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isAbstraction(node)) {

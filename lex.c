@@ -4,18 +4,18 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "lib/lltoa.h"
 #include "lib/tree.h"
 #include "lib/stack.h"
 #include "lib/errors.h"
 #include "scan.h"
 #include "ast.h"
-#include "builtins.h"
+#include "objects.h"
 #include "lex.h"
 
 const char* INTERNAL_SOURCE_CODE = NULL;
 const char* SOURCE_CODE = NULL;
-bool TEST = false;
 
 struct Position {
     unsigned int line;
@@ -39,7 +39,7 @@ const char* getLexeme(Node* node) {
 void printLexeme(const char* lexeme, FILE* stream) {
     switch (lexeme[0]) {
         case '\n': fputs("\\n", stream); break;
-        case '\0': fputs("[EOF]", stream); break;
+        case '\0': fputs("$EOF", stream); break;
         default: fwrite(lexeme, sizeof(char), getLexemeLength(lexeme), stream);
     }
 }
@@ -77,7 +77,7 @@ void throwError(const char* type, const char* message, const char* lexeme) {
         errorArray(4, (strings){type, " error: ", message, " \'"});
         printLexeme(lexeme, stderr);
         errorArray(1, (strings){"\'"});
-        if (!TEST) {
+        if (VERBOSITY >= 0) {
             const char* location = getLocationString(getLexemeLocation(lexeme));
             errorArray(3, (strings){" at ", location, "\n"});
         }
@@ -94,6 +94,11 @@ void throwTokenError(const char* type, const char* message, Node* token) {
 void lexerErrorIf(bool condition, const char* lexeme, const char* message) {
     if (condition)
         throwError("Syntax", message, lexeme);
+}
+
+void syntaxErrorIf(bool condition, Node* token, const char* message) {
+    if (condition)
+        throwTokenError("Syntax", message, token);
 }
 
 bool isNameCharacter(char c) {
@@ -243,6 +248,10 @@ bool isSameToken(Node* tokenA, Node* tokenB) {
 
 bool isThisToken(Node* token, const char* lexeme) {
     return isSameLexeme(getLexeme(token), lexeme);
+}
+
+bool isInternalToken(Node* token) {
+    return getLexeme(token)[0] == '$';
 }
 
 bool isSpace(Node* token) {

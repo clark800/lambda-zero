@@ -1,17 +1,16 @@
 #include <assert.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "lib/readfile.h"
 #include "ast.h"
-#include "closure.h"
-#include "serialize.h"
 #include "builtins.h"
 #include "lex.h"
+#include "serialize.h"
 #include "evaluate.h"
 
 static const bool LAZY = true;     // for debugging
+bool PROFILE = false;
+bool TRACE = false;
 int LOOP_COUNT = 0;
 
 typedef struct State State;
@@ -23,7 +22,30 @@ struct State {
     Stack* env;
 };
 
-Hold* evaluateNode(State* state);
+void evaluationErrorIf(bool condition, Node* token, const char* message) {
+    if (condition)
+        throwTokenError("Evaluation", message, token);
+}
+
+static inline Node* newClosure(Node* term, Node* env) {
+    return newBranchNode(0, term, env);
+}
+
+Node* getClosureTerm(Node* closure) {
+    return getLeft(closure);
+}
+
+Node* getClosureEnv(Node* closure) {
+    return getRight(closure);
+}
+
+static inline Node* newUpdateClosure(Node* closure) {
+    return newClosure(NULL, closure);
+}
+
+static inline bool isUpdateClosure(Node* closure) {
+    return getLeft(closure) == NULL && getRight(closure) != NULL;
+}
 
 static bool isUpdateNext(Stack* stack) {
     return !isEmpty(stack) && isUpdateClosure(peek(stack, 0));
@@ -106,9 +128,32 @@ void evaluateReferenceNode(State* state) {
     setHead(state->env, getClosureEnv(closure));
 }
 
-static inline Hold* getResult(State* state) {
-    evaluationErrorIf(!isUpdatesOnly(state->stack), NULL, "extra arguments");
-    return hold(newClosure(getNode(state->node), getHead(state->env)));
+Hold* evaluateClosure(Node* closure) {
+    return evaluate(getClosureTerm(closure), getClosureEnv(closure));
+}
+
+long long evaluateToInteger(Node* builtin, Hold* termClosure) {
+    Hold* valueClosure = evaluateClosure(getNode(termClosure));
+    Node* integerNode = getClosureTerm(getNode(valueClosure));
+    evaluationErrorIf(!isInteger(integerNode), builtin,
+            "expected integer first parameter");
+    long long integer = getInteger(integerNode);
+    release(valueClosure);
+    release(termClosure);
+    return integer;
+}
+
+Node* evaluateBuiltin(Node* builtin, Stack* stack) {
+    int arity = getArity(builtin);
+    if (arity == 0)
+        return computeBuiltin(builtin, 0, 0);
+    evaluationErrorIf(isEmpty(stack), builtin, "missing first argument");
+    long long left = evaluateToInteger(builtin, pop(stack));
+    if (arity == 1)
+        return computeBuiltin(builtin, left, 0);
+    evaluationErrorIf(isEmpty(stack), builtin, "missing second argument");
+    long long right = evaluateToInteger(builtin, pop(stack));
+    return computeBuiltin(builtin, left, right);
 }
 
 void evaluateBuiltinNode(State* state) {
@@ -116,9 +161,27 @@ void evaluateBuiltinNode(State* state) {
     setNode(state, evaluateBuiltin(getNode(state->node), state->stack));
 }
 
+static inline Hold* getResult(State* state) {
+    evaluationErrorIf(!isUpdatesOnly(state->stack), NULL, "extra arguments");
+    return hold(newClosure(getNode(state->node), getHead(state->env)));
+}
+
+void debugState(Node* node, Stack* stack, Stack* env) {
+    if (TRACE) {
+        debugLine();
+        debug("node: ");
+        debugAST(node);
+        debug("\nstack: ");
+        debugStack(stack, getClosureTerm);
+        debug("\nenv: ");
+        debugStack(env, getClosureTerm);
+        debug("\n");
+    }
+}
+
 Hold* evaluateNode(State* state) {
     while (true) {
-        debugEvalState(getNode(state->node), state->stack, state->env);
+        debugState(getNode(state->node), state->stack, state->env);
         LOOP_COUNT += 1;
         Node* node = getNode(state->node);
         if (isApplication(node)) {
@@ -139,9 +202,17 @@ Hold* evaluateNode(State* state) {
     }
 }
 
-Hold* evaluate(Node* closure) {
+void debugLoopCount(int loopCount) {
+    if (PROFILE) {
+        debug("Loops: ");
+        debugInteger(loopCount);
+        debug("\n");
+    }
+}
+
+Hold* evaluate(Node* term, Node* env) {
     State state;
-    initState(&state, getClosureTerm(closure), getClosureEnv(closure));
+    initState(&state, term, env);
     Hold* result = evaluateNode(&state);
     deleteState(&state);
     debugLoopCount(LOOP_COUNT);

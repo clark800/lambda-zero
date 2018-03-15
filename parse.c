@@ -4,15 +4,34 @@
 #include "lib/tree.h"
 #include "lib/stack.h"
 #include "ast.h"
+#include "objects.h"
 #include "lex.h"
 #include "operators.h"
-#include "builtins.h"
 #include "desugar.h"
+#include "bind.h"
 #include "serialize.h"
+#include "parse.h"
 
-void syntaxErrorIf(bool condition, Node* token, const char* message) {
-    if (condition)
-        throwTokenError("Syntax", message, token);
+bool DEBUG = false;
+
+static inline bool isCommaBranch(Node* node) {
+    return isBranchNode(node) && isThisToken(node, ",");
+}
+
+static inline bool isNewline(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "\n");
+}
+
+static inline bool isOpenParen(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "(");
+}
+
+static inline bool isCloseParen(Node* node) {
+    return isLeafNode(node) && isThisToken(node, ")");
+}
+
+static inline bool isEOF(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "\0");
 }
 
 bool isOperatorTop(Stack* stack) {
@@ -185,6 +204,16 @@ static inline void pushToken(Stack* stack, Node* token) {
         pushOperand(stack, token);
 }
 
+void debugParseState(Node* token, Stack* stack) {
+    if (DEBUG) {
+        debug("Token: ");
+        debugAST(token);
+        debug("  Stack: ");
+        debugStack(stack, NULL);
+        debug("\n");
+    }
+}
+
 Hold* parseString(const char* input) {
     Stack* stack = newStack(NULL);
     push(stack, newEOF());
@@ -198,63 +227,22 @@ Hold* parseString(const char* input) {
     }
 }
 
-static unsigned long long findDebruijnIndex(Node* symbol, Stack* parameters) {
-    unsigned long long i = 0;
-    for (Iterator* it = iterate(parameters); !end(it); it = next(it), i++)
-        if (isSameToken(cursor(it), symbol))
-            return i + 1;
-    return 0;
-}
-
-static void processSymbol(Node* symbol, Stack* parameterStack) {
-    unsigned long long code = lookupBuiltinCode(symbol);
-    if (code > 0) {
-        convertSymbolToBuiltin(symbol, code);
-        return;
+void debugStage(const char* label, Node* node) {
+    if (DEBUG) {
+        debugLine();
+        debug(label);
+        debug(": ");
+        debugAST(node);
+        debug("\n");
     }
-    unsigned long long index = findDebruijnIndex(symbol, parameterStack);
-    syntaxErrorIf(index == 0, symbol, "undefined symbol");
-    convertSymbolToReference(symbol, index);
-}
-
-static bool isDefined(Node* symbol, Stack* parameterStack) {
-    // PARAMETERX is always considered to be a fresh variable so that we
-    // can allow tuples inside tuples
-    return (PARAMETERX == NULL || !isSameToken(symbol, PARAMETERX)) &&
-        (lookupBuiltinCode(symbol) != 0 ||
-        findDebruijnIndex(symbol, parameterStack) != 0);
-}
-
-static void process(Node* node, Stack* parameterStack) {
-    if (isSymbol(node)) {
-        processSymbol(node, parameterStack);
-    } else if (isAbstraction(node)) {
-        syntaxErrorIf(isDefined(getParameter(node), parameterStack),
-            getParameter(node), "symbol already defined");
-        push(parameterStack, getParameter(node));
-        process(getBody(node), parameterStack);
-        release(pop(parameterStack));
-    } else if (isApplication(node)) {
-        process(getLeft(node), parameterStack);
-        process(getRight(node), parameterStack);
-    } else {
-        // allow references so we can paste parsed trees in with sugars
-        assert(isReference(node) || isInteger(node) || isBuiltin(node));
-    }
-}
-
-void preprocess(Node* root) {
-    Stack* parameterStack = newStack(NULL);
-    process(root, parameterStack);
-    deleteStack(parameterStack);
 }
 
 Hold* parse(const char* input) {
     Hold* result = parseString(input);
-    debugAST("Parsed", getNode(result));
+    debugStage("Parsed", getNode(result));
     result = replaceHold(result, desugar(getNode(result)));
-    debugAST("Desugared", getNode(result));
-    preprocess(getNode(result));
-    debugAST("Preprocessed", getNode(result));
+    debugStage("Desugared", getNode(result));
+    bind(getNode(result));
+    debugStage("Preprocessed", getNode(result));
     return result;
 }
