@@ -22,7 +22,7 @@ struct State {
     Stack* env;
 };
 
-void evaluationErrorIf(bool condition, Node* token, const char* message) {
+static inline void errorIf(bool condition, Node* token, const char* message) {
     if (condition)
         throwTokenError("Evaluation", message, token);
 }
@@ -47,24 +47,17 @@ static inline bool isUpdateClosure(Node* closure) {
     return getLeft(closure) == NULL && getRight(closure) != NULL;
 }
 
-static bool isUpdateNext(Stack* stack) {
+static inline bool isUpdateNext(Stack* stack) {
     return !isEmpty(stack) && isUpdateClosure(peek(stack, 0));
 }
 
-bool isUpdatesOnly(Stack* stack) {
-    for (Iterator* it = iterate(stack); !end(it); it = next(it))
-        if (!isUpdateClosure(cursor(it)))
-            return false;
-    return true;
-}
-
-void initState(State* state, Node* root, Node* env) {
+static inline void initState(State* state, Node* root, Node* env) {
     state->node = hold(root);
     state->stack = newStack(NULL);
     state->env = newStack(env);
 }
 
-void deleteState(State* state) {
+static inline void deleteState(State* state) {
     release(state->node);
     deleteStack(state->stack);
     deleteStack(state->env);
@@ -74,13 +67,13 @@ static inline void setNode(State* state, Node* node) {
     state->node = replaceHold(state->node, hold(node));
 }
 
-void moveStackItem(Stack* fromStack, Stack* toStack) {
+static inline void moveStackItem(Stack* fromStack, Stack* toStack) {
     Hold* item = pop(fromStack);
     push(toStack, getNode(item));
     release(item);
 }
 
-void applyUpdate(State* state) {
+static inline void applyUpdate(State* state) {
     Hold* update = pop(state->stack);
     Node* closure = getRight(getNode(update));
     setLeft(closure, getNode(state->node));
@@ -88,7 +81,7 @@ void applyUpdate(State* state) {
     release(update);
 }
 
-void applyUpdates(State* state) {
+static inline void applyUpdates(State* state) {
     while (isUpdateNext(state->stack))
         applyUpdate(state);
 }
@@ -97,76 +90,77 @@ static inline Node* getReferencedClosure(Node* reference, Stack* env) {
     return peek(env, getDebruijnIndex(reference) - 1);
 }
 
-Node* getArgumentClosure(Node* argument, Stack* env) {
+static inline Node* getArgumentClosure(Node* argument, Stack* env) {
     if (isReference(argument))     // short-circuit optimization
         return getReferencedClosure(argument, env);
     return newClosure(argument, getHead(env));
 }
 
-void evaluateApplicationNode(State* state) {
+static inline void evaluateApplicationNode(State* state) {
     Node* function = getLeft(getNode(state->node));
     Node* argument = getRight(getNode(state->node));
     push(state->stack, getArgumentClosure(argument, state->env));
     setNode(state, function);
 }
 
-void evaluateAbstractionNode(State* state) {
-    if (isUpdateNext(state->stack)) {
-        applyUpdate(state);
-        return;
-    }
+static inline void evaluateLambdaNode(State* state) {
     moveStackItem(state->stack, state->env);
-    Node* function = getNode(state->node);
-    setNode(state, getBody(function));
+    Node* lambda = getNode(state->node);
+    setNode(state, getBody(lambda));
 }
 
-void evaluateReferenceNode(State* state) {
+static inline void evaluateReferenceNode(State* state) {
     Node* closure = getReferencedClosure(getNode(state->node), state->env);
-    if (LAZY && !isAbstraction(getClosureTerm(closure)))
+    if (LAZY && !isLambda(getClosureTerm(closure)))
         push(state->stack, newUpdateClosure(closure));
     setNode(state, getClosureTerm(closure));
     setHead(state->env, getClosureEnv(closure));
 }
 
-Hold* evaluateClosure(Node* closure) {
+static inline Hold* evaluateClosure(Node* closure) {
     return evaluate(getClosureTerm(closure), getClosureEnv(closure));
 }
 
-long long evaluateToInteger(Node* builtin, Hold* termClosure) {
+static inline long long evaluateToInteger(Node* builtin, Hold* termClosure) {
     Hold* valueClosure = evaluateClosure(getNode(termClosure));
     Node* integerNode = getClosureTerm(getNode(valueClosure));
-    evaluationErrorIf(!isInteger(integerNode), builtin,
-            "expected integer first parameter");
+    errorIf(!isInteger(integerNode), builtin, "expected integer argument");
     long long integer = getInteger(integerNode);
     release(valueClosure);
     release(termClosure);
     return integer;
 }
 
-Node* evaluateBuiltin(Node* builtin, Stack* stack) {
+static inline Node* evaluateBuiltin(Node* builtin, Stack* stack) {
     int arity = getArity(builtin);
     if (arity == 0)
         return computeBuiltin(builtin, 0, 0);
-    evaluationErrorIf(isEmpty(stack), builtin, "missing first argument");
+    errorIf(isEmpty(stack), builtin, "missing first argument");
     long long left = evaluateToInteger(builtin, pop(stack));
     if (arity == 1)
         return computeBuiltin(builtin, left, 0);
-    evaluationErrorIf(isEmpty(stack), builtin, "missing second argument");
+    errorIf(isEmpty(stack), builtin, "missing second argument");
     long long right = evaluateToInteger(builtin, pop(stack));
     return computeBuiltin(builtin, left, right);
 }
 
-void evaluateBuiltinNode(State* state) {
+static inline void evaluateBuiltinNode(State* state) {
     applyUpdates(state);
     setNode(state, evaluateBuiltin(getNode(state->node), state->stack));
 }
 
 static inline Hold* getResult(State* state) {
-    evaluationErrorIf(!isUpdatesOnly(state->stack), NULL, "extra arguments");
     return hold(newClosure(getNode(state->node), getHead(state->env)));
 }
 
-void debugState(Node* node, Stack* stack, Stack* env) {
+static inline Hold* getIntegerResult(State* state) {
+    applyUpdates(state);
+    if (!isEmpty(state->stack))
+        errorIf(true, getClosureTerm(peek(state->stack, 0)), "extra argument");
+    return getResult(state);
+}
+
+static inline void debugState(Node* node, Stack* stack, Stack* env) {
     if (TRACE) {
         debugLine();
         debug("node: ");
@@ -179,19 +173,20 @@ void debugState(Node* node, Stack* stack, Stack* env) {
     }
 }
 
-Hold* evaluateNode(State* state) {
+static inline Hold* evaluateNode(State* state) {
     while (true) {
         debugState(getNode(state->node), state->stack, state->env);
         LOOP_COUNT += 1;
         Node* node = getNode(state->node);
         if (isApplication(node)) {
             evaluateApplicationNode(state);
-        } else if (isAbstraction(node)) {
+        } else if (isLambda(node)) {
+            applyUpdates(state);
             if (isEmpty(state->stack))
                 return getResult(state);
-            evaluateAbstractionNode(state);
+            evaluateLambdaNode(state);
         } else if (isInteger(node)) {
-            return getResult(state);
+            return getIntegerResult(state);
         } else if (isReference(node)) {
             evaluateReferenceNode(state);
         } else if (isBuiltin(node)) {
@@ -202,7 +197,7 @@ Hold* evaluateNode(State* state) {
     }
 }
 
-void debugLoopCount(int loopCount) {
+static inline void debugLoopCount(int loopCount) {
     if (PROFILE) {
         debug("Loops: ");
         debugInteger(loopCount);

@@ -11,6 +11,6 @@ void debug(const char* message);
 void debugLine(void);
 void debugAST(Node* node);
 void debugInteger(long long n);
-void debugStack(Stack* stack, Node* (*extract)(Node*));
+void debugStack(Stack* stack, Node* (*select)(Node*));
 
 #endif

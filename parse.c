@@ -44,7 +44,7 @@ bool isSpaceTop(Stack* stack) {
 
 static inline bool isValidOperand(Node* node) {
     return isName(node) || isInteger(node) ||
-        isApplication(node) || isAbstraction(node);
+        isApplication(node) || isLambda(node);
 }
 
 void eraseNewlines(Stack* stack) {

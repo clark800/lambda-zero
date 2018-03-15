@@ -57,10 +57,10 @@ void debugAST(Node* node) {
     serializeAST(node, stderr);
 }
 
-void debugStack(Stack* stack, Node* (*extract)(Node*)) {
+void debugStack(Stack* stack, Node* (*select)(Node*)) {
     debug("[");
     for (Iterator* it = iterate(stack); !end(it); it = next(it)) {
-        debugAST(extract == NULL ? cursor(it) : extract(cursor(it)));
+        debugAST(select == NULL ? cursor(it) : select(cursor(it)));
         if (!end(next(it)))
             debug(", ");
     }
@@ -74,7 +74,7 @@ void serializeNode(Node* node, Stack* env, unsigned int depth, FILE* stream) {
         fputs(" ", stream);
         serializeNode(getRight(node), env, depth, stream);
         fputs(")", stream);
-    } else if (isAbstraction(node)) {
+    } else if (isLambda(node)) {
         fputs("(", stream);
         printToken(getParameter(node), stream);
         fputs(" -> ", stream);
