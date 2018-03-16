@@ -19,9 +19,9 @@ assemble() {
           sed '/^\#/d' | grep -v '^[ ]*$' > sys.tmp
         echoexec nasm -f $FORMAT -o "$1" sys.tmp
         rm sys.tmp
-        return 0
+        return
     fi
-    return 1
+    echo "$1 up-to-date"
 }
 
-assemble sys.o || echo "sys.o up-to-date"
+assemble sys.o

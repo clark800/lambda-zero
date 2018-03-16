@@ -33,7 +33,7 @@ void __assert(const char* filename, const char* line, const char* expression);
 // stdlib.h
 int abs(int i);
 long long llabs(long long n);
-long long strtoll(const char* nptr, char** endptr, int base);
+long long strtoll(const char* nptr, const char** endptr, int base);
 void exit(int status);
 void* malloc(size_t size);
 void* realloc(void *ptr, size_t size);

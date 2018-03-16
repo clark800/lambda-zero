@@ -12,7 +12,7 @@ long long llabs(long long n) {
     return n < 0 ? -n : n;
 }
 
-long long strtoll(const char* nptr, char** endptr, int base) {
+long long strtoll(const char* nptr, const char** endptr, int base) {
     assert(base == 10);
     bool negative = nptr[0] == '-';
     int sign = negative ? -1 : 1;
@@ -36,7 +36,7 @@ long long strtoll(const char* nptr, char** endptr, int base) {
         n = n * 10 + digit;
     }
     if (endptr != NULL)
-        *endptr = (char*)nptr;
+        *endptr = nptr;
     return n;
 }
 

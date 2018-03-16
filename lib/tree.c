@@ -14,7 +14,7 @@ struct Node {
     Branch right;
 };
 
-Node FAKENULL_NODE = {0, 0, {NULL}, {NULL}};
+static Node FAKENULL_NODE = {0, 0, {NULL}, {NULL}};
 static Node *const FAKENULL = &FAKENULL_NODE;
 
 void initNodeAllocator() {

@@ -8,7 +8,7 @@
 #include "serialize.h"
 #include "evaluate.h"
 
-static const bool LAZY = true;     // for debugging
+enum {LAZY=1};     // for debugging
 bool PROFILE = false;
 bool TRACE = false;
 int LOOP_COUNT = 0;
