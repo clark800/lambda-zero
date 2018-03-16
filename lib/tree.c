@@ -14,8 +14,8 @@ struct Node {
     Branch right;
 };
 
-Node FAKENULL_NODE = {0, 0, {NULL}, {NULL}};
-static Node *const FAKENULL = &FAKENULL_NODE;
+Node VOID_NODE = {1, 0, {NULL}, {NULL}};
+Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
     initPool(sizeof(Node), 32768);
@@ -26,11 +26,12 @@ void destroyNodeAllocator() {
 }
 
 Node* newBranchNode(int location, Node* left, Node* right) {
+    assert(left != NULL && right != NULL);
     Node* node = (Node*)allocate();
     node->location = location;
     node->referenceCount = 0;
-    node->left.child = left == NULL ? FAKENULL : left;
-    node->right.child = right == NULL ? FAKENULL : right;
+    node->left.child = left;
+    node->right.child = right;
     node->left.child->referenceCount += 1;
     node->right.child->referenceCount += 1;
     return node;
@@ -46,12 +47,11 @@ Node* newLeafNode(int location, long long type) {
 }
 
 bool isLeafNode(Node* node) {
-    assert(node != NULL);
     return node->left.child == NULL || node->right.child == NULL;
 }
 
 bool isBranchNode(Node* node) {
-    return !isLeafNode(node);
+    return node->left.child != NULL && node->right.child != NULL;
 }
 
 int getLocation(Node* node) {
@@ -61,7 +61,7 @@ int getLocation(Node* node) {
 void releaseNode(Node* node) {
     assert(node->referenceCount > 0);
     node->referenceCount -= 1;
-    if (node->referenceCount == 0 && node != FAKENULL) {
+    if (node->referenceCount <= 0) {
         if (!isLeafNode(node)) {
             releaseNode(node->left.child);
             releaseNode(node->right.child);
@@ -72,26 +72,26 @@ void releaseNode(Node* node) {
 
 Node* getLeft(Node* node) {
     assert(isBranchNode(node));
-    return node->left.child == FAKENULL ? NULL : node->left.child;
+    return node->left.child;
 }
 
 Node* getRight(Node* node) {
     assert(isBranchNode(node));
-    return node->right.child == FAKENULL ? NULL : node->right.child;
+    return node->right.child;
 }
 
 void setLeft(Node* node, Node* left) {
-    assert(isBranchNode(node));
+    assert(isBranchNode(node) && left != NULL);
     Node* oldLeft = node->left.child;
-    node->left.child = left == NULL ? FAKENULL : left;
+    node->left.child = left;
     node->left.child->referenceCount += 1;
     releaseNode(oldLeft);
 }
 
 void setRight(Node* node, Node* right) {
-    assert(isBranchNode(node));
+    assert(isBranchNode(node) && right != NULL);
     Node* oldRight = node->right.child;
-    node->right.child = right == NULL ? FAKENULL : right;
+    node->right.child = right;
     node->right.child->referenceCount += 1;
     releaseNode(oldRight);
 }
@@ -102,17 +102,17 @@ long long getType(Node* node) {
 }
 
 void setType(Node* node, long long type) {
-    assert(node->right.child == NULL);
+    assert(isLeafNode(node) && node->right.child == NULL);
     node->left.value = type;
 }
 
 long long getValue(Node* node) {
-    assert(node->left.child == NULL);
+    assert(isLeafNode(node) && node->left.child == NULL);
     return node->right.value;
 }
 
 void setValue(Node* node, long long value) {
-    assert(node->left.child == NULL);
+    assert(isLeafNode(node) && node->left.child == NULL);
     node->right.value = value;
 }
 

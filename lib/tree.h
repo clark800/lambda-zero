@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 typedef struct Node Node;
+extern Node* const VOID;
 
 void initNodeAllocator(void);
 void destroyNodeAllocator(void);

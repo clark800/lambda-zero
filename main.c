@@ -31,7 +31,7 @@ void interpret(const char* input) {
     size_t memoryUsageAtStart = getMemoryUsage();
     Hold* parsed = parse(input);
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
-    Hold* valueClosure = evaluate(getNode(parsed), NULL);
+    Hold* valueClosure = evaluate(getNode(parsed), VOID);
     if (!IO) {
         serialize(getClosureTerm(getNode(valueClosure)),
                 getClosureEnv(getNode(valueClosure)), stdout);

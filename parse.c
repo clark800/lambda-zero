@@ -215,7 +215,7 @@ void debugParseState(Node* token, Stack* stack) {
 }
 
 Hold* parseString(const char* input) {
-    Stack* stack = newStack(NULL);
+    Stack* stack = newStack(VOID);
     push(stack, newEOF());
 
     for (Hold* token = getFirstToken(input); true;
