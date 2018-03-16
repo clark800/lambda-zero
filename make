@@ -59,7 +59,7 @@ build() {
 }
 
 config_fast() {
-    CC_FLAGS="-O3 -flto $CC_FLAGS"
+    CC_FLAGS="-DNDEBUG -O3 -flto $CC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 
@@ -77,7 +77,7 @@ config_custom() {
 
 config_small() {
     config_custom
-    CC_FLAGS="-s -Os -flto $CC_FLAGS"
+    CC_FLAGS="-DNDEBUG -s -Os -flto $CC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 

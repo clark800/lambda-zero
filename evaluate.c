@@ -40,11 +40,11 @@ Node* getClosureEnv(Node* closure) {
 }
 
 static inline Node* newUpdateClosure(Node* closure) {
-    return newClosure(NULL, closure);
+    return newClosure(VOID, closure);
 }
 
 static inline bool isUpdateClosure(Node* closure) {
-    return getLeft(closure) == NULL && getRight(closure) != NULL;
+    return getLeft(closure) == VOID;
 }
 
 static inline bool isUpdateNext(Stack* stack) {
@@ -53,7 +53,7 @@ static inline bool isUpdateNext(Stack* stack) {
 
 static inline void initState(State* state, Node* root, Node* env) {
     state->node = hold(root);
-    state->stack = newStack(NULL);
+    state->stack = newStack(VOID);
     state->env = newStack(env);
 }
 

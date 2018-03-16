@@ -9,7 +9,7 @@ typedef struct Stack Stack;
 typedef struct Iterator Iterator;
 
 static inline Stack* newStack(Node* head) {
-    return (Stack*)hold(newBranchNode(0, head, NULL));
+    return (Stack*)hold(newBranchNode(0, head, VOID));
 }
 
 static inline void deleteStack(Stack* stack) {
@@ -25,7 +25,7 @@ static inline void setHead(Stack* stack, Node* head) {
 }
 
 static inline bool isEmpty(Stack* stack) {
-    return getHead(stack) == NULL;
+    return getHead(stack) == VOID;
 }
 
 static inline void push(Stack* stack, Node* node) {
@@ -50,9 +50,9 @@ static inline Node* peek(Stack* stack, size_t i) {
 
 static inline Node* peekSafe(Stack* stack, size_t i) {
     Node* node = getHead(stack); 
-    for (; i > 0 && node != NULL; i--)
+    for (; i > 0 && node != VOID; i--)
         node = getRight(node);
-    return node == NULL ? NULL : getLeft(node);
+    return node == VOID ? NULL : getLeft(node);
 }
 
 static inline Iterator* iterate(Stack* stack) {
@@ -68,7 +68,7 @@ static inline Node* cursor(Iterator* iterator) {
 }
 
 static inline bool end(Iterator* iterator) {
-    return (Node*)iterator == NULL;
+    return (Node*)iterator == VOID;
 }
 
 #endif

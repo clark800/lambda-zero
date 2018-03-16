@@ -178,7 +178,7 @@ Node* newStringLiteral(const char* lexeme) {
     const char* close = lexeme + getLexemeLength(lexeme) - 1;
     lexerErrorIf(close[0] != quote, lexeme, "missing end quote");
     Node* string = newNil(getLexemeLocation(lexeme));
-    Stack* stack = newStack(NULL);
+    Stack* stack = newStack(VOID);
     const char* p = lexeme + 1;
     for (; p < close; p = skipCharacter(p))
         push(stack, newInteger(location, decodeCharacter(p)));

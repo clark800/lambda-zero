@@ -58,7 +58,7 @@ static void bindWith(Node* node, Stack* parameterStack) {
 }
 
 void bind(Node* root) {
-    Stack* parameterStack = newStack(NULL);
+    Stack* parameterStack = newStack(VOID);
     bindWith(root, parameterStack);
     deleteStack(parameterStack);
 }
