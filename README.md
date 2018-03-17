@@ -9,7 +9,7 @@
 - The interpreter is less than 2000 lines of strict ANSI C99 and the binary is
   just ~60KB dynamically linked and stripped.
 - The interpreter can also be built for Linux x86-64 without the C standard
-  library in which case it is less than 2200 lines of strict ANSI C99 and
+  library in which case it is less than 2300 lines of strict ANSI C99 and
   generates a ~25KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
   memory allocator, error messaging, and rudimental built-in debugging and

@@ -1,14 +1,13 @@
 #include "lib/tree.h"
-#include "lib/stack.h"
+#include "lib/array.h"
 #include "ast.h"
 #include "lex.h"
 #include "bind.h"
 
-static unsigned long long findDebruijnIndex(Node* symbol, Stack* parameters) {
-    unsigned long long i = 0;
-    for (Iterator* it = iterate(parameters); !end(it); it = next(it), i++)
-        if (isSameToken(cursor(it), symbol))
-            return i + 1;
+static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
+    for (unsigned long long i = 1; i <= length(parameters); i++)
+        if (isSameToken(elementAt(parameters, length(parameters) - i), symbol))
+            return i;
     return 0;
 }
 
@@ -21,44 +20,59 @@ unsigned long long lookupBuiltinCode(Node* token) {
     return 0;
 }
 
-static void bindSymbol(Node* symbol, Stack* parameterStack) {
+static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
     unsigned long long code = lookupBuiltinCode(symbol);
     if (code > 0) {
         convertSymbolToBuiltin(symbol, code);
         return;
     }
-    unsigned long long index = findDebruijnIndex(symbol, parameterStack);
+    unsigned long long index = findDebruijnIndex(symbol, parameters);
     syntaxErrorIf(index == 0, symbol, "undefined symbol");
-    convertSymbolToReference(symbol, index);
+    unsigned long long localDepth = length(parameters) - globalDepth;
+    if (index > localDepth)
+        convertSymbolToGlobal(symbol, length(parameters) - index);
+    else
+        convertSymbolToReference(symbol, index);
 }
 
-static bool isDefined(Node* symbol, Stack* parameterStack) {
+static bool isDefined(Node* symbol, Array* parameters) {
     // internal tokens are exempted to allow e.g. tuples inside tuples
     return !isInternalToken(symbol) &&
         (lookupBuiltinCode(symbol) != 0 ||
-        findDebruijnIndex(symbol, parameterStack) != 0);
+        findDebruijnIndex(symbol, parameters) != 0);
 }
 
-static void bindWith(Node* node, Stack* parameterStack) {
+void bindWith(Node* node, Array* parameters, const Array* globals) {
     if (isSymbol(node)) {
-        bindSymbol(node, parameterStack);
+        bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
-        syntaxErrorIf(isDefined(getParameter(node), parameterStack),
+        syntaxErrorIf(isDefined(getParameter(node), parameters),
             getParameter(node), "symbol already defined");
-        push(parameterStack, getParameter(node));
-        bindWith(getBody(node), parameterStack);
-        release(pop(parameterStack));
+        append(parameters, getParameter(node));
+        bindWith(getBody(node), parameters, globals);
+        unappend(parameters);
     } else if (isApplication(node)) {
-        bindWith(getLeft(node), parameterStack);
-        bindWith(getRight(node), parameterStack);
-    } else {
-        // allow references so we can paste parsed trees in with sugars
-        assert(isReference(node) || isInteger(node) || isBuiltin(node));
+        bindWith(getLeft(node), parameters, globals);
+        bindWith(getRight(node), parameters, globals);
     }
 }
 
-void bind(Node* root) {
-    Stack* parameterStack = newStack(VOID);
-    bindWith(root, parameterStack);
-    deleteStack(parameterStack);
+Program bind(Hold* root, bool optimize) {
+    Node* node = getNode(root);
+    Array* parameters = newArray(2048);        // names of globals and locals
+    Array* globals = newArray(optimize ? 2048 : 0);   // values of globals
+    while (optimize && isApplication(node) && isLambda(getLeft(node))) {
+        Node* definedSymbol = getParameter(getLeft(node));
+        Node* definedValue = getRight(node);
+        syntaxErrorIf(isDefined(definedSymbol, parameters),
+            definedSymbol, "symbol already defined");
+
+        bindWith(definedValue, parameters, globals);
+        append(parameters, definedSymbol);
+        append(globals, definedValue);
+        node = getBody(getLeft(node));
+    }
+    bindWith(node, parameters, globals);
+    deleteArray(parameters);
+    return (Program){root, node, globals};
 }

@@ -17,7 +17,8 @@ Array* newArray(size_t initialCapacity) {
 }
 
 void deleteArray(Array* array) {
-    free(array->elements);
+    if (array->elements != NULL)
+        free(array->elements);      // may be NULL if capacity is zero
     free(array);
 }
 
@@ -30,11 +31,16 @@ void append(Array* array, void* value) {
     array->elements[array->length++] = value;
 }
 
-size_t length(Array* array) {
+void* unappend(Array* array) {
+    assert(array->length > 0);
+    return array->elements[array->length--];
+}
+
+size_t length(const Array* array) {
     return array->length;
 }
 
-void* elementAt(Array* array, size_t index) {
+void* elementAt(const Array* array, size_t index) {
     assert(index < array->length);
     return array->elements[index];
 }

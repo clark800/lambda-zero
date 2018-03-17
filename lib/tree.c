@@ -61,7 +61,7 @@ int getLocation(Node* node) {
 void releaseNode(Node* node) {
     assert(node->referenceCount > 0);
     node->referenceCount -= 1;
-    if (node->referenceCount <= 0) {
+    if (node->referenceCount == 0) {
         if (!isLeafNode(node)) {
             releaseNode(node->left.child);
             releaseNode(node->right.child);

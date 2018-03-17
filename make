@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 # http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Shell
 
 OUT="main"
@@ -32,8 +32,8 @@ echoexec() {
 }
 
 clean() {
-    rm -f "$OUT" *.o
-    rm -f lib/libc/sys.o
+    rm -f $OBJECTS
+    rm -f "$OUT"
 }
 
 is_up_to_date() {
@@ -47,12 +47,12 @@ build_libc() {
 
 build() {
     if ! is_up_to_date "$OUT"; then
-        echoexec $CC $CC_FLAGS $SOURCES
-        echoexec $CC $LINK_FLAGS -o "$OUT" $OBJECTS
-        rm -f *.o
-        echo
-        echo "BUILD SUCCESSFUL:"
-        ls -gG "$OUT"
+        echoexec $CC $CC_FLAGS $SOURCES &&
+        echoexec $CC $LINK_FLAGS -o "$OUT" $OBJECTS &&
+        rm -f $OBJECTS &&
+        echo &&
+        echo "BUILD SUCCESSFUL:" &&
+        ls -gG "$OUT" || (rm -f $OBJECTS ; false)
         return
     fi
     echo "$OUT up-to-date"
@@ -77,7 +77,7 @@ config_custom() {
 
 config_small() {
     config_custom
-    CC_FLAGS="-DNDEBUG -s -Os -flto $CC_FLAGS"
+    CC_FLAGS="-s -Os -flto $CC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 

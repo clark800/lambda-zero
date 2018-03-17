@@ -11,12 +11,14 @@
 
 long long INPUT_INDEX = 0;
 
-static inline Node* toBoolean(long long value) {
-    return value == 0 ? FALSE : TRUE;
+enum Sign {NEGATIVE=-1, ZERO=0, POSITIVE=1};
+
+static inline enum Sign sgn(long long n) {
+    return n == 0 ? ZERO : (n > 0 ? POSITIVE : NEGATIVE);
 }
 
-static inline int sgn(long long n) {
-    return n == 0 ? 0 : (n > 0 ? 1 : -1);
+static inline Node* toBoolean(long long value) {
+    return value == 0 ? FALSE : TRUE;
 }
 
 // note: it is important to check for overflow before it occurs because

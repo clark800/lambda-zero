@@ -3,9 +3,10 @@
 
 #include <stdbool.h>
 #include "lib/tree.h"
+#include "ast.h"
 
 extern bool DEBUG;
 
-Hold* parse(const char* input);
+Program parse(const char* input, bool optimize);
 
 #endif
