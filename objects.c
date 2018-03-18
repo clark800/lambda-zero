@@ -20,7 +20,7 @@ const char* OBJECTS =
     "($get 0)\n"                                            // lazy input list
     "($ -> $)";                                             // terminator
 
-Hold* OBJECTS_HOLD = NULL;
+Program PROGRAM;
 Node* IDENTITY = NULL;
 Node* NIL = NULL;
 Node* TRUE = NULL;
@@ -38,9 +38,9 @@ Node* getElement(Node* node, unsigned int n) {
     return getLeft(node);
 }
 
-void initObjects(Hold* objectsHold) {
-    OBJECTS_HOLD = objectsHold;
-    Node* objects = getNode(OBJECTS_HOLD);
+void initObjects(Program program) {
+    PROGRAM = program;
+    Node* objects = getNode(program.root);
     negateLocations(objects);
     IDENTITY = getElement(objects, 0);
     PARAMETERX = getParameter(IDENTITY);
@@ -55,7 +55,7 @@ void initObjects(Hold* objectsHold) {
 }
 
 void deleteObjects() {
-    release(OBJECTS_HOLD);
+    deleteProgram(PROGRAM);
 }
 
 Node* newNil(int location) {

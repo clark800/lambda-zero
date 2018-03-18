@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include "lib/tree.h"
+#include "lib/array.h"
 
 // a symbol identifies a thing e.g. the parameter *named* x
 // constructed from (x -> y) is not a symbol
@@ -21,10 +22,28 @@
 // leaf = atom | parameter
 
 // INTEGER must be zero and BUILTIN must be last
-enum LeafTypes {INTEGER, NAME, OPERATOR, PARAMETER, BUILTIN};
+enum LeafType {INTEGER=0, NAME, OPERATOR, PARAMETER, BUILTIN};
 
-enum BuiltinCodes {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS, EQUAL, NOTEQUAL,
-      LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL, PUT, GET};
+// GLOBAL is not a builtin; it's a marker so that we can store global indices
+// without colliding with builtin codes
+enum BuiltinCode {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS, EQUAL, NOTEQUAL,
+      LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL, PUT, GET,
+      GLOBAL};
+
+enum NodeType {
+    N_INTEGER, N_BUILTIN, N_REFERENCE, N_GLOBAL, N_LAMBDA, N_APPLICATION};
+
+typedef struct Program Program;
+struct Program {
+    Hold* root;
+    Node* main;
+    Array* globals;
+};
+
+static inline void deleteProgram(Program program) {
+    release(program.root);
+    deleteArray(program.globals);
+}
 
 // =============================================
 // Functions to test if a node is a certain type
@@ -47,11 +66,16 @@ static inline bool isParameter(Node* node) {
 }
 
 static inline bool isBuiltin(Node* node) {
-    return isLeafNode(node) && getType(node) >= BUILTIN;
+    return isLeafNode(node) && (
+            getType(node) >= BUILTIN && getType(node) < GLOBAL);
 }
 
 static inline bool isReference(Node* node) {
     return isLeafNode(node) && getType(node) < 0;
+}
+
+static inline bool isGlobal(Node* node) {
+    return isLeafNode(node) && getType(node) >= GLOBAL;
 }
 
 static inline bool isSymbol(Node* node) {
@@ -66,6 +90,19 @@ static inline bool isLambda(Node* node) {
     return isBranchNode(node) && isParameter(getLeft(node));
 }
 
+static inline enum NodeType getNodeType(Node* node) {
+    if (isBranchNode(node))
+        return isParameter(getLeft(node)) ? N_LAMBDA : N_APPLICATION;
+    long long type = getType(node);
+    if (type < 0)
+        return N_REFERENCE;
+    if (type == 0)
+        return N_INTEGER;
+    if (type < GLOBAL)
+        return N_BUILTIN;
+    return N_GLOBAL;
+}
+
 // ====================================
 // Functions to get a value from a node
 // ====================================
@@ -78,6 +115,11 @@ static inline unsigned long long getDebruijnIndex(Node* reference) {
 static inline unsigned long long getBuiltinCode(Node* builtin) {
     assert(isBuiltin(builtin));
     return (unsigned long long)getType(builtin);
+}
+
+static inline unsigned long long getGlobalIndex(Node* global) {
+    assert(isGlobal(global));
+    return (unsigned long long)(getType(global) - GLOBAL);
 }
 
 static inline long long getInteger(Node* integer) {
@@ -144,6 +186,12 @@ static inline void convertSymbolToBuiltin(Node* symbol,
     unsigned long long code) {
     assert(isSymbol(symbol) && code >= BUILTIN);
     setType(symbol, (long long)code);
+}
+
+static inline void convertSymbolToGlobal(Node* symbol,
+        unsigned long long index) {
+    assert(isSymbol(symbol));
+    setType(symbol, (long long)(GLOBAL + index));
 }
 
 static inline void convertNameToParameter(Node* symbol) {

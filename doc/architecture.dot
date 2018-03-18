@@ -26,6 +26,7 @@ digraph graphname {
             }
         }
         serialize;
+        closure;
         subgraph cluster_evaluator {
             label="evaluator";
             evaluate;
@@ -47,15 +48,18 @@ digraph graphname {
     evaluate -> lex;
     evaluate -> serialize;
     evaluate -> builtins;
+    evaluate -> closure;
 
     lex -> scan;
     lex -> ast;
     lex -> objects;
 
+    main -> ast;
     main -> parse;
     main -> evaluate;
     main -> serialize;
     main -> objects;
+    main -> closure;
 
     objects -> ast;
 
@@ -72,4 +76,5 @@ digraph graphname {
 
     serialize -> ast;
     serialize -> lex;
+    serialize -> closure;
 }

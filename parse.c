@@ -237,12 +237,10 @@ void debugStage(const char* label, Node* node) {
     }
 }
 
-Hold* parse(const char* input) {
+Program parse(const char* input, bool optimize) {
     Hold* result = parseString(input);
     debugStage("Parsed", getNode(result));
     result = replaceHold(result, desugar(getNode(result)));
     debugStage("Desugared", getNode(result));
-    bind(getNode(result));
-    debugStage("Preprocessed", getNode(result));
-    return result;
+    return bind(result, optimize);
 }

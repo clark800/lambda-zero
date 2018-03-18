@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "lib/tree.h"
+#include "ast.h"
 
 extern bool IO;
 extern const char* OBJECTS;
@@ -18,7 +19,7 @@ extern Node* PRINT;
 extern Node* INPUT;
 extern Node* GET_BUILTIN;
 
-void initObjects(Hold* objectsHold);
+void initObjects(Program program);
 void deleteObjects(void);
 
 Node* newNil(int location);

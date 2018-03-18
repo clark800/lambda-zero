@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
+#include "lib/array.h"
 
-void serialize(Node* root, Node* env, FILE* stream);
+void serialize(Node* root, Node* locals, const Array* globals, FILE* stream);
 
 void debug(const char* message);
 void debugLine(void);

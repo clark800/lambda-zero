@@ -2,7 +2,8 @@
 #define BIND_H
 
 #include "lib/tree.h"
+#include "ast.h"
 
-void bind(Node* root);
+Program bind(Hold* root, bool optimize);
 
 #endif

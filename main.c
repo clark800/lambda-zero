@@ -4,6 +4,8 @@
 #include "lib/tree.h"
 #include "lib/freelist.h"
 #include "lib/errors.h"
+#include "ast.h"
+#include "closure.h"
 #include "objects.h"
 #include "serialize.h"
 #include "parse.h"
@@ -29,17 +31,17 @@ void checkForMemoryLeak(const char* label, size_t expectedUsage) {
 
 void interpret(const char* input) {
     size_t memoryUsageAtStart = getMemoryUsage();
-    Hold* parsed = parse(input);
+    Program program = parse(input, true);
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
-    Hold* valueClosure = evaluate(getNode(parsed), VOID);
+    Hold* valueClosure = evaluate(program.main, VOID, program.globals);
     if (!IO) {
-        serialize(getClosureTerm(getNode(valueClosure)),
-                getClosureEnv(getNode(valueClosure)), stdout);
+        serialize(getTerm(getNode(valueClosure)),
+                  getLocals(getNode(valueClosure)), program.globals, stdout);
         fputs("\n", stdout);
     }
     release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
-    release(parsed);
+    deleteProgram(program);
     checkForMemoryLeak("interpret", memoryUsageAtStart);
 }
 
@@ -58,7 +60,7 @@ char* readScript(const char* filename) {
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL);
     initNodeAllocator();
-    initObjects(parse(OBJECTS));
+    initObjects(parse(OBJECTS, false));
     char* program = argv[0];
     while (--argc > 0 && (*++argv)[0] == '-')
         for (char* flag = argv[0] + 1; *flag != '\0'; flag++)

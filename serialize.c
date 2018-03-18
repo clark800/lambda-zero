@@ -1,7 +1,9 @@
 #include <assert.h>
 #include "lib/lltoa.h"
 #include "lib/tree.h"
+#include "lib/array.h"
 #include "ast.h"
+#include "closure.h"
 #include "lex.h"
 #include "serialize.h"
 
@@ -48,6 +50,13 @@ void serializeAST(Node* node, FILE* stream) {
         serializeInteger(getInteger(node), stream);
     } else if (isNewline(node)) {
         fputs("\\n", stream);
+    } else if (isReference(node)) {
+        printToken(node, stream);
+        fputs("#", stream);
+        serializeInteger((long long)getDebruijnIndex(node), stream);
+    } else if (isGlobal(node)) {
+        printToken(node, stream);
+        fputs("#G", stream);
     } else {
         printToken(node, stream);
     }
@@ -67,27 +76,28 @@ void debugStack(Stack* stack, Node* (*select)(Node*)) {
     debug("]");
 }
 
-void serializeNode(Node* node, Stack* env, unsigned int depth, FILE* stream) {
+void serializeNode(Node* node, Stack* locals, const Array* globals,
+        unsigned int depth, FILE* stream) {
     if (isApplication(node)) {
         fputs("(", stream);
-        serializeNode(getLeft(node), env, depth, stream);
+        serializeNode(getLeft(node), locals, globals, depth, stream);
         fputs(" ", stream);
-        serializeNode(getRight(node), env, depth, stream);
+        serializeNode(getRight(node), locals, globals, depth, stream);
         fputs(")", stream);
     } else if (isLambda(node)) {
         fputs("(", stream);
         printToken(getParameter(node), stream);
         fputs(" -> ", stream);
-        serializeNode(getBody(node), env, depth + 1, stream);
+        serializeNode(getBody(node), locals, globals, depth + 1, stream);
         fputs(")", stream);
     } else if (isReference(node)) {
         unsigned long long debruijn = getDebruijnIndex(node);
         if (debruijn > depth) {
-            Node* closure = peek(env, debruijn - depth - 1);
-            Node* nextNode = getLeft(closure);
-            Stack* nextEnv = newStack(getRight(closure));
-            serializeNode(nextNode, nextEnv, 0, stream);
-            deleteStack(nextEnv);
+            Node* closure = peek(locals, debruijn - depth - 1);
+            Node* nextNode = getTerm(closure);
+            Stack* newLocals = newStack(getLocals(closure));
+            serializeNode(nextNode, newLocals, globals, 0, stream);
+            deleteStack(newLocals);
         } else {
             printToken(node, stream);
         }
@@ -95,13 +105,18 @@ void serializeNode(Node* node, Stack* env, unsigned int depth, FILE* stream) {
         serializeInteger(getInteger(node), stream);
     } else if (isBuiltin(node)) {
         printToken(node, stream);
+    } else if (isGlobal(node)) {
+        Node* value = elementAt(globals, getGlobalIndex(node));
+        // all references in a global refer to un-applied parameters
+        // so we know the locals stack will never be accessed
+        serializeNode(value, NULL, globals, 0, stream);
     } else {
         assert(false);
     }
 }
 
-void serialize(Node* root, Node* env, FILE* stream) {
-    Stack* envStack = newStack(env);
-    serializeNode(root, envStack, 0, stream);
-    deleteStack(envStack);
+void serialize(Node* root, Node* locals, const Array* globals, FILE* stream) {
+    Stack* localStack = newStack(locals);
+    serializeNode(root, localStack, globals, 0, stream);
+    deleteStack(localStack);
 }

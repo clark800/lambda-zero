@@ -3,12 +3,11 @@
 
 #include <stdbool.h>
 #include "lib/tree.h"
+#include "lib/array.h"
 
 extern bool PROFILE;
 extern bool TRACE;
 
-Node* getClosureTerm(Node* closure);
-Node* getClosureEnv(Node* closure);
-Hold* evaluate(Node* term, Node* env);
+Hold* evaluate(Node* term, Node* locals, const Array* globals);
 
 #endif
