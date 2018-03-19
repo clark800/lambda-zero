@@ -5,8 +5,9 @@
 #include "lib/tree.h"
 #include "lib/stack.h"
 #include "lib/array.h"
+#include "closure.h"
 
-void serialize(Node* root, Node* locals, const Array* globals, FILE* stream);
+void serialize(Closure* closure, const Array* globals, FILE* stream);
 
 void debug(const char* message);
 void debugLine(void);

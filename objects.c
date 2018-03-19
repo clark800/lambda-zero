@@ -32,25 +32,19 @@ Node* PRINT = NULL;
 Node* INPUT = NULL;
 Node* GET_BUILTIN = NULL;
 
-Node* getElement(Node* node, unsigned int n) {
-    for (unsigned int i = 0; i < n; i++)
-        node = getRight(node);
-    return getLeft(node);
-}
-
 void initObjects(Program program) {
     PROGRAM = program;
     Node* objects = getNode(program.root);
     negateLocations(objects);
-    IDENTITY = getElement(objects, 0);
+    IDENTITY = getListElement(objects, 0);
     PARAMETERX = getParameter(IDENTITY);
     REFERENCEX = getBody(IDENTITY);
-    FALSE = getElement(objects, 1);
-    NIL = getElement(objects, 2);
+    FALSE = getListElement(objects, 1);
+    NIL = getListElement(objects, 2);
     TRUE = getBody(NIL);
-    PRINT = getElement(objects, 3);
+    PRINT = getListElement(objects, 3);
     YCOMBINATOR = getLeft(PRINT);
-    INPUT = getElement(objects, 4);
+    INPUT = getListElement(objects, 4);
     GET_BUILTIN = getLeft(INPUT);
 }
 

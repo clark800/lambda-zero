@@ -33,5 +33,6 @@ Hold* replaceHold(Hold* oldHold, Hold* newHold);
 Node* getNode(Hold* hold);
 
 void negateLocations(Node* node);
+Node* getListElement(Node* node, unsigned long long n);
 
 #endif
