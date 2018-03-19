@@ -15,50 +15,9 @@ bool PROFILE = false;
 bool TRACE = false;
 int LOOP_COUNT = 0;
 
-typedef struct State State;
-
-// note: cannot use an array for locals because it is a cactus stack
-struct State {
-    Hold* node;
-    Stack* stack;
-    Stack* locals;
-};
-
 static inline void errorIf(bool condition, Node* token, const char* message) {
     if (condition)
         throwTokenError("Evaluation", message, token);
-}
-
-static inline Node* newUpdate(Node* closure) {
-    return newClosure(VOID, closure);
-}
-
-static inline bool isUpdate(Node* closure) {
-    return getLeft(closure) == VOID;
-}
-
-static inline Node* getUpdateClosure(Node* update) {
-    return getRight(update);
-}
-
-static inline bool isUpdateNext(Stack* stack) {
-    return !isEmpty(stack) && isUpdate(peek(stack, 0));
-}
-
-static inline void initState(State* state, Node* root, Node* locals) {
-    state->node = hold(root);
-    state->stack = newStack(VOID);
-    state->locals = newStack(locals);
-}
-
-static inline void deleteState(State* state) {
-    release(state->node);
-    deleteStack(state->stack);
-    deleteStack(state->locals);
-}
-
-static inline void setNode(State* state, Node* node) {
-    state->node = replaceHold(state->node, hold(node));
 }
 
 static inline void moveStackItem(Stack* fromStack, Stack* toStack) {
@@ -67,55 +26,73 @@ static inline void moveStackItem(Stack* fromStack, Stack* toStack) {
     release(item);
 }
 
-static inline void applyUpdate(State* state) {
-    Hold* update = pop(state->stack);
-    Node* closure = getUpdateClosure(getNode(update));
-    updateClosure(closure, getNode(state->node), getHead(state->locals));
-    release(update);
+static inline bool isUpdateNext(Stack* stack) {
+    return !isEmpty(stack) && isUpdate(peek(stack, 0));
 }
 
-static inline void applyUpdates(State* state) {
-    while (isUpdateNext(state->stack))
-        applyUpdate(state);
+static inline void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
+    while (isUpdateNext(stack)) {
+        Hold* update = pop(stack);
+        Closure* closureToUpdate = getUpdateClosure(getNode(update));
+        setClosure(closureToUpdate, evaluatedClosure);
+        release(update);
+    }
 }
 
-static inline Node* getReferencedClosure(Node* reference, Stack* locals) {
-    return peek(locals, getDebruijnIndex(reference) - 1);
+static inline Closure* getReferencedClosure(Node* reference, Node* locals) {
+    return getListElement(locals, getDebruijnIndex(reference) - 1);
 }
 
-static inline Node* getArgumentClosure(Node* argument, Stack* locals) {
-    if (isReference(argument))     // short-circuit optimization
-        return getReferencedClosure(argument, locals);
-    return newClosure(argument, getHead(locals));
+static inline Node* getGlobalValue(Node* global, const Array* globals) {
+    return elementAt(globals, getGlobalIndex(global));
 }
 
-static inline void evaluateApplicationNode(State* state) {
-    Node* function = getLeft(getNode(state->node));
-    Node* argument = getRight(getNode(state->node));
-    push(state->stack, getArgumentClosure(argument, state->locals));
-    setNode(state, function);
+static inline Closure* optimizeClosure(Node* node, Node* locals,
+        const Array* globals) {
+    // the default case works for all node types;
+    // the other cases are short-circuit optmizations
+    switch (getNodeType(node)) {
+        case N_REFERENCE: return getReferencedClosure(node, locals);
+        case N_BUILTIN:
+        case N_INTEGER: return newClosure(node, VOID);
+        case N_GLOBAL: return newClosure(getGlobalValue(node, globals), VOID);
+        default: return newClosure(node, locals);
+    }
 }
 
-static inline void evaluateLambdaNode(State* state) {
-    moveStackItem(state->stack, state->locals);
-    Node* lambda = getNode(state->node);
-    setNode(state, getBody(lambda));
+static inline void evaluateApplicationNode(Closure* closure, Stack* stack,
+        const Array* globals) {
+    Node* application = getTerm(closure);
+    Node* lambda = getLeft(application);
+    Node* argument = getRight(application);
+    push(stack, optimizeClosure(argument, getLocals(closure), globals));
+    setTerm(closure, lambda);
 }
 
-static inline void evaluateReferenceNode(State* state) {
-    Node* closure = getReferencedClosure(getNode(state->node), state->locals);
-    if (LAZY && !isLambda(getTerm(closure)))
-        push(state->stack, newUpdate(closure));
-    setNode(state, getTerm(closure));
-    setHead(state->locals, getLocals(closure));
+static inline void evaluateLambdaNode(Closure* closure, Stack* stack) {
+    moveStackItem(stack, (Stack*)closure);
+    setTerm(closure, getBody(getTerm(closure)));
 }
 
-static inline void evaluateGlobalNode(State* state, const Array* globals) {
-   setNode(state, elementAt(globals, getGlobalIndex(getNode(state->node))));
-   setHead(state->locals, VOID);
+static inline bool isValue(Node* node) {
+    return (isLambda(node) || isInteger(node) ||
+            isBuiltin(node) || isGlobal(node));
 }
 
-static inline Hold* evaluateClosure(Node* closure, const Array* globals) {
+static inline void evaluateReferenceNode(Closure* closure, Stack* stack) {
+    Closure* referencedClosure = getReferencedClosure(
+            getTerm(closure), getLocals(closure));
+    if (LAZY && !isValue(getTerm(referencedClosure)))
+        push(stack, newUpdate(referencedClosure));
+    setClosure(closure, referencedClosure);
+}
+
+static inline void evaluateGlobalNode(Closure* closure, const Array* globals) {
+   setTerm(closure, getGlobalValue(getTerm(closure), globals));
+   setLocals(closure, VOID);
+}
+
+static inline Hold* evaluateClosure(Closure* closure, const Array* globals) {
     return evaluate(getTerm(closure), getLocals(closure), globals);
 }
 
@@ -144,51 +121,49 @@ static inline Node* evaluateBuiltin(Node* builtin, Stack* stack,
     return computeBuiltin(builtin, left, right);
 }
 
-static inline void evaluateBuiltinNode(State* state, const Array* globals) {
-    applyUpdates(state);
-    setNode(state,
-        evaluateBuiltin(getNode(state->node), state->stack, globals));
+static inline void evaluateBuiltinNode(Closure* closure, Stack* stack,
+        const Array* globals) {
+    applyUpdates(closure, stack);
+    setTerm(closure, evaluateBuiltin(getTerm(closure), stack, globals));
 }
 
-static inline Hold* getResult(State* state) {
-    return hold(newClosure(getNode(state->node), getHead(state->locals)));
+static inline Hold* getIntegerResult(Closure* closure, Stack* stack) {
+    applyUpdates(closure, stack);
+    if (!isEmpty(stack))
+        errorIf(true, getTerm(peek(stack, 0)), "extra argument");
+    return hold(closure);
 }
 
-static inline Hold* getIntegerResult(State* state) {
-    applyUpdates(state);
-    if (!isEmpty(state->stack))
-        errorIf(true, getTerm(peek(state->stack, 0)), "extra argument");
-    return getResult(state);
-}
-
-static inline void debugState(Node* node, Stack* stack, Stack* locals) {
+static inline void debugState(Closure* closure, Stack* stack) {
     if (TRACE) {
         debugLine();
-        debug("node: ");
-        debugAST(node);
+        debug("term: ");
+        debugAST(getTerm(closure));
         debug("\nstack: ");
-        debugStack(stack, getTerm);
+        debugStack(stack, (Node* (*)(Node*))getTerm);
         debug("\nlocals: ");
-        debugStack(locals, getTerm);
+        debugStack((Stack*)closure, (Node* (*)(Node*))getTerm);
         debug("\n");
     }
 }
 
-static inline Hold* evaluateNode(State* state, const Array* globals) {
+static inline Hold* evaluateNode(
+        Closure* closure, Stack* stack, const Array* globals) {
     while (true) {
-        debugState(getNode(state->node), state->stack, state->locals);
+        debugState(closure, stack);
         LOOP_COUNT += 1;
-        switch (getNodeType(getNode(state->node))) {
-            case N_APPLICATION: evaluateApplicationNode(state); break;
-            case N_REFERENCE: evaluateReferenceNode(state); break;
-            case N_BUILTIN: evaluateBuiltinNode(state, globals); break;
-            case N_GLOBAL: evaluateGlobalNode(state, globals); break;
-            case N_INTEGER: return getIntegerResult(state);
+        switch (getNodeType(getTerm(closure))) {
+            case N_APPLICATION:
+                evaluateApplicationNode(closure, stack, globals); break;
+            case N_REFERENCE: evaluateReferenceNode(closure, stack); break;
+            case N_BUILTIN: evaluateBuiltinNode(closure, stack, globals); break;
+            case N_GLOBAL: evaluateGlobalNode(closure, globals); break;
+            case N_INTEGER: return getIntegerResult(closure, stack);
             case N_LAMBDA:
-                applyUpdates(state);
-                if (isEmpty(state->stack))
-                    return getResult(state);
-                evaluateLambdaNode(state);
+                applyUpdates(closure, stack);
+                if (isEmpty(stack))
+                    return hold(closure);
+                evaluateLambdaNode(closure, stack);
         }
     }
 }
@@ -202,10 +177,11 @@ static inline void debugLoopCount(int loopCount) {
 }
 
 Hold* evaluate(Node* term, Node* locals, const Array* globals) {
-    State state;
-    initState(&state, term, locals);
-    Hold* result = evaluateNode(&state, globals);
-    deleteState(&state);
+    Hold* closure = hold(newClosure(term, locals));
+    Stack* stack = newStack(VOID);
+    Hold* result = evaluateNode(getNode(closure), stack, globals);
+    release(closure);
+    deleteStack(stack);
     debugLoopCount(LOOP_COUNT);
     return result;
 }

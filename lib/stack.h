@@ -9,7 +9,7 @@ typedef struct Stack Stack;
 typedef struct Iterator Iterator;
 
 static inline Stack* newStack(Node* head) {
-    return (Stack*)hold(newBranchNode(0, head, VOID));
+    return (Stack*)hold(newBranchNode(0, VOID, head));
 }
 
 static inline void deleteStack(Stack* stack) {
@@ -17,11 +17,11 @@ static inline void deleteStack(Stack* stack) {
 }
 
 static inline Node* getHead(Stack* stack) {
-    return getLeft((Node*)stack);
+    return getRight((Node*)stack);
 }
 
 static inline void setHead(Stack* stack, Node* head) {
-    setLeft((Node*)stack, head);
+    setRight((Node*)stack, head);
 }
 
 static inline bool isEmpty(Stack* stack) {
@@ -42,10 +42,7 @@ static inline Hold* pop(Stack* stack) {
 
 static inline Node* peek(Stack* stack, size_t i) {
     assert(!isEmpty(stack));
-    Node* node = getHead(stack); 
-    for (; i > 0; i--)
-        node = getRight(node);
-    return getLeft(node);
+    return getListElement(getHead(stack), i);
 }
 
 static inline Node* peekSafe(Stack* stack, size_t i) {

@@ -141,3 +141,9 @@ void negateLocations(Node* node) {
         negateLocations(node->right.child);
     }
 }
+
+Node* getListElement(Node* node, unsigned long long n) {
+    for (unsigned long long i = 0; i < n; i++)
+        node = node->right.child;
+    return node->left.child;
+}

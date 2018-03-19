@@ -76,7 +76,7 @@ void debugStack(Stack* stack, Node* (*select)(Node*)) {
     debug("]");
 }
 
-void serializeNode(Node* node, Stack* locals, const Array* globals,
+void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     if (isApplication(node)) {
         fputs("(", stream);
@@ -93,11 +93,8 @@ void serializeNode(Node* node, Stack* locals, const Array* globals,
     } else if (isReference(node)) {
         unsigned long long debruijn = getDebruijnIndex(node);
         if (debruijn > depth) {
-            Node* closure = peek(locals, debruijn - depth - 1);
-            Node* nextNode = getTerm(closure);
-            Stack* newLocals = newStack(getLocals(closure));
-            serializeNode(nextNode, newLocals, globals, 0, stream);
-            deleteStack(newLocals);
+            Closure* next = getListElement(locals, debruijn - depth - 1);
+            serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
         } else {
             printToken(node, stream);
         }
@@ -107,16 +104,12 @@ void serializeNode(Node* node, Stack* locals, const Array* globals,
         printToken(node, stream);
     } else if (isGlobal(node)) {
         Node* value = elementAt(globals, getGlobalIndex(node));
-        // all references in a global refer to un-applied parameters
-        // so we know the locals stack will never be accessed
-        serializeNode(value, NULL, globals, 0, stream);
+        serializeNode(value, locals, globals, 0, stream);
     } else {
         assert(false);
     }
 }
 
-void serialize(Node* root, Node* locals, const Array* globals, FILE* stream) {
-    Stack* localStack = newStack(locals);
-    serializeNode(root, localStack, globals, 0, stream);
-    deleteStack(localStack);
+void serialize(Closure* closure, const Array* globals, FILE* stream) {
+    serializeNode(getTerm(closure), getLocals(closure), globals, 0, stream);
 }
