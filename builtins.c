@@ -7,6 +7,7 @@
 #include "lib/errors.h"
 #include "ast.h"
 #include "objects.h"
+#include "closure.h"
 #include "builtins.h"
 
 long long INPUT_INDEX = 0;
@@ -111,4 +112,18 @@ Node* computeBuiltin(Node* builtin, long long left, long long right) {
         case GET: return evaluateGet(builtin, left);
         default: assert(false); return NULL;
     }
+}
+
+long long getIntegerArgument(Node* builtin, Closure* closure) {
+    if (closure == NULL)
+        return 0;
+    Node* integer = getTerm(closure);
+    errorIf(!isInteger(integer), builtin, "expected integer argument");
+    return getInteger(integer);
+}
+
+Node* evaluateBuiltin(Node* builtin, Closure* left, Closure* right) {
+    long long leftInteger = getIntegerArgument(builtin, left);
+    long long rightInteger = getIntegerArgument(builtin, right);
+    return computeBuiltin(builtin, leftInteger, rightInteger);
 }

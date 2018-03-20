@@ -1,13 +1,14 @@
 // to build this diagram, install graphviz and run the following command:
 // dot -o architecture.pdf -T pdf architecture.dot
+// note: ordering=out seems to be not working due to a bug in graphviz
 digraph graphname {
     size=6;
-    ranksep=1;
-    nodesep=0.5;
+    ranksep=1.2;
+    nodesep=0.8;
+    mclimit=2;
 
     subgraph cluster_interpreter {
         label="interpreter";
-        main;
         subgraph cluster_parser {
             label="parser";
             desugar;
@@ -25,6 +26,7 @@ digraph graphname {
                 }
             }
         }
+        main;
         serialize;
         closure;
         subgraph cluster_evaluator {
@@ -34,18 +36,21 @@ digraph graphname {
         }
     }
 
+    objects -> ast;
+
     bind -> ast;
     bind -> lex;
 
     builtins -> ast;
     builtins -> objects;
+    builtins -> lex;
+    builtins -> closure;
 
     desugar -> ast;
     desugar -> lex;
     desugar -> objects;
 
     evaluate -> ast;
-    evaluate -> lex;
     evaluate -> serialize;
     evaluate -> builtins;
     evaluate -> closure;
@@ -54,27 +59,25 @@ digraph graphname {
     lex -> ast;
     lex -> objects;
 
-    main -> ast;
+    serialize -> closure;
+    serialize -> ast;
+    serialize -> lex;
+
     main -> parse;
     main -> evaluate;
     main -> serialize;
     main -> objects;
     main -> closure;
-
-    objects -> ast;
+    main -> ast;
 
     operators -> ast;
     operators -> lex;
 
-    parse -> ast;
     parse -> lex;
     parse -> operators;
     parse -> objects;
     parse -> desugar;
     parse -> bind;
     parse -> serialize;
-
-    serialize -> ast;
-    serialize -> lex;
-    serialize -> closure;
+    parse -> ast;
 }

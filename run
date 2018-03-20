@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 # use bash process substitution to prepend prelude to source file
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$DIR/main" <(cat "$DIR/test/prelude" "${1-"-"}")
+# read input first to check for errors accessing files
+INPUT=$(cat "$DIR/test/prelude" "${1-"-"}")
+"$DIR/main" <(echo "$INPUT")
