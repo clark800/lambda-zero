@@ -101,12 +101,7 @@ void syntaxErrorIf(bool condition, Node* token, const char* message) {
 }
 
 bool isNameCharacter(char c) {
-    return isalpha(c) || c == '_' || c == '\'' || c == '$';
-}
-
-bool isOperatorCharacter(char c) {
-    return c == '\n' || (
-        !isspace(c) && !iscntrl(c) && !isNameCharacter(c) && !isdigit(c));
+    return isOperandCharacter(c) && c != '"';
 }
 
 bool isDigitCharacter(char c) {
@@ -131,19 +126,20 @@ bool isIfSugarLexeme(const char* lexeme) {
 
 bool isNameLexeme(const char* lexeme) {
     return isLexemeType(lexeme, isNameCharacter) &&
-        !isIfSugarLexeme(lexeme) && lexeme[0] != '\'';
+        !isIfSugarLexeme(lexeme) && !isQuoteCharacter(lexeme[0]) &&
+        !isDigitCharacter(lexeme[0]);
 }
 
 bool isOperatorLexeme(const char* lexeme) {
-    return isLexemeType(lexeme, isOperatorCharacter) || isIfSugarLexeme(lexeme);
+    return isDelimiterCharacter(lexeme[0]) ||
+        isLexemeType(lexeme, isOperatorCharacter) || isIfSugarLexeme(lexeme);
 }
 
 bool isIntegerLexeme(const char* lexeme) {
-    const char* digits = lexeme[0] == '-' ? lexeme + 1 : lexeme;
-    return isLexemeType(digits, isDigitCharacter);
+    return isLexemeType(lexeme, isDigitCharacter);
 }
 
-const char* skipCharacter(const char* start) {
+const char* skipQuoteCharacter(const char* start) {
     return start[0] == '\\' ? start + 2 : start + 1;
 }
 
@@ -157,16 +153,16 @@ char decodeCharacter(const char* start) {
         case '\"': return '\"';
         case '`': return '`';
         default:
-            lexerErrorIf(true, start, "invalid escape sequence");
+            lexerErrorIf(true, start, "invalid escape sequence after");
             return 0;
     }
 }
 
-Node* newCharacter(const char* lexeme) {
+Node* newCharacterLiteral(const char* lexeme) {
     char quote = lexeme[0];
     const char* end = lexeme + getLexemeLength(lexeme) - 1;
     lexerErrorIf(end[0] != quote, lexeme, "missing end quote");
-    const char* skip = skipCharacter(lexeme + 1);
+    const char* skip = skipQuoteCharacter(lexeme + 1);
     lexerErrorIf(skip != end, lexeme, "invalid character literal");
     unsigned char code = (unsigned char)decodeCharacter(lexeme + 1);
     return newInteger(getLexemeLocation(lexeme), code);
@@ -180,7 +176,7 @@ Node* newStringLiteral(const char* lexeme) {
     Node* string = newNil(getLexemeLocation(lexeme));
     Stack* stack = newStack(VOID);
     const char* p = lexeme + 1;
-    for (; p < close; p = skipCharacter(p))
+    for (; p < close; p = skipQuoteCharacter(p))
         push(stack, newInteger(location, decodeCharacter(p)));
     lexerErrorIf(p != close, lexeme, "invalid string literal");
     for (Iterator* it = iterate(stack); !end(it); it = next(it))
@@ -206,12 +202,10 @@ const char* findInLexeme(const char* lexeme, const char* characters) {
 }
 
 Node* createToken(const char* lexeme) {
-    if (lexeme[0] == '\0' || lexeme[0] == ' ')
-        return newOperator(getLexemeLocation(lexeme));
     if (lexeme[0] == '"')
         return newStringLiteral(lexeme);
     if (lexeme[0] == '\'')
-        return newCharacter(lexeme);
+        return newCharacterLiteral(lexeme);
 
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
     if (INTERNAL_SOURCE_CODE != SOURCE_CODE &&
@@ -254,7 +248,7 @@ bool isInternalToken(Node* token) {
 }
 
 bool isSpace(Node* token) {
-    return isLeafNode(token) && getLexeme(token)[0] == ' ';
+    return isLeafNode(token) && isSpaceCharacter(getLexeme(token)[0]);
 }
 
 Node* newEOF() {

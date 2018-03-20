@@ -61,10 +61,10 @@ int isalpha(int c);
 int isspace(int c);
 int iscntrl(int c);
 int isdigit(int c);
-//int isalnum(int c);
+int isalnum(int c);
+int isprint(int c);
+int ispunct(int c);
 //int isblank(int c);
-//int ispunct(int c);
-//int isprint(int c);
 
 // string.h
 void* memcpy(void *dest, const void *src, size_t n);
@@ -74,8 +74,8 @@ char* strcpy(char* dest, const char* src);
 char* strcat(char* dest, const char* src);
 int strncmp(const char* s1, const char* s2, size_t n);
 const char* strchr(const char* s, int c);
-size_t strspn(const char* s, const char* accept);
-size_t strcspn(const char* s, const char* accept);
+//size_t strspn(const char* s, const char* accept);
+//size_t strcspn(const char* s, const char* accept);
 //int strcmp(const char* s1, const char* s2);
 //const char* strpbrk(const char* s, const char* accept);
 

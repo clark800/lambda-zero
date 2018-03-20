@@ -5,7 +5,7 @@
 #include "lib/tree.h"
 
 typedef unsigned char Precedence;
-typedef enum {L, R, N} Associativity;
+typedef enum {L, R, N, P} Associativity;
 typedef struct Operator {
     const char* symbol;
     Precedence leftPrecedence;
@@ -14,7 +14,10 @@ typedef struct Operator {
     Node* (*collapse)(Node* operator, Node* left, Node* right);
 } Operator;
 
-Operator getOperator(Node* token);
-bool isSpecialOperator(Node* token);
+Operator getOperator(Node* token, bool prefixOnly);
+bool isParenthesizableOperator(Node* token);
+bool isSectionableOperator(Node* token);
+bool isAlwaysPrefixOperator(Node* token);
+bool isAlwaysInfixOperator(Node* token);
 
 #endif

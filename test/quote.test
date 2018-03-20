@@ -20,14 +20,17 @@ Syntax error: missing end quote '"abc'
 abc"
 Syntax error: invalid token 'abc"'
 ===============================================================================
-'\x'
-Syntax error: invalid escape sequence '\x''
+"abc"def"
+Syntax error: invalid token 'def"'
 ===============================================================================
-x -> "abc"x
-Syntax error: missing end quote '"abc"x'
+'\x'
+Syntax error: invalid escape sequence after '\'
+===============================================================================
+(x -> "abc"x) 0
+Evaluation error: extra argument '"abc"'
 ===============================================================================
 x -> 'a'x
-Syntax error: missing end quote ''a'x'
+(x -> (97 x))
 ===============================================================================
 "x\"
 Syntax error: invalid string literal '"x\"'

@@ -28,7 +28,7 @@ static inline Node* toBoolean(long long value) {
 static inline long long add(long long left, long long right) {
     if (left > 0 && right > 0 && left > LLONG_MAX - right)
         error("Integer overflow", "addition");
-    if (left < 0 && right < 0 && left < LLONG_MIN - right)
+    if (left < 0 && right < 0 && left < -LLONG_MAX - right)
         error("Integer overflow", "addition");
     return left + right;
 }
@@ -36,37 +36,26 @@ static inline long long add(long long left, long long right) {
 static inline long long subtract(long long left, long long right) {
     if (left > 0 && right < 0 && left > LLONG_MAX + right)
         error("Integer overflow", "subtraction");
-    if (left < 0 && right > 0 && left < LLONG_MIN + right)
+    if (left < 0 && right > 0 && left < -LLONG_MAX + right)
         error("Integer overflow", "subtraction");
     return left - right;
 }
 
 static inline long long multiply(long long left, long long right) {
-    if (right == -1 && left == LLONG_MIN)
+    if (right != 0 && llabs(left) > llabs(LLONG_MAX / right))
         error("Integer overflow", "multiplication");
-    if (right != 0 && right != 1 && right != -1) {
-        // todo: fix this
-        if (sgn(left) == sgn(right) && llabs(left) > llabs(LLONG_MAX / right))
-            error("Integer overflow", "multiplication");
-        if (sgn(left) != sgn(right) && llabs(left) > llabs(LLONG_MIN / right))
-            error("Integer overflow", "multiplication");
-    }
     return left * right;
 }
 
 static inline long long divide(long long left, long long right) {
     if (right == 0)
         error("Integer arithmetic", "divide by zero");
-    if (left == LLONG_MIN && right == -1)
-        error("Integer overflow", "division");
     return left / right;
 }
 
 static inline long long modulo(long long left, long long right) {
     if (right == 0)
         error("Integer arithmetic", "modulo by zero");
-    if (left == LLONG_MIN && right == -1)
-        return 0;
     return left % right;
 }
 

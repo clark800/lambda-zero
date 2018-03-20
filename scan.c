@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
 #include "scan.h"
@@ -12,38 +11,25 @@ bool isEscapedNewline(const char* start) {
     return start[0] == '\\' && start[1] == '\n';
 }
 
-static const char* skipTo(const char* str, const char* characters) {
-    return &(str[strcspn(str, characters)]);
-}
-
-static const char* skipPast(const char* str, const char* characters) {
-    return &(str[strspn(str, characters)]);
-}
-
-static const char* skipPastSameCharacter(const char* str) {
-    return skipPast(str, (char[2]){str[0], '\0'});
-}
-
-static const char* skipToDelimiter(const char* str) {
-    return skipTo(str, " \n();,.");
-}
-
-static const char* skipToNewline(const char* str) {
-    return skipTo(str, "\n");
-}
-
-static const char* skipOneCharacter(const char* str) {
-    return str[0] == '\0' ? str : str + 1;
-}
-
-static const char* skipElided(const char* str) {
-    while (isComment(str) || isEscapedNewline(str))
-        str = isComment(str) ? skipToNewline(str) :
-            skipOneCharacter(skipToNewline(str));
+const char* skipWhile(const char* str, bool (*predicate)(char)) {
+    while (str[0] != '\0' && predicate(str[0]))
+        str++;
     return str;
 }
 
-static const char* skipQuote(const char* start) {
+bool isNotNewlineCharacter(char c) {
+    return c != '\n';
+}
+
+const char* skipToNewline(const char* str) {
+    return skipWhile(str, isNotNewlineCharacter);
+}
+
+const char* skipCharacter(const char* str) {
+    return str[0] == '\0' ? str : str + 1;
+}
+
+const char* skipQuote(const char* start) {
     char quote = start[0];
     // assumption is that start points to the opening quotation mark
     for (start += 1; start[0] != '\0' && start[0] != '\n'; start += 1) {
@@ -57,12 +43,24 @@ static const char* skipQuote(const char* start) {
 
 const char* skipLexeme(const char* lexeme) {
     assert(lexeme[0] != '\0');
-    if (lexeme[0] == '"' || lexeme[0] == '\'')
-        return skipToDelimiter(skipQuote(lexeme));
-    if (lexeme[0] == ' ' || lexeme[0] == '.')
-        return skipPastSameCharacter(lexeme);
-    const char* delimiter = skipToDelimiter(lexeme);
-    return delimiter == lexeme ? delimiter + 1 : delimiter;
+    if (isSpaceCharacter(lexeme[0]))
+        return skipWhile(lexeme, isSpaceCharacter);
+    if (isDelimiterCharacter(lexeme[0]))
+        return skipCharacter(lexeme);
+    if (isQuoteCharacter(lexeme[0]))
+        return skipQuote(lexeme);
+    if (isOperandCharacter(lexeme[0]))
+        return skipWhile(lexeme, isOperandCharacter);
+    if (isOperatorCharacter(lexeme[0]))
+        return skipWhile(lexeme, isOperatorCharacter);
+    return skipCharacter(lexeme);    // illegal character
+}
+
+const char* skipElided(const char* str) {
+    while (isComment(str) || isEscapedNewline(str))
+        str = isComment(str) ? skipToNewline(str) :
+            skipCharacter(skipToNewline(str));
+    return str;
 }
 
 const char* getFirstLexeme(const char* input) {
