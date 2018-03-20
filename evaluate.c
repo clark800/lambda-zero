@@ -6,7 +6,6 @@
 #include "ast.h"
 #include "closure.h"
 #include "builtins.h"
-#include "lex.h"
 #include "serialize.h"
 #include "evaluate.h"
 
@@ -14,11 +13,6 @@ enum {LAZY=1};     // for debugging
 bool PROFILE = false;
 bool TRACE = false;
 int LOOP_COUNT = 0;
-
-static inline void errorIf(bool condition, Node* token, const char* message) {
-    if (condition)
-        throwTokenError("Evaluation", message, token);
-}
 
 static inline void moveStackItem(Stack* fromStack, Stack* toStack) {
     Hold* item = pop(fromStack);
@@ -96,35 +90,37 @@ static inline Hold* evaluateClosure(Closure* closure, const Array* globals) {
     return evaluate(getTerm(closure), getLocals(closure), globals);
 }
 
-static inline long long evaluateToInteger(Node* builtin, Hold* termClosure,
-        const Array* globals) {
-    Hold* valueClosure = evaluateClosure(getNode(termClosure), globals);
-    Node* integerNode = getTerm(getNode(valueClosure));
-    errorIf(!isInteger(integerNode), builtin, "expected integer argument");
-    long long integer = getInteger(integerNode);
-    release(valueClosure);
-    release(termClosure);
-    return integer;
+static inline Hold* popAndEvaluate(Stack* stack, const Array* globals) {
+    Hold* closure = pop(stack);
+    Hold* result = evaluateClosure(getNode(closure), globals);
+    release(closure);
+    return result;
 }
 
-static inline Node* evaluateBuiltin(Node* builtin, Stack* stack,
-        const Array* globals) {
+static inline void evaluateBuiltinNode(
+        Closure* closure, Stack* stack, const Array* globals) {
+    // all builtins are strictly evaluated
+    Node* builtin = getTerm(closure);
     int arity = getArity(builtin);
-    if (arity == 0)
-        return computeBuiltin(builtin, 0, 0);
-    errorIf(isEmpty(stack), builtin, "missing first argument");
-    long long left = evaluateToInteger(builtin, pop(stack), globals);
-    if (arity == 1)
-        return computeBuiltin(builtin, left, 0);
-    errorIf(isEmpty(stack), builtin, "missing second argument");
-    long long right = evaluateToInteger(builtin, pop(stack), globals);
-    return computeBuiltin(builtin, left, right);
-}
-
-static inline void evaluateBuiltinNode(Closure* closure, Stack* stack,
-        const Array* globals) {
+    if (arity == 0) {
+        setTerm(closure, evaluateBuiltin(builtin, NULL, NULL));
+        return;
+    }
     applyUpdates(closure, stack);
-    setTerm(closure, evaluateBuiltin(getTerm(closure), stack, globals));
+    errorIf(isEmpty(stack), builtin, "missing first argument");
+    Hold* left = popAndEvaluate(stack, globals);
+    if (arity == 1) {
+        setTerm(closure, evaluateBuiltin(builtin, getNode(left), NULL));
+        release(left);
+        return;
+    }
+    assert(arity == 2);
+    applyUpdates(closure, stack);
+    errorIf(isEmpty(stack), builtin, "missing second argument");
+    Hold* right = popAndEvaluate(stack, globals);
+    setTerm(closure, evaluateBuiltin(builtin, getNode(left), getNode(right)));
+    release(left);
+    release(right);
 }
 
 static inline Hold* getIntegerResult(Closure* closure, Stack* stack) {
