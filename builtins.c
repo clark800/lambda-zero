@@ -111,8 +111,9 @@ long long getIntegerArgument(Node* builtin, Closure* closure) {
     return getInteger(integer);
 }
 
-Node* evaluateBuiltin(Node* builtin, Closure* left, Closure* right) {
+Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right) {
     long long leftInteger = getIntegerArgument(builtin, left);
     long long rightInteger = getIntegerArgument(builtin, right);
-    return computeBuiltin(builtin, leftInteger, rightInteger);
+    Node* term = computeBuiltin(builtin, leftInteger, rightInteger);
+    return hold(newClosure(term, VOID));
 }

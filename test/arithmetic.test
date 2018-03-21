@@ -78,7 +78,7 @@ Syntax error: missing close parenthesis for '('
 Syntax error: missing left argument '+'
 ===============================================================================
 (+)
-Evaluation error: missing first argument '+'
+Evaluation error: missing argument to '+'
 ===============================================================================
 1 + 2 3
 Evaluation error: extra argument '3'
@@ -114,7 +114,7 @@ Syntax error: missing left argument '+'
 Syntax error: missing left argument '+'
 ===============================================================================
 (+ ~)
-Syntax error: invalid operator in section '~'
+Syntax error: missing right argument '~'
 ===============================================================================
 1+2-3+4-5+6
 5

@@ -90,10 +90,13 @@ static inline Hold* evaluateClosure(Closure* closure, const Array* globals) {
     return evaluate(getTerm(closure), getLocals(closure), globals);
 }
 
-static inline Hold* popAndEvaluate(Stack* stack, const Array* globals) {
-    Hold* closure = pop(stack);
-    Hold* result = evaluateClosure(getNode(closure), globals);
-    release(closure);
+static inline Hold* popStrictArgument(Closure* closure, Stack* stack,
+        const Array* globals, Node* builtin) {
+    applyUpdates(closure, stack);
+    errorIf(isEmpty(stack), builtin, "missing argument to");
+    Hold* expression = pop(stack);
+    Hold* result = evaluateClosure(getNode(expression), globals);
+    release(expression);
     return result;
 }
 
@@ -102,25 +105,17 @@ static inline void evaluateBuiltinNode(
     // all builtins are strictly evaluated
     Node* builtin = getTerm(closure);
     int arity = getArity(builtin);
-    if (arity == 0) {
-        setTerm(closure, evaluateBuiltin(builtin, NULL, NULL));
-        return;
-    }
-    applyUpdates(closure, stack);
-    errorIf(isEmpty(stack), builtin, "missing first argument");
-    Hold* left = popAndEvaluate(stack, globals);
-    if (arity == 1) {
-        setTerm(closure, evaluateBuiltin(builtin, getNode(left), NULL));
+    Hold* left = arity < 1 ? NULL : popStrictArgument(
+            closure, stack, globals, builtin);
+    Hold* right = arity < 2 ? NULL : popStrictArgument(
+            closure, stack, globals, builtin);
+    Hold* result = evaluateBuiltin(builtin, getNode(left), getNode(right));
+    setClosure(closure, getNode(result));
+    release(result);
+    if (left != NULL)
         release(left);
-        return;
-    }
-    assert(arity == 2);
-    applyUpdates(closure, stack);
-    errorIf(isEmpty(stack), builtin, "missing second argument");
-    Hold* right = popAndEvaluate(stack, globals);
-    setTerm(closure, evaluateBuiltin(builtin, getNode(left), getNode(right)));
-    release(left);
-    release(right);
+    if (right != NULL)
+        release(right);
 }
 
 static inline Hold* getIntegerResult(Closure* closure, Stack* stack) {
