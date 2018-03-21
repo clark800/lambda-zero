@@ -5,6 +5,16 @@
 #include "lex.h"
 #include "operators.h"
 
+typedef unsigned char Precedence;
+typedef enum {L, R, N, P} Associativity;
+struct Rules {
+    const char* symbol;
+    Precedence leftPrecedence;
+    Precedence rightPrecedence;
+    Associativity associativity;
+    Node* (*apply)(Node* operator, Node* left, Node* right);
+};
+
 Node* apply(Node* operator, Node* left, Node* right) {
     return newApplication(getLocation(operator), left, right);
 }
@@ -35,7 +45,7 @@ Node* paren(Node* operator, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-Operator OPERATORS[] = {
+Rules RULES[] = {
     {"\0", 0, 0, R, NULL},
     {"(", 240, 10, P, paren},
     {")", 10, 240, R, NULL},
@@ -80,32 +90,44 @@ Operator OPERATORS[] = {
     {".", 250, 250, L, infix}
 };
 
-Operator DEFAULT = {"", 150, 150, L, infix};
-Operator SPACE = {" ", 240, 240, L, apply};
+Rules DEFAULT = {"", 150, 150, L, infix};
+Rules SPACE = {" ", 240, 240, L, apply};
 
 Operator getOperator(Node* token, bool prefixOnly) {
     if (isSpace(token))
-        return SPACE;
-    for (unsigned int i = 0; i < sizeof(OPERATORS)/sizeof(Operator); i++)
-        if (isThisToken(token, OPERATORS[i].symbol))
-            if (!prefixOnly || OPERATORS[i].associativity == P)
-                return OPERATORS[i];
-    return DEFAULT;
+        return (Operator){token, &SPACE};
+    for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
+        if (isThisToken(token, RULES[i].symbol))
+            if (!prefixOnly || RULES[i].associativity == P)
+                return (Operator){token, &(RULES[i])};
+    return (Operator){token, &DEFAULT};
 }
 
-bool isParenthesizableOperator(Node* token) {
-    Operator op = getOperator(token, false);
-    return op.collapse == infix || op.collapse == prefix;
+int getOperatorArity(Operator operator) {
+    return operator.rules->associativity == P ? 1 : 2;
 }
 
-bool isAlwaysPrefixOperator(Node* token) {
-    return getOperator(token, false).associativity == P;
+Node* applyOperator(Operator operator, Node* left, Node* right) {
+    return operator.rules->apply(operator.token, left, right);
 }
 
-bool isAlwaysInfixOperator(Node* token) {
-    return getOperator(token, true).associativity != P;
+bool isSpecialOperator(Operator operator) {
+    return operator.rules->apply != infix && operator.rules->apply != prefix;
 }
 
-bool isSectionableOperator(Node* token) {
-    return isParenthesizableOperator(token) && !isAlwaysPrefixOperator(token);
+bool isPrefixOperator(Operator operator) {
+    return operator.rules->associativity == P;
+}
+
+bool isHigherPrecedence(Operator left, Operator right) {
+    if (left.rules->rightPrecedence == right.rules->leftPrecedence) {
+        const char* message = "operator is non-associative";
+        syntaxErrorIf(left.rules->associativity == N, left.token, message);
+        syntaxErrorIf(right.rules->associativity == N, right.token, message);
+    }
+
+    if (right.rules->associativity == L || right.rules->associativity == P)
+        return left.rules->rightPrecedence >= right.rules->leftPrecedence;
+    else
+        return left.rules->rightPrecedence > right.rules->leftPrecedence;
 }

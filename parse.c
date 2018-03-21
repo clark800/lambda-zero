@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include "lib/tree.h"
@@ -35,20 +34,20 @@ static inline bool isEOF(Node* node) {
 }
 
 bool isOperatorTop(Stack* stack) {
-    return isEmpty(stack) || isOperator(peek(stack, 0));
+    return isOperator(peek(stack, 0));
 }
 
-bool isSpaceTop(Stack* stack) {
-    return isEmpty(stack) || isSpace(peek(stack, 0));
-}
-
-static inline bool isOperand(Node* node) {
-    return isName(node) || isInteger(node) || isReference(node) ||
-        isApplication(node) || isLambda(node);
+bool isAlwaysPrefixOperator(Node* token) {
+    return isOperator(token) && isPrefixOperator(getOperator(token, false));
 }
 
 void eraseNewlines(Stack* stack) {
-    while (!isEmpty(stack) && isNewline(peek(stack, 0)))
+    while (isNewline(peek(stack, 0)))
+        release(pop(stack));
+}
+
+void eraseSpaces(Stack* stack) {
+    while (isSpace(peek(stack, 0)))
         release(pop(stack));
 }
 
@@ -66,43 +65,36 @@ void collapseOperator(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
     Operator op = getOperator(getNode(operator), isOperatorTop(stack));
-    Hold* left = op.associativity == P ? NULL : pop(stack);
-    push(stack, op.collapse(getNode(operator), getNode(left), getNode(right)));
+    Hold* left = getOperatorArity(op) > 1 ? pop(stack) : NULL;
+    push(stack, applyOperator(op, getNode(left), getNode(right)));
     release(right);
     release(operator);
     if (left != NULL)
         release(left);
 }
 
-bool isHigherPrecedence(Node* operator, Node* collapser, bool prefix) {
-    Operator op = getOperator(operator, prefix);
-    if (prefix && op.associativity != P)      // prefix operator not found
-        return false;                         // don't try to collapse sections
-
-    // collapser is preceded by an operand, so if it is an operator like '-'
-    // that could be either prefix or infix, we assume that this case is infix
-    Operator collapserOp = getOperator(collapser, false);
-    syntaxErrorIf(collapserOp.associativity == N && op.rightPrecedence ==
-        collapserOp.leftPrecedence, operator, "operator is non-associative");
-    if (collapserOp.associativity == L || collapserOp.associativity == P)
-        return op.rightPrecedence >= collapserOp.leftPrecedence;
-    else
-        return op.rightPrecedence > collapserOp.leftPrecedence;
-}
-
 bool shouldCollapseOperator(Stack* stack, Node* collapser) {
     // the operator that we are checking to collapse is at stack index 1
     if (isOperatorTop(stack)) {   // can't collapse with operator to the right
-        syntaxErrorIf(isAlwaysInfixOperator(collapser)
+        syntaxErrorIf(!isPrefixOperator(getOperator(collapser, true))
             && !isCloseParen(collapser) && !isOpenParen(peek(stack, 0)),
             collapser, "missing left argument");
         return false;
     }
+
     syntaxErrorIf(!isOpenParen(collapser) && isAlwaysPrefixOperator(collapser),
-            collapser, "space required before prefix operator");
+        collapser, "space required before prefix operator");
+
     Node* operator = peek(stack, 1);    // must exist because top is not EOF
-    return isOperator(operator) && !isEOF(operator) &&
-        isHigherPrecedence(operator, collapser, isOperator(peek(stack, 2)));
+    if (!isOperator(operator) || isEOF(operator))
+        return false;                   // can't collapse non-operator or EOF
+
+    bool prefixOnly = isOperator(peek(stack, 2));
+    Operator op = getOperator(operator, prefixOnly);
+    if (prefixOnly && !isPrefixOperator(op))
+        return false;   // default to false (don't collapse) to allow sections
+
+    return isHigherPrecedence(op, getOperator(collapser, false));
 }
 
 void collapseLeftOperand(Stack* stack, Node* token) {
@@ -116,12 +108,13 @@ void collapseLeftOperand(Stack* stack, Node* token) {
 }
 
 Node* createSection(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isSectionableOperator(operator), operator,
-            "invalid operator in section");
-    syntaxErrorIf(!isOperand(left), left, "invalid operand in section");
-    syntaxErrorIf(!isOperand(right), right, "invalid operand in section");
-    return newLambda(getLocation(operator), PARAMETERX,
-        getOperator(operator, false).collapse(operator, left, right));
+    Operator op = getOperator(operator, false);
+    syntaxErrorIf(isPrefixOperator(op) || isSpecialOperator(op),
+        operator, "invalid operator in section");
+    syntaxErrorIf(isOperator(left), left, "invalid operand in section");
+    syntaxErrorIf(isOperator(right), right, "invalid operand in section");
+    Node* body = applyOperator(op, left, right);
+    return newLambda(getLocation(operator), PARAMETERX, body);
 }
 
 Hold* createSectionWithHolds(Hold* operator, Hold* left, Hold* right) {
@@ -140,8 +133,7 @@ Node* applyToArgumentTuple(Node* base, Node* arguments) {
 }
 
 void pushArgumentTuple(Stack* stack, Node* argumentTuple) {
-    if (isSpaceTop(stack))
-        release(pop(stack));
+    eraseSpaces(stack);
     syntaxErrorIf(isOperatorTop(stack), argumentTuple,
         "expected operand before argument tuple");
     Hold* function = pop(stack);
@@ -150,7 +142,7 @@ void pushArgumentTuple(Stack* stack, Node* argumentTuple) {
 }
 
 void convertParenthesizedOperator(Node* operator) {
-    syntaxErrorIf(!isParenthesizableOperator(operator),
+    syntaxErrorIf(isSpecialOperator(getOperator(operator, false)),
         operator, "operator cannot be parenthesized");
     convertOperatorToName(operator);
 }
@@ -166,16 +158,16 @@ Hold* popParentheses(Stack* stack, Node* close) {
         release(left);
         return right;
     } // at this point we know that left and right are not parentheses or EOF
-    syntaxErrorIf(isOperator(getNode(right)) && isAlwaysPrefixOperator(
-            getNode(right)), getNode(right), "invalid operator in section");
+    syntaxErrorIf(isAlwaysPrefixOperator(getNode(right)),
+        getNode(right), "missing right argument");
     Hold* open = pop(stack);
-    syntaxErrorIf(!isOpenParen(getNode(open)), close, "bad section ending at");
+    syntaxErrorIf(!isOpenParen(getNode(open)), close, "missing '(' for");
     release(open);
     if (isOperator(getNode(right)))         // (1 +) ==> (x -> (1 + x))
         return createSectionWithHolds(right, left, hold(REFERENCEX));
     if (isOperator(getNode(left)))          // (+ 1) ==> (x -> (x + 1))
         return createSectionWithHolds(left, hold(REFERENCEX), right);
-    syntaxErrorIf(true, close, "bad section ending at");
+    syntaxErrorIf(true, close, "unexpected syntax error before");
     return NULL;
 }
 
@@ -197,15 +189,15 @@ Hold* collapseEOF(Stack* stack, Hold* token) {
     syntaxErrorIf(isEOF(peek(stack, 0)), getNode(token), "no input");
     Hold* result = pop(stack);
     Node* end = peek(stack, 0);
-    syntaxErrorIf(!isEOF(end), end, "illegal syntax near");
+    syntaxErrorIf(!isEOF(end), end, "unexpected syntax error near");
     deleteStack(stack);
     release(token);
     return result;
 }
 
 void pushOperator(Stack* stack, Node* operator) {
-    if (!isAlwaysPrefixOperator(operator) && isSpaceTop(stack))
-        release(pop(stack));
+    if (!isAlwaysPrefixOperator(operator))
+        eraseSpaces(stack);
     if ((isSpace(operator) || isNewline(operator)) && isOperatorTop(stack))
         return;   // note: close parens never appear on the stack
     if (isCloseParen(operator)) {
