@@ -54,9 +54,6 @@ void serializeAST(Node* node, FILE* stream) {
         printToken(node, stream);
         fputs("#", stream);
         serializeInteger((long long)getDebruijnIndex(node), stream);
-    } else if (isGlobal(node)) {
-        printToken(node, stream);
-        fputs("#G", stream);
     } else {
         printToken(node, stream);
     }

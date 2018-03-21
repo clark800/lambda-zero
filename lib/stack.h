@@ -45,13 +45,6 @@ static inline Node* peek(Stack* stack, size_t i) {
     return getListElement(getHead(stack), i);
 }
 
-static inline Node* peekSafe(Stack* stack, size_t i) {
-    Node* node = getHead(stack); 
-    for (; i > 0 && node != VOID; i--)
-        node = getRight(node);
-    return node == VOID ? NULL : getLeft(node);
-}
-
 static inline Iterator* iterate(Stack* stack) {
    return (Iterator*)getHead(stack); 
 }

@@ -30,7 +30,7 @@ const char* strchr(const char* s, int c) {
     return c == 0 ? s : NULL;
 }
 
-size_t strspn(const char* s, const char* accept) {
+/*size_t strspn(const char* s, const char* accept) {
     for (size_t i = 0; true; i++)
         if (s[i] == '\0' || strchr(accept, s[i]) == NULL)
             return i;
@@ -40,7 +40,7 @@ size_t strcspn(const char* s, const char* accept) {
     for (size_t i = 0; true; i++)
         if (s[i] == '\0' || strchr(accept, s[i]) != NULL)
             return i;
-}
+}*/
 
 /*int strcmp(const char* s1, const char* s2) {
     return strncmp(s1, s2, 0);

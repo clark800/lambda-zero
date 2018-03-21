@@ -57,11 +57,16 @@ void bindWith(Node* node, Array* parameters, const Array* globals) {
     }
 }
 
+bool isLetExpression(Node* node) {
+    return isApplication(node) && isLambda(getLeft(node)) &&
+        !isInternalToken(getParameter(getLeft(node)));
+}
+
 Program bind(Hold* root, bool optimize) {
     Node* node = getNode(root);
     Array* parameters = newArray(2048);        // names of globals and locals
     Array* globals = newArray(optimize ? 2048 : 0);   // values of globals
-    while (optimize && isApplication(node) && isLambda(getLeft(node))) {
+    while (optimize && isLetExpression(node)) {
         Node* definedSymbol = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
         syntaxErrorIf(isDefined(definedSymbol, parameters),

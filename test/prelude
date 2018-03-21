@@ -19,10 +19,10 @@ false(x, y) = y
 if(c, x, y) = c(x, y)
 and(b, c) = if (b) then c else false
 or(b, c) = if (b) then true else c
-not(b) = if (b) then false else true
-xor(b, c) = if (b) then not(c) else c
+~b = if (b) then false else true
+xor(b, c) = if (b) then ~c else c
 b => c = if (b) then c else true
-b <=> c = if (b) then c else not(c)
+b <=> c = if (b) then c else ~c
 (/\) = and
 (\/) = or
 
@@ -41,7 +41,7 @@ mirror(f) = x -> f(x, x)        -- convert binary function to unary function
 on(f, g) = x -> y -> f(g(x), g(y))  -- apply binary f with unary g applied first
 f ^^ n = z -> if (n == 0) then z else (f ^^ n - 1)(f(z))
 until(f, p, z) = if (p(z)) then z else f.until(p, f(z))
-while(f, p, z) = f.until(not <> p, z)
+while(f, p, z) = f.until((~) <> p, z)
 curry(f) = x -> y -> f(x; y)
 uncurry(f) = xx -> f(left(xx), right(xx))
 
@@ -59,8 +59,7 @@ mx ? f = mx(nothing, f)                   -- maybe chaining (bind)
 mx ?| x = mx(x, identity)                 -- just value or default
 
 -- math --
-negate(n) = 0 - n
-abs(n) = if (n >= 0) then n else negate(n)
+abs(n) = if (n >= 0) then n else -n
 min(n, m) = if (n <= m) then n else m
 max(n, m) = if (n >= m) then n else m
 even(n) = n.mod(2) == 0
@@ -69,7 +68,7 @@ divides(n, m) = m.mod(n) == 0
 factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
 gcd(n, m) = if (m == 0) then n else gcd(m, n.mod(m))
 n ^ m = if (m == 0) then 1 else
-    if (m < 0) then 1 / n ^ negate(m) else
+    if (m < 0) then 1 / n ^ -m else
     if (even(m)) then (*).mirror(n ^ (m / 2)) else
     n * n ^ (m - 1)
 
@@ -105,7 +104,7 @@ cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
 -- generic list transformations --
 filter(xs, p) = xs.foldr(x -> xs' -> if (p(x)) then x :: xs' else xs', nil)
 (|) = filter
-xs |~ p = xs | not <> p
+xs |~ p = xs | (~) <> p
 map(xs, f) = xs.foldr((::) <> f, nil)          -- map function over list
 zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then nil else
     f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail)
@@ -131,7 +130,7 @@ lookup(nxs, n) = if (nxs.empty) then nothing else
 
 -- integer list basics --
 contains(ns, n) = ns.any((== n))              -- test if element is in list
-containsSorted(ns, n) = not(ns.empty) /\ n >= ns.head /\
+containsSorted(ns, n) = ~ns.empty /\ n >= ns.head /\
         (n == ns.head \/ ns.tail.containsSorted(n))
 xs === ys = if (xs.empty \/ ys.empty) then xs.empty <=> ys.empty else (
     xs.head == ys.head /\ xs.tail === ys.tail       -- integer list equality
