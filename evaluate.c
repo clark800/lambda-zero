@@ -103,14 +103,18 @@ static inline void evaluateBuiltinNode(
     Node* builtin = getTerm(closure);
     int arity = getArity(builtin);
     if (arity == 0) {
-        setTerm(closure, evaluateBuiltin(builtin, NULL, NULL));
+        Hold* result = evaluateBuiltin(builtin, NULL, NULL);
+        setClosure(closure, getNode(result));
+        release(result);
         return;
     }
     applyUpdates(closure, stack);
     errorIf(isEmpty(stack), builtin, "missing first argument");
     Hold* left = popAndEvaluate(stack, globals);
     if (arity == 1) {
-        setTerm(closure, evaluateBuiltin(builtin, getNode(left), NULL));
+        Hold* result = evaluateBuiltin(builtin, getNode(left), NULL);
+        setClosure(closure, getNode(result));
+        release(result);
         release(left);
         return;
     }
@@ -118,7 +122,9 @@ static inline void evaluateBuiltinNode(
     applyUpdates(closure, stack);
     errorIf(isEmpty(stack), builtin, "missing second argument");
     Hold* right = popAndEvaluate(stack, globals);
-    setTerm(closure, evaluateBuiltin(builtin, getNode(left), getNode(right)));
+    Hold* result = evaluateBuiltin(builtin, getNode(left), getNode(right));
+    setClosure(closure, getNode(result));
+    release(result);
     release(left);
     release(right);
 }

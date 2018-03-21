@@ -11,6 +11,6 @@ static inline void errorIf(bool condition, Node* token, const char* message) {
 }
 
 int getArity(Node* builtin);
-Node* evaluateBuiltin(Node* builtin, Closure* left, Closure* right);
+Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right);
 
 #endif
