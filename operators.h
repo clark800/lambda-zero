@@ -10,9 +10,15 @@ typedef struct Operator {
     Rules* rules;
 } Operator;
 
-Operator getOperator(Node* token, bool prefixOnly);
+static inline bool isCommaTuple(Node* node) {
+    return isBranchNode(node) && isThisToken(node, ",");
+}
+
+Operator getOperator(Node* token, bool prefixOrOpen);
 bool isSpecialOperator(Operator operator);
 bool isPrefixOperator(Operator operator);
+bool isOpenOperator(Operator operator);
+bool isCloseOperator(Operator operator);
 bool isHigherPrecedence(Operator left, Operator right);
 int getOperatorArity(Operator operator);
 Node* applyOperator(Operator operator, Node* left, Node* right);

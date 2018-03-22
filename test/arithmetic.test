@@ -72,7 +72,7 @@ mod (-9223372036854775807) (-1)
 0
 ===============================================================================
 2 * (3 + 4
-Syntax error: missing close parenthesis for '('
+Syntax error: missing close for '('
 ===============================================================================
 +
 Syntax error: missing left argument '+'
@@ -114,7 +114,7 @@ Syntax error: missing left argument '+'
 Syntax error: missing left argument '+'
 ===============================================================================
 (+ ~)
-Syntax error: missing right argument '~'
+Syntax error: invalid operator in section '~'
 ===============================================================================
 1+2-3+4-5+6
 5
