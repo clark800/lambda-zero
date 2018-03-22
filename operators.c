@@ -9,8 +9,7 @@ typedef unsigned char Precedence;
 typedef enum {L, R, N, P} Associativity;
 struct Rules {
     const char* symbol;
-    Precedence leftPrecedence;
-    Precedence rightPrecedence;
+    Precedence leftPrecedence, rightPrecedence;
     Associativity associativity;
     Node* (*apply)(Node* operator, Node* left, Node* right);
 };

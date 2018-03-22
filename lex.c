@@ -1,10 +1,9 @@
-#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "lib/lltoa.h"
 #include "lib/tree.h"
 #include "lib/stack.h"
@@ -14,12 +13,10 @@
 #include "objects.h"
 #include "lex.h"
 
-const char* INTERNAL_SOURCE_CODE = NULL;
 const char* SOURCE_CODE = NULL;
 
 struct Position {
-    unsigned int line;
-    unsigned int column;
+    unsigned int line, column;
 };
 
 static inline int getLexemeLocation(const char* lexeme) {
@@ -27,7 +24,7 @@ static inline int getLexemeLocation(const char* lexeme) {
 }
 
 const char* getLexemeByLocation(int location) {
-    const char* start = location < 0 ? INTERNAL_SOURCE_CODE : SOURCE_CODE;
+    const char* start = location < 0 ? INTERNAL_CODE : SOURCE_CODE;
     return location == 0 ? "\0" : &start[abs(location) - 1];
 }
 
@@ -72,22 +69,17 @@ const char* getLocationString(int location) {
 }
 
 void throwError(const char* type, const char* message, const char* lexeme) {
-    if (lexeme != NULL) {
-        errorArray(4, (strings){type, " error: ", message, " \'"});
-        printLexeme(lexeme, stderr);
-        errorArray(1, (strings){"\'"});
-        if (VERBOSITY >= 0) {
-            const char* location = getLocationString(getLexemeLocation(lexeme));
-            errorArray(3, (strings){" at ", location, "\n"});
-        }
-    } else {
-        errorArray(4, (strings){type, " error: ", message, "\n"});
-    }
+    errorArray(4, (strings){type, " error: ", message, " \'"});
+    printLexeme(lexeme, stderr);
+    errorArray(1, (strings){"\'"});
+    const char* location = getLocationString(getLexemeLocation(lexeme));
+    if (VERBOSITY >= 0)
+        errorArray(3, (strings){" at ", location, "\n"});
     exit(1);
 }
 
 void throwTokenError(const char* type, const char* message, Node* token) {
-    throwError(type, message, token == NULL ? NULL : getLexeme(token));
+    throwError(type, message, getLexeme(token));
 }
 
 void lexerErrorIf(bool condition, const char* lexeme, const char* message) {
@@ -113,8 +105,8 @@ bool isForbiddenCharacter(char c) {
 }
 
 bool isLexemeType(const char* lexeme, bool (*predicate)(char c)) {
-    size_t length = getLexemeLength(lexeme);
-    for (size_t i = 0; i < length; i++)
+    unsigned int length = getLexemeLength(lexeme);
+    for (unsigned int i = 0; i < length; i++)
         if (!predicate(lexeme[i]))
             return false;
     return true;
@@ -151,11 +143,9 @@ char decodeCharacter(const char* start) {
         case 'n': return '\n';
         case '\\': return '\\';
         case '\"': return '\"';
-        case '`': return '`';
-        default:
-            lexerErrorIf(true, start, "invalid escape sequence after");
-            return 0;
+        default: lexerErrorIf(true, start, "invalid escape sequence after");
     }
+    return 0;
 }
 
 Node* newCharacterLiteral(const char* lexeme) {
@@ -194,8 +184,7 @@ long long parseInteger(const char* lexeme) {
 }
 
 const char* findInLexeme(const char* lexeme, const char* characters) {
-    size_t length = getLexemeLength(lexeme);
-    for (size_t i = 0; i < length; i++)
+    for (unsigned int i = 0; i < getLexemeLength(lexeme); i++)
         if (lexeme[i] != '\0' && strchr(characters, lexeme[i]) != NULL)
             return &(lexeme[i]);
     return NULL;
@@ -208,8 +197,8 @@ Node* createToken(const char* lexeme) {
         return newCharacterLiteral(lexeme);
 
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
-    if (INTERNAL_SOURCE_CODE != SOURCE_CODE &&
-            findInLexeme(lexeme, "[]{}`!@#$%") != NULL)
+    bool isUserCode = SOURCE_CODE != INTERNAL_CODE;
+    if (isUserCode && findInLexeme(lexeme, "[]{}`!@#$%") != NULL)
         lexerErrorIf(true, lexeme, "reserved character in");
 
     int location = getLexemeLocation(lexeme);
@@ -224,7 +213,6 @@ Node* createToken(const char* lexeme) {
 }
 
 Hold* getFirstToken(const char* sourceCode) {
-    INTERNAL_SOURCE_CODE = SOURCE_CODE == NULL ? sourceCode : SOURCE_CODE;
     SOURCE_CODE = sourceCode;
     for (const char* p = sourceCode; p[0] != '\0'; p++)
         lexerErrorIf(isForbiddenCharacter(p[0]), p, "foridden character");

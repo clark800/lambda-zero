@@ -89,8 +89,9 @@ Node* evaluateGet(Node* builtin, long long index) {
     inputIndex += 1;
     int c = fgetc(stdin);
     int location = getLocation(builtin);
-    return c == EOF ? NIL : prepend(newInteger(location, c),
-        newApplication(location, GET_BUILTIN, newInteger(location, index + 1)));
+    return c == EOF ? newNil(location) : prepend(
+        newInteger(location, c), newApplication(location, getLeft(INPUT),
+            newInteger(location, index + 1)));
 }
 
 Node* computeBuiltin(Node* builtin, long long left, long long right) {

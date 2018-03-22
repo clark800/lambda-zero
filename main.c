@@ -17,31 +17,30 @@ void memoryError(const char* label, long long bytes) {
     debug(" bytes\n");
 }
 
-void usageError(const char* name) {
-    errorArray(3, (strings){"Usage error: ", name,
-            " [-d] [-t] [-p] [-n] [FILE]"});
-    exit(2);
-}
-
 void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
     if (usage != expectedUsage)
         memoryError(label, (long long)(usage - expectedUsage));
 }
 
-void interpret(const char* input) {
-    size_t memoryUsageAtStart = getMemoryUsage();
-    Program program = parse(input, true);
+void interpret(const char* input, bool showDebug) {
+    initNodeAllocator();
+    initObjects(parse(INTERNAL_CODE, false, false));
+    size_t memoryUsageBeforeParse = getMemoryUsage();
+    Program program = parse(input, true, showDebug);
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
-    Hold* valueClosure = evaluate(program.main, VOID, program.globals);
-    if (!IO) {
-        serialize(getNode(valueClosure), program.globals, stdout);
+    Hold* valueClosure = evaluate(program.entry, VOID, program.globals);
+    if (!program.IO) {
+        serialize(getNode(valueClosure), program.globals);
         fputs("\n", stdout);
     }
     release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
     deleteProgram(program);
-    checkForMemoryLeak("interpret", memoryUsageAtStart);
+    checkForMemoryLeak("parse", memoryUsageBeforeParse);
+    deleteObjects();
+    destroyNodeAllocator();
+    checkForMemoryLeak("interpret", 0);
 }
 
 char* readScript(const char* filename) {
@@ -56,28 +55,28 @@ char* readScript(const char* filename) {
     return script;
 }
 
+void usageError(const char* name) {
+    errorArray(3, (strings){"Usage error: ", name, " [-dtpn] [FILE]"});
+    exit(2);
+}
+
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
-    initNodeAllocator();
-    initObjects(parse(OBJECTS, false));
-    char* program = argv[0];
+    bool showDebug = false;
     while (--argc > 0 && (*++argv)[0] == '-')
         for (char* flag = argv[0] + 1; *flag != '\0'; flag++)
             switch (*flag) {
-                case 'd': DEBUG = true; break;    // show parse steps
-                case 't': TRACE = true; break;    // show eval steps
-                case 'p': PROFILE = true; break;  // show eval loop count
-                case 'n': VERBOSITY = -1; break;  // hide line #s in errors
-                default: usageError(program); break;
+                case 'd': showDebug = true; break;    // show parse steps
+                case 't': TRACE = true; break;        // show eval steps
+                case 'p': PROFILE = true; break;      // show eval loop count
+                case 'n': VERBOSITY = -1; break;      // hide line #s in errors
+                default: usageError(argv[0]); break;
             }
     if (argc > 1)
-        usageError(program);
+        usageError(argv[0]);
     char* input = argc == 0 ? readfile(stdin) : readScript(argv[0]);
-    interpret(input);
+    interpret(input, showDebug);
     free(input);
-    deleteObjects();
-    checkForMemoryLeak("main", 0);
-    destroyNodeAllocator();
     return 0;
 }
