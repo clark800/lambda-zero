@@ -29,14 +29,14 @@ int fputs(const char* str, FILE* stream) {
     return (int)fwrite(str, sizeof(char), strlen(str), stream);
 }
 
-int putchar(int c) {
+int fputc(int c, FILE* stream) {
     unsigned char ch = (unsigned char)c;
-    return fwrite(&ch, 1, 1, stdout) == 1 ? c : EOF;
+    return fwrite(&ch, 1, 1, stream) == 1 ? c : EOF;
 }
 
-int getchar(void) {
+int fgetc(FILE* stream) {
     char buffer[2];
-    ssize_t bytes = read(STDIN_FILENO, buffer, 1);
+    ssize_t bytes = read(fileno(stream), buffer, 1);
     return bytes == 1 ? buffer[0] : EOF;
 }
 

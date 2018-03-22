@@ -28,7 +28,7 @@ enum LeafType {INTEGER=0, NAME, OPERATOR, PARAMETER, BUILTIN};
 // without colliding with builtin codes
 enum BuiltinCode {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS,
       EQUAL, NOTEQUAL, LESSTHAN, GREATERTHAN, LESSTHANOREQUAL,
-      GREATERTHANOREQUAL, PUT, GET, GLOBAL};
+      GREATERTHANOREQUAL, ERROR, EXIT, PUT, GET, GLOBAL};
 
 enum NodeType {
     N_INTEGER, N_BUILTIN, N_REFERENCE, N_GLOBAL, N_LAMBDA, N_APPLICATION};
@@ -157,6 +157,11 @@ static inline Node* newParameter(int location) {
 
 static inline Node* newOperator(int location) {
     return newLeafNode(location, OPERATOR);
+}
+
+static inline Node* newBuiltin(int location, unsigned long long code) {
+    assert(code >= BUILTIN);
+    return newLeafNode(location, (long long)code);
 }
 
 static inline Node* newReference(int location, unsigned long long debruijn) {

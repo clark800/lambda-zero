@@ -10,7 +10,8 @@ static inline void errorIf(bool condition, Node* token, const char* message) {
         throwTokenError("Evaluation", message, token);
 }
 
-int getArity(Node* builtin);
+unsigned int getBuiltinArity(Node* builtin);
+bool isStrictArgument(Node* builtin, unsigned int i);
 Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right);
 
 #endif
