@@ -58,6 +58,7 @@ char* readScript(const char* filename) {
 
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL);
+    setbuf(stderr, NULL);
     initNodeAllocator();
     initObjects(parse(OBJECTS, false));
     char* program = argv[0];

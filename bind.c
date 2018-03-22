@@ -12,8 +12,8 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
 }
 
 unsigned long long lookupBuiltinCode(Node* token) {
-    const char* const builtins[] = {"+", "-", "*", "/", "mod",
-        "==", "=/=", "<", ">", "<=", ">=", "$put", "$get"};
+    const char* const builtins[] = {"+", "-", "*", "/", "mod", "==", "=/=",
+        "<", ">", "<=", ">=", "error", "$exit", "$put", "$get"};
     for (unsigned long long i = 0; i < sizeof(builtins)/sizeof(char*); i++)
         if (isThisToken(token, builtins[i]))
             return i + BUILTIN;

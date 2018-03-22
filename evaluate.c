@@ -90,11 +90,13 @@ static inline Hold* evaluateClosure(Closure* closure, const Array* globals) {
     return evaluate(getTerm(closure), getLocals(closure), globals);
 }
 
-static inline Hold* popStrictArgument(Closure* closure, Stack* stack,
-        const Array* globals, Node* builtin) {
+static inline Hold* popBuiltinArgument(Closure* closure, Stack* stack,
+        const Array* globals, unsigned int position) {
     applyUpdates(closure, stack);
-    errorIf(isEmpty(stack), builtin, "missing argument to");
+    errorIf(isEmpty(stack), getTerm(closure), "missing argument to");
     Hold* expression = pop(stack);
+    if (!isStrictArgument(getTerm(closure), position))
+        return expression;
     Hold* result = evaluateClosure(getNode(expression), globals);
     release(expression);
     return result;
@@ -102,13 +104,12 @@ static inline Hold* popStrictArgument(Closure* closure, Stack* stack,
 
 static inline void evaluateBuiltinNode(
         Closure* closure, Stack* stack, const Array* globals) {
-    // all builtins are strictly evaluated
     Node* builtin = getTerm(closure);
-    int arity = getArity(builtin);
-    Hold* left = arity < 1 ? NULL : popStrictArgument(
-            closure, stack, globals, builtin);
-    Hold* right = arity < 2 ? NULL : popStrictArgument(
-            closure, stack, globals, builtin);
+    unsigned int arity = getBuiltinArity(builtin);
+    Hold* left = arity > 0 ?
+        popBuiltinArgument(closure, stack, globals, 0) : NULL;
+    Hold* right = arity > 1 ?
+        popBuiltinArgument(closure, stack, globals, 1) : NULL;
     Hold* result = evaluateBuiltin(builtin, getNode(left), getNode(right));
     setClosure(closure, getNode(result));
     release(result);

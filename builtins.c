@@ -10,15 +10,9 @@
 #include "closure.h"
 #include "builtins.h"
 
-long long INPUT_INDEX = 0;
+bool STDERR = false;
 
-enum Sign {NEGATIVE=-1, ZERO=0, POSITIVE=1};
-
-static inline enum Sign sgn(long long n) {
-    return n == 0 ? ZERO : (n > 0 ? POSITIVE : NEGATIVE);
-}
-
-static inline Node* toBoolean(long long value) {
+static inline Node* toBoolean(int value) {
     return value == 0 ? FALSE : TRUE;
 }
 
@@ -59,28 +53,44 @@ static inline long long modulo(long long left, long long right) {
     return left % right;
 }
 
-int getArity(Node* builtin) {
+unsigned int getBuiltinArity(Node* builtin) {
     switch (getBuiltinCode(builtin)) {
+        case ERROR: return 1;
+        case EXIT: return 1;
         case GET: return 1;
         case PUT: return 1;
         default: return 2;
     }
 }
 
+bool isStrictArgument(Node* builtin, unsigned int i) {
+    return !(getBuiltinCode(builtin) == ERROR && i == 0);
+}
+
+Hold* evaluateError(Node* builtin, Closure* closure) {
+    STDERR = true;
+    fputc((int)'\n', stderr);       // start error message on a new line
+    Node* exit = newBuiltin(getLocation(builtin), EXIT);
+    setTerm(closure, newApplication(getLocation(builtin), exit,
+        newApplication(getLocation(builtin), getTerm(closure), PRINT)));
+    return hold(closure);
+}
+
 Node* evaluatePut(long long c) {
     if (c < 0 || c >= 256)
         error("Runtime", "expected byte value in list returned from main");
-    putchar((int)c);
+    fputc((int)c, STDERR ? stderr : stdout);
     return IDENTITY;
 }
 
 Node* evaluateGet(Node* builtin, long long index) {
-    assert(index == INPUT_INDEX);    // ensure lazy evaluation is working
-    INPUT_INDEX += 1;
-    int c = getchar();
+    static long long inputIndex = 0;
+    assert(index == inputIndex);    // ensure lazy evaluation is working
+    inputIndex += 1;
+    int c = fgetc(stdin);
     int location = getLocation(builtin);
-    return c == EOF ? NIL : prepend(newInteger(location, c), newApplication(
-                location, GET_BUILTIN, newInteger(location, index + 1)));
+    return c == EOF ? NIL : prepend(newInteger(location, c),
+        newApplication(location, GET_BUILTIN, newInteger(location, index + 1)));
 }
 
 Node* computeBuiltin(Node* builtin, long long left, long long right) {
@@ -111,9 +121,17 @@ long long getIntegerArgument(Node* builtin, Closure* closure) {
     return getInteger(integer);
 }
 
-Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right) {
+Hold* evaluateIntegerBuiltin(Node* builtin, Closure* left, Closure* right) {
     long long leftInteger = getIntegerArgument(builtin, left);
     long long rightInteger = getIntegerArgument(builtin, right);
     Node* term = computeBuiltin(builtin, leftInteger, rightInteger);
     return hold(newClosure(term, VOID));
+}
+
+Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right) {
+    switch (getBuiltinCode(builtin)) {
+        case ERROR: return evaluateError(builtin, left);
+        case EXIT: throwTokenError("\nRuntime", "hit", builtin); return NULL;
+        default: return evaluateIntegerBuiltin(builtin, left, right);
+    }
 }
