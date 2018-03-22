@@ -53,3 +53,6 @@ Syntax error: undefined symbol 'x'
 (x -> (x -> x))
 Syntax error: symbol already defined 'x'
 ===============================================================================
+(0 -> 5) 4
+Syntax error: expected name but got '0'
+===============================================================================

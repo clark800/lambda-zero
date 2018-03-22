@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <stdlib.h>     // llabs
 #include "lltoa.h"
 

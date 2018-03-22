@@ -71,12 +71,12 @@ const char* getNextLexeme(const char* lastLexeme) {
     return skipElided(skipLexeme(lastLexeme));
 }
 
-size_t getLexemeLength(const char* lexeme) {
-    return (size_t)(lexeme[0] == '\0' ? 1 : skipLexeme(lexeme) - lexeme);
+unsigned int getLexemeLength(const char* lexeme) {
+    return (unsigned int)(lexeme[0] == '\0' ? 1 : skipLexeme(lexeme) - lexeme);
 }
 
 bool isSameLexeme(const char* a, const char* b) {
-    size_t lengthA = getLexemeLength(a);
-    size_t lengthB = getLexemeLength(b);
+    unsigned int lengthA = getLexemeLength(a);
+    unsigned int lengthB = getLexemeLength(b);
     return lengthA == lengthB && strncmp(a, b, lengthA) == 0;
 }

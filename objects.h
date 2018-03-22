@@ -1,23 +1,11 @@
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
-#include <stdbool.h>
 #include "lib/tree.h"
 #include "ast.h"
 
-extern bool IO;
-extern const char* OBJECTS;
-
-extern Node* IDENTITY;
-extern Node* NIL;
-extern Node* TRUE;
-extern Node* FALSE;
-extern Node* YCOMBINATOR;
-extern Node* PARAMETERX;
-extern Node* REFERENCEX;
-extern Node* PRINT;
-extern Node* INPUT;
-extern Node* GET_BUILTIN;
+extern const char* INTERNAL_CODE;
+extern Node *IDENTITY, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
 
 void initObjects(Program program);
 void deleteObjects(void);

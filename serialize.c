@@ -48,8 +48,6 @@ void serializeAST(Node* node, FILE* stream) {
     } else if (isInteger(node)) {
         // builtins create integers, so not all integers will exist in input
         serializeInteger(getInteger(node), stream);
-    } else if (isNewline(node)) {
-        fputs("\\n", stream);
     } else if (isReference(node)) {
         printToken(node, stream);
         fputs("#", stream);
@@ -107,6 +105,6 @@ void serializeNode(Node* node, Node* locals, const Array* globals,
     }
 }
 
-void serialize(Closure* closure, const Array* globals, FILE* stream) {
-    serializeNode(getTerm(closure), getLocals(closure), globals, 0, stream);
+void serialize(Closure* closure, const Array* globals) {
+    serializeNode(getTerm(closure), getLocals(closure), globals, 0, stdout);
 }

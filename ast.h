@@ -33,12 +33,12 @@ enum BuiltinCode {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS,
 enum NodeType {
     N_INTEGER, N_BUILTIN, N_REFERENCE, N_GLOBAL, N_LAMBDA, N_APPLICATION};
 
-typedef struct Program Program;
-struct Program {
+typedef struct Program {
     Hold* root;
-    Node* main;
+    Node* entry;
     Array* globals;
-};
+    bool IO;
+} Program;
 
 static inline void deleteProgram(Program program) {
     release(program.root);

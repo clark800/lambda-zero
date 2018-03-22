@@ -37,8 +37,7 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
 
 static bool isDefined(Node* symbol, Array* parameters) {
     // internal tokens are exempted to allow e.g. tuples inside tuples
-    return !isInternalToken(symbol) &&
-        (lookupBuiltinCode(symbol) != 0 ||
+    return !isInternalToken(symbol) && (lookupBuiltinCode(symbol) != 0 ||
         findDebruijnIndex(symbol, parameters) != 0);
 }
 
@@ -77,7 +76,9 @@ Program bind(Hold* root, bool optimize) {
         append(globals, definedValue);
         node = getBody(getLeft(node));
     }
+    bool IO = length(parameters) > 0 &&
+        isThisToken(elementAt(parameters, length(parameters) - 1), "main");
     bindWith(node, parameters, globals);
     deleteArray(parameters);
-    return (Program){root, node, globals};
+    return (Program){root, node, globals, IO};
 }

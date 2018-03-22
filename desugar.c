@@ -29,7 +29,7 @@ Node* transformRecursion(Node* name, Node* value) {
     // value ==> (Y (name -> value))
     int location = getLocation(name);
     return newApplication(location, YCOMBINATOR,
-        newLambda(location, newParameter(getLocation(name)), value));
+        newLambda(location, newParameter(location), value));
 }
 
 Node* getScope(Node* explicitScope, Node* name) {
@@ -37,23 +37,21 @@ Node* getScope(Node* explicitScope, Node* name) {
         return explicitScope;
     if (!isThisToken(name, "main"))
         return name;
-    IO = true;
     int location = getLocation(name);
     return newApplication(location,
-            newApplication(location, name, INPUT), PRINT);
+        newApplication(location, name, INPUT), PRINT);
 }
 
 Node* transformDefine(Node* definition, Node* explicitScope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
     Node* left = getLeft(definition);
     Node* right = getRight(definition);
-    while (isApplication(left)) {
+    for (; isApplication(left); left = getLeft(left)) {
         Node* parameterName = getRight(left);
         syntaxErrorIf(!isName(parameterName), parameterName,
             "expected name but got");
         Node* parameter = newParameter(getLocation(parameterName));
         right = newLambda(getLocation(parameter), parameter, right);
-        left = getLeft(left);
     }
     Node* name = left;
     Node* value = transformRecursion(name, right);

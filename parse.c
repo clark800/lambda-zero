@@ -11,8 +11,6 @@
 #include "serialize.h"
 #include "parse.h"
 
-bool DEBUG = false;
-
 static inline bool isArgumentTuple(Node* node) {
     return isBranchNode(node) && isThisToken(node, ",");
 }
@@ -114,7 +112,7 @@ Node* createSection(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(isOperator(left), left, "invalid operand in section");
     syntaxErrorIf(isOperator(right), right, "invalid operand in section");
     Node* body = applyOperator(op, left, right);
-    return newLambda(getLocation(operator), PARAMETERX, body);
+    return newLambda(getLocation(operator), getParameter(IDENTITY), body);
 }
 
 Hold* createSectionWithHolds(Hold* operator, Hold* left, Hold* right) {
@@ -163,10 +161,11 @@ Hold* popParentheses(Stack* stack, Node* close) {
     Hold* open = pop(stack);
     syntaxErrorIf(!isOpenParen(getNode(open)), close, "missing '(' for");
     release(open);
+    Hold* hole = hold(getBody(IDENTITY));
     if (isOperator(getNode(right)))         // (1 +) ==> (x -> (1 + x))
-        return createSectionWithHolds(right, left, hold(REFERENCEX));
+        return createSectionWithHolds(right, left, hole);
     if (isOperator(getNode(left)))          // (+ 1) ==> (x -> (x + 1))
-        return createSectionWithHolds(left, hold(REFERENCEX), right);
+        return createSectionWithHolds(left, hole, right);
     syntaxErrorIf(true, close, "unexpected syntax error before");
     return NULL;
 }
@@ -209,22 +208,21 @@ void pushOperator(Stack* stack, Node* operator) {
 }
 
 void debugParseState(Node* token, Stack* stack) {
-    if (DEBUG) {
-        debug("Token: ");
-        debugAST(token);
-        debug("  Stack: ");
-        debugStack(stack, NULL);
-        debug("\n");
-    }
+    debug("Token: '");
+    debugAST(token);
+    debug("'  Stack: ");
+    debugStack(stack, NULL);
+    debug("\n");
 }
 
-Hold* parseString(const char* input) {
+Hold* parseString(const char* input, bool showDebug) {
     Stack* stack = newStack(VOID);
     push(stack, newEOF());
 
     for (Hold* token = getFirstToken(input); true;
                token = replaceHold(token, getNextToken(token))) {
-        debugParseState(getNode(token), stack);
+        if (showDebug)
+            debugParseState(getNode(token), stack);
         if (isEOF(getNode(token)))
             return collapseEOF(stack, token);
         if (isOperator(getNode(token)))
@@ -234,8 +232,8 @@ Hold* parseString(const char* input) {
     }
 }
 
-void debugStage(const char* label, Node* node) {
-    if (DEBUG) {
+void debugStage(const char* label, Node* node, bool showDebug) {
+    if (showDebug) {
         debugLine();
         debug(label);
         debug(": ");
@@ -244,10 +242,10 @@ void debugStage(const char* label, Node* node) {
     }
 }
 
-Program parse(const char* input, bool optimize) {
-    Hold* result = parseString(input);
-    debugStage("Parsed", getNode(result));
+Program parse(const char* input, bool optimize, bool showDebug) {
+    Hold* result = parseString(input, showDebug);
+    debugStage("Parsed", getNode(result), showDebug);
     result = replaceHold(result, desugar(getNode(result)));
-    debugStage("Desugared", getNode(result));
+    debugStage("Desugared", getNode(result), showDebug);
     return bind(result, optimize);
 }

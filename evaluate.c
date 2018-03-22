@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdbool.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
@@ -9,23 +8,12 @@
 #include "serialize.h"
 #include "evaluate.h"
 
-enum {LAZY=1};     // for debugging
 bool PROFILE = false;
 bool TRACE = false;
-int LOOP_COUNT = 0;
-
-static inline void moveStackItem(Stack* fromStack, Stack* toStack) {
-    Hold* item = pop(fromStack);
-    push(toStack, getNode(item));
-    release(item);
-}
-
-static inline bool isUpdateNext(Stack* stack) {
-    return !isEmpty(stack) && isUpdate(peek(stack, 0));
-}
+int LOOPS = 0;
 
 static inline void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
-    while (isUpdateNext(stack)) {
+    while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
         Hold* update = pop(stack);
         Closure* closureToUpdate = getUpdateClosure(getNode(update));
         setClosure(closureToUpdate, evaluatedClosure);
@@ -46,16 +34,17 @@ static inline Closure* optimizeClosure(Node* node, Node* locals,
     // the default case works for all node types;
     // the other cases are short-circuit optmizations
     switch (getNodeType(node)) {
-        case N_REFERENCE: return getReferencedClosure(node, locals);
         case N_BUILTIN:
         case N_INTEGER: return newClosure(node, VOID);
         case N_GLOBAL: return newClosure(getGlobalValue(node, globals), VOID);
+        case N_REFERENCE: return getReferencedClosure(node, locals);
         default: return newClosure(node, locals);
     }
 }
 
 static inline void evaluateApplicationNode(Closure* closure, Stack* stack,
         const Array* globals) {
+    // push right side of application onto stack and step into left side
     Node* application = getTerm(closure);
     Node* lambda = getLeft(application);
     Node* argument = getRight(application);
@@ -64,7 +53,10 @@ static inline void evaluateApplicationNode(Closure* closure, Stack* stack,
 }
 
 static inline void evaluateLambdaNode(Closure* closure, Stack* stack) {
-    moveStackItem(stack, (Stack*)closure);
+    // move argument from stack to local environment and step into body
+    Hold* argument = pop(stack);
+    push((Stack*)closure, getNode(argument));
+    release(argument);
     setTerm(closure, getBody(getTerm(closure)));
 }
 
@@ -74,9 +66,10 @@ static inline bool isValue(Node* node) {
 }
 
 static inline void evaluateReferenceNode(Closure* closure, Stack* stack) {
+    // lookup referenced closure in the local environment and switch to it
     Closure* referencedClosure = getReferencedClosure(
             getTerm(closure), getLocals(closure));
-    if (LAZY && !isValue(getTerm(referencedClosure)))
+    if (!isValue(getTerm(referencedClosure)))
         push(stack, newUpdate(referencedClosure));
     setClosure(closure, referencedClosure);
 }
@@ -143,7 +136,7 @@ static inline Hold* evaluateNode(
         Closure* closure, Stack* stack, const Array* globals) {
     while (true) {
         debugState(closure, stack);
-        LOOP_COUNT += 1;
+        LOOPS += 1;
         switch (getNodeType(getTerm(closure))) {
             case N_APPLICATION:
                 evaluateApplicationNode(closure, stack, globals); break;
@@ -174,6 +167,6 @@ Hold* evaluate(Node* term, Node* locals, const Array* globals) {
     Hold* result = evaluateNode(getNode(closure), stack, globals);
     release(closure);
     deleteStack(stack);
-    debugLoopCount(LOOP_COUNT);
+    debugLoopCount(LOOPS);
     return result;
 }

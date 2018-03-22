@@ -24,6 +24,7 @@ CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors \
 
 LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
 SOURCES=`find -L . -name "*.c" -not -path "./lib/libc/*"`
+HEADERS=`find -L . -name "*.h" -not -path "./lib/libc/*"`
 OBJECTS="*.o"
 
 echoexec() {
@@ -86,7 +87,11 @@ config_unused() {
     CC_FLAGS="-O0 -fdata-sections -ffunction-sections $CC_FLAGS"
 }
 
-loc() {
+get_loc() {
+    $CC -fpreprocessed -dD -E -P $HEADERS $SOURCES | wc -l
+}
+
+run_cloc() {
     cloc --quiet --exclude-list-file=.clocignore --by-file $*
 }
 
@@ -97,7 +102,8 @@ case "$1" in
     unused) clean && config_unused && build_libc && build;;
     test) config_debug && build && test/test.sh;;
     clean) clean;;
-    cloc) loc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;
-    cloc-all) loc . | tail -n +3 | cut -c -78;;
+    loc) get_loc;;
+    cloc) run_cloc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;
+    cloc-all) run_cloc . | tail -n +3 | cut -c -78;;
     *) echo "usage: $0 [{fast|test|small|unused|clean|cloc|cloc-all}]"; exit 1;;
 esac
