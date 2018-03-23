@@ -96,7 +96,7 @@ Evaluation error: extra argument '3'
 Syntax error: missing left argument '*'
 ===============================================================================
 (~x = -x) ((+) ~2~3)
-Syntax error: space required before prefix operator '~'
+-5
 ===============================================================================
 (~x = -x) ((+) ~2 ~3)
 -5

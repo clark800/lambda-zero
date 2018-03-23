@@ -3,72 +3,75 @@
 #include <string.h>
 #include "scan.h"
 
-bool isComment(const char* start) {
-    return start[0] == '-' && start[1] == '-';
+static inline bool isSpaceCharacter(char c) {
+    return c == ' ';
 }
 
-bool isEscapedNewline(const char* start) {
-    return start[0] == '\\' && start[1] == '\n';
+static inline bool isComment(const char* s) {
+    return s[0] == '-' && s[1] == '-';
 }
 
-const char* skipWhile(const char* str, bool (*predicate)(char)) {
-    while (str[0] != '\0' && predicate(str[0]))
-        str++;
-    return str;
+static inline bool isEscapedNewline(const char* s) {
+    return s[0] == '\\' && s[1] == '\n';
 }
 
-bool isNotNewlineCharacter(char c) {
+static inline bool isNotNewlineCharacter(char c) {
     return c != '\n';
 }
 
-const char* skipToNewline(const char* str) {
-    return skipWhile(str, isNotNewlineCharacter);
+static inline const char* skipWhile(const char* s, bool (*predicate)(char)) {
+    while (s[0] != '\0' && predicate(s[0]))
+        s++;
+    return s;
 }
 
-const char* skipCharacter(const char* str) {
-    return str[0] == '\0' ? str : str + 1;
+static inline const char* skipSpaces(const char* s) {
+    return skipWhile(s, isSpaceCharacter);
 }
 
-const char* skipQuote(const char* start) {
-    char quote = start[0];
+static inline const char* skipToNewline(const char* s) {
+    return skipWhile(s, isNotNewlineCharacter);
+}
+
+static inline const char* skipN(const char* s, unsigned int n) {
+    return &(s[n]);
+}
+
+static inline const char* skipQuote(const char* s) {
+    char quote = s[0];
     // assumption is that start points to the opening quotation mark
-    for (start += 1; start[0] != '\0' && start[0] != '\n'; start += 1) {
-        if (start[0] == '\\' && start[1] != '\0')
-            start += 1;     // skip character following slash
-        else if (start[0] == quote)
-            return start + 1;
+    for (s += 1; s[0] != '\0' && s[0] != '\n'; s += 1) {
+        if (s[0] == '\\' && s[1] != '\0')
+            s += 1;     // skip character following slash
+        else if (s[0] == quote)
+            return s + 1;
     }
-    return start;
+    return s;
 }
 
-const char* skipLexeme(const char* lexeme) {
-    assert(lexeme[0] != '\0');
-    if (isSpaceCharacter(lexeme[0]))
-        return skipWhile(lexeme, isSpaceCharacter);
-    if (isDelimiterCharacter(lexeme[0]))
-        return skipCharacter(lexeme);
+static inline const char* skipLexeme(const char* lexeme) {
+    assert(lexeme[0] != '\0' && lexeme[0] != ' ');
     if (isQuoteCharacter(lexeme[0]))
         return skipQuote(lexeme);
     if (isOperandCharacter(lexeme[0]))
         return skipWhile(lexeme, isOperandCharacter);
     if (isOperatorCharacter(lexeme[0]))
         return skipWhile(lexeme, isOperatorCharacter);
-    return skipCharacter(lexeme);    // illegal character
+    return skipN(lexeme, 1);    // delimiter
 }
 
-const char* skipElided(const char* str) {
-    while (isComment(str) || isEscapedNewline(str))
-        str = isComment(str) ? skipToNewline(str) :
-            skipCharacter(skipToNewline(str));
-    return str;
+static inline const char* skipElided(const char* s) {
+    while (isComment(s) || isEscapedNewline(s))
+        s = isComment(s) ? skipToNewline(s) : skipSpaces(skipN(s, 2));
+    return s;
 }
 
 const char* getFirstLexeme(const char* input) {
-    return skipElided(input);
+    return skipElided(skipSpaces(input));
 }
 
 const char* getNextLexeme(const char* lastLexeme) {
-    return skipElided(skipLexeme(lastLexeme));
+    return skipElided(skipSpaces(skipLexeme(lastLexeme)));
 }
 
 unsigned int getLexemeLength(const char* lexeme) {

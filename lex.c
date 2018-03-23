@@ -87,9 +87,13 @@ void lexerErrorIf(bool condition, const char* lexeme, const char* message) {
         throwError("Syntax", message, lexeme);
 }
 
+void syntaxError(const char* message, Node* token) {
+    throwTokenError("Syntax", message, token);
+}
+
 void syntaxErrorIf(bool condition, Node* token, const char* message) {
     if (condition)
-        throwTokenError("Syntax", message, token);
+        syntaxError(message, token);
 }
 
 bool isNameCharacter(char c) {
@@ -233,10 +237,6 @@ bool isThisToken(Node* token, const char* lexeme) {
 
 bool isInternalToken(Node* token) {
     return getLexeme(token)[0] == '$';
-}
-
-bool isSpace(Node* token) {
-    return isLeafNode(token) && isSpaceCharacter(getLexeme(token)[0]);
 }
 
 Node* newEOF() {

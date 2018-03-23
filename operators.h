@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "lib/tree.h"
 
+typedef enum {IN, PRE, OPEN, CLOSE} Fixity;
 typedef struct Rules Rules;
 typedef struct Operator {
     Node* token;
@@ -16,11 +17,8 @@ static inline bool isCommaTuple(Node* node) {
 
 Operator getOperator(Node* token, bool prefixOrOpen);
 bool isSpecialOperator(Operator operator);
-bool isPrefixOperator(Operator operator);
-bool isOpenOperator(Operator operator);
-bool isCloseOperator(Operator operator);
+Fixity getFixity(Operator operator);
 bool isHigherPrecedence(Operator left, Operator right);
-int getOperatorArity(Operator operator);
 Node* applyOperator(Operator operator, Node* left, Node* right);
 
 #endif

@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-static inline bool isSpaceCharacter(char c) {
-    return c == ' ';
-}
-
 static inline bool isQuoteCharacter(char c) {
     return c == '"' || c == '\'';
 }

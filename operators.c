@@ -6,11 +6,12 @@
 #include "lex.h"
 #include "operators.h"
 
+typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
-typedef enum {L, R, N, P, O, C} Associativity;
 struct Rules {
     const char* symbol;
     Precedence leftPrecedence, rightPrecedence;
+    Fixity fixity;
     Associativity associativity;
     Node* (*apply)(Node* operator, Node* left, Node* right);
 };
@@ -73,68 +74,68 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
 }
 
 Rules RULES[] = {
-    {"\0", 0, 0, R, NULL},
-    {"(", 240, 10, O, unmatched},
-    {")", 10, 240, C, parentheses},
-    {"[", 240, 10, O, unmatched},
-    {"]", 10, 240, C, brackets},
-    {",", 20, 20, R, apply},
-    {";", 30, 30, R, infix},
-    {"\n", 40, 40, R, apply},
-    {"=", 50, 50, N, apply},
-    {"->", 240, 60, R, lambda},
-    {"?|", 80, 80, R, infix},
-    {"?", 80, 80, L, infix},
-    {"?:", 80, 80, R, infix},
-    {"then", 80, 80, L, apply},
-    {"else", 80, 70, L, apply},
-    {"\\/", 90, 90, R, infix},
-    {"/\\", 100, 100, R, infix},
-    {"==", 120, 120, N, infix},
-    {"=/=", 120, 120, N, infix},
-    {"===", 120, 120, N, infix},
-    {"<=>", 120, 120, N, infix},
-    {"=>", 120, 120, N, infix},
-    {"<", 120, 120, N, infix},
-    {">", 120, 120, N, infix},
-    {"<=", 120, 120, N, infix},
-    {">=", 120, 120, N, infix},
-    {"|", 140, 140, L, infix},
-    {"|~", 140, 140, L, infix},
-    {"++", 150, 150, R, infix},
-    {"\\", 160, 160, L, infix},
-    {"\\\\", 160, 160, L, infix},
-    {"::", 170, 170, R, infix},
-    {"..", 180, 180, N, infix},
-    {"^^", 190, 190, L, infix},
-    {"+", 200, 200, L, infix},
-    {"-", 200, 200, L, infix},
-    {"*", 210, 210, L, infix},
-    {"/", 210, 210, L, infix},
-    {"^", 220, 220, R, infix},
-    {"<>", 230, 230, R, infix},
-    {"-", 235, 245, P, negate},
-    {"~", 235, 245, P, prefix},
-    {"!", 235, 245, P, prefix},
-    {".", 250, 250, L, infix}
+    {"\0", 0, 0, CLOSE, R, NULL},
+    {"(", 240, 10, OPEN, L, unmatched},
+    {")", 10, 240, CLOSE, R, parentheses},
+    {"[", 240, 10, OPEN, L, unmatched},
+    {"]", 10, 240, CLOSE, R, brackets},
+    {",", 20, 20, IN, R, apply},
+    {";", 30, 30, IN, R, infix},
+    {"\n", 40, 40, IN, R, apply},
+    {"=", 50, 50, IN, N, apply},
+    {"->", 240, 60, IN, R, lambda},
+    {"?|", 80, 80, IN, R, infix},
+    {"?", 80, 80, IN, L, infix},
+    {"?:", 80, 80, IN, R, infix},
+    {"then", 80, 80, IN, L, apply},
+    {"else", 80, 70, IN, L, apply},
+    {"\\/", 90, 90, IN, R, infix},
+    {"/\\", 100, 100, IN, R, infix},
+    {"==", 120, 120, IN, N, infix},
+    {"=/=", 120, 120, IN, N, infix},
+    {"===", 120, 120, IN, N, infix},
+    {"<=>", 120, 120, IN, N, infix},
+    {"=>", 120, 120, IN, N, infix},
+    {"<", 120, 120, IN, N, infix},
+    {">", 120, 120, IN, N, infix},
+    {"<=", 120, 120, IN, N, infix},
+    {">=", 120, 120, IN, N, infix},
+    {"|", 140, 140, IN, L, infix},
+    {"|~", 140, 140, IN, L, infix},
+    {"++", 150, 150, IN, R, infix},
+    {"\\", 160, 160, IN, L, infix},
+    {"\\\\", 160, 160, IN, L, infix},
+    {"::", 170, 170, IN, R, infix},
+    {"..", 180, 180, IN, N, infix},
+    {"^^", 190, 190, IN, L, infix},
+    {"+", 200, 200, IN, L, infix},
+    {"-", 200, 200, IN, L, infix},
+    {"*", 210, 210, IN, L, infix},
+    {"/", 210, 210, IN, L, infix},
+    {"^", 220, 220, IN, R, infix},
+    {"<>", 230, 230, IN, R, infix},
+    {"-", 235, 245, PRE, L, negate},
+    {"~", 235, 245, PRE, L, prefix},
+    {"!", 235, 245, PRE, L, prefix},
+    {".", 250, 250, IN, L, infix}
 };
 
-Rules DEFAULT = {"", 150, 150, L, infix};
-Rules SPACE = {" ", 240, 240, L, apply};
+Rules DEFAULT = {"", 150, 150, IN, L, infix};
 
-Operator getOperator(Node* token, bool prefixOrOpen) {
-    if (isSpace(token))
-        return (Operator){token, &SPACE};
+bool allowsOperatorBefore(Rules rules) {
+    return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
+}
+
+Operator getOperator(Node* token, bool isAfterOperator) {
     for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
         if (isThisToken(token, RULES[i].symbol))
-            if (!prefixOrOpen || RULES[i].associativity == P
-                    || RULES[i].associativity == O)
+            if (!isAfterOperator || allowsOperatorBefore(RULES[i]))
                 return (Operator){token, &(RULES[i])};
     return (Operator){token, &DEFAULT};
 }
 
-int getOperatorArity(Operator operator) {
-    return operator.rules->associativity == P ? 1 : 2;
+Fixity getFixity(Operator operator) {
+    return operator.rules->fixity;
 }
 
 Node* applyOperator(Operator operator, Node* left, Node* right) {
@@ -145,18 +146,6 @@ bool isSpecialOperator(Operator operator) {
     return operator.rules->apply != infix && operator.rules->apply != prefix;
 }
 
-bool isPrefixOperator(Operator operator) {
-    return operator.rules->associativity == P;
-}
-
-bool isOpenOperator(Operator operator) {
-    return operator.rules->associativity == O;
-}
-
-bool isCloseOperator(Operator operator) {
-    return operator.rules->associativity == C;
-}
-
 bool isHigherPrecedence(Operator left, Operator right) {
     if (left.rules->rightPrecedence == right.rules->leftPrecedence) {
         const char* message = "operator is non-associative";
@@ -164,8 +153,8 @@ bool isHigherPrecedence(Operator left, Operator right) {
         syntaxErrorIf(right.rules->associativity == N, right.token, message);
     }
 
-    if (right.rules->associativity == L || right.rules->associativity == P)
-        return left.rules->rightPrecedence >= right.rules->leftPrecedence;
-    else
+    if (right.rules->associativity == R)
         return left.rules->rightPrecedence > right.rules->leftPrecedence;
+    else
+        return left.rules->rightPrecedence >= right.rules->leftPrecedence;
 }
