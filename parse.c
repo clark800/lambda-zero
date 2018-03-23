@@ -27,6 +27,10 @@ static inline bool isEOF(Node* node) {
     return isLeafNode(node) && isThisToken(node, "\0");
 }
 
+static inline bool isTuple(Node* node) {
+    return isLambda(node) && isThisToken(getParameter(node), ",");
+}
+
 bool isOperatorTop(Stack* stack) {
     return isOperator(peek(stack, 0));
 }
@@ -40,10 +44,11 @@ void eraseNewlines(Stack* stack) {
         release(pop(stack));
 }
 
-Node* applyToCommaTuple(Node* base, Node* arguments) {
-    for (; isCommaTuple(arguments); arguments = getRight(arguments))
-        base = newApplication(getLocation(base), base, getLeft(arguments));
-    return newApplication(getLocation(base), base, arguments);
+Node* applyToCommaList(Node* base, Node* arguments) {
+    if (!isCommaList(getLeft(arguments)))
+        return newApplication(getLocation(base), base, getRight(arguments));
+    return newApplication(getLocation(base),
+            applyToCommaList(base, getLeft(arguments)), getRight(arguments));
 }
 
 void pushOperand(Stack* stack, Node* node) {
@@ -56,13 +61,16 @@ void pushOperand(Stack* stack, Node* node) {
     }
 }
 
-void pushBracketOperand(Stack* stack, Node* node) {
-    if (isCommaTuple(node)) {
-        if (isOperatorTop(stack))
-            syntaxError("expected operand before arguments", peek(stack, 0));
-        Hold* function = pop(stack);
-        push(stack, applyToCommaTuple(getNode(function), node));
-        release(function);
+void pushBracketedOperand(Stack* stack, Node* node, Node* open) {
+    if (isOpenParen(open) && isCommaList(node)) {
+        if (isOperatorTop(stack)) {     // create a tuple and push
+            push(stack, newLambda(getLocation(open),
+                newParameter(getLocation(node)), node));
+        } else {                        // curried function application
+            Hold* function = pop(stack);
+            push(stack, applyToCommaList(getNode(function), node));
+            release(function);
+        }
     } else {
         pushOperand(stack, node);
     }
@@ -148,18 +156,19 @@ Hold* collapseSection(Stack* stack, Node* right) {
 
 void collapseBracket(Stack* stack, Operator op) {
     Node* close = op.token;
-    syntaxErrorIf(isEOF(peek(stack, 0)), close, "missing open for");
+    syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
     Hold* contents = pop(stack);
     if (isOpenOperator(getNode(contents))) {
-        pushBracketOperand(stack, applyOperator(op, getNode(contents), NULL));
+        Node* result = applyOperator(op, getNode(contents), NULL);
+        pushBracketedOperand(stack, result, getNode(contents));
     } else {
-        syntaxErrorIf(isEOF(peek(stack, 0)), close, "missing open for");
+        syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
         Node* right = getNode(contents);
         if (isCloseParen(close) && !isOpenParen(peek(stack, 0)))
             contents = replaceHold(contents, collapseSection(stack, right));
         Hold* open = pop(stack);
-        pushBracketOperand(stack,
-            applyOperator(op, getNode(open), getNode(contents)));
+        Node* result = applyOperator(op, getNode(open), getNode(contents));
+        pushBracketedOperand(stack, result, getNode(open));
         release(open);
     }
     release(contents);
@@ -182,10 +191,10 @@ void pushOperator(Stack* stack, Node* operator) {
 Hold* collapseEOF(Stack* stack, Hold* token) {
     eraseNewlines(stack);
     collapseLeftOperand(stack, getNode(token));
-    syntaxErrorIf(isEOF(peek(stack, 0)), getNode(token), "no input");
+    syntaxErrorIf(isEOF(peek(stack, 0)), "no input", getNode(token));
     Hold* result = pop(stack);
     Node* end = peek(stack, 0);
-    syntaxErrorIf(!isEOF(end), end, "unexpected syntax error near");
+    syntaxErrorIf(!isEOF(end), "unexpected syntax error near", end);
     deleteStack(stack);
     release(token);
     return result;

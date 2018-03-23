@@ -8,10 +8,10 @@
 // print = Y (print -> c -> (put c) (cs -> cs print))    -- desugar
 
 const char* INTERNAL_CODE =
-    "($x -> $x) \n ($t -> $f -> $t) \n ($t -> $f -> $f) \n" // id, true, false
+    "($ -> $) \n ($t -> $f -> $t) \n ($t -> $f -> $f) \n"   // id, true, false
     "($y -> ($q -> $y ($q $q)) ($q -> $y ($q $q))) "        // Y combinator
     "($print -> $c -> (($put $c) ($cs -> $cs $print))) \n"  // string printer
-    "($get 0) \n ($ -> $)";                                 // lazy input list
+    "($get 0) \n 0";                                        // lazy input list
 
 Program PROGRAM;
 Node *IDENTITY, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;

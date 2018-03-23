@@ -3,5 +3,5 @@
 Syntax error: missing right argument '+'
 ==========================================================================
 1 + (1, 2)
-Syntax error: expected operand before arguments '+'
+Evaluation error: expected integer argument '+'
 ==========================================================================

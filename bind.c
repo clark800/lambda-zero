@@ -27,7 +27,7 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
         return;
     }
     unsigned long long index = findDebruijnIndex(symbol, parameters);
-    syntaxErrorIf(index == 0, symbol, "undefined symbol");
+    syntaxErrorIf(index == 0, "undefined symbol", symbol);
     unsigned long long localDepth = length(parameters) - globalDepth;
     if (index > localDepth)
         convertSymbolToGlobal(symbol, length(parameters) - index);
@@ -37,7 +37,8 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
 
 static bool isDefined(Node* symbol, Array* parameters) {
     // internal tokens are exempted to allow e.g. tuples inside tuples
-    return !isInternalToken(symbol) && (lookupBuiltinCode(symbol) != 0 ||
+    return !isInternalToken(symbol) && !isThisToken(symbol, ",") &&
+        (lookupBuiltinCode(symbol) != 0 ||
         findDebruijnIndex(symbol, parameters) != 0);
 }
 
@@ -45,8 +46,8 @@ void bindWith(Node* node, Array* parameters, const Array* globals) {
     if (isSymbol(node)) {
         bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
-        syntaxErrorIf(isDefined(getParameter(node), parameters),
-            getParameter(node), "symbol already defined");
+        if (isDefined(getParameter(node), parameters))
+            syntaxError("symbol already defined", getParameter(node));
         append(parameters, getParameter(node));
         bindWith(getBody(node), parameters, globals);
         unappend(parameters);
@@ -68,8 +69,8 @@ Program bind(Hold* root, bool optimize) {
     while (optimize && isLetExpression(node)) {
         Node* definedSymbol = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
-        syntaxErrorIf(isDefined(definedSymbol, parameters),
-            definedSymbol, "symbol already defined");
+        if (isDefined(definedSymbol, parameters))
+            syntaxError("symbol already defined", definedSymbol);
 
         bindWith(definedValue, parameters, globals);
         append(parameters, definedSymbol);

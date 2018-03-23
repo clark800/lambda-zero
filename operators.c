@@ -25,8 +25,14 @@ Node* infix(Node* operator, Node* left, Node* right) {
     return apply(operator, apply(operator, operator, left), right);
 }
 
+Node* comma(Node* operator, Node* left, Node* right) {
+    return isCommaList(left) ?
+        newApplication(getLocation(operator), left, right) :
+        infix(operator, left, right);
+}
+
 Node* lambda(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isName(left), left, "expected name but got");
+    syntaxErrorIf(!isName(left), "expected name but got", left);
     convertNameToParameter(left);
     return newLambda(getLocation(operator), left, right);
 }
@@ -42,32 +48,28 @@ Node* negate(Node* operator, Node* left, Node* right) {
 }
 
 Node* unmatched(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(true, operator, "missing close for");
+    syntaxErrorIf(true, "missing close for", operator);
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-Node* constructList(int location, Node* commaTuple) {
-    if (!isCommaTuple(commaTuple))
-        return prepend(commaTuple, newNil(location));
-    return prepend(getLeft(commaTuple),
-        constructList(location, getRight(commaTuple)));
-}
-
 Node* brackets(Node* close, Node* open, Node* contents) {
-    syntaxErrorIf(!isThisToken(open, "["), close, "missing open for");
+    syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
     if (contents == NULL)
         return newNil(getLocation(open));
-    if (!isCommaTuple(contents))
+    if (!isCommaList(contents))
         return prepend(contents, newNil(getLocation(open)));
-    return constructList(getLocation(open), contents);
+    Node* list = newNil(getLocation(open));
+    for(; isCommaList(getLeft(contents)); contents = getLeft(contents))
+        list = prepend(getRight(contents), list);
+    return prepend(getRight(contents), list);
 }
 
 Node* parentheses(Node* close, Node* open, Node* contents) {
-    syntaxErrorIf(!isThisToken(open, "("), close, "missing open for");
-    syntaxErrorIf(contents == NULL, open, "empty parentheses");
+    syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
+    syntaxErrorIf(contents == NULL, "empty parentheses", open);
     if (isOperator(contents)) {
-        syntaxErrorIf(isSpecialOperator(getOperator(contents, false)),
-            contents, "operator cannot be parenthesized");
+        if (isSpecialOperator(getOperator(contents, false)))
+            syntaxError("operator cannot be parenthesized", contents);
         convertOperatorToName(contents);
     }
     return contents;
@@ -79,11 +81,13 @@ Rules RULES[] = {
     {")", 10, 240, CLOSE, R, parentheses},
     {"[", 240, 10, OPEN, L, unmatched},
     {"]", 10, 240, CLOSE, R, brackets},
-    {",", 20, 20, IN, R, apply},
-    {";", 30, 30, IN, R, infix},
-    {"\n", 40, 40, IN, R, apply},
-    {"=", 50, 50, IN, N, apply},
-    {"->", 240, 60, IN, R, lambda},
+    {"\n", 20, 20, IN, R, apply},
+    {"=", 30, 30, IN, N, apply},
+    {"|", 40, 40, IN, L, infix},
+    {"|~", 40, 40, IN, L, infix},
+    {",", 50, 50, IN, L, comma},
+    {";", 60, 60, IN, R, infix},
+    {"->", 240, 70, IN, R, lambda},
     {"?|", 80, 80, IN, R, infix},
     {"?", 80, 80, IN, L, infix},
     {"?:", 80, 80, IN, R, infix},
@@ -100,8 +104,6 @@ Rules RULES[] = {
     {">", 120, 120, IN, N, infix},
     {"<=", 120, 120, IN, N, infix},
     {">=", 120, 120, IN, N, infix},
-    {"|", 140, 140, IN, L, infix},
-    {"|~", 140, 140, IN, L, infix},
     {"++", 150, 150, IN, R, infix},
     {"\\", 160, 160, IN, L, infix},
     {"\\\\", 160, 160, IN, L, infix},
@@ -143,14 +145,15 @@ Node* applyOperator(Operator operator, Node* left, Node* right) {
 }
 
 bool isSpecialOperator(Operator operator) {
-    return operator.rules->apply != infix && operator.rules->apply != prefix;
+    return operator.rules->apply != infix && operator.rules->apply != prefix
+        && operator.rules->apply != comma;
 }
 
 bool isHigherPrecedence(Operator left, Operator right) {
     if (left.rules->rightPrecedence == right.rules->leftPrecedence) {
         const char* message = "operator is non-associative";
-        syntaxErrorIf(left.rules->associativity == N, left.token, message);
-        syntaxErrorIf(right.rules->associativity == N, right.token, message);
+        syntaxErrorIf(left.rules->associativity == N, message, left.token);
+        syntaxErrorIf(right.rules->associativity == N, message, right.token);
     }
 
     if (right.rules->associativity == R)

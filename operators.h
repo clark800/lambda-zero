@@ -11,8 +11,8 @@ typedef struct Operator {
     Rules* rules;
 } Operator;
 
-static inline bool isCommaTuple(Node* node) {
-    return isBranchNode(node) && isThisToken(node, ",");
+static inline bool isCommaList(Node* node) {
+    return isApplication(node) && isThisToken(node, ",");
 }
 
 Operator getOperator(Node* token, bool prefixOrOpen);

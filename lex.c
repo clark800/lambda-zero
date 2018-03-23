@@ -91,7 +91,7 @@ void syntaxError(const char* message, Node* token) {
     throwTokenError("Syntax", message, token);
 }
 
-void syntaxErrorIf(bool condition, Node* token, const char* message) {
+void syntaxErrorIf(bool condition, const char* message, Node* token) {
     if (condition)
         syntaxError(message, token);
 }
