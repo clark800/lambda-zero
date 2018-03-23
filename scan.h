@@ -13,8 +13,8 @@ static inline bool isQuoteCharacter(char c) {
 }
 
 static inline bool isDelimiterCharacter(char c) {
-    return c == ' ' || c == '\n' || c == '(' || c == ')' ||
-           c == ',' || c == ';' || c == '\0';
+    return c == ' ' || c == '\n' || c == '\0' || c == ',' || c == ';' ||
+        c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}';
 }
 
 static inline bool isOperandCharacter(char c) {

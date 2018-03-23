@@ -75,7 +75,6 @@ n ^ m = if (m == 0) then 1 else
 -- list basics --
 x :: xs = (x; xs)                     -- prepend element to list (cons)
 prepend = flip(::)
-nil = constant(true)                        -- empty list
 empty(xs) = xs(constant(constant(false)))   -- test for empty list
 head = left                  -- get first element of list
 tail = right                 -- drop first element of list
@@ -83,7 +82,7 @@ last(xs) = head(tail.until(empty <> tail, xs)) -- get last element of list
 index(xs, n) = head((tail ^^ n)(xs))      -- get element of list at index
 
 -- syntactic helpers --
-xs ?: f = if (xs.empty) then nil else f(xs.head, xs.tail)
+xs ?: f = if (xs.empty) then [] else f(xs.head, xs.tail)
 
 -- list folds --
 foldr(xs, f, z) = if (xs.empty) then z else f(xs.head, xs.tail.foldr(f, z))
@@ -98,23 +97,23 @@ length(xs) = xs.foldr(constant(+ 1), 0)         -- get length of list
 -- generic list constructors --
 iterate(f, x) = x :: iterate(f, f(x))       -- iteratively apply f
 repeat(x) = x :: repeat(x)                  -- infinitely repeat one element
-replicate(x, n) = ((x ::) ^^ n)(nil)      -- replicate one element n times
+replicate(x, n) = ((x ::) ^^ n)([])         -- replicate one element n times
 cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
 
 -- generic list transformations --
-filter(xs, p) = xs.foldr(x -> xs' -> if (p(x)) then x :: xs' else xs', nil)
+filter(xs, p) = xs.foldr(x -> xs' -> if (p(x)) then x :: xs' else xs', [])
 (|) = filter
 xs |~ p = xs | (~) <> p
-map(xs, f) = xs.foldr((::) <> f, nil)          -- map function over list
-zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then nil else
+map(xs, f) = xs.foldr((::) <> f, [])          -- map function over list
+zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then [] else
     f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail)
 zip(xs, ys) = zipWith(xs, (;), ys)
 unzip(xs) = (xs.map(left); xs.map(right))
 -- drop all elements beyond the first n elements
-take(xs, n) = if (n == 0) then nil else xs.head :: xs.tail.take(n - 1)
+take(xs, n) = if (n == 0) then [] else xs.head :: xs.tail.take(n - 1)
 drop(xs, n) = (tail ^^ n)(xs)            -- drop n elements from front of list
-concatenate(xss) = xss.foldr((++), nil)     -- concatenate list of lists
-reverse(xs) = xs.foldl(flip(::), nil)       -- reverse a list
+concatenate(xss) = xss.foldr((++), [])     -- concatenate list of lists
+reverse(xs) = xs.foldl(flip(::), [])       -- reverse a list
 interleave(xs, y) = xs ?: x -> xs' ->
     if (xs'.empty) then xs else x :: y :: interleave(xs', y)
 join(xss, ys) = concatenate(interleave(xss, ys))
@@ -137,25 +136,25 @@ xs === ys = if (xs.empty \/ ys.empty) then xs.empty <=> ys.empty else (
 )
 
 -- integer list constructors --
-n .. m = if (n > m) then nil else n :: (n + 1 .. m)
+n .. m = if (n > m) then [] else n :: (n + 1 .. m)
 
 -- integer list transformations --
-sort(ns) = ns ?: k -> ks -> sort(ks | (<= k)) ++ k :: sort(ks | (> k))
+sort(ns) = ns ?: k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 deduplicate(ns) = ns ?: k -> ks -> k :: deduplicate(ks | (=/= k))
 ns \ ms = ns |~ ms.contains                      -- list difference
 ns \\ ms = ns |~ ms.containsSorted               -- sorted list difference
 union(ns, ms) = ns ++ (ms \ ns)
 intersect(ns, ms) = ns | ms.contains
 
-span(p, ns) = if (ns.empty) then (nil; nil) else
+span(p, ns) = if (ns.empty) then ([]; []) else
     if (p(ns.head)) then (
         nsns = span(p, ns.tail)
         (ns.head :: nsns.left; nsns.right)
-    ) else (nil; ns)
+    ) else ([]; ns)
 
 lines(ns) = (
     nsns = span((=/= '\n'), ns)
-    nsns.left :: (if (nsns.right.empty) then nil else lines(nsns.right.tail))
+    nsns.left :: (if (nsns.right.empty) then [] else lines(nsns.right.tail))
 )
 
 repl(in, prompt, f) = prompt ++ in.lines.map(f).join("\n" ++ prompt)
@@ -175,7 +174,7 @@ primes = (f(ms) = ms ?: n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 -- serialization --
 showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
-    showReversedNatural(m) = if (m == 0) then nil else
+    showReversedNatural(m) = if (m == 0) then [] else
         ('0' + m.mod(10)) :: showReversedNatural(m / 10)
     if (n == 0) then "0" else reverse(showReversedNatural(n))
 )

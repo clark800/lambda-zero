@@ -198,7 +198,7 @@ Node* createToken(const char* lexeme) {
 
     lexerErrorIf(isSameLexeme(lexeme, ":"), lexeme, "reserved operator");
     bool isUserCode = SOURCE_CODE != INTERNAL_CODE;
-    if (isUserCode && findInLexeme(lexeme, "[]{}`!@#$%") != NULL)
+    if (isUserCode && findInLexeme(lexeme, "{}`!@#$%") != NULL)
         lexerErrorIf(true, lexeme, "reserved character in");
 
     int location = getLexemeLocation(lexeme);

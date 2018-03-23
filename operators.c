@@ -2,11 +2,12 @@
 #include <stdbool.h>
 #include "lib/tree.h"
 #include "ast.h"
+#include "objects.h"
 #include "lex.h"
 #include "operators.h"
 
 typedef unsigned char Precedence;
-typedef enum {L, R, N, P} Associativity;
+typedef enum {L, R, N, P, O, C} Associativity;
 struct Rules {
     const char* symbol;
     Precedence leftPrecedence, rightPrecedence;
@@ -39,15 +40,44 @@ Node* negate(Node* operator, Node* left, Node* right) {
     return infix(operator, newInteger(getLocation(operator), 0), right);
 }
 
-Node* paren(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(true, operator, "missing close parenthesis for");
+Node* unmatched(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(true, operator, "missing close for");
     return left == NULL ? right : left; // suppress unused parameter warning
+}
+
+Node* constructList(int location, Node* commaTuple) {
+    if (!isCommaTuple(commaTuple))
+        return prepend(commaTuple, newNil(location));
+    return prepend(getLeft(commaTuple),
+        constructList(location, getRight(commaTuple)));
+}
+
+Node* brackets(Node* close, Node* open, Node* contents) {
+    syntaxErrorIf(!isThisToken(open, "["), close, "missing open for");
+    if (contents == NULL)
+        return newNil(getLocation(open));
+    if (!isCommaTuple(contents))
+        return prepend(contents, newNil(getLocation(open)));
+    return constructList(getLocation(open), contents);
+}
+
+Node* parentheses(Node* close, Node* open, Node* contents) {
+    syntaxErrorIf(!isThisToken(open, "("), close, "missing open for");
+    syntaxErrorIf(contents == NULL, open, "empty parentheses");
+    if (isOperator(contents)) {
+        syntaxErrorIf(isSpecialOperator(getOperator(contents, false)),
+            contents, "operator cannot be parenthesized");
+        convertOperatorToName(contents);
+    }
+    return contents;
 }
 
 Rules RULES[] = {
     {"\0", 0, 0, R, NULL},
-    {"(", 240, 10, P, paren},
-    {")", 10, 240, R, NULL},
+    {"(", 240, 10, O, unmatched},
+    {")", 10, 240, C, parentheses},
+    {"[", 240, 10, O, unmatched},
+    {"]", 10, 240, C, brackets},
     {",", 20, 20, R, apply},
     {";", 30, 30, R, infix},
     {"\n", 40, 40, R, apply},
@@ -92,12 +122,13 @@ Rules RULES[] = {
 Rules DEFAULT = {"", 150, 150, L, infix};
 Rules SPACE = {" ", 240, 240, L, apply};
 
-Operator getOperator(Node* token, bool prefixOnly) {
+Operator getOperator(Node* token, bool prefixOrOpen) {
     if (isSpace(token))
         return (Operator){token, &SPACE};
     for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
         if (isThisToken(token, RULES[i].symbol))
-            if (!prefixOnly || RULES[i].associativity == P)
+            if (!prefixOrOpen || RULES[i].associativity == P
+                    || RULES[i].associativity == O)
                 return (Operator){token, &(RULES[i])};
     return (Operator){token, &DEFAULT};
 }
@@ -116,6 +147,14 @@ bool isSpecialOperator(Operator operator) {
 
 bool isPrefixOperator(Operator operator) {
     return operator.rules->associativity == P;
+}
+
+bool isOpenOperator(Operator operator) {
+    return operator.rules->associativity == O;
+}
+
+bool isCloseOperator(Operator operator) {
+    return operator.rules->associativity == C;
 }
 
 bool isHigherPrecedence(Operator left, Operator right) {
