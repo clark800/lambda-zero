@@ -31,8 +31,8 @@ bool isOperatorTop(Stack* stack) {
     return isOperator(peek(stack, 0));
 }
 
-bool isOpen(Node* token) {
-    return isOperator(token) && isOpenOperator(getOperator(token, false));
+bool isOpenOperator(Node* token) {
+    return isOperator(token) && getFixity(getOperator(token, false)) == OPEN;
 }
 
 void eraseNewlines(Stack* stack) {
@@ -72,7 +72,7 @@ void collapseOperator(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
     Operator op = getOperator(getNode(operator), isOperatorTop(stack));
-    Hold* left = getOperatorArity(op) > 1 ? pop(stack) : NULL;
+    Hold* left = getFixity(op) == IN ? pop(stack) : NULL;
     pushOperand(stack, applyOperator(op, getNode(left), getNode(right)));
     release(right);
     release(operator);
@@ -81,11 +81,12 @@ void collapseOperator(Stack* stack) {
 }
 
 void validateConsecutiveOperators(Node* left, Node* right) {
-    syntaxErrorIf(isOpen(left) && isEOF(right), left, "missing close for");
+    if (isOpenOperator(left) && isEOF(right))
+        syntaxError("missing close for", left);
     Operator op = getOperator(right, isOperator(left));
-    if (isCloseOperator(op) && !isCloseParen(right) && !isOpen(left))
+    if (getFixity(op) == CLOSE && !isCloseParen(right) && !isOpenOperator(left))
         syntaxError("missing right argument", left);
-    if (isInfixOperator(op) && !isOpenParen(left))
+    if (getFixity(op) == IN && !isOpenParen(left))
         syntaxError("missing left argument", right);   // e.g. "5 - * 2"
 }
 
@@ -106,7 +107,7 @@ bool shouldCollapseOperator(Stack* stack, Node* collapser) {
 
     Node* left = peek(stack, 2);
     Operator op = getOperator(operator, isOperator(left));
-    if (isOperator(left) && !isOpenOperator(op) && !isPrefixOperator(op))
+    if (isOperator(left) && getFixity(op) != OPEN && getFixity(op) != PRE)
         return false;
 
     return isHigherPrecedence(op, getOperator(collapser, false));
@@ -125,7 +126,7 @@ void collapseLeftOperand(Stack* stack, Node* collapser) {
 
 Node* newSection(Node* operator, Node* left, Node* right) {
     Operator op = getOperator(operator, false);
-    if (isPrefixOperator(op) || isSpecialOperator(op))
+    if (getFixity(op) == PRE || isSpecialOperator(op))
         syntaxError("invalid operator in section", operator);
     Node* body = applyOperator(op, left, right);
     return newLambda(getLocation(operator), getParameter(IDENTITY), body);
@@ -149,7 +150,7 @@ void collapseBracket(Stack* stack, Operator op) {
     Node* close = op.token;
     syntaxErrorIf(isEOF(peek(stack, 0)), close, "missing open for");
     Hold* contents = pop(stack);
-    if (isOpen(getNode(contents))) {
+    if (isOpenOperator(getNode(contents))) {
         pushBracketOperand(stack, applyOperator(op, getNode(contents), NULL));
     } else {
         syntaxErrorIf(isEOF(peek(stack, 0)), close, "missing open for");
@@ -168,11 +169,11 @@ void pushOperator(Stack* stack, Node* operator) {
     if (isNewline(operator) && isOperatorTop(stack))
         return;   // note: close parens never appear on the stack
     Operator op = getOperator(operator, isOperatorTop(stack));
-    if (isCloseOperator(op))
+    if (getFixity(op) == CLOSE)
         eraseNewlines(stack);
 
     collapseLeftOperand(stack, operator);
-    if (isCloseOperator(op))
+    if (getFixity(op) == CLOSE)
         collapseBracket(stack, op);
     else
         push(stack, operator);
