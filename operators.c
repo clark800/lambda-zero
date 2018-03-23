@@ -122,13 +122,17 @@ Rules RULES[] = {
 Rules DEFAULT = {"", 150, 150, L, infix};
 Rules SPACE = {" ", 240, 240, L, apply};
 
-Operator getOperator(Node* token, bool prefixOrOpen) {
+bool allowsOperatorBefore(Rules rules) {
+    return rules.associativity == P ||
+        rules.associativity == O || rules.associativity == C;
+}
+
+Operator getOperator(Node* token, bool isAfterOperator) {
     if (isSpace(token))
         return (Operator){token, &SPACE};
     for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
         if (isThisToken(token, RULES[i].symbol))
-            if (!prefixOrOpen || RULES[i].associativity == P
-                    || RULES[i].associativity == O)
+            if (!isAfterOperator || allowsOperatorBefore(RULES[i]))
                 return (Operator){token, &(RULES[i])};
     return (Operator){token, &DEFAULT};
 }
@@ -155,6 +159,11 @@ bool isOpenOperator(Operator operator) {
 
 bool isCloseOperator(Operator operator) {
     return operator.rules->associativity == C;
+}
+
+bool requiresLeftOperand(Operator op) {
+    // close operators can always accept open operators to the left
+    return !isPrefixOperator(op) && !isOpenOperator(op) && !isCloseOperator(op);
 }
 
 bool isHigherPrecedence(Operator left, Operator right) {

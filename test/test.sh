@@ -69,6 +69,7 @@ function run {
     local failures=0
     declare -a suites=(
         "lambda.test"
+        "syntax.test"
         "arithmetic.test"
         "definition.test"
         "quote.test"
