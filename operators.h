@@ -19,7 +19,7 @@ bool isSpecialOperator(Operator operator);
 bool isPrefixOperator(Operator operator);
 bool isOpenOperator(Operator operator);
 bool isCloseOperator(Operator operator);
-bool requiresLeftOperand(Operator operator);
+bool isInfixOperator(Operator operator);
 bool isHigherPrecedence(Operator left, Operator right);
 int getOperatorArity(Operator operator);
 Node* applyOperator(Operator operator, Node* left, Node* right);

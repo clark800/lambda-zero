@@ -239,10 +239,6 @@ bool isInternalToken(Node* token) {
     return getLexeme(token)[0] == '$';
 }
 
-bool isSpace(Node* token) {
-    return isLeafNode(token) && isSpaceCharacter(getLexeme(token)[0]);
-}
-
 Node* newEOF() {
     return newOperator(0);
 }
