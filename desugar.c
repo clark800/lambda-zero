@@ -11,8 +11,8 @@ static inline bool isDefinition(Node* node) {
 
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
-        syntaxErrorIf(isSameToken(getParameter(node), name), getParameter(node),
-            "cannot use definition name as parameter name");
+        if (isSameToken(getParameter(node), name))
+            syntaxError("symbol already defined", getParameter(node));
         return hasRecursiveCalls(getBody(node), name);
     }
     if (isApplication(node))
@@ -48,8 +48,8 @@ Node* transformDefine(Node* definition, Node* explicitScope) {
     Node* right = getRight(definition);
     for (; isApplication(left); left = getLeft(left)) {
         Node* parameterName = getRight(left);
-        syntaxErrorIf(!isName(parameterName), parameterName,
-            "expected name but got");
+        if (!isName(parameterName))
+            syntaxError("expected name but got", parameterName);
         Node* parameter = newParameter(getLocation(parameterName));
         right = newLambda(getLocation(parameter), parameter, right);
     }
@@ -64,7 +64,7 @@ Node* constructDefine(Node* node, Node* left, Node* right) {
     if (isDefinition(right))
         right = transformDefine(right, NULL);
     if (isDefinition(left)) {
-        syntaxErrorIf(isDefinition(node), node, "cannot define a definition");
+        syntaxErrorIf(isDefinition(node), "cannot define a definition", node);
         return transformDefine(left, right);
     }
     return newBranchNode(getLocation(node), left, right);

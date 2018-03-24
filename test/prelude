@@ -27,10 +27,10 @@ b <=> c = if (b) then c else ~c
 (\/) = or
 
 -- pairs --
-(x; y) = f -> f x y
+x, y = f -> f x y
 left(xy) = xy(true)
 right(xy) = xy(false)
-swap(xy) = (right(xy); left(xy))
+swap(xy) = (right(xy), left(xy))
 
 -- function methods --
 x.f = f(x)                      -- uniform function call syntax
@@ -42,11 +42,11 @@ on(f, g) = x -> y -> f(g(x), g(y))  -- apply binary f with unary g applied first
 f ^^ n = z -> if (n == 0) then z else (f ^^ n - 1)(f(z))
 until(f, p, z) = if (p(z)) then z else f.until(p, f(z))
 while(f, p, z) = f.until((~) <> p, z)
-curry(f) = x -> y -> f(x; y)
+curry(f) = x -> y -> f((x, y))
 uncurry(f) = xx -> f(left(xx), right(xx))
 
 -- more pairs --
-mapPair(xx, f) = (;).on(f).uncurry(xx)
+mapPair(xx, f) = (,).on(f).uncurry(xx)
 
 -- maybe --
 nothing = z -> f -> z
@@ -73,7 +73,7 @@ n ^ m = if (m == 0) then 1 else
     n * n ^ (m - 1)
 
 -- list basics --
-x :: xs = (x; xs)                     -- prepend element to list (cons)
+x :: xs = (x, xs)                     -- prepend element to list (cons)
 prepend = flip(::)
 empty(xs) = xs(constant(constant(false)))   -- test for empty list
 head = left                  -- get first element of list
@@ -107,8 +107,8 @@ xs |~ p = xs | (~) <> p
 map(xs, f) = xs.foldr((::) <> f, [])          -- map function over list
 zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then [] else
     f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail)
-zip(xs, ys) = zipWith(xs, (;), ys)
-unzip(xs) = (xs.map(left); xs.map(right))
+zip(xs, ys) = zipWith(xs, (,), ys)
+unzip(xs) = (xs.map(left), xs.map(right))
 -- drop all elements beyond the first n elements
 take(xs, n) = if (n == 0) then [] else xs.head :: xs.tail.take(n - 1)
 drop(xs, n) = (tail ^^ n)(xs)            -- drop n elements from front of list
@@ -146,11 +146,11 @@ ns \\ ms = ns |~ ms.containsSorted               -- sorted list difference
 union(ns, ms) = ns ++ (ms \ ns)
 intersect(ns, ms) = ns | ms.contains
 
-span(p, ns) = if (ns.empty) then ([]; []) else
+span(p, ns) = if (ns.empty) then ([], []) else
     if (p(ns.head)) then (
         nsns = span(p, ns.tail)
-        (ns.head :: nsns.left; nsns.right)
-    ) else ([]; ns)
+        (ns.head :: nsns.left, nsns.right)
+    ) else ([], ns)
 
 lines(ns) = (
     nsns = span((=/= '\n'), ns)

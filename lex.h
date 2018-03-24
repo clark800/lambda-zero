@@ -13,7 +13,7 @@ bool isInternalToken(Node* token);
 void printToken(Node* token, FILE* stream);
 void throwTokenError(const char* type, const char* message, Node* token);
 void syntaxError(const char* message, Node* token);
-void syntaxErrorIf(bool condition, Node* token, const char* message);
+void syntaxErrorIf(bool condition, const char* message, Node* token);
 Node* newEOF(void);
 
 #endif
