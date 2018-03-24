@@ -27,8 +27,8 @@
 
 ### Quicksort
 
-    xs ?: f = if (xs.empty) then nil else f(xs.head, xs.tail)
-    sort(ns) = ns ?: k -> ks -> sort(ks | (<= k)) ++ k :: sort(ks | (> k))
+    xs #? f = if (xs.empty) then [] else f(xs.head, xs.tail)
+    sort(ns) = ns #? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 
 ### Infinite list of natural numbers
 
@@ -38,7 +38,7 @@
 
 ### Infinite list of prime numbers
 
-    primes = (f(ms) = ms ?: n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
+    primes = (f(ms) = ms #? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 
 # Motivation
 

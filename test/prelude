@@ -1,19 +1,19 @@
--- naming conventions --
--- x, y, z unspecified type
--- f, g, h function type
--- n, m, k integer type
--- b, c    boolean type
--- p, q    boolean-valued function
--- m*      maybe of *
--- *s      list of *
--- **      pair of * and *
+// naming conventions
+// x, y, z unspecified type
+// f, g, h function type
+// n, m, k integer type
+// b, c    boolean type
+// p, q    boolean-valued function
+// m*      maybe of *
+// *s      list of *
+// **      pair of * and *
 
--- universal --
-undefined = 0 / 0               -- runtime error if this is evaluated
-identity(x) = x                 -- identity function
-constant(x) = y -> x            -- return value does not depend on parameter
+// universal
+undefined = 0 / 0               // runtime error if this is evaluated
+identity(x) = x                 // identity function
+constant(x) = y -> x            // return value does not depend on parameter
 
--- boolean logic --
+// boolean logic
 true(x, y) = x
 false(x, y) = y
 if(c, x, y) = c(x, y)
@@ -26,42 +26,43 @@ b <=> c = if (b) then c else ~c
 (/\) = and
 (\/) = or
 
--- pairs --
+// pairs
 x, y = f -> f x y
 left(xy) = xy(true)
 right(xy) = xy(false)
 swap(xy) = (right(xy), left(xy))
 
--- function methods --
-x.f = f(x)                      -- uniform function call syntax
-f <> g = x -> f(g(x))           -- function composition
+// function methods
+x.f = f(x)                      // uniform function call syntax
+f <> g = x -> f(g(x))           // function composition
 compose = (<>)
-flip(f) = x -> y -> f(y, x)     -- flip binary function argument order
-mirror(f) = x -> f(x, x)        -- convert binary function to unary function
-on(f, g) = x -> y -> f(g(x), g(y))  -- apply binary f with unary g applied first
+flip(f) = x -> y -> f(y, x)     // flip binary function argument order
+mirror(f) = x -> f(x, x)        // convert binary function to unary function
+on(f, g) = x -> y -> f(g(x), g(y))  // apply binary f with unary g applied first
 f ^^ n = z -> if (n == 0) then z else (f ^^ n - 1)(f(z))
 until(f, p, z) = if (p(z)) then z else f.until(p, f(z))
 while(f, p, z) = f.until((~) <> p, z)
 curry(f) = x -> y -> f((x, y))
 uncurry(f) = xx -> f(left(xx), right(xx))
 
--- more pairs --
+// more pairs
 mapPair(xx, f) = (,).on(f).uncurry(xx)
 
--- maybe --
+// maybe
 nothing = z -> f -> z
 just(x) = z -> f -> f(x)
 isNothing(mx) = mx(true, constant(false))
 isJust(mx) = mx(false, constant(true))
 fromJust(mx) = mx(undefined, identity)
 maybe(x, f, mx) = mx(x, f)
-mx ? f = mx(nothing, f)                   -- maybe chaining (bind)
-mx ?| x = mx(x, identity)                 -- just value or default
+mx ?. f = mx(nothing, f)                   // maybe chaining (bind)
+mx ?: x = mx(x, identity)                 // just value or default
 
--- math --
+// math
 abs(n) = if (n >= 0) then n else -n
 min(n, m) = if (n <= m) then n else m
 max(n, m) = if (n >= m) then n else m
+mod(n, m) = n \ m
 even(n) = n.mod(2) == 0
 odd(n) = n.mod(2) =/= 0
 divides(n, m) = m.mod(n) == 0
@@ -72,79 +73,80 @@ n ^ m = if (m == 0) then 1 else
     if (even(m)) then (*).mirror(n ^ (m / 2)) else
     n * n ^ (m - 1)
 
--- list basics --
-x :: xs = (x, xs)                     -- prepend element to list (cons)
+// list basics
+x :: xs = (x, xs)                     // prepend element to list (cons)
 prepend = flip(::)
-empty(xs) = xs(constant(constant(false)))   -- test for empty list
-head = left                  -- get first element of list
-tail = right                 -- drop first element of list
-last(xs) = head(tail.until(empty <> tail, xs)) -- get last element of list
-index(xs, n) = head((tail ^^ n)(xs))      -- get element of list at index
+empty(xs) = xs(constant(constant(false)))   // test for empty list
+head = left                  // get first element of list
+tail = right                 // drop first element of list
+last(xs) = head(tail.until(empty <> tail, xs)) // get last element of list
+index(xs, n) = head((tail ^^ n)(xs))      // get element of list at index
 
--- syntactic helpers --
-xs ?: f = if (xs.empty) then [] else f(xs.head, xs.tail)
+// syntactic helpers
+xs #? f = if (xs.empty) then [] else f(xs.head, xs.tail)
 
--- list folds --
+// list folds
 foldr(xs, f, z) = if (xs.empty) then z else f(xs.head, xs.tail.foldr(f, z))
 foldl(xs, f, z) = if (xs.empty) then z else xs.tail.foldl(f, f(z, xs.head))
 reducer(xs, f) = xs.tail.foldr(f, xs.head)
 reducel(xs, f) = xs.tail.foldl(f, xs.head)
 
--- list fold operations --
-xs ++ ys = xs.foldr((::), ys)                  -- concatenate lists
-length(xs) = xs.foldr(constant(+ 1), 0)         -- get length of list
+// list fold operations
+xs ++ ys = xs.foldr((::), ys)                  // concatenate lists
+length(xs) = xs.foldr(constant(+ 1), 0)         // get length of list
+(#) = length
 
--- generic list constructors --
-iterate(f, x) = x :: iterate(f, f(x))       -- iteratively apply f
-repeat(x) = x :: repeat(x)                  -- infinitely repeat one element
-replicate(x, n) = ((x ::) ^^ n)([])         -- replicate one element n times
-cycle(xs) = xs ++ cycle(xs)                 -- infinitely cycle list
+// generic list constructors
+iterate(f, x) = x :: iterate(f, f(x))       // iteratively apply f
+repeat(x) = x :: repeat(x)                  // infinitely repeat one element
+replicate(x, n) = ((x ::) ^^ n)([])         // replicate one element n times
+cycle(xs) = xs ++ cycle(xs)                 // infinitely cycle list
 
--- generic list transformations --
+// generic list transformations
 filter(xs, p) = xs.foldr(x -> xs' -> if (p(x)) then x :: xs' else xs', [])
 (|) = filter
 xs |~ p = xs | (~) <> p
-map(xs, f) = xs.foldr((::) <> f, [])          -- map function over list
+map(xs, f) = xs.foldr((::) <> f, [])          // map function over list
 zipWith(xs, f, ys) = if (xs.empty \/ ys.empty) then [] else
     f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail)
 zip(xs, ys) = zipWith(xs, (,), ys)
 unzip(xs) = (xs.map(left), xs.map(right))
--- drop all elements beyond the first n elements
+// drop all elements beyond the first n elements
 take(xs, n) = if (n == 0) then [] else xs.head :: xs.tail.take(n - 1)
-drop(xs, n) = (tail ^^ n)(xs)            -- drop n elements from front of list
-concatenate(xss) = xss.foldr((++), [])     -- concatenate list of lists
-reverse(xs) = xs.foldl(flip(::), [])       -- reverse a list
-interleave(xs, y) = xs ?: x -> xs' ->
+drop(xs, n) = (tail ^^ n)(xs)            // drop n elements from front of list
+concatenate(xss) = xss.foldr((++), [])     // concatenate list of lists
+reverse(xs) = xs.foldl(flip(::), [])       // reverse a list
+interleave(xs, y) = xs #? x -> xs' ->
     if (xs'.empty) then xs else x :: y :: interleave(xs', y)
 join(xss, ys) = concatenate(interleave(xss, ys))
 
--- generic list reducers --
-any(xs, p) = xs.map(p).foldr((\/), false)     -- test if any element satisfies p
-all(xs, p) = xs.map(p).foldr((/\), true)      -- test if all elements satisfy p
--- find first element satisfying p, or return nothing
+// generic list reducers
+any(xs, p) = xs.map(p).foldr((\/), false)     // test if any element satisfies p
+all(xs, p) = xs.map(p).foldr((/\), true)      // test if all elements satisfy p
+// find first element satisfying p, or return nothing
 find(xs, p) = if (xs.empty) then nothing else
     if (p(xs.head)) then just(xs.head) else xs.tail.find(p)
 lookup(nxs, n) = if (nxs.empty) then nothing else
     if (nxs.head.left == n) then just(nxs.head.right) else nxs.tail.lookup(n)
 
--- integer list basics --
-contains(ns, n) = ns.any((== n))              -- test if element is in list
+// integer list basics
+n : ns = ns.any((== n))
 containsSorted(ns, n) = ~ns.empty /\ n >= ns.head /\
         (n == ns.head \/ ns.tail.containsSorted(n))
 xs === ys = if (xs.empty \/ ys.empty) then xs.empty <=> ys.empty else (
-    xs.head == ys.head /\ xs.tail === ys.tail       -- integer list equality
+    xs.head == ys.head /\ xs.tail === ys.tail       // integer list equality
 )
 
--- integer list constructors --
+// integer list constructors
 n .. m = if (n > m) then [] else n :: (n + 1 .. m)
 
--- integer list transformations --
-sort(ns) = ns ?: k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
-deduplicate(ns) = ns ?: k -> ks -> k :: deduplicate(ks | (=/= k))
-ns \ ms = ns |~ ms.contains                      -- list difference
-ns \\ ms = ns |~ ms.containsSorted               -- sorted list difference
-union(ns, ms) = ns ++ (ms \ ns)
-intersect(ns, ms) = ns | ms.contains
+// integer list transformations
+sort(ns) = ns #? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
+deduplicate(ns) = ns #? k -> ks -> k :: deduplicate(ks | (=/= k))
+ns -- ms = ns |~ (: ms)             // list difference
+union(ns, ms) = ns ++ (ms -- ns)
+intersect(ns, ms) = ns | (: ms)
+sortedDifference(ns, ms) = ns |~ ms.containsSorted // sorted list difference
 
 span(p, ns) = if (ns.empty) then ([], []) else
     if (p(ns.head)) then (
@@ -159,19 +161,19 @@ lines(ns) = (
 
 repl(in, prompt, f) = prompt ++ in.lines.map(f).join("\n" ++ prompt)
 
--- integer list reducers --
+// integer list reducers
 sum(ns) = ns.foldl((+), 0)
 product(ns) = ns.foldl((*), 1)
 minimum(ns) = ns.reducel(min)
 maximum(ns) = ns.reducel(max)
 
--- infinite lists --
+// infinite lists
 countFrom = iterate(+ 1)
 naturals = countFrom(0)
 squares = naturals.map(mirror(*))
-primes = (f(ms) = ms ?: n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
+primes = (f(ms) = ms #? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 
--- serialization --
+// serialization
 showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
     showReversedNatural(m) = if (m == 0) then [] else
