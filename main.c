@@ -61,6 +61,7 @@ void usageError(const char* name) {
 }
 
 int main(int argc, char* argv[]) {
+    setbuf(stdin, NULL);
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
     bool showDebug = false;

@@ -9,8 +9,8 @@
 - The interpreter is less than 2000 lines of strict ANSI C99 and the binary is
   just ~60KB dynamically linked and stripped.
 - The interpreter can also be built for Linux x86-64 without the C standard
-  library in which case it is less than 2300 lines of strict ANSI C99 and
-  generates a ~25KB statically linked stripped binary.
+  library in which case it is less than 2500 lines of strict ANSI C99 and
+  generates a ~30KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
   memory allocator, error messaging, and rudimental built-in debugging and
   profiling features.
@@ -27,8 +27,8 @@
 
 ### Quicksort
 
-    xs #? f = if (xs.empty) then [] else f(xs.head, xs.tail)
-    sort(ns) = ns #? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
+    xs ::? f = if (xs.empty) then [] else f(xs.head, xs.tail)
+    sort(ns) = ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 
 ### Infinite list of natural numbers
 
@@ -38,7 +38,7 @@
 
 ### Infinite list of prime numbers
 
-    primes = (f(ms) = ms #? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
+    primes = (f(ms) = ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 
 # Motivation
 
@@ -95,38 +95,40 @@ The desugared language can be described by the grammar rules below
 (technically the desugared language is a sublanguage of expr because this
 grammar ignores some error cases):
 
-    integer = [-]?[0-9]+
-    builtin = '+' | '-' | '*' | '/' | 'mod' | '==' | '=/=' | '<' | '>' | '<=' | '>='
+    natural = [0-9]+
+    builtin = '+' | '-' | '*' | '/' | '\\' | '==' | '=/=' | '<' | '>' | '<=' | '>=' | 'error'
     name = ("a token that is not an integer, builtin, delimiter, or arrow")
-    expr = integer | builtin | name | (name -> expr) | (expr expr)
+    expr = natural | builtin | name | (name -> expr) | (expr expr)
 
 ### Syntactic sugars
 
-Let `x, y, z` be generic expressions, `f` be a name expression, and `op` be
+Let `x, y, z` be generic expressions, `f` be a name expression, and `*` be
 an operator name expression.
 
-- Left associative spaces: `x y z => ((x y) z)`
-- Right associative newlines: `x \n y \n z => (z (y z))`
-- Redundant Parentheses: `(x) => x` unless `x` is an operator
+- Left associative spaces: `x y z` desugars to `((x y) z)`
+- Right associative newlines: `x \n y \n z` desguars to `(z (y z))`
+- Redundant Parentheses: `(x)` desugars to `x` unless `x` is an operator
   (see Operator names sugar below)
-- Definitions (Let expressions): `(f = x) y => (f -> y) x`
-- Trailing definitions: `(x (f = y)) => (x ((f = y) f))` If there is nothing
-  after a definition, it as treated as if the name of the definition follows
-  the definition.
-- Function definitions: `f x y = z => f = x -> y -> z`
+- Definitions (Let expressions): `(f = x) y` desugars to `(f -> y) x`
+- Trailing definitions: `(x (f = y))` desguars to `(x ((f = y) f))`
+  If there is nothing after a definition, it as treated as if the name of the
+  definition follows the definition.
+- Function definitions: `f x y = z` desugars to `f = x -> y -> z`
 - Recursive definitions: The right hand sise of a function definition can refer
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
-- Curried function application: `f(x, y) => f x y`
-- Infix operators: `x op y => op x y` where `op` is a non-alphanumeric symbol
-When operators are chained like `x op y op z` there are precedence rules that
-determine how it is parsed.
-- Operator names: `(op)` disables the infix operator sugar on `op`
-- Sections: `(op y) => x -> (x op y)` and `(y op) => x -> (y op x)`
+- Curried function application: `f(x, y)` desugars to `f x y`
+- Infix operators: `x * y` desugars to `* x y`
+When operators are chained like `x * y * z` there are precedence and associatvitiy rules that determine how it is parsed.
+- Operator names: `(*)` disables the infix operator sugar on `*`
+- Sections: `(* y)` desguars to `x -> (x * y)` and
+  `(y *)` desugars to `x -> (y * x)`
 - If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument. `if` is still just a normal function.
-- String literals: `"abc"` desugars to a list of ascii character codes,
-  using the Church encoding for lists
-- Character literals: `'a'` desugars to the ascii character code
+- String literals: `"abc"` desugars to a Church-encoded list of ascii
+  character codes.
+- Character literals: `'a'` desugars to the ascii character code for `a`
+- List literals: `[x, y, z]` desugars to the Church-encoded list of
+  `x`, `y`, and `z`.
 
 ### I/O
 

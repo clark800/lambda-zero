@@ -41,7 +41,7 @@ int fgetc(FILE* stream) {
 }
 
 void setbuf(FILE* stream, char* buffer) {
-    assert(stream != NULL && buffer == NULL);
+    assert(stream != (FILE*)(-1) && buffer == NULL);
 }
 
 /*

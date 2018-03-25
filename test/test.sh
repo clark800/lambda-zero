@@ -42,7 +42,8 @@ function oneline_suite {
     fi
     header "$name"
     while read -r line; do
-        read -r expected_output
+        read -r output_line
+        local expected_output=$(echo "$output_line" | sed 's/\\n/\n/g')
         local sedline=$(echo "\n$line" | sed 's/\\n/\n/g')
         local input="$prelude$sedline"
         local output=$(echo "$input" | $CMD 2>&1)
