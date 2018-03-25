@@ -11,26 +11,6 @@
 #include "serialize.h"
 #include "parse.h"
 
-static inline bool isNewline(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\n");
-}
-
-static inline bool isOpenParen(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "(");
-}
-
-static inline bool isCloseParen(Node* node) {
-    return isLeafNode(node) && isThisToken(node, ")");
-}
-
-static inline bool isEOF(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\0");
-}
-
-static inline bool isTuple(Node* node) {
-    return isLambda(node) && isThisToken(getParameter(node), ",");
-}
-
 bool isOperatorTop(Stack* stack) {
     return isOperator(peek(stack, 0));
 }

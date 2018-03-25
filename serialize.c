@@ -7,14 +7,6 @@
 #include "lex.h"
 #include "serialize.h"
 
-static inline bool isDefinition(Node* node) {
-    return isApplication(node) && isThisToken(node, "=");
-}
-
-static inline bool isNewline(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\n");
-}
-
 void debug(const char* message) {
     fputs(message, stderr);
 }

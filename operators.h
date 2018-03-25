@@ -11,10 +11,6 @@ typedef struct Operator {
     Rules* rules;
 } Operator;
 
-static inline bool isCommaList(Node* node) {
-    return isApplication(node) && isThisToken(node, ",");
-}
-
 Operator getOperator(Node* token, bool prefixOrOpen);
 bool isSpecialOperator(Operator operator);
 Fixity getFixity(Operator operator);
