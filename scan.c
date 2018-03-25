@@ -8,11 +8,11 @@ static inline bool isSpaceCharacter(char c) {
 }
 
 static inline bool isComment(const char* s) {
-    return s[0] == '-' && s[1] == '-';
+    return s[0] == '/' && s[1] == '/';
 }
 
 static inline bool isEscapedNewline(const char* s) {
-    return s[0] == '\\' && s[1] == '\n';
+    return s[0] == '\\' && s[1] == '\\' && s[1] == '\n';
 }
 
 static inline bool isNotNewlineCharacter(char c) {
@@ -62,7 +62,7 @@ static inline const char* skipLexeme(const char* lexeme) {
 
 static inline const char* skipElided(const char* s) {
     while (isComment(s) || isEscapedNewline(s))
-        s = isComment(s) ? skipToNewline(s) : skipSpaces(skipN(s, 2));
+        s = isComment(s) ? skipToNewline(s) : skipSpaces(skipN(s, 3));
     return s;
 }
 

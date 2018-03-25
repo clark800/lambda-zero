@@ -86,11 +86,9 @@ Rules RULES[] = {
     {"|", 40, 40, IN, L, infix},
     {"|~", 40, 40, IN, L, infix},
     {",", 50, 50, IN, L, comma},
-    {";", 60, 60, IN, R, infix},
+    {"&", 60, 60, IN, L, infix},
     {"->", 240, 70, IN, R, lambda},
-    {"?|", 80, 80, IN, R, infix},
-    {"?", 80, 80, IN, L, infix},
-    {"?:", 80, 80, IN, R, infix},
+    {"#?", 80, 80, IN, R, infix},
     {"then", 80, 80, IN, L, apply},
     {"else", 80, 70, IN, L, apply},
     {"\\/", 90, 90, IN, R, infix},
@@ -104,9 +102,13 @@ Rules RULES[] = {
     {">", 120, 120, IN, N, infix},
     {"<=", 120, 120, IN, N, infix},
     {">=", 120, 120, IN, N, infix},
+    {"<:", 120, 120, IN, N, infix},
+    {">=<", 120, 120, IN, N, infix},
+    {":", 120, 120, IN, N, infix},
+    {"&&", 150, 150, IN, R, infix},
     {"++", 150, 150, IN, R, infix},
-    {"\\", 160, 160, IN, L, infix},
-    {"\\\\", 160, 160, IN, L, infix},
+    {"--", 150, 150, IN, N, infix},
+    {"**", 160, 160, IN, R, infix},
     {"::", 170, 170, IN, R, infix},
     {"..", 180, 180, IN, N, infix},
     {"^^", 190, 190, IN, L, infix},
@@ -114,15 +116,19 @@ Rules RULES[] = {
     {"-", 200, 200, IN, L, infix},
     {"*", 210, 210, IN, L, infix},
     {"/", 210, 210, IN, L, infix},
+    {"%", 210, 210, IN, L, infix},
+    {"\\", 210, 210, IN, L, infix},
     {"^", 220, 220, IN, R, infix},
     {"<>", 230, 230, IN, R, infix},
     {"-", 235, 245, PRE, L, negate},
     {"~", 235, 245, PRE, L, prefix},
-    {"!", 235, 245, PRE, L, prefix},
+    {"#", 235, 245, PRE, L, prefix},
+    {"?:", 250, 250, IN, L, infix},
+    {"?.", 250, 250, IN, L, infix},
     {".", 250, 250, IN, L, infix}
 };
 
-Rules DEFAULT = {"", 150, 150, IN, L, infix};
+Rules DEFAULT = {"", 140, 140, IN, L, infix};
 
 bool allowsOperatorBefore(Rules rules) {
     return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
