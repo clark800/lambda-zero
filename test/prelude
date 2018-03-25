@@ -27,7 +27,7 @@ b <=> c = if (b) then c else ~c
 (\/) = or
 
 // pairs
-x, y = f -> f x y
+(x, y) = f -> f x y             // this definition is for (,) and sections
 left(xy) = xy(true)
 right(xy) = xy(false)
 swap(xy) = (right(xy), left(xy))

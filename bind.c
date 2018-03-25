@@ -27,7 +27,11 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
         return;
     }
     unsigned long long index = findDebruijnIndex(symbol, parameters);
-    syntaxErrorIf(index == 0, "undefined symbol", symbol);
+    if (index == 0) {
+        if (isThisToken(symbol, ","))
+            syntaxError("missing parentheses around", symbol);
+        syntaxError("undefined symbol", symbol);
+    }
     unsigned long long localDepth = length(parameters) - globalDepth;
     if (index > localDepth)
         convertSymbolToGlobal(symbol, length(parameters) - index);
@@ -36,17 +40,16 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
 }
 
 static bool isDefined(Node* symbol, Array* parameters) {
-    // internal tokens are exempted to allow e.g. tuples inside tuples
-    return !isInternalToken(symbol) && !isThisToken(symbol, ",") &&
-        (lookupBuiltinCode(symbol) != 0 ||
-        findDebruijnIndex(symbol, parameters) != 0);
+    // internal tokens are exempted to allow e.g. lists
+    return !isInternalToken(symbol) && (lookupBuiltinCode(symbol) != 0 ||
+            findDebruijnIndex(symbol, parameters) != 0);
 }
 
 void bindWith(Node* node, Array* parameters, const Array* globals) {
     if (isSymbol(node)) {
         bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
-        if (isDefined(getParameter(node), parameters))
+        if (!isTuple(node) && isDefined(getParameter(node), parameters))
             syntaxError("symbol already defined", getParameter(node));
         append(parameters, getParameter(node));
         bindWith(getBody(node), parameters, globals);

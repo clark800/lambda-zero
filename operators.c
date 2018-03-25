@@ -75,17 +75,23 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
     return contents;
 }
 
+// comma must be the lowest precedence operator above parentheses/brackets
+// or else a commaList, which is an invalid operand, could get buried in the
+// AST without being detected, then a surrounding parentheses could apply
+// a tuple abstraction, which would bind across a bracket boundary.
+// if a comma is not wrapped in parentheses or brackets, it will be at the
+// very top level and thus won't be defined, so bind will catch this case.
 Rules RULES[] = {
     {"\0", 0, 0, CLOSE, R, NULL},
     {"(", 240, 10, OPEN, L, unmatched},
     {")", 10, 240, CLOSE, R, parentheses},
     {"[", 240, 10, OPEN, L, unmatched},
     {"]", 10, 240, CLOSE, R, brackets},
-    {"\n", 20, 20, IN, R, apply},
-    {"=", 30, 30, IN, N, apply},
-    {"|", 40, 40, IN, L, infix},
-    {"|~", 40, 40, IN, L, infix},
-    {",", 50, 50, IN, L, comma},
+    {",", 20, 20, IN, L, comma},
+    {"\n", 30, 30, IN, R, apply},
+    {"=", 40, 40, IN, N, apply},
+    {"|", 50, 50, IN, L, infix},
+    {"|~", 50, 50, IN, L, infix},
     {"&", 60, 60, IN, L, infix},
     {"->", 240, 70, IN, R, lambda},
     {"#?", 80, 80, IN, R, infix},

@@ -5,10 +5,6 @@
 #include "objects.h"
 #include "desugar.h"
 
-static inline bool isDefinition(Node* node) {
-    return isApplication(node) && isThisToken(node, "=");
-}
-
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
         if (isSameToken(getParameter(node), name))
@@ -46,6 +42,11 @@ Node* transformDefine(Node* definition, Node* explicitScope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
     Node* left = getLeft(definition);
     Node* right = getRight(definition);
+    // special case to allow defining the comma operator for use in
+    // (,) and sections: (, x) and (x ,). this is necessary because it will
+    // be wrapped in a tuple abstraction by the time it reaches here
+    if (isTuple(left))
+        left = getBody(left);
     for (; isApplication(left); left = getLeft(left)) {
         Node* parameterName = getRight(left);
         if (!isName(parameterName))
@@ -54,6 +55,7 @@ Node* transformDefine(Node* definition, Node* explicitScope) {
         right = newLambda(getLocation(parameter), parameter, right);
     }
     Node* name = left;
+    syntaxErrorIf(!isSymbol(name), "expected symbol but got", name);
     Node* value = transformRecursion(name, right);
     int location = getLocation(name);
     return newBranchNode(location, newLambda(location,

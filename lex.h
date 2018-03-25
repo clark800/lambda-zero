@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "lib/tree.h"
+#include "ast.h"
 
 Hold* getFirstToken(const char* input);
 Hold* getNextToken(Hold* lastToken);
@@ -15,5 +16,34 @@ void throwTokenError(const char* type, const char* message, Node* token);
 void syntaxError(const char* message, Node* token);
 void syntaxErrorIf(bool condition, const char* message, Node* token);
 Node* newEOF(void);
+
+static inline bool isNewline(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "\n");
+}
+
+static inline bool isDefinition(Node* node) {
+    return isApplication(node) && isThisToken(node, "=");
+}
+
+static inline bool isOpenParen(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "(");
+}
+
+static inline bool isCloseParen(Node* node) {
+    return isLeafNode(node) && isThisToken(node, ")");
+}
+
+static inline bool isEOF(Node* node) {
+    return isLeafNode(node) && isThisToken(node, "\0");
+}
+
+static inline bool isCommaList(Node* node) {
+    return isApplication(node) && isThisToken(node, ",");
+}
+
+static inline bool isTuple(Node* node) {
+    return isLambda(node) && isThisToken(getParameter(node), ",") &&
+        isCommaList(getBody(node));
+}
 
 #endif
