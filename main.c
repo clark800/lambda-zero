@@ -13,7 +13,7 @@
 void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
     if (usage != expectedUsage)
-        memoryError(label, (long long)(usage - expectedUsage));
+        printMemoryError(label, (long long)(usage - expectedUsage));
 }
 
 void interpret(const char* input, bool showDebug) {
@@ -22,7 +22,7 @@ void interpret(const char* input, bool showDebug) {
     size_t memoryUsageBeforeParse = getMemoryUsage();
     Program program = parse(input, true, showDebug);
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
-    Hold* valueClosure = evaluate(program.entry, VOID, program.globals);
+    Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     if (!program.IO) {
         serialize(getNode(valueClosure), program.globals);
         fputs("\n", stdout);

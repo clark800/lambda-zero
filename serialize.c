@@ -23,6 +23,8 @@ void debugInteger(long long n) {
 void serializeAST(Node* node, FILE* stream) {
     if (node == NULL) {
         fputs("NULL", stream);     // for debugging
+    } else if (node == VOID) {
+        fputs("VOID", stream);
     } else if (isBranchNode(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);

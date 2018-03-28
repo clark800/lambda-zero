@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "array.h"
 
 struct Array {
@@ -24,7 +24,7 @@ void deleteArray(Array* array) {
 
 void append(Array* array, void* value) {
     if (array->length == array->capacity) {
-        array->capacity *= 2;
+        array->capacity = array->capacity == 0 ? 1 : 2 * array->capacity;
         size_t newSize = array->capacity * sizeof(void*);
         array->elements = realloc(array->elements, newSize);
     }

@@ -88,7 +88,7 @@ config_unused() {
 }
 
 get_loc() {
-    $CC -fpreprocessed -dD -E -P $HEADERS $SOURCES | wc -l
+    $CC -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
 }
 
 run_cloc() {

@@ -14,7 +14,7 @@ Node* newEOF() {
     return newOperator(0);
 }
 
-const char* getLexeme(Node* node) {
+static inline const char* getLexeme(Node* node) {
     return getLexemeByLocation(getLocation(node));
 }
 
