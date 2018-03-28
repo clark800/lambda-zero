@@ -3,6 +3,7 @@
 #include "lib/tree.h"
 #include "ast.h"
 #include "objects.h"
+#include "errors.h"
 #include "lex.h"
 #include "operators.h"
 

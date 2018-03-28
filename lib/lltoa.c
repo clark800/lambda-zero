@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>     // llabs
 #include "lltoa.h"
 
@@ -37,4 +38,9 @@ char* lltoa(long long n, char* buffer, int radix) {
         buffer[i++] = '-';
     buffer[i] = '\0';
     return reverse(buffer, i);
+}
+
+void fputll(long long n, FILE* stream) {
+    char buffer[3 * sizeof(long long)];
+    fputs(lltoa(n, buffer, 10), stream);
 }

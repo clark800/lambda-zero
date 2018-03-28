@@ -4,6 +4,7 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "objects.h"
+#include "errors.h"
 #include "lex.h"
 #include "operators.h"
 #include "desugar.h"

@@ -3,19 +3,12 @@
 #include "lib/readfile.h"
 #include "lib/tree.h"
 #include "lib/freelist.h"
-#include "lib/errors.h"
 #include "ast.h"
-#include "closure.h"
 #include "objects.h"
+#include "errors.h"
 #include "serialize.h"
 #include "parse.h"
 #include "evaluate.h"
-
-void memoryError(const char* label, long long bytes) {
-    errorArray(4, (strings){"MEMORY LEAK IN \"", label, "\":", " "});
-    debugInteger(bytes);
-    debug(" bytes\n");
-}
 
 void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
@@ -45,19 +38,11 @@ void interpret(const char* input, bool showDebug) {
 
 char* readScript(const char* filename) {
     FILE* stream = fopen(filename, "r");
-    if (stream == NULL || stream == (FILE*)(-1)) {
-        errorArray(3, (strings){
-            "Usage error: file '", filename, "' cannot be opened"});
-        exit(2);
-    }
+    if (stream == NULL || stream == (FILE*)(-1))
+        readError(filename);
     char* script = readfile(stream);
     fclose(stream);
     return script;
-}
-
-void usageError(const char* name) {
-    errorArray(3, (strings){"Usage error: ", name, " [-dtpn] [FILE]"});
-    exit(2);
 }
 
 int main(int argc, char* argv[]) {

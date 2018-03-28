@@ -1,11 +1,10 @@
 #include <assert.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
 #include "lib/tree.h"
-#include "lib/errors.h"
 #include "ast.h"
+#include "errors.h"
 #include "objects.h"
 #include "closure.h"
 #include "builtins.h"
@@ -19,37 +18,37 @@ static inline Node* toBoolean(int value) {
 // note: it is important to check for overflow before it occurs because
 // undefined behavior occurs immediately after an overflow, which is
 // impossible to recover from
-static inline long long add(long long left, long long right) {
+long long add(long long left, long long right, Node* builtin) {
     if (left > 0 && right > 0 && left > LLONG_MAX - right)
-        error("Integer overflow", "addition");
+        runtimeError("integer overflow", builtin);
     if (left < 0 && right < 0 && left < -LLONG_MAX - right)
-        error("Integer overflow", "addition");
+        runtimeError("integer overflow", builtin);
     return left + right;
 }
 
-static inline long long subtract(long long left, long long right) {
+long long subtract(long long left, long long right, Node* builtin) {
     if (left > 0 && right < 0 && left > LLONG_MAX + right)
-        error("Integer overflow", "subtraction");
+        runtimeError("integer overflow", builtin);
     if (left < 0 && right > 0 && left < -LLONG_MAX + right)
-        error("Integer overflow", "subtraction");
+        runtimeError("integer overflow", builtin);
     return left - right;
 }
 
-static inline long long multiply(long long left, long long right) {
+long long multiply(long long left, long long right, Node* builtin) {
     if (right != 0 && llabs(left) > llabs(LLONG_MAX / right))
-        error("Integer overflow", "multiplication");
+        runtimeError("integer overflow", builtin);
     return left * right;
 }
 
-static inline long long divide(long long left, long long right) {
+long long divide(long long left, long long right, Node* builtin) {
     if (right == 0)
-        error("Integer arithmetic", "divide by zero");
+        runtimeError("divide by zero", builtin);
     return left / right;
 }
 
-static inline long long modulo(long long left, long long right) {
+long long modulo(long long left, long long right, Node* builtin) {
     if (right == 0)
-        error("Integer arithmetic", "modulo by zero");
+        runtimeError("divide by zero", builtin);
     return left % right;
 }
 
@@ -76,9 +75,9 @@ Hold* evaluateError(Node* builtin, Closure* closure) {
     return hold(closure);
 }
 
-Node* evaluatePut(long long c) {
+Node* evaluatePut(Node* builtin, long long c) {
     if (c < 0 || c >= 256)
-        error("Runtime", "expected byte value in list returned from main");
+        runtimeError("expected byte value in list returned from main", builtin);
     fputc((int)c, STDERR ? stderr : stdout);
     return IDENTITY;
 }
@@ -97,18 +96,18 @@ Node* evaluateGet(Node* builtin, long long index) {
 Node* computeBuiltin(Node* builtin, long long left, long long right) {
     int location = getLocation(builtin);
     switch (getBuiltinCode(builtin)) {
-        case PLUS: return newInteger(location, add(left, right));
-        case MINUS: return newInteger(location, subtract(left, right));
-        case TIMES: return newInteger(location, multiply(left, right));
-        case DIVIDE: return newInteger(location, divide(left, right));
-        case MODULUS: return newInteger(location, modulo(left, right));
+        case PLUS: return newInteger(location, add(left, right, builtin));
+        case MINUS: return newInteger(location, subtract(left, right, builtin));
+        case TIMES: return newInteger(location, multiply(left, right, builtin));
+        case DIVIDE: return newInteger(location, divide(left, right, builtin));
+        case MODULUS: return newInteger(location, modulo(left, right, builtin));
         case EQUAL: return toBoolean(left == right);
         case NOTEQUAL: return toBoolean(left != right);
         case LESSTHAN: return toBoolean(left < right);
         case GREATERTHAN: return toBoolean(left > right);
         case LESSTHANOREQUAL: return toBoolean(left <= right);
         case GREATERTHANOREQUAL: return toBoolean(left >= right);
-        case PUT: return evaluatePut(left);
+        case PUT: return evaluatePut(builtin, left);
         case GET: return evaluateGet(builtin, left);
         default: assert(false); return NULL;
     }
@@ -118,7 +117,8 @@ long long getIntegerArgument(Node* builtin, Closure* closure) {
     if (closure == NULL)
         return 0;
     Node* integer = getTerm(closure);
-    errorIf(!isInteger(integer), builtin, "expected integer argument");
+    if (!isInteger(integer))
+       runtimeError("expected integer argument to", builtin);
     return getInteger(integer);
 }
 
@@ -132,7 +132,7 @@ Hold* evaluateIntegerBuiltin(Node* builtin, Closure* left, Closure* right) {
 Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right) {
     switch (getBuiltinCode(builtin)) {
         case ERROR: return evaluateError(builtin, left);
-        case EXIT: throwTokenError("\nRuntime", "hit", builtin); return NULL;
+        case EXIT: runtimeError("hit", builtin); return NULL;
         default: return evaluateIntegerBuiltin(builtin, left, right);
     }
 }

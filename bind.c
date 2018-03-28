@@ -2,6 +2,7 @@
 #include "lib/array.h"
 #include "ast.h"
 #include "lex.h"
+#include "errors.h"
 #include "bind.h"
 
 static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {

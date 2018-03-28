@@ -54,16 +54,16 @@ Syntax error: magnitude of integer is too large '9223372036854775808'
 Syntax error: magnitude of integer is too large '9223372036854775808'
 ===============================================================================
 9223372036854775807 + 1
-Integer overflow error: addition
+\nRuntime error: integer overflow '+'
 ===============================================================================
 9223372036854775807 + 0
 9223372036854775807
 ===============================================================================
 -9223372036854775807 - 1
-Integer overflow error: subtraction
+\nRuntime error: integer overflow '-'
 ===============================================================================
 1 / 0
-Integer arithmetic error: divide by zero
+\nRuntime error: divide by zero '/'
 ===============================================================================
 (-5) \ (-2)
 -1
@@ -78,10 +78,10 @@ Syntax error: missing close for '('
 Syntax error: missing left argument '+'
 ===============================================================================
 (+)
-Evaluation error: missing argument to '+'
+\nRuntime error: missing argument to '+'
 ===============================================================================
 1 + 2 3
-Evaluation error: extra argument '3'
+\nRuntime error: extra argument '3'
 ===============================================================================
 5 - - 2
 7
