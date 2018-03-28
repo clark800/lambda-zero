@@ -58,8 +58,6 @@ static inline const char* skipLexeme(const char* lexeme) {
         return skipWhile(lexeme, isOperandCharacter);
     if (isOperatorCharacter(lexeme[0]))
         return skipWhile(lexeme, isOperatorCharacter);
-    if (lexeme[0] == '$')
-        return skipWhile(lexeme + 1, isOperandCharacter);
     return lexeme + 1;    // delimiter or illegal character
 }
 

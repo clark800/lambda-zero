@@ -18,12 +18,13 @@ const char* getLexeme(Node* node) {
     return getLexemeByLocation(getLocation(node));
 }
 
-void printToken(Node* token, FILE* stream) {
-    printLexeme(getLexeme(token), stream);
+bool isInternalToken(Node* token) {
+    return isLeafNode(token) && !isInteger(token) && *getLexeme(token) == '\'';
 }
 
-bool isInternalToken(Node* token) {
-    return getLexeme(token)[0] == '$';
+void printToken(Node* token, FILE* stream) {
+    const char* lexeme = getLexeme(token);
+    printLexeme(isInternalToken(token) ? lexeme + 1 : lexeme, stream);
 }
 
 bool isIfSugarLexeme(const char* lexeme) {
@@ -32,7 +33,7 @@ bool isIfSugarLexeme(const char* lexeme) {
 
 bool isNameLexeme(const char* lexeme) {
     return isOperandCharacter(lexeme[0]) && !isdigit(lexeme[0]) &&
-        !isIfSugarLexeme(lexeme) && !isQuoteCharacter(lexeme[0]);
+        !isIfSugarLexeme(lexeme);
 }
 
 bool isOperatorLexeme(const char* lexeme) {
@@ -105,15 +106,14 @@ long long parseInteger(const char* lexeme) {
 Node* createToken(const char* lexeme) {
     if (lexeme[0] == '"')
         return newStringLiteral(lexeme);
-    if (lexeme[0] == '\'')
+    // single quoted operands are internal names while parsing internal code
+    if (lexeme[0] == '\'' && IDENTITY != NULL)
         return newCharacterLiteral(lexeme);
-
-    lexerErrorIf(lexeme[0] == '$' && IDENTITY != NULL, lexeme, "invalid token");
 
     int location = getLexemeLocation(lexeme);
     if (isIntegerLexeme(lexeme))
         return newInteger(location, parseInteger(lexeme));
-    if (isNameLexeme(lexeme) || lexeme[0] == '$')
+    if (isNameLexeme(lexeme))
         return newName(location);
     if (isOperatorLexeme(lexeme))
         return newOperator(location);
