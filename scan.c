@@ -1,10 +1,15 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "objects.h"
 #include "scan.h"
 
+const char* SOURCE_CODE = NULL;
+
 static inline bool isSpaceCharacter(char c) {
-    return c == ' ';
+    return c == ' ' || c == '\t' || c == '\r';
 }
 
 static inline bool isComment(const char* s) {
@@ -33,13 +38,9 @@ static inline const char* skipToNewline(const char* s) {
     return skipWhile(s, isNotNewlineCharacter);
 }
 
-static inline const char* skipN(const char* s, unsigned int n) {
-    return &(s[n]);
-}
-
 static inline const char* skipQuote(const char* s) {
     char quote = s[0];
-    // assumption is that start points to the opening quotation mark
+    // assumption is that s points to the opening quotation mark
     for (s += 1; s[0] != '\0' && s[0] != '\n'; s += 1) {
         if (s[0] == '\\' && s[1] != '\0')
             s += 1;     // skip character following slash
@@ -57,16 +58,19 @@ static inline const char* skipLexeme(const char* lexeme) {
         return skipWhile(lexeme, isOperandCharacter);
     if (isOperatorCharacter(lexeme[0]))
         return skipWhile(lexeme, isOperatorCharacter);
-    return skipN(lexeme, 1);    // delimiter
+    if (lexeme[0] == '$')
+        return skipWhile(lexeme + 1, isOperandCharacter);
+    return lexeme + 1;    // delimiter or illegal character
 }
 
 static inline const char* skipElided(const char* s) {
     while (isComment(s) || isEscapedNewline(s))
-        s = isComment(s) ? skipToNewline(s) : skipSpaces(skipN(s, 3));
+        s = isComment(s) ? skipToNewline(s) : skipSpaces(s + 3);
     return s;
 }
 
 const char* getFirstLexeme(const char* input) {
+    SOURCE_CODE = input;
     return skipElided(skipSpaces(input));
 }
 
@@ -80,6 +84,34 @@ unsigned int getLexemeLength(const char* lexeme) {
 
 bool isSameLexeme(const char* a, const char* b) {
     unsigned int lengthA = getLexemeLength(a);
-    unsigned int lengthB = getLexemeLength(b);
-    return lengthA == lengthB && strncmp(a, b, lengthA) == 0;
+    return getLexemeLength(b) == lengthA && strncmp(a, b, lengthA) == 0;
+}
+
+int getLexemeLocation(const char* lexeme) {
+    return (int)(lexeme - SOURCE_CODE + 1);
+}
+
+const char* getLexemeByLocation(int location) {
+    const char* start = location < 0 ? INTERNAL_CODE : SOURCE_CODE;
+    return location == 0 ? "\0" : &start[abs(location) - 1];
+}
+
+Position getPosition(unsigned int location) {
+    Position position = {1, 1};  // use 1-based indexing
+    for (unsigned int i = 0; i < location - 1; i++) {
+        position.column += 1;
+        if (SOURCE_CODE[i] == '\n') {
+            position.line += 1;
+            position.column = 1;
+        }
+    }
+    return position;
+}
+
+void printLexeme(const char* lexeme, FILE* stream) {
+    switch (lexeme[0]) {
+        case '\n': fputs("\\n", stream); break;
+        case '\0': fputs("$EOF", stream); break;
+        default: fwrite(lexeme, sizeof(char), getLexemeLength(lexeme), stream);
+    }
 }

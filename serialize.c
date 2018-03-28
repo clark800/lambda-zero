@@ -16,13 +16,8 @@ void debugLine(void) {
     debug("======================================\n");
 }
 
-void serializeInteger(long long n, FILE* stream) {
-    char buffer[3 * sizeof(long long)];
-    fputs(lltoa(n, buffer, 10), stream);
-}
-
 void debugInteger(long long n) {
-    serializeInteger(n, stderr);
+    fputll(n, stderr);
 }
 
 void serializeAST(Node* node, FILE* stream) {
@@ -39,11 +34,11 @@ void serializeAST(Node* node, FILE* stream) {
         fputs(" ->", stream);
     } else if (isInteger(node)) {
         // builtins create integers, so not all integers will exist in input
-        serializeInteger(getInteger(node), stream);
+        fputll(getInteger(node), stream);
     } else if (isReference(node)) {
         printToken(node, stream);
         fputs("#", stream);
-        serializeInteger((long long)getDebruijnIndex(node), stream);
+        fputll((long long)getDebruijnIndex(node), stream);
     } else {
         printToken(node, stream);
     }
@@ -86,7 +81,7 @@ void serializeNode(Node* node, Node* locals, const Array* globals,
             printToken(node, stream);
         }
     } else if (isInteger(node)) {
-        serializeInteger(getInteger(node), stream);
+        fputll(getInteger(node), stream);
     } else if (isBuiltin(node)) {
         printToken(node, stream);
     } else if (isGlobal(node)) {

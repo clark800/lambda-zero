@@ -18,16 +18,16 @@ Syntax error: invalid character literal ''\\x''
 Syntax error: missing end quote '"abc'
 ===============================================================================
 abc"
-Syntax error: invalid token 'abc"'
+Syntax error: invalid string literal '"'
 ===============================================================================
 "abc"def"
-Syntax error: invalid token 'def"'
+Syntax error: invalid string literal '"'
 ===============================================================================
 '\x'
 Syntax error: invalid escape sequence after '\'
 ===============================================================================
 (x -> "abc"x) 0
-Evaluation error: extra argument '"abc"'
+\nRuntime error: extra argument '"abc"'
 ===============================================================================
 x -> 'a'x
 (x -> (97 x))

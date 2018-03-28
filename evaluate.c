@@ -3,6 +3,7 @@
 #include "lib/stack.h"
 #include "lib/array.h"
 #include "ast.h"
+#include "errors.h"
 #include "closure.h"
 #include "builtins.h"
 #include "serialize.h"
@@ -86,7 +87,8 @@ static inline Hold* evaluateClosure(Closure* closure, const Array* globals) {
 static inline Hold* popBuiltinArgument(Closure* closure, Stack* stack,
         const Array* globals, unsigned int position) {
     applyUpdates(closure, stack);
-    errorIf(isEmpty(stack), getTerm(closure), "missing argument to");
+    if (isEmpty(stack))
+        runtimeError("missing argument to", getTerm(closure));
     Hold* expression = pop(stack);
     if (!isStrictArgument(getTerm(closure), position))
         return expression;
@@ -115,7 +117,7 @@ static inline void evaluateBuiltinNode(
 static inline Hold* getIntegerResult(Closure* closure, Stack* stack) {
     applyUpdates(closure, stack);
     if (!isEmpty(stack))
-        errorIf(true, getTerm(peek(stack, 0)), "extra argument");
+        runtimeError("extra argument", getTerm(peek(stack, 0)));
     return hold(closure);
 }
 
