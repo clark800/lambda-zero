@@ -6,7 +6,7 @@
 32
 ===============================================================================
 'abc
-Syntax error: missing end quote ''abc'
+Syntax error: missing end quote for ''abc'
 ===============================================================================
 'abc'
 Syntax error: invalid character literal ''abc''
@@ -15,7 +15,7 @@ Syntax error: invalid character literal ''abc''
 Syntax error: invalid character literal ''\\x''
 ===============================================================================
 "abc
-Syntax error: missing end quote '"abc'
+Syntax error: missing end quote for '"abc'
 ===============================================================================
 abc"
 Syntax error: invalid string literal '"'

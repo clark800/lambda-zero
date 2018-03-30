@@ -6,6 +6,6 @@
 
 unsigned int getBuiltinArity(Node* builtin);
 bool isStrictArgument(Node* builtin, unsigned int i);
-Hold* evaluateBuiltin(Node* builtin, Closure* left, Closure* right);
+Hold* evaluateBuiltin(Closure* builtin, Closure* left, Closure* right);
 
 #endif

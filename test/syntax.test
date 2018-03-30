@@ -1,6 +1,6 @@
 ==========================================================================
 [1 +]
-Syntax error: missing right argument '+'
+Syntax error: missing right argument to '+'
 ==========================================================================
 1 + (1, 2)
 \nRuntime error: expected integer argument to '+'

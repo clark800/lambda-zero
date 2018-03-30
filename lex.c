@@ -14,7 +14,7 @@ Node* newEOF() {
     return newOperator(0);
 }
 
-const char* getLexeme(Node* node) {
+static inline const char* getLexeme(Node* node) {
     return getLexemeByLocation(getLocation(node));
 }
 
@@ -71,7 +71,7 @@ char decodeCharacter(const char* start) {
 Node* newCharacterLiteral(const char* lexeme) {
     char quote = lexeme[0];
     const char* end = lexeme + getLexemeLength(lexeme) - 1;
-    lexerErrorIf(end[0] != quote, lexeme, "missing end quote");
+    lexerErrorIf(end[0] != quote, lexeme, "missing end quote for");
     const char* skip = skipQuoteCharacter(lexeme + 1);
     lexerErrorIf(skip != end, lexeme, "invalid character literal");
     unsigned char code = (unsigned char)decodeCharacter(lexeme + 1);
@@ -82,7 +82,7 @@ Node* newStringLiteral(const char* lexeme) {
     char quote = lexeme[0];
     int location = getLexemeLocation(lexeme);
     const char* close = lexeme + getLexemeLength(lexeme) - 1;
-    lexerErrorIf(close[0] != quote, lexeme, "missing end quote");
+    lexerErrorIf(close[0] != quote, lexeme, "missing end quote for");
     Node* string = newNil(getLexemeLocation(lexeme));
     Stack* stack = newStack(VOID);
     const char* p = lexeme + 1;

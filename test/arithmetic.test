@@ -54,16 +54,16 @@ Syntax error: magnitude of integer is too large '9223372036854775808'
 Syntax error: magnitude of integer is too large '9223372036854775808'
 ===============================================================================
 9223372036854775807 + 1
-\nRuntime error: integer overflow '+'
+\nRuntime error: integer overflow in '+'
 ===============================================================================
 9223372036854775807 + 0
 9223372036854775807
 ===============================================================================
 -9223372036854775807 - 1
-\nRuntime error: integer overflow '-'
+\nRuntime error: integer overflow in '-'
 ===============================================================================
 1 / 0
-\nRuntime error: divide by zero '/'
+\nRuntime error: divide by zero in '/'
 ===============================================================================
 (-5) \ (-2)
 -1
@@ -75,7 +75,7 @@ Syntax error: magnitude of integer is too large '9223372036854775808'
 Syntax error: missing close for '('
 ===============================================================================
 +
-Syntax error: missing left argument '+'
+Syntax error: missing left argument to '+'
 ===============================================================================
 (+)
 \nRuntime error: missing argument to '+'
@@ -93,7 +93,7 @@ Syntax error: missing left argument '+'
 7
 ===============================================================================
 5 - * 2
-Syntax error: missing left argument '*'
+Syntax error: missing left argument to '*'
 ===============================================================================
 (~x = -x) ((+) ~2~3)
 -5
@@ -105,13 +105,13 @@ Syntax error: missing left argument '*'
 1
 ===============================================================================
 (+ +)
-Syntax error: missing left argument '+'
+Syntax error: missing left argument to '+'
 ===============================================================================
 (+ + +)
-Syntax error: missing left argument '+'
+Syntax error: missing left argument to '+'
 ===============================================================================
 (~ +)
-Syntax error: missing left argument '+'
+Syntax error: missing left argument to '+'
 ===============================================================================
 (+ ~)
 Syntax error: invalid operator in section '~'

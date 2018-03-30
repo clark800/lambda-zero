@@ -14,11 +14,11 @@ struct Node {
     Branch right;
 };
 
-Node VOID_NODE = {1, 0, {NULL}, {NULL}};
+Node VOID_NODE = {1, 0, {NULL}, {NULL}};    // same as integer "0"
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
-    initPool(sizeof(Node), 32768);
+    initPool(sizeof(Node), 16384);
 }
 
 void destroyNodeAllocator() {
@@ -66,6 +66,7 @@ void releaseNode(Node* node) {
             releaseNode(node->left.child);
             releaseNode(node->right.child);
         }
+        assert(node != VOID);
         reclaim(node);
     }
 }
@@ -97,22 +98,22 @@ void setRight(Node* node, Node* right) {
 }
 
 long long getType(Node* node) {
-    assert(isLeafNode(node));
+    assert(isLeafNode(node) && node != VOID);
     return node->left.value;
 }
 
 void setType(Node* node, long long type) {
-    assert(isLeafNode(node) && node->right.child == NULL);
+    assert(isLeafNode(node) && node != VOID && node->right.child == NULL);
     node->left.value = type;
 }
 
 long long getValue(Node* node) {
-    assert(isLeafNode(node) && node->left.child == NULL);
+    assert(isLeafNode(node) && node != VOID && node->left.child == NULL);
     return node->right.value;
 }
 
 void setValue(Node* node, long long value) {
-    assert(isLeafNode(node) && node->left.child == NULL);
+    assert(isLeafNode(node) && node != VOID && node->left.child == NULL);
     node->right.value = value;
 }
 
@@ -143,7 +144,10 @@ void negateLocations(Node* node) {
 }
 
 Node* getListElement(Node* node, unsigned long long n) {
-    for (unsigned long long i = 0; i < n; i++)
+    assert(isBranchNode(node));
+    for (unsigned long long i = 0; i < n; i++) {
         node = node->right.child;
+        assert(isBranchNode(node));
+    }
     return node->left.child;
 }

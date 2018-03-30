@@ -74,9 +74,9 @@ void validateConsecutiveOperators(Node* left, Node* right) {
         syntaxError("missing close for", left);
     Operator op = getOperator(right, isOperator(left));
     if (getFixity(op) == CLOSE && !isCloseParen(right) && !isOpenOperator(left))
-        syntaxError("missing right argument", left);
+        syntaxError("missing right argument to", left);
     if (getFixity(op) == IN && !isOpenParen(left))
-        syntaxError("missing left argument", right);   // e.g. "5 - * 2"
+        syntaxError("missing left argument to", right);   // e.g. "5 - * 2"
 }
 
 void validateOperator(Stack* stack, Node* operator) {

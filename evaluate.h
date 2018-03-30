@@ -4,10 +4,12 @@
 #include <stdbool.h>
 #include "lib/tree.h"
 #include "lib/array.h"
+#include "closure.h"
 
 extern bool PROFILE;
 extern bool TRACE;
 
-Hold* evaluate(Node* term, Node* locals, const Array* globals);
+Hold* evaluateClosure(Closure* closure, const Array* globals);
+Hold* evaluateTerm(Node* term, const Array* globals);
 
 #endif
