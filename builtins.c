@@ -20,35 +20,35 @@ static inline Node* toBoolean(int value) {
 // impossible to recover from
 long long add(long long left, long long right, Closure* builtin) {
     if (left > 0 && right > 0 && left > LLONG_MAX - right)
-        runtimeError("integer overflow", builtin);
+        runtimeError("integer overflow in", builtin);
     if (left < 0 && right < 0 && left < -LLONG_MAX - right)
-        runtimeError("integer overflow", builtin);
+        runtimeError("integer overflow in", builtin);
     return left + right;
 }
 
 long long subtract(long long left, long long right, Closure* builtin) {
     if (left > 0 && right < 0 && left > LLONG_MAX + right)
-        runtimeError("integer overflow", builtin);
+        runtimeError("integer overflow in", builtin);
     if (left < 0 && right > 0 && left < -LLONG_MAX + right)
-        runtimeError("integer overflow", builtin);
+        runtimeError("integer overflow in", builtin);
     return left - right;
 }
 
 long long multiply(long long left, long long right, Closure* builtin) {
     if (right != 0 && llabs(left) > llabs(LLONG_MAX / right))
-        runtimeError("integer overflow", builtin);
+        runtimeError("integer overflow in", builtin);
     return left * right;
 }
 
 long long divide(long long left, long long right, Closure* builtin) {
     if (right == 0)
-        runtimeError("divide by zero", builtin);
+        runtimeError("divide by zero in", builtin);
     return left / right;
 }
 
 long long modulo(long long left, long long right, Closure* builtin) {
     if (right == 0)
-        runtimeError("divide by zero", builtin);
+        runtimeError("divide by zero in", builtin);
     return left % right;
 }
 
