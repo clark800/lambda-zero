@@ -8,6 +8,14 @@
 // print = c -> (put c) (cs -> cs print)                 -- desugar
 // print = Y (print -> c -> (put c) (cs -> cs print))    -- desugar
 
+// get(n) = c               -- c is the ascii code for the nth input character
+// input(n) = (c -> if (c == -1) then nil else c :: input(n + 1)) get(n)
+// input = n -> (c -> (c == -1)(nil)(c :: input(n + 1))) get(n)
+// input = n -> (c -> (c == -1)(z -> t -> f -> t)(g -> g c (input(n+1)))) get(n)
+// "(('y' -> ('x' -> 'y' ('x' 'x')) ('x' -> 'y' ('x' 'x'))) "
+// "('input' -> 'n' -> ('c' -> ('c' == -1)('z' -> 't' -> 'f' -> 't')"
+// "('g' -> 'g' 'c' ('input' ('n' + 1)))) ('get' 'n'))) 0 \n 0";
+
 const char* INTERNAL_CODE =
     // identity, true, false
     "('_' -> '_') \n ('t' -> 'f' -> 't') \n ('t' -> 'f' -> 'f') \n"
