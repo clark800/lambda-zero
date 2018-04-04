@@ -10,7 +10,6 @@ void serialize(Closure* closure, const Array* globals);
 
 void debug(const char* message);
 void debugLine(void);
-void debugInteger(long long n);
 void debugAST(Node* node);
 void debugStack(Stack* stack, Node* (*select)(Node*));
 

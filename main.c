@@ -19,18 +19,14 @@ void checkForMemoryLeak(const char* label, size_t expectedUsage) {
 void interpret(const char* input, bool showDebug) {
     initNodeAllocator();
     initObjects(parse(INTERNAL_CODE, false, false));
-    size_t memoryUsageBeforeParse = getMemoryUsage();
     Program program = parse(input, true, showDebug);
-    size_t memoryUsageBeforeEvaluate = getMemoryUsage();
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     if (!program.IO) {
         serialize(getNode(valueClosure), program.globals);
         fputs("\n", stdout);
     }
     release(valueClosure);
-    checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
     deleteProgram(program);
-    checkForMemoryLeak("parse", memoryUsageBeforeParse);
     deleteObjects();
     destroyNodeAllocator();
     checkForMemoryLeak("interpret", 0);
@@ -55,7 +51,6 @@ int main(int argc, char* argv[]) {
             switch (*flag) {
                 case 'd': showDebug = true; break;    // show parse steps
                 case 't': TRACE = true; break;        // show eval steps
-                case 'p': PROFILE = true; break;      // show eval loop count
                 case 'n': VERBOSITY = -1; break;      // hide line #s in errors
                 default: usageError(argv[0]); break;
             }
