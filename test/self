@@ -1,0 +1,56 @@
+isDelimiterCharacter(n) = n : " \n\0,;()[]{}"
+isReservedCharacter(n) = n : "{};!@$"
+isOperandCharacter(n) = isAlphanumeric(n) \/ n == '_' \/ n == '\''
+isOperatorCharacter(n) = isPunctuation(n) /\ ~isDelimiterCharacter(n) /\
+    ~isOperandCharacter(n) /\ ~isQuote(n) /\ ~isReservedCharacter(n)
+
+isComment(lexeme) = lexeme.startsWith("//")
+isElided(lexeme) = isBlank(lexeme.head) \/ isComment(lexeme)
+
+breakQuoteCharacter(ns) =
+    if (ns.isEmpty) then ([], []) else
+    if (ns.head == '\\' /\ ~ns.tail.isEmpty) then (ns.take(2), ns.drop(2)) else
+    ([ns.head], ns.tail)
+
+breakWith(ns, spanner, p) =
+    if (ns.isEmpty) then ([], []) else (
+        nsns = spanner(ns)
+        if (~p(nsns.left)) then (
+            nsns' = nsns.right.breakWith(spanner, p)
+            (nsns.left ++ nsns'.left, nsns'.right)
+        ) else ([], ns)
+    )
+
+shiftSplit(nsns) = if (nsns.right.isEmpty) then nsns else
+    (nsns.left ++ [nsns.right.head], nsns.right.tail)
+
+spanQuote(ns, quote) = (
+    x = ns.tail.breakWith(breakQuoteCharacter, (== quote) <> head)
+    shiftSplit((quote :: x.left, x.right))
+)
+
+splitLexeme(ns) = ns ::? n -> ns' ->
+    if (isComment(ns)) then ns.break((== '\n')) else
+    if (n.isBlank) then ns.span(isBlank) else
+    if (n.isQuote) then ns.spanQuote(n) else
+    if (n.isOperandCharacter) then ns.span(isOperandCharacter) else
+    if (n.isOperatorCharacter) then ns.span(isOperatorCharacter) else
+    ([n], ns')
+
+advanceLocation(location, lexeme) =
+    if (lexeme.head == '\n') then (location.left + 1, 1) else
+    (location.left, location.right + length(lexeme))
+
+splitLexemes(string, splitter, location) = if (string.isEmpty) then [] else (
+    lexeme_remaining = splitter(string)
+    lexeme = lexeme_remaining.left
+    remaining = lexeme_remaining.right
+    nextLocation = advanceLocation(location, lexeme)
+    (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
+)
+
+lex(string) = string.splitLexemes(splitLexeme, (1, 1)) |~ isElided <> left
+
+showLexItem(x) = showPair((showString(x.left), showIntegerPair(x.right)))
+showLexOutput(items) = showList(items.map(showLexItem))
+main(input) = showLexOutput(lex(input))

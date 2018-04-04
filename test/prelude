@@ -123,6 +123,8 @@ join(xss, ys) = concatenate(interleave(xss, ys))
 // generic list reducers
 any(xs, p) = xs.map(p).foldr((\/), false)     // test if any element satisfies p
 all(xs, p) = xs.map(p).foldr((/\), true)      // test if all elements satisfy p
+anyTrue(xs) = xs.any(identity)
+allTrue(xs) = xs.all(identity)
 // find first element satisfying p, or return nothing
 find(xs, p) = if (xs.isEmpty) then nothing else
     if (p(xs.head)) then just(xs.head) else xs.tail.find(p)
@@ -148,16 +150,28 @@ union(ns, ms) = ns ++ (ms -- ns)
 intersect(ns, ms) = ns | (: ms)
 sortedDifference(ns, ms) = ns |~ ms.containsSorted // sorted list difference
 
-span(p, ns) = if (ns.isEmpty) then ([], []) else
+span(ns, p) = if (ns.isEmpty) then ([], []) else
     if (p(ns.head)) then (
-        nsns = span(p, ns.tail)
+        nsns = ns.tail.span(p)
         (ns.head :: nsns.left, nsns.right)
     ) else ([], ns)
 
-lines(ns) = (
-    nsns = span((=/= '\n'), ns)
-    nsns.left :: (if (nsns.right.isEmpty) then [] else lines(nsns.right.tail))
+break(ns, p) = ns.span((~) <> p)
+
+chop(ns, f) = if (ns.isEmpty) then [] else (
+    nsns = f(ns)
+    nsns.left :: chop(nsns.right, f)
 )
+
+split(ns, p) = (
+    nsns = ns.break(p)
+    nsns.left :: (if (nsns.right.isEmpty) then [] else nsns.right.tail.split(p))
+)
+
+startsWith(ns, ks) = allTrue(zipWith(ns, (==), ks))
+
+words(ns) = ns.split(== ' ') |~ isEmpty
+lines(ns) = ns.split(== '\n')
 
 repl(in, prompt, f) = prompt ++ in.lines.map(f).join("\n" ++ prompt)
 
@@ -173,6 +187,20 @@ naturals = countFrom(0)
 squares = naturals.map(mirror(*))
 primes = (f(ms) = ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 
+// character classes
+isUppercase(n) = n >= 'A' /\ n <= 'Z'
+isLowercase(n) = n >= 'a' /\ n <= 'z'
+isDigit(n) = n >= '0' /\ n <= '9'
+isQuote(n) = n == '"' \/ n == '\'' \/ n == '`'
+isWhitespace(n) = n == ' ' \/ n >= '\t' /\ n <= '\r'
+isBlank(n) = n == ' ' \/ n == '\t'
+isControl(n) = n < 32 \/ n >= 127
+isAlphabetic(n) = isUppercase(n) \/ isLowercase(n)
+isAlphanumeric(n) = isAlphabetic(n) \/ isDigit(n)
+isPrintable(n) = ~isControl(n)
+isGraphical(n) = isPrintable(n) /\ ~isBlank(n)
+isPunctuation(n) = isGraphical(n) /\ ~isAlphanumeric(n)
+
 // serialization
 showBoolean(b) = if (b) then "true" else "false"
 showNatural(n) = (
@@ -181,12 +209,19 @@ showNatural(n) = (
     if (n == 0) then "0" else reverse(showReversedNatural(n))
 )
 
+showString(ns) = "\"" ++ ns ++ "\""     // todo: escape
+showPair(xsxs) = "(" ++ xsxs.left ++ ", " ++ xsxs.right ++ ")"
+showList(xs) = "[" ++ xs.join(", ") ++ "]"
 showInteger(n) = (if (n < 0) then "-" else "") ++ showNatural(abs(n))
-showStringPair(nsns) = "(" ++ nsns.left ++ ", " ++ nsns.right ++ ")"
-showIntegerPair(nn) = showStringPair(nn.mapPair(showInteger))
 
-showStringList(nss) = "[" ++ nss.join(", ") ++ "]"
-showIntegerList(ns) = showStringList(ns.map(showInteger))
-showIntegerPairList(nns) = showStringList(nns.map(showIntegerPair))
-showIntegerListPair(nsns) = showStringPair(nsns.mapPair(showIntegerList))
-showIntegerListList(nss) = showStringList(nss.map(showIntegerList))
+showStringPair(nsns) = showPair(nsns.mapPair(showString))
+showIntegerPair(nn) = showPair(nn.mapPair(showInteger))
+showStringIntegerPair(nsn) = showPair(
+    (showString(nsn.left), showInteger(nsn.right)))
+
+showStringList(nss) = showList(nss.map(showString))
+showIntegerList(ns) = showList(ns.map(showInteger))
+showIntegerPairList(nns) = showList(nns.map(showIntegerPair))
+showIntegerListPair(nsns) = showPair(nsns.mapPair(showIntegerList))
+showIntegerListList(nss) = showList(nss.map(showIntegerList))
+showStringIntegerPairList(nsns) = showList(nsns.map(showStringIntegerPair))
