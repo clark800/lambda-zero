@@ -16,10 +16,6 @@ void debugLine(void) {
     debug("======================================\n");
 }
 
-void debugInteger(long long n) {
-    fputll(n, stderr);
-}
-
 void serializeAST(Node* node, FILE* stream) {
     if (node == NULL) {
         fputs("NULL", stream);     // for debugging

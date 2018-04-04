@@ -92,13 +92,16 @@ Node* evaluatePut(Closure* builtin, long long c) {
 
 Node* evaluateGet(Closure* builtin, long long index) {
     static long long inputIndex = 0;
-    assert(index == inputIndex);    // ensure lazy evaluation is working
+    assert(index <= inputIndex);
+    if (index < inputIndex)
+        return peek(INPUT_STACK, (size_t)(inputIndex - index - 1));
     inputIndex += 1;
     int c = fgetc(stdin);
     int location = getLocation(getTerm(builtin));
-    return c == EOF ? newNil(location) : prepend(
+    push(INPUT_STACK, c == EOF ? newNil(location) : prepend(
         newInteger(location, c), newApplication(location, getLeft(INPUT),
-            newInteger(location, index + 1)));
+            newInteger(location, index + 1))));
+    return peek(INPUT_STACK, 0);
 }
 
 Node* computeBuiltin(Closure* builtin, long long left, long long right) {

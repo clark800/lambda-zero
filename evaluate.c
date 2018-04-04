@@ -9,9 +9,7 @@
 #include "serialize.h"
 #include "evaluate.h"
 
-bool PROFILE = false;
 bool TRACE = false;
-int LOOPS = 0;
 
 static inline void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
@@ -135,7 +133,6 @@ static inline void debugState(Closure* closure, Stack* stack) {
 Hold* evaluateNode(Closure* closure, Stack* stack, const Array* globals) {
     while (true) {
         debugState(closure, stack);
-        LOOPS += 1;
         switch (getNodeType(getTerm(closure))) {
             case N_APPLICATION: evaluateApplicationNode(closure, stack); break;
             case N_REFERENCE: evaluateReferenceNode(closure, stack); break;
@@ -158,18 +155,9 @@ Hold* evaluateClosure(Closure* closure, const Array* globals) {
     return result;
 }
 
-static inline void debugLoopCount(int loopCount) {
-    if (PROFILE) {
-        debug("Loops: ");
-        debugInteger(loopCount);
-        debug("\n");
-    }
-}
-
 Hold* evaluateTerm(Node* term, const Array* globals) {
     Hold* closure = hold(newClosure(term, VOID, VOID));
     Hold* result = evaluateClosure(getNode(closure), globals);
     release(closure);
-    debugLoopCount(LOOPS);
     return result;
 }

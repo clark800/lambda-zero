@@ -127,9 +127,9 @@ Rules RULES[] = {
     {"\\", 210, 210, IN, L, infix},
     {"^", 220, 220, IN, R, infix},
     {"<>", 230, 230, IN, R, infix},
-    {"-", 235, 245, PRE, L, negate},
-    {"~", 235, 245, PRE, L, prefix},
-    {"#", 235, 245, PRE, L, prefix},
+    {"-", 235, 235, PRE, L, negate},
+    {"~", 235, 235, PRE, L, prefix},
+    {"#", 235, 235, PRE, L, prefix},
     {"?:", 250, 250, IN, L, infix},
     {"?.", 250, 250, IN, L, infix},
     {".", 250, 250, IN, L, infix}

@@ -12,8 +12,7 @@
   library in which case it is less than 2500 lines of strict ANSI C99 and
   generates a ~30KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
-  memory allocator, error messaging, and rudimental built-in debugging and
-  profiling features.
+  memory allocator, error messaging, and rudimental built-in debugging features.
 
 # Sample Code
 

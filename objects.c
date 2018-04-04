@@ -1,4 +1,5 @@
 #include "lib/tree.h"
+#include "lib/stack.h"
 #include "ast.h"
 #include "objects.h"
 
@@ -19,6 +20,7 @@ const char* INTERNAL_CODE =
 
 Program PROGRAM;
 Node *IDENTITY, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
+Stack* INPUT_STACK;
 
 void initObjects(Program program) {
     PROGRAM = program;
@@ -30,10 +32,12 @@ void initObjects(Program program) {
     PRINT = getListElement(objects, 3);
     YCOMBINATOR = getLeft(PRINT);
     INPUT = getListElement(objects, 4);
+    INPUT_STACK = newStack(VOID);
 }
 
 void deleteObjects() {
     deleteProgram(PROGRAM);
+    deleteStack(INPUT_STACK);
 }
 
 Node* newNil(int location) {

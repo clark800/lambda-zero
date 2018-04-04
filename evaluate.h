@@ -6,7 +6,6 @@
 #include "lib/array.h"
 #include "closure.h"
 
-extern bool PROFILE;
 extern bool TRACE;
 
 Hold* evaluateClosure(Closure* closure, const Array* globals);
