@@ -16,10 +16,6 @@ static inline bool isComment(const char* s) {
     return s[0] == '/' && s[1] == '/';
 }
 
-static inline bool isEscapedNewline(const char* s) {
-    return s[0] == '\\' && s[1] == '\\' && s[1] == '\n';
-}
-
 static inline bool isNotNewlineCharacter(char c) {
     return c != '\n';
 }
@@ -34,8 +30,8 @@ static inline const char* skipSpaces(const char* s) {
     return skipWhile(s, isSpaceCharacter);
 }
 
-static inline const char* skipToNewline(const char* s) {
-    return skipWhile(s, isNotNewlineCharacter);
+static inline const char* skipComment(const char* s) {
+    return isComment(s) ? skipWhile(s, isNotNewlineCharacter) : s;
 }
 
 static inline const char* skipQuote(const char* s) {
@@ -61,19 +57,13 @@ static inline const char* skipLexeme(const char* lexeme) {
     return lexeme + 1;    // delimiter or illegal character
 }
 
-static inline const char* skipElided(const char* s) {
-    while (isComment(s) || isEscapedNewline(s))
-        s = isComment(s) ? skipToNewline(s) : skipSpaces(s + 3);
-    return s;
-}
-
 const char* getFirstLexeme(const char* input) {
     SOURCE_CODE = input;
-    return skipElided(skipSpaces(input));
+    return skipComment(skipSpaces(input));
 }
 
 const char* getNextLexeme(const char* lastLexeme) {
-    return skipElided(skipSpaces(skipLexeme(lastLexeme)));
+    return skipComment(skipSpaces(skipLexeme(lastLexeme)));
 }
 
 unsigned int getLexemeLength(const char* lexeme) {
@@ -109,7 +99,7 @@ Position getPosition(unsigned int location) {
 void printLexeme(const char* lexeme, FILE* stream) {
     switch (lexeme[0]) {
         case '\n': fputs("\\n", stream); break;
-        case '\0': fputs("$EOF", stream); break;
+        case '\0': fputs("\\0", stream); break;
         default: fwrite(lexeme, sizeof(char), getLexemeLength(lexeme), stream);
     }
 }
