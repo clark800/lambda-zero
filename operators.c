@@ -67,7 +67,8 @@ Node* brackets(Node* close, Node* open, Node* contents) {
 
 Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
-    syntaxErrorIf(contents == NULL, "empty parentheses", open);
+    if (contents == NULL)
+        return IDENTITY;
     if (isOperator(contents)) {
         if (isSpecialOperator(getOperator(contents, false)))
             syntaxError("operator cannot be parenthesized", contents);
