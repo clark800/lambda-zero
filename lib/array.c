@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
+#include "util.h"
 #include "array.h"
 
 struct Array {
@@ -9,10 +10,10 @@ struct Array {
 };
 
 Array* newArray(size_t initialCapacity) {
-    Array* array = (Array*)malloc(sizeof(Array));
+    Array* array = (Array*)smalloc(sizeof(Array));
     array->capacity = initialCapacity;
     array->length = 0;
-    array->elements = (void**)malloc(initialCapacity * sizeof(void*));
+    array->elements = (void**)smalloc(initialCapacity * sizeof(void*));
     return array;
 }
 

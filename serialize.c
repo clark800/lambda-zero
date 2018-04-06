@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "lib/lltoa.h"
+#include "lib/util.h"
 #include "lib/tree.h"
 #include "lib/array.h"
 #include "ast.h"

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "util.h"
 #include "array.h"
 #include "pool.h"
 
@@ -11,13 +12,13 @@ struct Pool {
 };
 
 void appendPage(Pool* pool) {
-    pool->currentPage = malloc(pool->pageCapacity * pool->itemSize);
+    pool->currentPage = smalloc(pool->pageCapacity * pool->itemSize);
     append(pool->pages, pool->currentPage);
     pool->pageUsage = 0;
 }
 
 Pool* newPool(size_t itemSize, size_t pageCapacity) {
-    Pool* pool = (Pool*)malloc(sizeof(Pool));
+    Pool* pool = (Pool*)smalloc(sizeof(Pool));
     pool->itemSize = itemSize;
     pool->pageCapacity = pageCapacity;
     pool->pages = newArray(32);

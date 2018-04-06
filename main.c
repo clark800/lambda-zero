@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "lib/readfile.h"
+#include "lib/util.h"
 #include "lib/tree.h"
 #include "lib/freelist.h"
 #include "ast.h"
@@ -42,7 +42,8 @@ char* readScript(const char* filename) {
 }
 
 int main(int argc, char* argv[]) {
-    setbuf(stdin, NULL);
+    // note: setbuf(stdin, NULL) will leave unread input in stdin on exit
+    // causing the shell to execute it, which is dangerous
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
     bool showDebug = false;

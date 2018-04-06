@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include "lib/tree.h"
+#include "lib/util.h"
 #include "ast.h"
 #include "errors.h"
 #include "objects.h"
@@ -77,12 +78,6 @@ Hold* evaluateError(Closure* builtin, Closure* message) {
     return hold(builtin);
 }
 
-Hold* evaluateExit(void) {
-    fputc((int)'\n', stderr);
-    exit(1);
-    return NULL;
-}
-
 Node* evaluatePut(Closure* builtin, long long c) {
     if (c < 0 || c >= 256)
         runtimeError("expected byte value in list returned from main", builtin);
@@ -143,7 +138,7 @@ Hold* evaluateIntegerBuiltin(Closure* builtin, Closure* left, Closure* right) {
 Hold* evaluateBuiltin(Closure* builtin, Closure* left, Closure* right) {
     switch (getBuiltinCode(getTerm(builtin))) {
         case ERROR: return evaluateError(builtin, left);
-        case EXIT: return evaluateExit();
+        case EXIT: return error("\n");
         default: return evaluateIntegerBuiltin(builtin, left, right);
     }
 }
