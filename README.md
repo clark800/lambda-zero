@@ -22,11 +22,11 @@
 
 ### Factorial
 
-    factorial(n) = if (n == 0) then 1 else n * factorial(n - 1)
+    factorial(n) = n == 0 ? 1 || n * factorial(n - 1)
 
 ### Quicksort
 
-    xs ::? f = if (xs.empty) then [] else f(xs.head, xs.tail)
+    xs ::? f = xs.empty ? [] || f(xs.head, xs.tail)
     sort(ns) = ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 
 ### Infinite list of natural numbers
@@ -122,7 +122,6 @@ When operators are chained like `x * y * z` there are precedence and associatvit
 - Operator names: `(*)` disables the infix operator sugar on `*`
 - Sections: `(* y)` desguars to `x -> (x * y)` and
   `(y *)` desugars to `x -> (y * x)`
-- If-then-else: `then` and `else` are treated as infix operators that apply the left argument to the right argument. `if` is still just a normal function.
 - String literals: `"abc"` desugars to a Church-encoded list of ascii
   character codes.
 - Character literals: `'a'` desugars to the ascii character code for `a`

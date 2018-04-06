@@ -27,18 +27,12 @@ void printToken(Node* token, FILE* stream) {
     printLexeme(isInternalToken(token) ? lexeme + 1 : lexeme, stream);
 }
 
-bool isIfSugarLexeme(const char* lexeme) {
-    return isSameLexeme(lexeme, "then") || isSameLexeme(lexeme, "else");
-}
-
 bool isNameLexeme(const char* lexeme) {
-    return isOperandCharacter(lexeme[0]) && !isdigit(lexeme[0]) &&
-        !isIfSugarLexeme(lexeme);
+    return isOperandCharacter(lexeme[0]) && !isdigit(lexeme[0]);
 }
 
 bool isOperatorLexeme(const char* lexeme) {
-    return isDelimiterCharacter(lexeme[0]) ||
-        isOperatorCharacter(lexeme[0]) || isIfSugarLexeme(lexeme);
+    return isDelimiterCharacter(lexeme[0]) || isOperatorCharacter(lexeme[0]);
 }
 
 bool isIntegerLexeme(const char* lexeme) {
