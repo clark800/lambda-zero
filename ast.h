@@ -169,6 +169,11 @@ static inline Node* newReference(int location, unsigned long long debruijn) {
 }
 
 static inline Node* newLambda(int location, Node* parameter, Node* body) {
+    // we could make the left child of a lambda VOID, but storing a parameter
+    // lets us decouple the location of the lambda from the parameter name,
+    // which is useful in cases like string literals where we need to point
+    // to the string literal for error messages, but we prefer not to make the
+    // parameter name be the string literal
     assert(isParameter(parameter));
     return newBranchNode(location, parameter, body);
 }

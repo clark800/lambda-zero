@@ -103,11 +103,9 @@ isBuiltin(node) = node.getType == BUILTIN
 isInteger(node) = node.getType == INTEGER
 isGlobal(node) = node.getType == GLOBAL
 
-isAlphanumericOperator(lexeme) = lexeme === "then" \/ lexeme === "else"
-isNameLexeme(lexeme) = isOperandCharacter(lexeme.head) /\
-    ~isDigit(lexeme.head) /\ ~isAlphanumericOperator(lexeme)
-isOperatorLexeme(lexeme) = isOperatorCharacter(lexeme.head) \/
-    isDelimiterCharacter(lexeme.head) \/ isAlphanumericOperator(lexeme)
+isNameLexeme(lexeme) = isOperandCharacter(lexeme.head) /\ ~isDigit(lexeme.head)
+isOperatorLexeme(lexeme) =
+    isOperatorCharacter(lexeme.head) \/ isDelimiterCharacter(lexeme.head)
 isIntegerLexeme(lexeme) = lexeme.all(isDigit)
 
 X = newName(("x", (0, 0)))
