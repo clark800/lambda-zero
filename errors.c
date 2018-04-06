@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "lib/lltoa.h"
+#include "lib/util.h"
 #include "scan.h"
 #include "closure.h"
 #include "errors.h"

@@ -1,6 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>     // llabs
-#include "lltoa.h"
+#include "util.h"
+
+void* error(const char* message) {
+    fputs(message, stderr);
+    exit(1);
+    return NULL;
+}
+
+void* smalloc(size_t size) {
+    void* p = malloc(size);
+    return p == NULL && size > 0 ? error("\nError: out of memory\n") : p;
+}
 
 char getDigitCharacter(long long n) {
     return n < 0 || n >= 16 ? '#' : (char)(n < 10 ? '0' + n : 'a' + (n - 10));
@@ -43,4 +54,26 @@ char* lltoa(long long n, char* buffer, int radix) {
 void fputll(long long n, FILE* stream) {
     char buffer[3 * sizeof(long long)];
     fputs(lltoa(n, buffer, 10), stream);
+}
+
+char* readfile(FILE* stream) {
+    size_t length = 0;
+    size_t bufferLength = READ_CHUNK_SIZE;
+    size_t bytesRead = 0;
+    char* buffer = (char*)smalloc(bufferLength * sizeof(char));
+
+    do {
+        length += (size_t)bytesRead * sizeof(char);
+        if (length == bufferLength) {
+            bufferLength += READ_CHUNK_SIZE;
+            buffer = realloc(buffer, bufferLength * sizeof(char));
+        }
+        bytesRead = fread(buffer + length, sizeof(char),
+            (bufferLength - length), stream);
+    } while (bytesRead > 0);
+
+    if (length == bufferLength)
+        buffer = realloc(buffer, (length + 1) * sizeof(char));
+    buffer[length] = '\0';
+    return buffer;
 }
