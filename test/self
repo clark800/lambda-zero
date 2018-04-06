@@ -7,41 +7,46 @@ isOperatorCharacter(n) = isPunctuation(n) /\ ~isDelimiterCharacter(n) /\
 isComment(lexeme) = lexeme.startsWith("//")
 isElided(lexeme) = isBlank(lexeme.head) \/ isComment(lexeme)
 
-breakQuoteCharacter(ns) =
-    if (ns.isEmpty) then ([], []) else
-    if (ns.head == '\\' /\ ~ns.tail.isEmpty) then (ns.take(2), ns.drop(2)) else
+breakQuoteCharacter(ns) = (
+    ns.isEmpty? ([], [])
+    (ns.head == '\\' /\ ~ns.tail.isEmpty)? (ns.take(2), ns.drop(2))
     ([ns.head], ns.tail)
+)
 
-breakWith(ns, spanner, p) =
-    if (ns.isEmpty) then ([], []) else (
-        nsns = spanner(ns)
-        if (~p(nsns.left)) then (
-            nsns' = nsns.right.breakWith(spanner, p)
-            (nsns.left ++ nsns'.left, nsns'.right)
-        ) else ([], ns)
-    )
+breakWith(ns, spanner, p) = (
+    ns.isEmpty? ([], [])
+    nsns = spanner(ns)
+    p(nsns.left)? ([], ns)
+    nsns' = nsns.right.breakWith(spanner, p)
+    (nsns.left ++ nsns'.left, nsns'.right)
+)
 
-shiftSplit(nsns) = if (nsns.right.isEmpty) then nsns else
+shiftSplit(nsns) = (
+    nsns.right.isEmpty? nsns
     (nsns.left ++ [nsns.right.head], nsns.right.tail)
+)
 
 spanQuote(ns, quote) = (
     x = ns.tail.breakWith(breakQuoteCharacter, (== quote) <> head)
     shiftSplit((quote :: x.left, x.right))
 )
 
-splitLexeme(ns) = ns ::? n -> ns' ->
-    if (isComment(ns)) then ns.break((== '\n')) else
-    if (n.isBlank) then ns.span(isBlank) else
-    if (n.isQuote) then ns.spanQuote(n) else
-    if (n.isOperandCharacter) then ns.span(isOperandCharacter) else
-    if (n.isOperatorCharacter) then ns.span(isOperatorCharacter) else
+splitLexeme(ns) = ns ::? n -> ns' -> (
+    isComment(ns)? ns.break((== '\n'))
+    n.isBlank? ns.span(isBlank)
+    n.isQuote? ns.spanQuote(n)
+    n.isOperandCharacter? ns.span(isOperandCharacter)
+    n.isOperatorCharacter? ns.span(isOperatorCharacter)
     ([n], ns')
+)
 
-advanceLocation(location, lexeme) =
-    if (lexeme.head == '\n') then (location.left + 1, 1) else
+advanceLocation(location, lexeme) = (
+    (lexeme.head == '\n')? (location.left + 1, 1)
     (location.left, location.right + length(lexeme))
+)
 
-splitLexemes(string, splitter, location) = if (string.isEmpty) then [] else (
+splitLexemes(string, splitter, location) = (
+    string.isEmpty? []
     lexeme_remaining = splitter(string)
     lexeme = lexeme_remaining.left
     remaining = lexeme_remaining.right
@@ -49,8 +54,149 @@ splitLexemes(string, splitter, location) = if (string.isEmpty) then [] else (
     (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
 )
 
-lex(string) = string.splitLexemes(splitLexeme, (1, 1)) |~ isElided <> left
+scan(string) = string.splitLexemes(splitLexeme, (1, 1)) |~ isElided <> left
 
-showLexItem(x) = showPair((showString(x.left), showIntegerPair(x.right)))
-showLexOutput(items) = showList(items.map(showLexItem))
-main(input) = showLexOutput(lex(input))
+showTag(x) = showPair((showString(x.left), showIntegerPair(x.right)))
+//main(input) = showList(scan(input).map(showTag))
+
+getLexeme(tag) = tag.left
+getLine(tag) = tag.right.left
+getColumn(tag) = tag.right.right
+
+showPrettyTag(tag) = "'" ++ getLexeme(tag) ++ "' at line " ++
+    showInteger(getLine(tag)) ++ " column " ++ showInteger(getColumn(tag))
+
+REFERENCE = 0
+LAMBDA = 1
+APPLICATION = 2
+BUILTIN = 3
+INTEGER = 4
+GLOBAL = 5
+
+NAME = -1
+OPERATOR = -2
+
+newReference(tag, debruijn) = ((tag, REFERENCE), debruijn)
+newName(tag) = newReference(tag, NAME)
+newOperator(tag) = newReference(tag, OPERATOR)
+newLambda(tag, parameter, body) = ((tag, LAMBDA), (parameter, body))
+newApplication(tag, left', right') = ((tag, APPLICATION), (left', right'))
+newBuiltin(tag, code) = ((tag, BUILTIN), code)
+newInteger(tag, value) = ((tag, INTEGER), value)
+newGlobal(tag, code) = ((tag, GLOBAL), code)
+
+getTag(node) = node.left.left
+getType(node) = node.left.right
+getData(node) = node.right
+getParameter(node) = getData(node).left
+getBody(node) = getData(node).right
+getFunction(node) = getData(node).left
+getArgument(node) = getData(node).right
+
+isReference(node) = node.getType == REFERENCE
+isName(node) = isReference(node) /\ node.getData == NAME
+isOperator(node) = isReference(node) /\ node.getData == OPERATOR
+isSymbol(node) = isName(node) \/ isOperator(node)
+isLambda(node) = node.getType == LAMBDA
+isApplication(node) = node.getType == APPLICATION
+isBuiltin(node) = node.getType == BUILTIN
+isInteger(node) = node.getType == INTEGER
+isGlobal(node) = node.getType == GLOBAL
+
+isAlphanumericOperator(lexeme) = lexeme === "then" \/ lexeme === "else"
+isNameLexeme(lexeme) = isOperandCharacter(lexeme.head) /\
+    ~isDigit(lexeme.head) /\ ~isAlphanumericOperator(lexeme)
+isOperatorLexeme(lexeme) = isOperatorCharacter(lexeme.head) \/
+    isDelimiterCharacter(lexeme.head) \/ isAlphanumericOperator(lexeme)
+isIntegerLexeme(lexeme) = lexeme.all(isDigit)
+
+X = newName(("x", (0, 0)))
+Y = newName(("y", (0, 0)))
+Z = newName(("z", (0, 0)))
+
+newNil(tag) =
+    newLambda(tag, Z,
+        newLambda(getTag(X), X,
+            newLambda(getTag(Y), Y,
+                newReference(getTag(X), 2))))
+
+prependList(character, list) =
+    newLambda(getTag(list), X,
+        newApplication(getTag(list),
+            newApplication(getTag(list), X, character), list))
+
+parseEscapeCode(code, tag) = (
+    code == '0' ? '\0'
+    code == 'n' ? '\n'
+    code == 't' ? '\t'
+    code == 'r' ? '\r'
+    code == '\\' ? '\\'
+    code == '\"' ? '\"'
+    code == '\'' ? '\''
+    error("Error: invalid escape sequence after" ++ showPrettyTag(tag))
+)
+
+parseQuotedCharacter(tag, string) = (
+    (string.head =/= '\\')?
+        newInteger(tag, string.head)
+    (string.tail.isEmpty)?
+        error("Error: missing escape code in " ++ showPrettyTag(tag))
+    newInteger(tag, parseEscapeCode(string.tail.head, tag))
+)
+
+splitStringLiteral(string) = (
+    (string.isEmpty)? []
+    n = (string.head == '\\' /\ ~string.tail.isEmpty)? 2 || 1
+    string.take(n) :: splitStringLiteral(string.drop(n))
+)
+
+buildStringLiteral(tag, characters) = (
+    characters.isEmpty? newNil(tag)
+    prependList(characters.head, buildStringLiteral(tag, characters.tail))
+)
+
+getQuoteContents(tag) = (
+    lexeme = getLexeme(tag)
+    (lexeme.last == lexeme.head)? dropLast(lexeme.tail)
+    error("Error: missing end quote for " ++ showPrettyTag(tag))
+)
+
+getQuotedCharacters(tag) =
+    splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
+
+parseStringLiteral(tag) = buildStringLiteral(tag, getQuotedCharacters(tag))
+
+parseCharacterLiteral(tag) = (
+    characters = getQuotedCharacters(tag)
+    (characters.length == 1)? characters.head
+    error("Error: invalid character literal " ++ showPrettyTag(tag))
+)
+
+createToken(tag) = (
+    lexeme = getLexeme(tag)
+    (lexeme.head == '"')? parseStringLiteral(tag)
+    (lexeme.head == '\'')? parseCharacterLiteral(tag)
+    isIntegerLexeme(lexeme)? newInteger(tag, parseInteger(lexeme, 10))
+    isNameLexeme(lexeme)? newName(tag)
+    isOperatorLexeme(lexeme)? newOperator(tag)
+    error("Error: invalid token " ++ showPrettyTag(tag))
+)
+
+lex(string) = scan(string).map(createToken)
+
+showLexeme(lexeme) = (lexeme.head == '\n')? "\\n" || lexeme
+showToken(token) = showLexeme(getLexeme(getTag(token)))
+showAST(node) = (
+    node.isReference?
+        showToken(node) ++ "#" ++ showInteger(getData(node))
+    node.isLambda?
+        showToken(getParameter(node)) ++ " -> " ++ showAST(getBody(node))
+    node.isApplication?
+        "(" ++ showAST(getFunction(node)) ++ " " ++
+               showAST(getArgument(node)) ++ ")"
+    node.isInteger?
+        "#" ++ showInteger(getData(node))
+    showToken(node)
+)
+
+main(input) = showList(lex(input).map(showAST))
