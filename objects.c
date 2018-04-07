@@ -18,7 +18,7 @@
 
 const char* INTERNAL_CODE =
     // identity, true, false
-    "('_' -> '_') \n ('t' -> 'f' -> 't') \n ('t' -> 'f' -> 'f') \n"
+    "(_ -> _) \n ('t' -> 'f' -> 't') \n ('t' -> 'f' -> 'f') \n"
     // Y combinator
     "('y' -> ('x' -> 'y' ('x' 'x')) ('x' -> 'y' ('x' 'x'))) "
     // lazy string printer

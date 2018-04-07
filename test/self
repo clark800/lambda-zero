@@ -1,4 +1,4 @@
-isDelimiterCharacter(n) = n : " \n\0,;()[]{}"
+isDelimiterCharacter(n) = n : " \n\0,;`()[]{}"
 isReservedCharacter(n) = n : "{};!@$"
 isOperandCharacter(n) = isAlphanumeric(n) \/ n == '_' \/ n == '\''
 isOperatorCharacter(n) = isPunctuation(n) /\ ~isDelimiterCharacter(n) /\

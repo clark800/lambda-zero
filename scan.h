@@ -15,8 +15,7 @@ static inline bool isQuoteCharacter(char c) {
 }
 
 static inline bool isDelimiterCharacter(char c) {
-    return c == ' ' || c == '\n' || c == '\0' || c == ',' || c == ';' ||
-        c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}';
+    return c == '\0' || strchr(" \n,;`()[]{}", c) != NULL;
 }
 
 static inline bool isOperandCharacter(char c) {
@@ -25,7 +24,7 @@ static inline bool isOperandCharacter(char c) {
 
 static inline bool isOperatorCharacter(char c) {
     return ispunct(c) && !isDelimiterCharacter(c) && !isOperandCharacter(c)
-        && !isQuoteCharacter(c) && strchr("{};`!@$", c) == NULL;
+        && !isQuoteCharacter(c) && strchr("{};!@$", c) == NULL;
 }
 
 const char* getFirstLexeme(const char* input);

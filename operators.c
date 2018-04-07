@@ -131,7 +131,8 @@ Rules RULES[] = {
     {"^", 13, 13, IN, R, infix},
     {"<>", 13, 13, IN, R, infix},
     {"?.", 15, 15, IN, L, infix},
-    {".", 15, 15, IN, L, infix}
+    {".", 15, 15, IN, L, infix},
+    {"`", 15, 15, PRE, L, prefix}
 };
 
 Rules DEFAULT = {"", 10, 10, IN, L, infix};
