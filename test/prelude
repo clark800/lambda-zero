@@ -37,7 +37,7 @@ right(xy) = xy(false)
 swap(xy) = (right(xy), left(xy))
 
 // function methods
-flip(f) = x -> y -> f(y, x)     // flip binary function argument order
+`f = x -> y -> f(y, x)      // flip order of first two arguments of function
 mirror(f) = x -> f(x, x)        // convert binary function to unary function
 on(f, g) = x -> y -> f(g(x), g(y))  // apply binary f with unary g applied first
 f ^^ n = z -> n == 0 ? z || (f ^^ n - 1)(f(z))
@@ -57,7 +57,7 @@ isJust(mx) = mx(false, constant(true))
 fromJust(mx) = mx(undefined, identity)
 maybe(x, f, mx) = mx(x, f)
 mx ?. f = mx(nothing, f)                   // maybe chaining (bind)
-mx ?: x = mx(x, identity)                 // just value or default
+mx ?: x = mx(x, identity)                  // just value or default
 
 // math
 abs(n) = n >= 0 ? n || -n
@@ -78,7 +78,7 @@ n ^ m = (
 
 // list basics
 x :: xs = (x, xs)                     // prepend element to list (cons)
-prepend = flip(::)
+prepend = `(::)
 isEmpty(xs) = xs(constant(constant(false)))
 head = left                  // get first element of list
 tail = right                 // drop first element of list
@@ -95,7 +95,7 @@ reducer(xs, f) = xs.tail.foldr(f, xs.head)
 reducel(xs, f) = xs.tail.foldl(f, xs.head)
 
 // list fold operations
-xs ++ ys = xs.foldr((::), ys)                  // concatenate lists
+xs ++ ys = xs.foldr((::), ys)                   // concatenate lists
 length(xs) = xs.foldr(constant(+ 1), 0)         // get length of list
 (#) = length
 
@@ -120,7 +120,7 @@ drop(xs, n) = (tail ^^ n)(xs)            // drop n elements from front of list
 dropLast(xs) = xs.isEmpty \/ xs.tail.isEmpty ? [] ||
     xs.head :: dropLast(xs.tail)
 concatenate(xss) = xss.foldr((++), [])     // concatenate list of lists
-reverse(xs) = xs.foldl(flip(::), [])       // reverse a list
+reverse(xs) = xs.foldl(`(::), [])       // reverse a list
 interleave(xs, y) = xs ::? x -> xs' ->
     xs'.isEmpty ? xs || x :: y :: interleave(xs', y)
 join(xss, ys) = concatenate(interleave(xss, ys))
@@ -151,16 +151,17 @@ sort(ns) = ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 deduplicate(ns) = ns ::? k -> ks -> k :: deduplicate(ks | (=/= k))
 ns -- ms = ns |~ (: ms)             // list difference
 union(ns, ms) = ns ++ (ms -- ns)
-intersect(ns, ms) = ns | (: ms)
+intersection(ns, ms) = ns | (: ms)
 sortedDifference(ns, ms) = ns |~ ms.containsSorted // sorted list difference
 
-span(ns, p) = ns.isEmpty ? ([], []) ||
-    p(ns.head) ? (
-        nsns = ns.tail.span(p)
-        (ns.head :: nsns.left, nsns.right)
-    ) || ([], ns)
+break(ns, p) = (
+    ns.isEmpty ? ([], [])
+    p(ns.head) ? ([], ns)
+    nsns = ns.tail.break(p)
+    (ns.head :: nsns.left, nsns.right)
+)
 
-break(ns, p) = ns.span((~) <> p)
+span(ns, p) = ns.break((~) <> p)
 
 chop(ns, f) = ns.isEmpty ? [] || (
     nsns = f(ns)
@@ -195,7 +196,7 @@ primes = (f(ms) = ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 isUppercase(n) = n >= 'A' /\ n <= 'Z'
 isLowercase(n) = n >= 'a' /\ n <= 'z'
 isDigit(n) = n >= '0' /\ n <= '9'
-isQuote(n) = n == '"' \/ n == '\'' \/ n == '`'
+isQuote(n) = n == '"' \/ n == '\''
 isWhitespace(n) = n == ' ' \/ n >= '\t' /\ n <= '\r'
 isBlank(n) = n == ' ' \/ n == '\t'
 isControl(n) = n < 32 \/ n >= 127
