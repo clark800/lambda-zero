@@ -96,7 +96,7 @@ run_cloc() {
 }
 
 case "$1" in
-    "") config_fast && build;;
+    "") config_debug && build;;
     fast) config_fast && build;;
     small) config_small && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;

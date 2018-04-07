@@ -1,6 +1,7 @@
 #include "lib/tree.h"
 #include "lib/array.h"
 #include "ast.h"
+#include "objects.h"
 #include "lex.h"
 #include "errors.h"
 #include "bind.h"
@@ -22,6 +23,8 @@ unsigned long long lookupBuiltinCode(Node* token) {
 }
 
 static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
+    if (IDENTITY != NULL && isThisToken(symbol, "_"))
+        syntaxError("cannot reference", symbol);
     unsigned long long code = lookupBuiltinCode(symbol);
     if (code > 0) {
         convertSymbolToBuiltin(symbol, code);
@@ -40,10 +43,10 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
         convertSymbolToReference(symbol, index);
 }
 
-static bool isDefined(Node* symbol, Array* parameters) {
+bool isDefined(Node* symbol, Array* parameters) {
     // internal tokens are exempted to allow e.g. lists
-    return !isInternalToken(symbol) && (lookupBuiltinCode(symbol) != 0 ||
-            findDebruijnIndex(symbol, parameters) != 0);
+    return !isThisToken(symbol, "_") && (lookupBuiltinCode(symbol) != 0 ||
+             findDebruijnIndex(symbol, parameters) != 0);
 }
 
 void bindWith(Node* node, Array* parameters, const Array* globals) {
@@ -63,7 +66,7 @@ void bindWith(Node* node, Array* parameters, const Array* globals) {
 
 bool isLetExpression(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
-        !isInternalToken(getParameter(getLeft(node)));
+        !isThisToken(getParameter(getLeft(node)), "_");
 }
 
 Program bind(Hold* root, bool optimize) {
