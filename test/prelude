@@ -31,10 +31,10 @@ b <=> c = b ? c || ~c
 (\/) = or
 
 // pairs
-(x, y) = f -> f x y             // this definition is for (,) and sections
+(,) = x -> y -> f -> f x y     // this definition is for (,) and sections
 left(xy) = xy(true)
 right(xy) = xy(false)
-swap(xy) = (right(xy), left(xy))
+swap((x, y)) = (y, x)
 
 // function methods
 `f = x -> y -> f(y, x)      // flip order of first two arguments of function
@@ -157,20 +157,20 @@ sortedDifference(ns, ms) = ns |~ ms.containsSorted // sorted list difference
 break(ns, p) = (
     ns.isEmpty ? ([], [])
     p(ns.head) ? ([], ns)
-    nsns = ns.tail.break(p)
-    (ns.head :: nsns.left, nsns.right)
+    (before, after) = ns.tail.break(p)
+    (ns.head :: before, after)
 )
 
 span(ns, p) = ns.break((~) <> p)
 
 chop(ns, f) = ns.isEmpty ? [] || (
-    nsns = f(ns)
-    nsns.left :: chop(nsns.right, f)
+    (a, b) = f(ns)
+    a :: chop(b, f)
 )
 
 split(ns, p) = (
-    nsns = ns.break(p)
-    nsns.left :: (nsns.right.isEmpty ? [] || nsns.right.tail.split(p))
+    (a, b) = ns.break(p)
+    a :: (b.isEmpty ? [] || b.tail.split(p))
 )
 
 startsWith(ns, ks) = allTrue(zipWith(ns, (==), ks))

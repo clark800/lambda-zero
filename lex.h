@@ -42,4 +42,8 @@ static inline bool isTuple(Node* node) {
         isCommaList(getBody(node));
 }
 
+static inline bool isPair(Node* node) {
+    return isTuple(node) && isLeafNode(getLeft(getLeft(getBody(node))));
+}
+
 #endif
