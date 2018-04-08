@@ -209,9 +209,4 @@ static inline void convertNameToParameter(Node* symbol) {
     setType(symbol, PARAMETER);
 }
 
-static inline void convertOperatorToName(Node* symbol) {
-    assert(isOperator(symbol));
-    setType(symbol, NAME);
-}
-
 #endif

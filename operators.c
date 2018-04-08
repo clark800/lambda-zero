@@ -22,20 +22,28 @@ Node* apply(Node* operator, Node* left, Node* right) {
 }
 
 Node* infix(Node* operator, Node* left, Node* right) {
-    convertOperatorToName(operator);
     return apply(operator, apply(operator, operator, left), right);
 }
 
 Node* comma(Node* operator, Node* left, Node* right) {
-    return isCommaList(left) ?
-        newApplication(getLocation(operator), left, right) :
-        infix(operator, left, right);
+    return (isCommaList(left) ? apply : infix)(operator, left, right);
 }
 
-Node* lambda(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isName(left), "expected name but got", left);
-    convertNameToParameter(left);
-    return newLambda(getLocation(operator), left, right);
+Node* newArrow(Node* operator, Node* left, Node* right) {
+    int location = getLocation(operator);
+    if (isSymbol(left))
+        return newLambda(location, newParameter(getLocation(left)), right);
+    syntaxErrorIf(!isPair(left), "invalid left operand", operator);
+    // (x, y) -> body ---> p -> (x -> y -> body) left(p) right(p)
+    Node* leftName = getRight(getLeft(getBody(left)));
+    Node* rightName = getRight(getBody(left));
+    Node* leftComponent = newApplication(location, getBody(IDENTITY), TRUE);
+    Node* rightComponent = newApplication(location, getBody(IDENTITY), FALSE);
+    Node* lambda = newLambda(location, newParameter(getLocation(leftName)),
+        newLambda(location, newParameter(getLocation(rightName)), right));
+    Node* application = newApplication(location,
+        newApplication(location, lambda, leftComponent), rightComponent);
+    return newLambda(location, getParameter(IDENTITY), application);
 }
 
 Node* prefix(Node* operator, Node* left, Node* right) {
@@ -72,7 +80,7 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
     if (isOperator(contents)) {
         if (isSpecialOperator(getOperator(contents, false)))
             syntaxError("operator cannot be parenthesized", contents);
-        convertOperatorToName(contents);
+        return newName(getLocation(contents));
     }
     return contents;
 }
@@ -94,7 +102,7 @@ Rules RULES[] = {
     {"=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
     {"|~", 4, 4, IN, L, infix},
-    {"->", 5, 5, IN, R, lambda},
+    {"->", 5, 5, IN, R, newArrow},
     {"||", 5, 5, IN, R, infix},
     {"::?", 5, 5, IN, R, infix},
     {"?", 6, 6, IN, R, infix},

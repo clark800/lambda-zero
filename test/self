@@ -15,20 +15,17 @@ breakQuoteCharacter(ns) = (
 
 breakWith(ns, spanner, p) = (
     ns.isEmpty? ([], [])
-    nsns = spanner(ns)
-    p(nsns.left)? ([], ns)
-    nsns' = nsns.right.breakWith(spanner, p)
-    (nsns.left ++ nsns'.left, nsns'.right)
+    (a, b) = spanner(ns)
+    p(a)? ([], ns)
+    (c, d) = b.breakWith(spanner, p)
+    (a ++ c, d)
 )
 
-shiftSplit(nsns) = (
-    nsns.right.isEmpty? nsns
-    (nsns.left ++ [nsns.right.head], nsns.right.tail)
-)
+shiftSplit((a, b)) = b.isEmpty? (a, b) || (a ++ [b.head], b.tail)
 
 spanQuote(ns, quote) = (
-    x = ns.tail.breakWith(breakQuoteCharacter, (== quote) <> head)
-    shiftSplit((quote :: x.left, x.right))
+    (a, b) = ns.tail.breakWith(breakQuoteCharacter, (== quote) <> head)
+    shiftSplit((quote :: a, b))
 )
 
 splitLexeme(ns) = ns ::? n -> ns' -> (
@@ -41,15 +38,14 @@ splitLexeme(ns) = ns ::? n -> ns' -> (
 )
 
 advanceLocation(location, lexeme) = (
-    (lexeme.head == '\n')? (location.left + 1, 1)
-    (location.left, location.right + length(lexeme))
+    (line, column) = location
+    (lexeme.head == '\n')? (line + 1, 1)
+    (line, column + length(lexeme))
 )
 
 splitLexemes(string, splitter, location) = (
     string.isEmpty? []
-    lexeme_remaining = splitter(string)
-    lexeme = lexeme_remaining.left
-    remaining = lexeme_remaining.right
+    (lexeme, remaining) = splitter(string)
     nextLocation = advanceLocation(location, lexeme)
     (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
 )
