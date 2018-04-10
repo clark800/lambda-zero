@@ -32,7 +32,8 @@ bool isNameLexeme(const char* lexeme) {
 }
 
 bool isOperatorLexeme(const char* lexeme) {
-    return isDelimiterCharacter(lexeme[0]) || isOperatorCharacter(lexeme[0]);
+    return isDelimiterCharacter(lexeme[0]) || isOperatorCharacter(lexeme[0]) ||
+        isSpaceCharacter(lexeme[0]);
 }
 
 bool isIntegerLexeme(const char* lexeme) {
@@ -130,4 +131,8 @@ bool isSameToken(Node* tokenA, Node* tokenB) {
 
 bool isThisToken(Node* token, const char* lexeme) {
     return isSameLexeme(getLexeme(token), lexeme);
+}
+
+bool isSpace(Node* token) {
+    return isLeafNode(token) && isSpaceCharacter(getLexeme(token)[0]);
 }

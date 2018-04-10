@@ -182,6 +182,10 @@ static inline Node* newApplication(int location, Node* left, Node* right) {
     return newBranchNode(location, left, right);
 }
 
+static inline Node* newTuple(int location, Node* items) {
+    return newLambda(location, newParameter(getLocation(items)), items);
+}
+
 // =======================================
 // Functions to convert between node types
 // =======================================

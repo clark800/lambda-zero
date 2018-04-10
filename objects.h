@@ -14,5 +14,7 @@ void deleteObjects(void);
 
 Node* newNil(int location);
 Node* prepend(Node* item, Node* list);
+Node* newUnit(int location);
+Node* newSingleton(int location, Node* item);
 
 #endif

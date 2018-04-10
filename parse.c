@@ -35,26 +35,15 @@ Node* applyToCommaList(Node* base, Node* arguments) {
 void pushOperand(Stack* stack, Node* node) {
     if (isOperatorTop(stack)) {
         push(stack, node);
-    } else {
-        Hold* left = pop(stack);
+        return;
+    }
+    Hold* left = pop(stack);
+    if (isTuple(node) && isApplication(getBody(node))) {
+        push(stack, applyToCommaList(getNode(left), getBody(node)));
+        release(hold(node));
+    } else
         push(stack, newApplication(getLocation(node), getNode(left), node));
-        release(left);
-    }
-}
-
-void pushBracketedOperand(Stack* stack, Node* node, Node* open) {
-    if (isOpenParen(open) && isCommaList(node)) {
-        if (isOperatorTop(stack)) {     // create a tuple and push
-            push(stack, newLambda(getLocation(open),
-                newParameter(getLocation(node)), node));
-        } else {                        // curried function application
-            Hold* function = pop(stack);
-            push(stack, applyToCommaList(getNode(function), node));
-            release(function);
-        }
-    } else {
-        pushOperand(stack, node);
-    }
+    release(left);
 }
 
 void collapseOperator(Stack* stack) {
@@ -140,24 +129,27 @@ void collapseBracket(Stack* stack, Operator op) {
     syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
     Hold* contents = pop(stack);
     if (isOpenOperator(getNode(contents))) {
-        Node* result = applyOperator(op, getNode(contents), NULL);
-        pushBracketedOperand(stack, result, getNode(contents));
+        pushOperand(stack, applyOperator(op, getNode(contents), NULL));
     } else {
         syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
         Node* right = getNode(contents);
         if (isCloseParen(close) && !isOpenParen(peek(stack, 0)))
             contents = replaceHold(contents, collapseSection(stack, right));
         Hold* open = pop(stack);
-        Node* result = applyOperator(op, getNode(open), getNode(contents));
-        pushBracketedOperand(stack, result, getNode(open));
+        pushOperand(stack, applyOperator(op, getNode(open), getNode(contents)));
         release(open);
     }
     release(contents);
 }
 
 void pushOperator(Stack* stack, Node* operator) {
-    if (isNewline(operator) && isOperatorTop(stack))
-        return;   // note: close parens never appear on the stack
+    // ignore spaces before operators
+    if (isSpace(peek(stack, 0)) && !isOpenParen(operator))
+        release(pop(stack));
+    // ignore spaces and newlines after operators
+    // note: close parens never appear on the stack
+    if ((isNewline(operator) || isSpace(operator)) && isOperatorTop(stack))
+        return;
     Operator op = getOperator(operator, isOperatorTop(stack));
     if (getFixity(op) == CLOSE)
         eraseNewlines(stack);

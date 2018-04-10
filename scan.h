@@ -10,6 +10,10 @@ typedef struct {
     unsigned int line, column;
 } Position;
 
+static inline bool isSpaceCharacter(char c) {
+    return c == ' ' || c == '\t' || c == '\r';
+}
+
 static inline bool isQuoteCharacter(char c) {
     return c == '"' || c == '\'';
 }

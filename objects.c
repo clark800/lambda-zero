@@ -17,8 +17,8 @@
 // "('g' -> 'g' 'c' ('input' ('n' + 1)))) ('get' 'n'))) 0 \n 0";
 
 const char* INTERNAL_CODE =
-    // identity, true, false
-    "(_ -> _) \n ('t' -> 'f' -> 't') \n ('t' -> 'f' -> 'f') \n"
+    // identity, empty tuple, true, false
+    "(_ -> _) \n (,) -> (,) \n ('t' -> 'f' -> 't') \n ('t' -> 'f' -> 'f') \n"
     // Y combinator
     "('y' -> ('x' -> 'y' ('x' 'x')) ('x' -> 'y' ('x' 'x'))) "
     // lazy string printer
@@ -27,7 +27,7 @@ const char* INTERNAL_CODE =
     "('get' 0) \n 0";
 
 Program PROGRAM;
-Node *IDENTITY, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
+Node *IDENTITY, *UNIT, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
 Stack* INPUT_STACK;
 
 void initObjects(Program program) {
@@ -35,11 +35,12 @@ void initObjects(Program program) {
     Node* objects = getNode(program.root);
     negateLocations(objects);
     IDENTITY = getListElement(objects, 0);
-    TRUE = getListElement(objects, 1);
-    FALSE = getListElement(objects, 2);
-    PRINT = getListElement(objects, 3);
+    UNIT = getListElement(objects, 1);
+    TRUE = getListElement(objects, 2);
+    FALSE = getListElement(objects, 3);
+    PRINT = getListElement(objects, 4);
     YCOMBINATOR = getLeft(PRINT);
-    INPUT = getListElement(objects, 4);
+    INPUT = getListElement(objects, 5);
     INPUT_STACK = newStack(VOID);
 }
 
@@ -56,4 +57,13 @@ Node* prepend(Node* item, Node* list) {
     int location = getLocation(list);
     return newLambda(location, getParameter(IDENTITY), newApplication(location,
             newApplication(location, getBody(IDENTITY), item), list));
+}
+
+Node* newUnit(int location) {
+    return newLambda(location, getParameter(UNIT), getBody(UNIT));
+}
+
+Node* newSingleton(int location, Node* item) {
+    return newLambda(location, getParameter(UNIT),
+        newApplication(getLocation(getBody(UNIT)), getBody(UNIT), item));
 }

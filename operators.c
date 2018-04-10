@@ -84,13 +84,16 @@ Node* brackets(Node* close, Node* open, Node* contents) {
 Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
     if (contents == NULL)
-        return newLambda(getLocation(open),
-            getParameter(IDENTITY), getBody(IDENTITY));
+        return newUnit(getLocation(open));
     if (isOperator(contents)) {
         if (isSpecialOperator(getOperator(contents, false)))
             syntaxError("operator cannot be parenthesized", contents);
         return newName(getLocation(contents));
     }
+    if (isCommaList(contents))
+        return newTuple(getLocation(open), contents);
+    if (isTuple(contents))
+        return newSingleton(getLocation(open), contents);
     return contents;
 }
 
@@ -153,12 +156,15 @@ Rules RULES[] = {
 };
 
 Rules DEFAULT = {"", 10, 10, IN, L, infix};
+Rules SPACE = {" ", 14, 14, IN, L, apply};
 
 bool allowsOperatorBefore(Rules rules) {
     return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
 }
 
 Operator getOperator(Node* token, bool isAfterOperator) {
+    if (isSpace(token))
+        return (Operator){token, &SPACE};
     for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
         if (isThisToken(token, RULES[i].symbol))
             if (!isAfterOperator || allowsOperatorBefore(RULES[i]))
