@@ -38,12 +38,9 @@ static inline bool isCommaList(Node* node) {
 }
 
 static inline bool isTuple(Node* node) {
+    // must check the body to exclude the definition of ","
     return isLambda(node) && isThisToken(getParameter(node), ",") &&
         isCommaList(getBody(node));
-}
-
-static inline bool isPair(Node* node) {
-    return isTuple(node) && isLeafNode(getLeft(getLeft(getBody(node))));
 }
 
 #endif

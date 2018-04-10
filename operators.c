@@ -17,6 +17,13 @@ struct Rules {
     Node* (*apply)(Node* operator, Node* left, Node* right);
 };
 
+int getTupleSize(Node* tuple) {
+    int i = 0;
+    for (Node* n = getBody(tuple); isApplication(n); i++)
+        n = getLeft(n);
+    return i;
+}
+
 Node* apply(Node* operator, Node* left, Node* right) {
     return newApplication(getLocation(operator), left, right);
 }
@@ -33,7 +40,8 @@ Node* newArrow(Node* operator, Node* left, Node* right) {
     int location = getLocation(operator);
     if (isSymbol(left))
         return newLambda(location, newParameter(getLocation(left)), right);
-    syntaxErrorIf(!isPair(left), "invalid left operand", operator);
+    if (!(isTuple(left) && getTupleSize(left) == 2))
+        syntaxError("invalid parameter", left);
     // (x, y) -> body ---> p -> (x -> y -> body) left(p) right(p)
     Node* leftName = getRight(getLeft(getBody(left)));
     Node* rightName = getRight(getBody(left));
@@ -76,7 +84,8 @@ Node* brackets(Node* close, Node* open, Node* contents) {
 Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
     if (contents == NULL)
-        return IDENTITY;
+        return newLambda(getLocation(open),
+            getParameter(IDENTITY), getBody(IDENTITY));
     if (isOperator(contents)) {
         if (isSpecialOperator(getOperator(contents, false)))
             syntaxError("operator cannot be parenthesized", contents);
