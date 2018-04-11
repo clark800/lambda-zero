@@ -66,6 +66,7 @@ void bindWith(Node* node, Array* parameters, const Array* globals) {
 
 bool isLetExpression(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
+        !isTuple(getLeft(node)) && !isList(getLeft(node)) &&
         !isThisToken(getParameter(getLeft(node)), "_");
 }
 
