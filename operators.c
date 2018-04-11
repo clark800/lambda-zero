@@ -105,59 +105,79 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
 // if a comma is not wrapped in parentheses or brackets, it will be at the
 // very top level and thus won't be defined, so bind will catch this case.
 Rules RULES[] = {
+    // syntactic operators
     {"\0", 0, 0, CLOSE, L, NULL},
-    {"(", 14, 0, OPEN, L, unmatched},
-    {")", 0, 14, CLOSE, R, parentheses},
-    {"[", 14, 0, OPEN, L, unmatched},
-    {"]", 0, 14, CLOSE, R, brackets},
+    {"(", 22, 0, OPEN, L, unmatched},
+    {")", 0, 22, CLOSE, R, parentheses},
+    {"[", 22, 0, OPEN, L, unmatched},
+    {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
     {"\n", 2, 2, IN, R, apply},
     {"=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
     {"|~", 4, 4, IN, L, infix},
     {"->", 5, 5, IN, R, newArrow},
+
+    // conditional operators
     {"||", 5, 5, IN, R, infix},
     {"::?", 5, 5, IN, R, infix},
     {"?", 6, 6, IN, R, infix},
-    {"\\/", 7, 7, IN, R, infix},
-    {"/\\", 8, 8, IN, R, infix},
-    {"==", 9, 9, IN, N, infix},
-    {"=/=", 9, 9, IN, N, infix},
-    {"===", 9, 9, IN, N, infix},
-    {"<=>", 9, 9, IN, N, infix},
-    {"=>", 9, 9, IN, N, infix},
-    {"<", 9, 9, IN, N, infix},
-    {">", 9, 9, IN, N, infix},
-    {"<=", 9, 9, IN, N, infix},
-    {">=", 9, 9, IN, N, infix},
-    {">=<", 9, 9, IN, N, infix},
-    {"<:", 9, 9, IN, N, infix},
-    {":", 9, 9, IN, N, infix},
-    {"::", 10, 10, IN, R, infix},
-    {"..", 10, 10, IN, N, infix},
-    {"++", 10, 10, IN, R, infix},
-    {"--", 10, 10, IN, N, infix},
-    {"**", 10, 10, IN, R, infix},
-    {"^^", 10, 10, IN, L, infix},
-    {"?:", 10, 10, IN, R, infix},
-    {"+", 11, 11, IN, L, infix},
-    {"-", 11, 11, IN, L, infix},
-    {"-", 11, 11, PRE, L, negate},
-    {"~", 11, 11, PRE, L, prefix},
-    {"#", 11, 11, PRE, L, prefix},
-    {"*", 12, 12, IN, L, infix},
-    {"/", 12, 12, IN, L, infix},
-    {"%", 12, 12, IN, L, infix},
-    {"\\", 12, 12, IN, L, infix},
-    {"^", 13, 13, IN, R, infix},
-    {"<>", 13, 13, IN, R, infix},
-    {"?.", 15, 15, IN, L, infix},
-    {".", 15, 15, IN, L, infix},
-    {"`", 15, 15, PRE, L, prefix}
+
+    // logical operators
+    {"<=>", 7, 7, IN, N, infix},
+    {"=>", 8, 8, IN, N, infix},
+    {"\\/", 9, 9, IN, R, infix},
+    {"/\\", 10, 10, IN, R, infix},
+
+    // comparison/test operators
+    {"==", 11, 11, IN, N, infix},
+    {"=/=", 11, 11, IN, N, infix},
+    {"===", 11, 11, IN, N, infix},
+    {"<", 11, 11, IN, N, infix},
+    {">", 11, 11, IN, N, infix},
+    {"<=", 11, 11, IN, N, infix},
+    {">=", 11, 11, IN, N, infix},
+    {">=<", 11, 11, IN, N, infix},
+    {"<:", 11, 11, IN, N, infix},
+    {":", 11, 11, IN, N, infix},
+
+    // monadic operators
+    {"?:", 12, 12, IN, R, infix},
+
+    // list operators
+    {"::", 13, 13, IN, R, infix},
+    {"++", 13, 13, IN, R, infix},
+    {"--", 13, 13, IN, N, infix},
+    {"**", 14, 14, IN, R, infix},
+    {"..", 15, 15, IN, N, infix},
+
+    // arithmetic operators
+    {"+", 16, 16, IN, L, infix},
+    {"-", 16, 16, IN, L, infix},
+    {"*", 17, 17, IN, L, infix},
+    {"/", 17, 17, IN, L, infix},
+    {"%", 17, 17, IN, L, infix},
+    {"\\", 17, 17, IN, L, infix},
+    {"^", 18, 18, IN, R, infix},
+
+    // functional operators
+    {"<>", 19, 19, IN, R, infix},
+
+    // higher than space operator
+    // prefix operators
+    {"-", 21, 21, PRE, L, negate},
+    {"~", 21, 21, PRE, L, prefix},
+    {"#", 21, 21, PRE, L, prefix},
+
+    // higher than function application
+    {"^^", 23, 23, IN, L, infix},
+    {"?.", 24, 24, IN, L, infix},
+    {".", 24, 24, IN, L, infix},
+    {"`", 24, 24, PRE, L, prefix}
 };
 
-Rules DEFAULT = {"", 10, 10, IN, L, infix};
-Rules SPACE = {" ", 14, 14, IN, L, apply};
+Rules DEFAULT = {"", 12, 12, IN, L, infix};
+Rules SPACE = {" ", 20, 20, IN, L, apply};
 
 bool allowsOperatorBefore(Rules rules) {
     return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
