@@ -21,7 +21,7 @@ void serializeAST(Node* node, FILE* stream) {
         fputs("NULL", stream);     // for debugging
     } else if (node == VOID) {
         fputs("VOID", stream);
-    } else if (isBranchNode(node)) {
+    } else if (isBranch(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
         fputs(isDefinition(node) ? " = " : " ", stream);

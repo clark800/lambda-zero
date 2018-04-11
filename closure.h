@@ -7,8 +7,7 @@
 typedef Node Closure;
 
 static inline Closure* newClosure(Node* term, Node* locals, Node* trace) {
-    Node* left = newBranchNode(0, term, trace);
-    return newBranchNode(0, left, locals);
+    return newBranch(0, newBranch(0, term, trace), locals);
 }
 
 static inline Node* getTerm(Closure* closure) {

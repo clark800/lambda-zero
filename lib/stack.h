@@ -9,7 +9,7 @@ typedef struct Stack Stack;
 typedef struct Iterator Iterator;
 
 static inline Stack* newStack(Node* head) {
-    return (Stack*)hold(newBranchNode(0, VOID, head));
+    return (Stack*)hold(newBranch(0, VOID, head));
 }
 
 static inline void deleteStack(Stack* stack) {
@@ -29,7 +29,7 @@ static inline bool isEmpty(Stack* stack) {
 }
 
 static inline void push(Stack* stack, Node* node) {
-    setHead(stack, newBranchNode(0, node, getHead(stack)));
+    setHead(stack, newBranch(0, node, getHead(stack)));
 }
 
 static inline Hold* pop(Stack* stack) {

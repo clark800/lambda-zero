@@ -31,16 +31,16 @@ b <=> c = b ? c || ~c
 (\/) = or
 
 // pairs
-(,) = x -> y -> f -> f x y     // this definition is for (,) and sections
+(,)(x, y) = f -> f x y     // this definition is for (,) and sections
 left(xy) = xy(true)
 right(xy) = xy(false)
 swap((x, y)) = (y, x)
 
 // function methods
-`f = x -> y -> f(y, x)      // flip order of first two arguments of function
-mirror(f) = x -> f(x, x)        // convert binary function to unary function
+`f(x, y) = f(y, x)      // flip order of first two arguments of function
+mirror(f)(x) = f(x, x)        // convert binary function to unary function
 on(f, g) = x -> y -> f(g(x), g(y))  // apply binary f with unary g applied first
-f ^^ n = z -> n == 0 ? z || (f ^^ n - 1)(f(z))
+(f ^^ n)(z) = n == 0 ? z || (f ^^ n - 1)(f(z))
 until(f, p, z) = p(z) ? z || f.until(p, f(z))
 while(f, p, z) = f.until((~) <> p, z)
 curry(f) = x -> y -> f((x, y))
@@ -83,7 +83,7 @@ isEmpty(xs) = xs(constant(constant(false)))
 head = left                  // get first element of list
 tail = right                 // drop first element of list
 last(xs) = head(tail.until(isEmpty <> tail, xs)) // get last element of list
-index(xs, n) = head((tail ^^ n)(xs))      // get element of list at index
+xs[n] = head((tail ^^ n)(xs))      // get element of list at index
 
 // syntactic helpers
 xs ::? f = xs.isEmpty ? [] || f(xs.head, xs.tail)

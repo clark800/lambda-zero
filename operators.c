@@ -73,12 +73,13 @@ Node* brackets(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
     if (contents == NULL)
         return newNil(getLocation(open));
+    int location = getLocation(open);
     if (!isCommaList(contents))
-        return prepend(contents, newNil(getLocation(open)));
+        return prepend(location, contents, newNil(getLocation(open)));
     Node* list = newNil(getLocation(open));
     for(; isCommaList(getLeft(contents)); contents = getLeft(contents))
-        list = prepend(getRight(contents), list);
-    return prepend(getRight(contents), list);
+        list = prepend(location, getRight(contents), list);
+    return prepend(location, getRight(contents), list);
 }
 
 Node* parentheses(Node* close, Node* open, Node* contents) {
@@ -92,7 +93,7 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
     }
     if (isCommaList(contents))
         return newTuple(getLocation(open), contents);
-    if (isTuple(contents))
+    if (isTuple(contents) || isList(contents))
         return newSingleton(getLocation(open), contents);
     return contents;
 }
