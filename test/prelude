@@ -40,7 +40,7 @@ swap((x, y)) = (y, x)
 `f(x, y) = f(y, x)      // flip order of first two arguments of function
 mirror(f)(x) = f(x, x)        // convert binary function to unary function
 on(f, g) = x -> y -> f(g(x), g(y))  // apply binary f with unary g applied first
-(f ^^ n)(z) = n == 0 ? z || (f ^^ n - 1)(f(z))
+f^^(n)(z) = n == 0 ? z || f^^(n - 1)(f(z))
 until(f, p, z) = p(z) ? z || f.until(p, f(z))
 while(f, p, z) = f.until((~) <> p, z)
 curry(f) = x -> y -> f((x, y))
@@ -83,7 +83,7 @@ isEmpty(xs) = xs(constant(constant(false)))
 head = left                  // get first element of list
 tail = right                 // drop first element of list
 last(xs) = head(tail.until(isEmpty <> tail, xs)) // get last element of list
-xs[n] = head((tail ^^ n)(xs))      // get element of list at index
+xs[n] = head(tail^^(n)(xs))      // get element of list at index
 
 // syntactic helpers
 xs ::? f = xs.isEmpty ? [] || f(xs.head, xs.tail)
@@ -102,7 +102,7 @@ length(xs) = xs.foldr(constant(+ 1), 0)         // get length of list
 // generic list constructors
 iterate(f, x) = x :: iterate(f, f(x))       // iteratively apply f
 repeat(x) = x :: repeat(x)                  // infinitely repeat one element
-replicate(x, n) = ((x ::) ^^ n)([])         // replicate one element n times
+replicate(x, n) = (x ::)^^(n)([])         // replicate one element n times
 cycle(xs) = xs ++ cycle(xs)                 // infinitely cycle list
 
 // generic list transformations
@@ -116,7 +116,7 @@ zip(xs, ys) = zipWith(xs, (,), ys)
 unzip(xs) = (xs.map(left), xs.map(right))
 // drop all elements beyond the first n elements
 take(xs, n) = n == 0 ? [] || xs.head :: xs.tail.take(n - 1)
-drop(xs, n) = (tail ^^ n)(xs)            // drop n elements from front of list
+drop(xs, n) = tail^^(n)(xs)            // drop n elements from front of list
 dropLast(xs) = xs.isEmpty \/ xs.tail.isEmpty ? [] ||
     xs.head :: dropLast(xs.tail)
 concatenate(xss) = xss.foldr((++), [])     // concatenate list of lists
