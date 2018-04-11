@@ -45,11 +45,12 @@ static inline bool isCommaList(Node* node) {
 static inline bool isTuple(Node* node) {
     // must check the body to exclude the definition of ","
     return isLambda(node) && isComma(getParameter(node)) &&
-        (isComma(getBody(node)) || isCommaList(getBody(node)));
+           (isComma(getBody(node)) || isCommaList(getBody(node)));
 }
 
 static inline bool isList(Node* node) {
-    return isLambda(node) && isThisToken(node, "[");
+    return isLambda(node) && isThisToken(node, "[") &&
+           isThisToken(getParameter(node), "_");
 }
 
 #endif

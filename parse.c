@@ -170,8 +170,8 @@ void pushOperator(Stack* stack, Node* operator) {
 
 Hold* collapseEOF(Stack* stack, Hold* token) {
     eraseNewlines(stack);
-    collapseLeftOperand(stack, getNode(token));
     syntaxErrorIf(isEOF(peek(stack, 0)), "no input", getNode(token));
+    collapseLeftOperand(stack, getNode(token));
     Hold* result = pop(stack);
     Node* end = peek(stack, 0);
     syntaxErrorIf(!isEOF(end), "unexpected syntax error near", end);
