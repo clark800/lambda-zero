@@ -93,7 +93,7 @@ Node* evaluateGet(Closure* builtin, long long index) {
     inputIndex += 1;
     int c = fgetc(stdin);
     int location = getLocation(getTerm(builtin));
-    push(INPUT_STACK, c == EOF ? newNil(location) : prepend(
+    push(INPUT_STACK, c == EOF ? newNil(location) : prepend(location,
         newInteger(location, c), newApplication(location, getLeft(INPUT),
             newInteger(location, index + 1))));
     return peek(INPUT_STACK, 0);

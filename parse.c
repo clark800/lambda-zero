@@ -38,11 +38,18 @@ void pushOperand(Stack* stack, Node* node) {
         return;
     }
     Hold* left = pop(stack);
-    if (isTuple(node) && isApplication(getBody(node))) {
+    if (isTuple(node) && isApplication(getBody(node)))
         push(stack, applyToCommaList(getNode(left), getBody(node)));
-        release(hold(node));
+    else if (isList(node)) {
+        if (!isApplication(getBody(node)))
+            syntaxError("missing argument to", node);
+        if (isApplication(getBody(getRight(getBody(node)))))
+            syntaxError("too many arguments to", node);
+        push(stack, infix(newName(getLocation(node)), getNode(left),
+            getRight(getLeft(getBody(node)))));
     } else
         push(stack, newApplication(getLocation(node), getNode(left), node));
+    release(hold(node));
     release(left);
 }
 
@@ -144,7 +151,7 @@ void collapseBracket(Stack* stack, Operator op) {
 
 void pushOperator(Stack* stack, Node* operator) {
     // ignore spaces before operators
-    if (isSpace(peek(stack, 0)) && !isOpenParen(operator))
+    if (isSpace(peek(stack, 0)) && !isOpenOperator(operator))
         release(pop(stack));
     // ignore spaces and newlines after operators
     // note: close parens never appear on the stack

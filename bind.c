@@ -27,7 +27,7 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
         syntaxError("cannot reference", symbol);
     unsigned long long code = lookupBuiltinCode(symbol);
     if (code > 0) {
-        convertSymbolToBuiltin(symbol, code);
+        convertToBuiltin(symbol, code);
         return;
     }
     unsigned long long index = findDebruijnIndex(symbol, parameters);
@@ -38,9 +38,9 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
     }
     unsigned long long localDepth = length(parameters) - globalDepth;
     if (index > localDepth)
-        convertSymbolToGlobal(symbol, length(parameters) - index);
+        convertToGlobal(symbol, length(parameters) - index);
     else
-        convertSymbolToReference(symbol, index);
+        convertToReference(symbol, index);
 }
 
 bool isDefined(Node* symbol, Array* parameters) {

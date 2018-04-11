@@ -19,7 +19,7 @@ static inline const char* getLexeme(Node* node) {
 }
 
 bool isInternalToken(Node* token) {
-    return isLeafNode(token) && !isInteger(token) && *getLexeme(token) == '\'';
+    return isLeaf(token) && !isInteger(token) && getLexeme(token)[0] == '\'';
 }
 
 void printToken(Node* token, FILE* stream) {
@@ -85,7 +85,7 @@ Node* newStringLiteral(const char* lexeme) {
         push(stack, newInteger(location, decodeCharacter(p)));
     lexerErrorIf(p != close, lexeme, "invalid string literal");
     for (Iterator* it = iterate(stack); !end(it); it = next(it))
-        string = prepend(cursor(it), string);
+        string = prepend(getLexemeLocation(lexeme), cursor(it), string);
     deleteStack(stack);
     return string;
 }
@@ -134,5 +134,5 @@ bool isThisToken(Node* token, const char* lexeme) {
 }
 
 bool isSpace(Node* token) {
-    return isLeafNode(token) && isSpaceCharacter(getLexeme(token)[0]);
+    return isLeaf(token) && isSpaceCharacter(getLexeme(token)[0]);
 }

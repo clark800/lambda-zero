@@ -50,32 +50,31 @@ static inline void deleteProgram(Program program) {
 // =============================================
 
 static inline bool isInteger(Node* node) {
-    return isLeafNode(node) && getType(node) == INTEGER;
+    return isLeaf(node) && getType(node) == INTEGER;
 }
 
 static inline bool isName(Node* node) {
-    return isLeafNode(node) && getType(node) == NAME;
+    return isLeaf(node) && getType(node) == NAME;
 }
 
 static inline bool isOperator(Node* node) {
-    return isLeafNode(node) && getType(node) == OPERATOR;
+    return isLeaf(node) && getType(node) == OPERATOR;
 }
 
 static inline bool isParameter(Node* node) {
-    return isLeafNode(node) && getType(node) == PARAMETER;
+    return isLeaf(node) && getType(node) == PARAMETER;
 }
 
 static inline bool isBuiltin(Node* node) {
-    return isLeafNode(node) && (
-            getType(node) >= BUILTIN && getType(node) < GLOBAL);
+    return isLeaf(node) && getType(node) >= BUILTIN && getType(node) < GLOBAL;
 }
 
 static inline bool isReference(Node* node) {
-    return isLeafNode(node) && getType(node) < 0;
+    return isLeaf(node) && getType(node) < 0;
 }
 
 static inline bool isGlobal(Node* node) {
-    return isLeafNode(node) && getType(node) >= GLOBAL;
+    return isLeaf(node) && getType(node) >= GLOBAL;
 }
 
 static inline bool isSymbol(Node* node) {
@@ -83,24 +82,21 @@ static inline bool isSymbol(Node* node) {
 }
 
 static inline bool isApplication(Node* node) {
-    return isBranchNode(node) && !isParameter(getLeft(node));
+    return isBranch(node) && !isParameter(getLeft(node));
 }
 
 static inline bool isLambda(Node* node) {
-    return isBranchNode(node) && isParameter(getLeft(node));
+    return isBranch(node) && isParameter(getLeft(node));
 }
 
 static inline enum NodeType getNodeType(Node* node) {
-    if (isBranchNode(node))
+    if (isBranch(node))
         return isParameter(getLeft(node)) ? N_LAMBDA : N_APPLICATION;
     long long type = getType(node);
-    if (type < 0)
-        return N_REFERENCE;
-    if (type == 0)
-        return N_INTEGER;
-    if (type < GLOBAL)
-        return N_BUILTIN;
-    return N_GLOBAL;
+    return type < 0 ? N_REFERENCE :
+           type == 0 ? N_INTEGER :
+           type < GLOBAL ? N_BUILTIN :
+           N_GLOBAL;
 }
 
 // ====================================
@@ -142,30 +138,30 @@ static inline Node* getBody(Node* lambda) {
 // ================================
 
 static inline Node* newInteger(int location, long long value) {
-    Node* result = newLeafNode(location, INTEGER);
+    Node* result = newLeaf(location, INTEGER);
     setValue(result, value);
     return result;
 }
 
 static inline Node* newName(int location) {
-    return newLeafNode(location, NAME);
+    return newLeaf(location, NAME);
 }
 
 static inline Node* newParameter(int location) {
-    return newLeafNode(location, PARAMETER);
+    return newLeaf(location, PARAMETER);
 }
 
 static inline Node* newOperator(int location) {
-    return newLeafNode(location, OPERATOR);
+    return newLeaf(location, OPERATOR);
 }
 
 static inline Node* newBuiltin(int location, unsigned long long code) {
     assert(code >= BUILTIN);
-    return newLeafNode(location, (long long)code);
+    return newLeaf(location, (long long)code);
 }
 
 static inline Node* newReference(int location, unsigned long long debruijn) {
-    return newLeafNode(location, -(long long)debruijn);
+    return newLeaf(location, -(long long)debruijn);
 }
 
 static inline Node* newLambda(int location, Node* parameter, Node* body) {
@@ -175,11 +171,11 @@ static inline Node* newLambda(int location, Node* parameter, Node* body) {
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
     assert(isParameter(parameter));
-    return newBranchNode(location, parameter, body);
+    return newBranch(location, parameter, body);
 }
 
 static inline Node* newApplication(int location, Node* left, Node* right) {
-    return newBranchNode(location, left, right);
+    return newBranch(location, left, right);
 }
 
 static inline Node* newTuple(int location, Node* items) {
@@ -190,27 +186,19 @@ static inline Node* newTuple(int location, Node* items) {
 // Functions to convert between node types
 // =======================================
 
-static inline void convertSymbolToReference(Node* symbol,
-    unsigned long long debruijn) {
-    assert(isSymbol(symbol) && debruijn > 0);
-    setType(symbol, -(long long)debruijn);
+static inline void convertToReference(Node* node, unsigned long long debruijn) {
+    assert(isSymbol(node) && debruijn > 0);
+    setType(node, -(long long)debruijn);
 }
 
-static inline void convertSymbolToBuiltin(Node* symbol,
-    unsigned long long code) {
-    assert(isSymbol(symbol) && code >= BUILTIN);
-    setType(symbol, (long long)code);
+static inline void convertToBuiltin(Node* node, unsigned long long code) {
+    assert(isSymbol(node) && code >= BUILTIN);
+    setType(node, (long long)code);
 }
 
-static inline void convertSymbolToGlobal(Node* symbol,
-        unsigned long long index) {
-    assert(isSymbol(symbol));
-    setType(symbol, (long long)(GLOBAL + index));
-}
-
-static inline void convertNameToParameter(Node* symbol) {
-    assert(isName(symbol));
-    setType(symbol, PARAMETER);
+static inline void convertToGlobal(Node* node, unsigned long long index) {
+    assert(isSymbol(node));
+    setType(node, (long long)(GLOBAL + index));
 }
 
 #endif

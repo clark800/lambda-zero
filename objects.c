@@ -53,8 +53,7 @@ Node* newNil(int location) {
     return newLambda(location, getParameter(IDENTITY), TRUE);
 }
 
-Node* prepend(Node* item, Node* list) {
-    int location = getLocation(list);
+Node* prepend(int location, Node* item, Node* list) {
     return newLambda(location, getParameter(IDENTITY), newApplication(location,
             newApplication(location, getBody(IDENTITY), item), list));
 }

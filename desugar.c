@@ -63,7 +63,7 @@ Node* constructDefine(Node* node, Node* left, Node* right) {
 }
 
 Hold* desugarDefine(Node* node) {
-    if (isLeafNode(node))
+    if (isLeaf(node))
         return hold(node);
     Hold* left = desugarDefine(getLeft(node));
     Hold* right = desugarDefine(getRight(node));

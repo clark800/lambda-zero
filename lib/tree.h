@@ -9,11 +9,11 @@ extern Node* const VOID;
 void initNodeAllocator(void);
 void destroyNodeAllocator(void);
 
-Node* newBranchNode(int location, Node* left, Node* right);
-Node* newLeafNode(int location, long long type);
+Node* newBranch(int location, Node* left, Node* right);
+Node* newLeaf(int location, long long type);
 
-bool isLeafNode(Node* node);
-bool isBranchNode(Node* node);
+bool isLeaf(Node* node);
+bool isBranch(Node* node);
 int getLocation(Node* node);
 
 Node* getLeft(Node* branchNode);

@@ -13,7 +13,7 @@ void initObjects(Program program);
 void deleteObjects(void);
 
 Node* newNil(int location);
-Node* prepend(Node* item, Node* list);
+Node* prepend(int location, Node* item, Node* list);
 Node* newUnit(int location);
 Node* newSingleton(int location, Node* item);
 

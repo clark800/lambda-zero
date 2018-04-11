@@ -15,7 +15,7 @@ void printToken(Node* token, FILE* stream);
 Node* newEOF(void);
 
 static inline bool isNewline(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\n");
+    return isLeaf(node) && isThisToken(node, "\n");
 }
 
 static inline bool isDefinition(Node* node) {
@@ -23,19 +23,19 @@ static inline bool isDefinition(Node* node) {
 }
 
 static inline bool isOpenParen(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "(");
+    return isLeaf(node) && isThisToken(node, "(");
 }
 
 static inline bool isCloseParen(Node* node) {
-    return isLeafNode(node) && isThisToken(node, ")");
+    return isLeaf(node) && isThisToken(node, ")");
 }
 
 static inline bool isEOF(Node* node) {
-    return isLeafNode(node) && isThisToken(node, "\0");
+    return isLeaf(node) && isThisToken(node, "\0");
 }
 
 static inline bool isComma(Node* node) {
-    return isLeafNode(node) && isThisToken(node, ",");
+    return isLeaf(node) && isThisToken(node, ",");
 }
 
 static inline bool isCommaList(Node* node) {
@@ -46,6 +46,10 @@ static inline bool isTuple(Node* node) {
     // must check the body to exclude the definition of ","
     return isLambda(node) && isComma(getParameter(node)) &&
         (isComma(getBody(node)) || isCommaList(getBody(node)));
+}
+
+static inline bool isList(Node* node) {
+    return isLambda(node) && isThisToken(node, "[");
 }
 
 #endif
