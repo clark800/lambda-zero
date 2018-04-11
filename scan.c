@@ -8,10 +8,6 @@
 
 const char* SOURCE_CODE = NULL;
 
-static inline bool isSpaceCharacter(char c) {
-    return c == ' ' || c == '\t' || c == '\r';
-}
-
 static inline bool isComment(const char* s) {
     return s[0] == '/' && s[1] == '/';
 }
@@ -24,10 +20,6 @@ static inline const char* skipWhile(const char* s, bool (*predicate)(char)) {
     while (s[0] != '\0' && predicate(s[0]))
         s++;
     return s;
-}
-
-static inline const char* skipSpaces(const char* s) {
-    return skipWhile(s, isSpaceCharacter);
 }
 
 static inline const char* skipComment(const char* s) {
@@ -47,7 +39,9 @@ static inline const char* skipQuote(const char* s) {
 }
 
 static inline const char* skipLexeme(const char* lexeme) {
-    assert(lexeme[0] != '\0' && lexeme[0] != ' ');
+    assert(lexeme[0] != '\0');
+    if (isSpaceCharacter(lexeme[0]))
+        return skipWhile(lexeme, isSpaceCharacter);
     if (isQuoteCharacter(lexeme[0]))
         return skipQuote(lexeme);
     if (isOperandCharacter(lexeme[0]))
@@ -59,11 +53,11 @@ static inline const char* skipLexeme(const char* lexeme) {
 
 const char* getFirstLexeme(const char* input) {
     SOURCE_CODE = input;
-    return skipComment(skipSpaces(input));
+    return skipComment(input);
 }
 
 const char* getNextLexeme(const char* lastLexeme) {
-    return skipComment(skipSpaces(skipLexeme(lastLexeme)));
+    return skipComment(skipLexeme(lastLexeme));
 }
 
 unsigned int getLexemeLength(const char* lexeme) {
