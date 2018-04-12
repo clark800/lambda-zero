@@ -113,7 +113,7 @@ Rules RULES[] = {
     {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
     {"\n", 2, 2, IN, R, apply},
-    {"=", 3, 3, IN, N, apply},
+    {":=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
     {"|~", 4, 4, IN, L, infix},
     {"->", 5, 5, IN, R, newArrow},
@@ -130,9 +130,9 @@ Rules RULES[] = {
     {"/\\", 10, 10, IN, R, infix},
 
     // comparison/test operators
+    {"=", 11, 11, IN, N, infix},
+    {"~=", 11, 11, IN, N, infix},
     {"==", 11, 11, IN, N, infix},
-    {"=/=", 11, 11, IN, N, infix},
-    {"===", 11, 11, IN, N, infix},
     {"<", 11, 11, IN, N, infix},
     {">", 11, 11, IN, N, infix},
     {"<=", 11, 11, IN, N, infix},
@@ -157,7 +157,6 @@ Rules RULES[] = {
     {"*", 17, 17, IN, L, infix},
     {"/", 17, 17, IN, L, infix},
     {"%", 17, 17, IN, L, infix},
-    {"\\", 17, 17, IN, L, infix},
     {"^", 18, 18, IN, R, infix},
 
     // functional operators

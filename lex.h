@@ -19,7 +19,7 @@ static inline bool isNewline(Node* node) {
 }
 
 static inline bool isDefinition(Node* node) {
-    return isApplication(node) && isThisToken(node, "=");
+    return isApplication(node) && isThisToken(node, ":=");
 }
 
 static inline bool isOpenParen(Node* node) {

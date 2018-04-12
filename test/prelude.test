@@ -56,32 +56,32 @@ factorial(10)
 head(replicate(10, 7))
 10
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map((2 + 1) *))
+main(input) := showIntegerList(naturals.take(5).map((2 + 1) *))
 [0, 3, 6, 9, 12]
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map(* (2 + 1)))
+main(input) := showIntegerList(naturals.take(5).map(* (2 + 1)))
 [0, 3, 6, 9, 12]
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map(2 * 2 +))
+main(input) := showIntegerList(naturals.take(5).map(2 * 2 +))
 [4, 5, 6, 7, 8]
 ===============================================================================
-main(input) = showIntegerList(naturals.take(5).map(+ 2 * 2))
+main(input) := showIntegerList(naturals.take(5).map(+ 2 * 2))
 [4, 5, 6, 7, 8]
 ===============================================================================
 ===============================================================================
-main(input) = showInteger(123)
+main(input) := showInteger(123)
 123
 ===============================================================================
-main(input) = showInteger(-123)
+main(input) := showInteger(-123)
 -123
 ===============================================================================
-main(input) = "abcdef".interleave(',')
+main(input) := "abcdef".interleave(',')
 a,b,c,d,e,f
 ===============================================================================
-main(input) = showIntegerList(5..9)
+main(input) := showIntegerList(5..9)
 [5, 6, 7, 8, 9]
 ===============================================================================
-"abcd" === 'a'..'d'
+"abcd" == 'a'..'d'
 (t' -> (f' -> t'))
 ===============================================================================
 maximum(take(squares, 7) | odd)
@@ -93,13 +93,13 @@ maximum(take(squares, 7) | odd)
 "aces".find(even) ?: -1
 -1
 ===============================================================================
-main(input) = union("abc", "bbd")
+main(input) := union("abc", "bbd")
 abcd
 ===============================================================================
-main(input) = intersection("abbc", "bbcd")
+main(input) := intersection("abbc", "bbcd")
 bbc
 ===============================================================================
-main(input) = deduplicate("acbbcda")
+main(input) := deduplicate("acbbcda")
 acbd
 ===============================================================================
 fromJust(just(10))
@@ -120,7 +120,7 @@ isNothing(nothing)
 isNothing(just(10))
 (x -> (y -> y))
 ===============================================================================
-main(input) = showBoolean((just(2) ?. (x -> just(2 * x)) ?: 0) == 4)
+main(input) := showBoolean((just(2) ?. (x -> just(2 * x)) ?: 0) = 4)
 true
 ===============================================================================
 0 ^ 0
@@ -156,10 +156,10 @@ true
 gcd(1071, 462)
 21
 ===============================================================================
-main(input) = naturals.take(10).map(showInteger).concatenate
+main(input) := naturals.take(10).map(showInteger).concatenate
 0123456789
 ===============================================================================
-main(input) = naturals.take(10).map(showInteger).join([])
+main(input) := naturals.take(10).map(showInteger).join([])
 0123456789
 ===============================================================================
 length("")
@@ -174,7 +174,7 @@ left((1 , (* 2) ^^ 2))
 10.(* 2)
 20
 ===============================================================================
-main(input) = showIntegerListPair(span((1 .. 5), (< 3)))
+main(input) := showIntegerListPair(span((1 .. 5), (< 3)))
 ([1, 2], [3, 4, 5])
 ===============================================================================
 head naturals.tail
@@ -189,10 +189,10 @@ head (naturals).tail
 head(naturals).tail
 \nRuntime error: extra argument 'false'
 ===============================================================================
-f(x) = x > 0 ? (+) || (-) \n g(x) = x(9, 5) \n g(f(-1))
+f(x) := x > 0 ? (+) || (-) \n g(x) := x(9, 5) \n g(f(-1))
 4
 ===============================================================================
-f(x) = x > 0 ? ((+) 1) || ((-) 1) \n g(x) = x(5) \n g(f(-1))
+f(x) := x > 0 ? ((+) 1) || ((-) 1) \n g(x) := x(5) \n g(f(-1))
 -4
 ===============================================================================
 (true ~) false
@@ -252,25 +252,25 @@ Syntax error: missing argument to '['
 (1..10)[1, 2]
 Syntax error: too many arguments to '['
 ===============================================================================
-main(input) = showIntegerListList(" 12 3  4 ".split(== ' '))
+main(input) := showIntegerListList(" 12 3  4 ".split(= ' '))
 [[], [49, 50], [51], [], [52], []]
 ===============================================================================
-main(input) = showIntegerListList("12 3  4".split(== ' '))
+main(input) := showIntegerListList("12 3  4".split(= ' '))
 [[49, 50], [51], [], [52]]
 ===============================================================================
-main(input) = showIntegerListList(words(" 12 3  4 "))
+main(input) := showIntegerListList(words(" 12 3  4 "))
 [[49, 50], [51], [52]]
 ===============================================================================
-main(input) = showIntegerList(primes.take(5).map((0 -)))
+main(input) := showIntegerList(primes.take(5).map((0 -)))
 [-2, -3, -5, -7, -11]
 ===============================================================================
-main(input) = showIntegerList(primes.take(10))
+main(input) := showIntegerList(primes.take(10))
 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 ===============================================================================
 zip(naturals, primes.take(10)).lookup(7) ?: -1
 19
 ===============================================================================
-main(input) = showIntegerPairList(zip(naturals, primes.take(8)))
+main(input) := showIntegerPairList(zip(naturals, primes.take(8)))
 [(0, 2), (1, 3), (2, 5), (3, 7), (4, 11), (5, 13), (6, 17), (7, 19)]
 ===============================================================================
 primes[25]
