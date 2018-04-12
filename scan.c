@@ -9,7 +9,7 @@
 const char* SOURCE_CODE = NULL;
 
 static inline bool isComment(const char* s) {
-    return s[0] == '/' && s[1] == '/';
+    return s[0] == '\'' && s[1] == '\'';
 }
 
 static inline bool isNotNewlineCharacter(char c) {

@@ -4,7 +4,7 @@ isOperandCharacter(n) := isAlphanumeric(n) \/ n = '_' \/ n = '\''
 isOperatorCharacter(n) := isPunctuation(n) /\ ~isDelimiterCharacter(n) /\
     ~isOperandCharacter(n) /\ ~isQuote(n) /\ ~isReservedCharacter(n)
 
-isComment(lexeme) := lexeme.startsWith("//")
+isComment(lexeme) := lexeme.startsWith("''")
 isElided(lexeme) := isBlank(lexeme.head) \/ isComment(lexeme)
 
 breakQuoteCharacter(ns) := (
@@ -53,7 +53,7 @@ splitLexemes(string, splitter, location) := (
 scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |~ isElided <> left
 
 showTag(x) := showPair((showString(x.left), showIntegerPair(x.right)))
-//main(input) := showList(scan(input).map(showTag))
+''main(input) := showList(scan(input).map(showTag))
 
 getLexeme(tag) := tag.left
 getLine(tag) := tag.right.left
