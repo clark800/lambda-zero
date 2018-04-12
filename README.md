@@ -18,7 +18,7 @@
 
 ### Hello World
 
-    main(input) = "hello world"
+    main(input) := "hello world"
 
 ### Factorial
 
@@ -95,7 +95,7 @@ The desugared language can be described by the grammar rules below
 grammar ignores some error cases):
 
     natural = [0-9]+
-    builtin = '+' | '-' | '*' | '/' | '\\' | '==' | '=/=' | '<' | '>' | '<=' | '>=' | 'error'
+    builtin = '+' | '-' | '*' | '/' | '%' | '=' | '~=' | '<' | '>' | '<=' | '>=' | 'error'
     name = ("a token that is not an integer, builtin, delimiter, or arrow")
     expr = natural | builtin | name | (name -> expr) | (expr expr)
 
@@ -108,11 +108,11 @@ an operator name expression.
 - Right associative newlines: `x \n y \n z` desguars to `(z (y z))`
 - Redundant Parentheses: `(x)` desugars to `x` unless `x` is an operator
   (see Operator names sugar below)
-- Definitions (Let expressions): `(f = x) y` desugars to `(f -> y) x`
-- Trailing definitions: `(x (f = y))` desguars to `(x ((f = y) f))`
+- Definitions (Let expressions): `(f := x) y` desugars to `(f -> y) x`
+- Trailing definitions: `(x (f := y))` desguars to `(x ((f := y) f))`
   If there is nothing after a definition, it as treated as if the name of the
   definition follows the definition.
-- Function definitions: `f x y = z` desugars to `f = x -> y -> z`
+- Function definitions: `f x y := z` desugars to `f := x -> y -> z`
 - Recursive definitions: The right hand sise of a function definition can refer
  to the function name, in which case the Y combinator is used to convert the
  definition to a non-recursive one.
