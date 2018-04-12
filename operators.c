@@ -113,7 +113,7 @@ Rules RULES[] = {
     {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
     {"\n", 2, 2, IN, R, apply},
-    {"=", 3, 3, IN, N, apply},
+    {":=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
     {"|~", 4, 4, IN, L, infix},
     {"->", 5, 5, IN, R, newArrow},
