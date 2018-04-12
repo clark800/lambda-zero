@@ -1,6 +1,6 @@
 isDelimiterCharacter(n) := n : " \n\0,;`()[]{}"
 isReservedCharacter(n) := n : "{};!@$"
-isOperandCharacter(n) := isAlphanumeric(n) \/ n == '_' \/ n == '\''
+isOperandCharacter(n) := isAlphanumeric(n) \/ n = '_' \/ n = '\''
 isOperatorCharacter(n) := isPunctuation(n) /\ ~isDelimiterCharacter(n) /\
     ~isOperandCharacter(n) /\ ~isQuote(n) /\ ~isReservedCharacter(n)
 
@@ -9,7 +9,7 @@ isElided(lexeme) := isBlank(lexeme.head) \/ isComment(lexeme)
 
 breakQuoteCharacter(ns) := (
     ns.isEmpty? ([], [])
-    (ns.head == '\\' /\ ~ns.tail.isEmpty)? (ns.take(2), ns.drop(2))
+    (ns.head = '\\' /\ ~ns.tail.isEmpty)? (ns.take(2), ns.drop(2))
     ([ns.head], ns.tail)
 )
 
@@ -24,12 +24,12 @@ breakWith(ns, spanner, p) := (
 shiftSplit((a, b)) := b.isEmpty? (a, b) || (a ++ [b.head], b.tail)
 
 spanQuote(ns, quote) := (
-    (a, b) := ns.tail.breakWith(breakQuoteCharacter, (== quote) <> head)
+    (a, b) := ns.tail.breakWith(breakQuoteCharacter, (= quote) <> head)
     shiftSplit((quote :: a, b))
 )
 
 splitLexeme(ns) := ns ::? n -> ns' -> (
-    isComment(ns)? ns.break((== '\n'))
+    isComment(ns)? ns.break((= '\n'))
     n.isBlank? ns.span(isBlank)
     n.isQuote? ns.spanQuote(n)
     n.isOperandCharacter? ns.span(isOperandCharacter)
@@ -39,7 +39,7 @@ splitLexeme(ns) := ns ::? n -> ns' -> (
 
 advanceLocation(location, lexeme) := (
     (line, column) := location
-    (lexeme.head == '\n')? (line + 1, 1)
+    (lexeme.head = '\n')? (line + 1, 1)
     (line, column + length(lexeme))
 )
 
@@ -89,15 +89,15 @@ getBody(node) := getData(node).right
 getFunction(node) := getData(node).left
 getArgument(node) := getData(node).right
 
-isReference(node) := node.getType == REFERENCE
-isName(node) := isReference(node) /\ node.getData == NAME
-isOperator(node) := isReference(node) /\ node.getData == OPERATOR
+isReference(node) := node.getType = REFERENCE
+isName(node) := isReference(node) /\ node.getData = NAME
+isOperator(node) := isReference(node) /\ node.getData = OPERATOR
 isSymbol(node) := isName(node) \/ isOperator(node)
-isLambda(node) := node.getType == LAMBDA
-isApplication(node) := node.getType == APPLICATION
-isBuiltin(node) := node.getType == BUILTIN
-isInteger(node) := node.getType == INTEGER
-isGlobal(node) := node.getType == GLOBAL
+isLambda(node) := node.getType = LAMBDA
+isApplication(node) := node.getType = APPLICATION
+isBuiltin(node) := node.getType = BUILTIN
+isInteger(node) := node.getType = INTEGER
+isGlobal(node) := node.getType = GLOBAL
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme.head) /\ ~isDigit(lexeme.head)
 isOperatorLexeme(lexeme) :=
@@ -120,18 +120,18 @@ prependList(character, list) :=
             newApplication(getTag(list), X, character), list))
 
 parseEscapeCode(code, tag) := (
-    code == '0' ? '\0'
-    code == 'n' ? '\n'
-    code == 't' ? '\t'
-    code == 'r' ? '\r'
-    code == '\\' ? '\\'
-    code == '\"' ? '\"'
-    code == '\'' ? '\''
+    code = '0' ? '\0'
+    code = 'n' ? '\n'
+    code = 't' ? '\t'
+    code = 'r' ? '\r'
+    code = '\\' ? '\\'
+    code = '\"' ? '\"'
+    code = '\'' ? '\''
     error("Error: invalid escape sequence after" ++ showPrettyTag(tag))
 )
 
 parseQuotedCharacter(tag, string) := (
-    (string.head =/= '\\')?
+    (string.head ~= '\\')?
         newInteger(tag, string.head)
     (string.tail.isEmpty)?
         error("Error: missing escape code in " ++ showPrettyTag(tag))
@@ -140,7 +140,7 @@ parseQuotedCharacter(tag, string) := (
 
 splitStringLiteral(string) := (
     (string.isEmpty)? []
-    n := (string.head == '\\' /\ ~string.tail.isEmpty)? 2 || 1
+    n := (string.head = '\\' /\ ~string.tail.isEmpty)? 2 || 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 )
 
@@ -151,7 +151,7 @@ buildStringLiteral(tag, characters) := (
 
 getQuoteContents(tag) := (
     lexeme := getLexeme(tag)
-    (lexeme.last == lexeme.head)? dropLast(lexeme.tail)
+    (lexeme.last = lexeme.head)? dropLast(lexeme.tail)
     error("Error: missing end quote for " ++ showPrettyTag(tag))
 )
 
@@ -162,14 +162,14 @@ parseStringLiteral(tag) := buildStringLiteral(tag, getQuotedCharacters(tag))
 
 parseCharacterLiteral(tag) := (
     characters := getQuotedCharacters(tag)
-    (characters.length == 1)? characters.head
+    (characters.length = 1)? characters.head
     error("Error: invalid character literal " ++ showPrettyTag(tag))
 )
 
 createToken(tag) := (
     lexeme := getLexeme(tag)
-    (lexeme.head == '"')? parseStringLiteral(tag)
-    (lexeme.head == '\'')? parseCharacterLiteral(tag)
+    (lexeme.head = '"')? parseStringLiteral(tag)
+    (lexeme.head = '\'')? parseCharacterLiteral(tag)
     isIntegerLexeme(lexeme)? newInteger(tag, parseInteger(lexeme, 10))
     isNameLexeme(lexeme)? newName(tag)
     isOperatorLexeme(lexeme)? newOperator(tag)
@@ -178,7 +178,7 @@ createToken(tag) := (
 
 lex(string) := scan(string).map(createToken)
 
-showLexeme(lexeme) := (lexeme.head == '\n')? "\\n" || lexeme
+showLexeme(lexeme) := (lexeme.head = '\n')? "\\n" || lexeme
 showToken(token) := showLexeme(getLexeme(getTag(token)))
 showAST(node) := (
     node.isReference?

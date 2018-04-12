@@ -40,7 +40,7 @@ swap((x, y)) := (y, x)
 `f(x, y) := f(y, x)      // flip order of first two arguments of function
 mirror(f)(x) := f(x, x)        // convert binary function to unary function
 on(f, g) := x -> y -> f(g(x), g(y))  // apply binary f with unary g applied first
-f^^(n)(z) := n == 0 ? z || f^^(n - 1)(f(z))
+f^^(n)(z) := n = 0 ? z || f^^(n - 1)(f(z))
 until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((~) <> p, z)
 curry(f) := x -> y -> f((x, y))
@@ -64,13 +64,13 @@ abs(n) := n >= 0 ? n || -n
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
 mod(n, m) := n \ m
-even(n) := n.mod(2) == 0
-odd(n) := n.mod(2) =/= 0
-divides(n, m) := m.mod(n) == 0
-factorial(n) := n == 0 ? 1 || n * factorial(n - 1)
-gcd(n, m) := m == 0 ? n || gcd(m, n.mod(m))
+even(n) := n.mod(2) = 0
+odd(n) := n.mod(2) ~= 0
+divides(n, m) := m.mod(n) = 0
+factorial(n) := n = 0 ? 1 || n * factorial(n - 1)
+gcd(n, m) := m = 0 ? n || gcd(m, n.mod(m))
 n ^ m := (
-    m == 0 ? 1
+    m = 0 ? 1
     m < 0 ? 1 / n ^ -m
     even(m) ? (*).mirror(n ^ (m / 2))
     n * n ^ (m - 1)
@@ -115,7 +115,7 @@ zipWith(xs, f, ys) := xs.isEmpty \/ ys.isEmpty ? [] ||
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(left), xs.map(right))
 // drop all elements beyond the first n elements
-take(xs, n) := n == 0 ? [] || xs.head :: xs.tail.take(n - 1)
+take(xs, n) := n = 0 ? [] || xs.head :: xs.tail.take(n - 1)
 drop(xs, n) := tail^^(n)(xs)            // drop n elements from front of list
 dropLast(xs) := xs.isEmpty \/ xs.tail.isEmpty ? [] ||
     xs.head :: dropLast(xs.tail)
@@ -134,21 +134,21 @@ allTrue(xs) := xs.all(identity)
 find(xs, p) := xs.isEmpty ? nothing ||
     p(xs.head) ? just(xs.head) || xs.tail.find(p)
 lookup(nxs, n) := nxs.isEmpty ? nothing ||
-    nxs.head.left == n ? just(nxs.head.right) || nxs.tail.lookup(n)
+    nxs.head.left = n ? just(nxs.head.right) || nxs.tail.lookup(n)
 
 // integer list basics
-n : ns := ns.any((== n))
+n : ns := ns.any((= n))
 containsSorted(ns, n) := ~ns.isEmpty /\ n >= ns.head /\
-        (n == ns.head \/ ns.tail.containsSorted(n))
-xs === ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
-    xs.head == ys.head /\ xs.tail === ys.tail       // integer list equality
+        (n = ns.head \/ ns.tail.containsSorted(n))
+xs == ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
+    xs.head = ys.head /\ xs.tail == ys.tail       // integer list equality
 
 // integer list constructors
 n .. m := n > m ? [] || n :: (n + 1 .. m)
 
 // integer list transformations
 sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
-deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (=/= k))
+deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (~= k))
 ns -- ms := ns |~ (: ms)             // list difference
 union(ns, ms) := ns ++ (ms -- ns)
 intersection(ns, ms) := ns | (: ms)
@@ -173,10 +173,10 @@ split(ns, p) := (
     a :: (b.isEmpty ? [] || b.tail.split(p))
 )
 
-startsWith(ns, ks) := allTrue(zipWith(ns, (==), ks))
+startsWith(ns, ks) := allTrue(zipWith(ns, (=), ks))
 
-words(ns) := ns.split(== ' ') |~ isEmpty
-lines(ns) := ns.split(== '\n')
+words(ns) := ns.split(= ' ') |~ isEmpty
+lines(ns) := ns.split(= '\n')
 
 repl(in, prompt, f) := prompt ++ in.lines.map(f).join("\n" ++ prompt)
 
@@ -196,9 +196,9 @@ primes := (f(ms) := ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 isUppercase(n) := n >= 'A' /\ n <= 'Z'
 isLowercase(n) := n >= 'a' /\ n <= 'z'
 isDigit(n) := n >= '0' /\ n <= '9'
-isQuote(n) := n == '"' \/ n == '\''
-isWhitespace(n) := n == ' ' \/ n >= '\t' /\ n <= '\r'
-isBlank(n) := n == ' ' \/ n == '\t'
+isQuote(n) := n = '"' \/ n = '\''
+isWhitespace(n) := n = ' ' \/ n >= '\t' /\ n <= '\r'
+isBlank(n) := n = ' ' \/ n = '\t'
 isControl(n) := n < 32 \/ n >= 127
 isAlphabetic(n) := isUppercase(n) \/ isLowercase(n)
 isAlphanumeric(n) := isAlphabetic(n) \/ isDigit(n)
@@ -209,9 +209,9 @@ isPunctuation(n) := isGraphical(n) /\ ~isAlphanumeric(n)
 // serialization
 showBoolean(b) := b ? "true" || "false"
 showNatural(n) := (
-    showReversedNatural(m) := m == 0 ? [] ||
+    showReversedNatural(m) := m = 0 ? [] ||
         ('0' + m.mod(10)) :: showReversedNatural(m / 10)
-    n == 0 ? "0" || reverse(showReversedNatural(n))
+    n = 0 ? "0" || reverse(showReversedNatural(n))
 )
 
 showString(ns) := "\"" ++ ns ++ "\""     // todo: escape
@@ -238,5 +238,5 @@ parseDigit(digit, base) :=
     error("Invalid digit in base " ++ showInteger(base) ++ ": " ++ [digit])
 parseNatural(string, base) :=
     string.foldl(x -> d -> base * x + parseDigit(d, base), 0)
-parseInteger(string, base) := string.head == '-' ?
+parseInteger(string, base) := string.head = '-' ?
     -parseNatural(string.tail, base) || parseNatural(string, base)

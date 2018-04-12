@@ -130,9 +130,9 @@ Rules RULES[] = {
     {"/\\", 10, 10, IN, R, infix},
 
     // comparison/test operators
+    {"=", 11, 11, IN, N, infix},
+    {"~=", 11, 11, IN, N, infix},
     {"==", 11, 11, IN, N, infix},
-    {"=/=", 11, 11, IN, N, infix},
-    {"===", 11, 11, IN, N, infix},
     {"<", 11, 11, IN, N, infix},
     {">", 11, 11, IN, N, infix},
     {"<=", 11, 11, IN, N, infix},
