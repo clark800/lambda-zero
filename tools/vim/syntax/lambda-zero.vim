@@ -1,9 +1,10 @@
 syntax match lambdaZeroDelimiter "(\|)\|\[\|\]\|{\|}\|,\|;"
-syntax match lambdaZeroName "\<[a-zA-Z_][a-zA-Z0-9_']*\>"
+syntax match lambdaZeroName "\<[a-zA-Z_][a-zA-Z0-9_']*" contains=lambdaZeroSubscript,lambdaZeroPrime,lambdaZeroGreek
+
 syntax match lambdaZeroOperator "[-`~!@#$%^&\*=\+\\|:<.>/\?]\+"
 syntax match lambdaZeroInteger "\<\d\+"
-syntax region lambdaZeroString start=/\v"/ skip=/\v(\\[\\"]){-1}/ end=/\v"/
-syntax region lambdaZeroCharacter start=/[^\w"']\v'/ skip=/\v(\\[\\']){-1}/ end=/\v'/
+syntax region lambdaZeroString start=/\(^\|[^"]\)"/ skip=/\v(\\[\\"]){-1}/ end=/"/ oneline
+syntax region lambdaZeroCharacter start=/\(^\|\W\)'/ skip=/\v(\\[\\']){-1}/ end=/'/ oneline
 syntax match lambdaZeroLineComment "\(^\|\s\)''.*$"
 
 highlight link lambdaZeroDelimiter Operator
