@@ -59,8 +59,8 @@ f(x) := (g(y) := y)
 (f(x) := x) := 1
 Syntax error: cannot define a definition ':='
 ===============================================================================
-x \ y := x * y
-Syntax error: symbol already defined '\'
+x % y := x * y
+Syntax error: symbol already defined '%'
 ===============================================================================
 f(x) := 1 \n f(x) := 2 \n f(0)
 Syntax error: symbol already defined 'f'

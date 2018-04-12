@@ -157,7 +157,6 @@ Rules RULES[] = {
     {"*", 17, 17, IN, L, infix},
     {"/", 17, 17, IN, L, infix},
     {"%", 17, 17, IN, L, infix},
-    {"\\", 17, 17, IN, L, infix},
     {"^", 18, 18, IN, R, infix},
 
     // functional operators

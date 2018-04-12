@@ -63,12 +63,12 @@ mx ?: x := mx(x, identity)                  // just value or default
 abs(n) := n >= 0 ? n || -n
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
-mod(n, m) := n \ m
+mod(n, m) := n % m
 even(n) := n.mod(2) = 0
 odd(n) := n.mod(2) ~= 0
 divides(n, m) := m.mod(n) = 0
-factorial(n) := n = 0 ? 1 || n * factorial(n - 1)
-gcd(n, m) := m = 0 ? n || gcd(m, n.mod(m))
+factorial(n) := (n = 0) ? 1 || n * factorial(n - 1)
+gcd(n, m) := (m = 0) ? n || gcd(m, n.mod(m))
 n ^ m := (
     m = 0 ? 1
     m < 0 ? 1 / n ^ -m

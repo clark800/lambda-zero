@@ -22,22 +22,22 @@
 
 ### Factorial
 
-    factorial(n) = n == 0 ? 1 || n * factorial(n - 1)
+    factorial(n) := (n = 0) ? 1 || n * factorial(n - 1)
 
 ### Quicksort
 
-    xs ::? f = xs.empty ? [] || f(xs.head, xs.tail)
-    sort(ns) = ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
+    xs ::? f := xs.isEmpty ? [] || f(xs.head, xs.tail)
+    sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 
 ### Infinite list of natural numbers
 
-    iterate(f, x) = x :: iterate(f, f(x))
-    countFrom = iterate(+ 1)
-    naturals = countFrom(0)
+    iterate(f, x) := x :: iterate(f, f(x))
+    countFrom := iterate(+ 1)
+    naturals := countFrom(0)
 
 ### Infinite list of prime numbers
 
-    primes = (f(ms) = ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
+    primes := (f(ms) := ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
 
 # Motivation
 
