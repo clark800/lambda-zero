@@ -28,7 +28,7 @@ static inline bool isOperandCharacter(char c) {
 
 static inline bool isOperatorCharacter(char c) {
     return ispunct(c) && !isDelimiterCharacter(c) && !isOperandCharacter(c)
-        && !isQuoteCharacter(c) && strchr("{};!@$", c) == NULL;
+        && !isQuoteCharacter(c) && strchr("{};@$", c) == NULL;
 }
 
 const char* getFirstLexeme(const char* input);

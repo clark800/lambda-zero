@@ -1,27 +1,27 @@
 isDelimiterCharacter(n) := n : " \n\0,;`()[]{}"
-isReservedCharacter(n) := n : "{};!@$"
+isReservedCharacter(n) := n : "{};@$"
 isOperandCharacter(n) := isAlphanumeric(n) \/ n = '_' \/ n = '\''
-isOperatorCharacter(n) := isPunctuation(n) /\ ~isDelimiterCharacter(n) /\
-    ~isOperandCharacter(n) /\ ~isQuote(n) /\ ~isReservedCharacter(n)
+isOperatorCharacter(n) := isPunctuation(n) /\ !isDelimiterCharacter(n) /\
+    !isOperandCharacter(n) /\ !isQuote(n) /\ !isReservedCharacter(n)
 
 isComment(lexeme) := lexeme.startsWith("''")
 isElided(lexeme) := isBlank(lexeme[0]) \/ isComment(lexeme)
 
 breakQuoteCharacter(ns) := (
     ns.isEmpty? ([], [])
-    (ns[0] = '\\' /\ ~(--ns == []))? ns.splitAt(2)
+    (ns[0] = '\\' /\ !(--ns =:= []))? ns.splitAt(2)
     ns.splitAt(1)
 )
 
 breakWith(ns, spanner, p) := (
-    ns == [] ? ([], [])
+    ns =:= [] ? ([], [])
     (a, b) := spanner(ns)
     p(a) ? ([], ns)
     (c, d) := b.breakWith(spanner, p)
     (a ++ c, d)
 )
 
-shiftSplit((a, b)) := b == [] ? (a, b) || (a ++ [b[0]], --b)
+shiftSplit((a, b)) := b =:= [] ? (a, b) || (a ++ [b[0]], --b)
 
 spanQuote(ns, quote) := (
     (a, b) := (--ns).breakWith(breakQuoteCharacter, (= quote) <> head)
@@ -44,13 +44,14 @@ advanceLocation(location, lexeme) := (
 )
 
 splitLexemes(string, splitter, location) := (
-    string == [] ? []
+    string =:= [] ? []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
     (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
 )
 
-scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |~ isElided <> left
+scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |
+    (!) <> isElided <> left
 
 showTag(x) := showPair((showString(x.left), showIntegerPair(x.right)))
 ''main(input) := showList(scan(input).map(showTag))
@@ -99,7 +100,7 @@ isBuiltin(node) := node.getType = BUILTIN
 isInteger(node) := node.getType = INTEGER
 isGlobal(node) := node.getType = GLOBAL
 
-isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ ~isDigit(lexeme[0])
+isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
     isOperatorCharacter(lexeme[0]) \/ isDelimiterCharacter(lexeme[0])
 isIntegerLexeme(lexeme) := lexeme.all(isDigit)
@@ -131,21 +132,21 @@ parseEscapeCode(code, tag) := (
 )
 
 parseQuotedCharacter(tag, string) := (
-    (string[0] ~= '\\')?
+    string[0] != '\\' ?
         newInteger(tag, string[0])
-    (--string == [])?
+    --string =:= [] ?
         error("Error: missing escape code in " ++ showPrettyTag(tag))
     newInteger(tag, parseEscapeCode((--string)[0], tag))
 )
 
 splitStringLiteral(string) := (
-    string == [] ? []
-    n := (string[0] = '\\' /\ ~(--string == []))? 2 || 1
+    string =:= [] ? []
+    n := (string[0] = '\\' /\ !(--string =:= [])) ? 2 || 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 )
 
 buildStringLiteral(tag, characters) := (
-    characters == [] ? newNil(tag)
+    characters =:= [] ? newNil(tag)
     prependList(characters[0], buildStringLiteral(tag, --characters))
 )
 
