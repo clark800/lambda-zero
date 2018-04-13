@@ -166,6 +166,7 @@ Rules RULES[] = {
     // higher than space operator
     // prefix operators
     {"-", 21, 21, PRE, L, negate},
+    {"--", 21, 21, PRE, L, prefix},
     {"~", 21, 21, PRE, L, prefix},
     {"#", 21, 21, PRE, L, prefix},
 

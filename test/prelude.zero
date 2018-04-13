@@ -11,7 +11,7 @@
 '' universal
 undefined := error("undefined")  '' runtime error if this is evaluated
 identity(x) := x                 '' identity function
-constant(x) := y -> x            '' return value does not depend on parameter
+constant(x) := _ -> x            '' return value does not depend on parameter
 x.f := f(x)                      '' uniform function call syntax
 f || x := f(x)                   '' low precedence application
 f <> g := x -> f(g(x))           '' function composition
@@ -79,22 +79,26 @@ n ^ m := (
 '' list basics
 x :: xs := (x, xs)                     '' prepend element to list (cons)
 prepend := `(::)
-isEmpty(xs) := xs(constant(constant(false)))
-head := left                  '' get first element of list
-tail := right                 '' drop first element of list
-xs[n] := head(tail^^(n)(xs))      '' get element of list at index
+isEmpty(xs) := xs(_ -> _ -> false)
+head(xs) := isEmpty(xs) ? error("head: empty list") || left(xs)
+--xs := isEmpty(xs) ? error("(--): empty list") || right(xs)
+take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
+drop(xs, n) := (--)^^(n)(xs)            '' drop n elements from front of list
+splitAt(xs, n) := (xs.take(n), xs.drop(n))
+xs[n] := head(xs.drop(n))          '' get element of list at index
 xs == ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
-    xs.head = ys.head /\ xs.tail == ys.tail       '' integer list equality
-last(xs) := head(tail.until((== []) <> tail, xs)) '' get last element of list
+    xs[0] = ys[0] /\ --xs == --ys       '' integer list equality
+last(xs) := (--).until((== []) <> (--), xs)[0] '' get last element of list
+dropLast(xs) := xs == [] \/ --xs == [] ? [] || xs[0] :: dropLast(--xs)
 
 '' syntactic helpers
-xs ::? f := xs == [] ? [] || f(xs.head, xs.tail)
+xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)
 
 '' list folds
-foldr(xs, f, z) := xs == [] ? z || f(xs.head, xs.tail.foldr(f, z))
-foldl(xs, f, z) := xs == [] ? z || xs.tail.foldl(f, f(z, xs.head))
-reducer(xs, f) := xs.tail.foldr(f, xs.head)
-reducel(xs, f) := xs.tail.foldl(f, xs.head)
+foldr(xs, f, z) := isEmpty(xs) ? z || f(head(xs), foldr(--xs, f, z))
+foldl(xs, f, z) := isEmpty(xs) ? z || foldl(--xs, f, f(z, head(xs)))
+reducer(xs, f) := (--xs).foldr(f, xs[0])
+reducel(xs, f) := (--xs).foldl(f, xs[0])
 
 '' list fold operations
 xs ++ ys := xs.foldr((::), ys)                   '' concatenate lists
@@ -113,14 +117,9 @@ filter(xs, p) := xs.foldr(x -> xs' -> p(x) ? x :: xs' || xs', [])
 xs |~ p := xs | (~) <> p
 map(xs, f) := xs.foldr((::) <> f, [])          '' map function over list
 zipWith(xs, f, ys) := xs == [] \/ ys == [] ? [] ||
-    f(xs.head, ys.head) :: zipWith(xs.tail, f, ys.tail)
+    f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(left), xs.map(right))
-'' drop all elements beyond the first n elements
-take(xs, n) := n = 0 ? [] || xs.head :: xs.tail.take(n - 1)
-drop(xs, n) := tail^^(n)(xs)            '' drop n elements from front of list
-dropLast(xs) := xs == [] \/ xs.tail == [] ? [] ||
-    xs.head :: dropLast(xs.tail)
 concatenate(xss) := xss.foldr((++), [])     '' concatenate list of lists
 reverse(xs) := xs.foldl(`(::), [])       '' reverse a list
 interleave(xs, y) := xs ::? x -> xs' ->
@@ -133,16 +132,15 @@ all(xs, p) := xs.map(p).foldr((/\), true)      '' test if all elements satisfy p
 anyTrue(xs) := xs.any(identity)
 allTrue(xs) := xs.all(identity)
 '' find first element satisfying p, or return nothing
-find(xs, p) := xs == [] ? nothing ||
-    p(xs.head) ? just(xs.head) || xs.tail.find(p)
+find(xs, p) := xs == [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 lookup(nxs, n) := nxs == [] ? nothing ||
-    nxs.head.left = n ? just(nxs.head.right) || nxs.tail.lookup(n)
+    nxs[0].left = n ? just(nxs[0].right) || (--nxs).lookup(n)
 
 '' integer list basics
 n : ns := ns.any((= n))
 n ~: ns := ~(n : ns)
-containsSorted(ns, n) := ~(ns == []) /\ n >= ns.head /\
-        (n = ns.head \/ ns.tail.containsSorted(n))
+containsSorted(ns, n) := ~(ns == []) /\ n >= ns[0] /\
+        (n = ns[0] \/ (--ns).containsSorted(n))
 
 '' integer list constructors
 n .. m := n > m ? [] || n :: (n + 1 .. m)
@@ -157,9 +155,9 @@ sortedDifference(ns, ms) := ns |~ ms.containsSorted  '' sorted list difference
 
 break(ns, p) := (
     ns == [] ? ([], [])
-    p(ns.head) ? ([], ns)
-    (before, after) := ns.tail.break(p)
-    (ns.head :: before, after)
+    p(ns[0]) ? ([], ns)
+    (before, after) := (--ns).break(p)
+    (ns[0] :: before, after)
 )
 
 span(ns, p) := ns.break((~) <> p)
@@ -171,7 +169,7 @@ chop(ns, f) := ns == [] ? [] || (
 
 split(ns, p) := (
     (a, b) := ns.break(p)
-    a :: (b == [] ? [] || b.tail.split(p))
+    a :: (b == [] ? [] || (--b).split(p))
 )
 
 startsWith(ns, ks) := allTrue(zipWith(ns, (=), ks))
@@ -239,4 +237,4 @@ parseDigit(digit, base) :=
 parseNatural(string, base) :=
     string.foldl(x -> d -> base * x + parseDigit(d, base), 0)
 parseInteger(string, base) := string.head = '-' ?
-    -parseNatural(string.tail, base) || parseNatural(string, base)
+    -parseNatural(--string, base) || parseNatural(string, base)

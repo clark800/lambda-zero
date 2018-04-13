@@ -5,26 +5,26 @@ isOperatorCharacter(n) := isPunctuation(n) /\ ~isDelimiterCharacter(n) /\
     ~isOperandCharacter(n) /\ ~isQuote(n) /\ ~isReservedCharacter(n)
 
 isComment(lexeme) := lexeme.startsWith("''")
-isElided(lexeme) := isBlank(lexeme.head) \/ isComment(lexeme)
+isElided(lexeme) := isBlank(lexeme[0]) \/ isComment(lexeme)
 
 breakQuoteCharacter(ns) := (
     ns.isEmpty? ([], [])
-    (ns.head = '\\' /\ ~ns.tail.isEmpty)? (ns.take(2), ns.drop(2))
-    ([ns.head], ns.tail)
+    (ns[0] = '\\' /\ ~(--ns == []))? ns.splitAt(2)
+    ns.splitAt(1)
 )
 
 breakWith(ns, spanner, p) := (
-    ns.isEmpty? ([], [])
+    ns == [] ? ([], [])
     (a, b) := spanner(ns)
-    p(a)? ([], ns)
+    p(a) ? ([], ns)
     (c, d) := b.breakWith(spanner, p)
     (a ++ c, d)
 )
 
-shiftSplit((a, b)) := b.isEmpty? (a, b) || (a ++ [b.head], b.tail)
+shiftSplit((a, b)) := b == [] ? (a, b) || (a ++ [b[0]], --b)
 
 spanQuote(ns, quote) := (
-    (a, b) := ns.tail.breakWith(breakQuoteCharacter, (= quote) <> head)
+    (a, b) := (--ns).breakWith(breakQuoteCharacter, (= quote) <> head)
     shiftSplit((quote :: a, b))
 )
 
@@ -39,12 +39,12 @@ splitLexeme(ns) := ns ::? n -> ns' -> (
 
 advanceLocation(location, lexeme) := (
     (line, column) := location
-    (lexeme.head = '\n')? (line + 1, 1)
+    (lexeme[0] = '\n')? (line + 1, 1)
     (line, column + length(lexeme))
 )
 
 splitLexemes(string, splitter, location) := (
-    string.isEmpty? []
+    string == [] ? []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
     (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
@@ -99,9 +99,9 @@ isBuiltin(node) := node.getType = BUILTIN
 isInteger(node) := node.getType = INTEGER
 isGlobal(node) := node.getType = GLOBAL
 
-isNameLexeme(lexeme) := isOperandCharacter(lexeme.head) /\ ~isDigit(lexeme.head)
+isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ ~isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
-    isOperatorCharacter(lexeme.head) \/ isDelimiterCharacter(lexeme.head)
+    isOperatorCharacter(lexeme[0]) \/ isDelimiterCharacter(lexeme[0])
 isIntegerLexeme(lexeme) := lexeme.all(isDigit)
 
 X := newName(("x", (0, 0)))
@@ -131,27 +131,27 @@ parseEscapeCode(code, tag) := (
 )
 
 parseQuotedCharacter(tag, string) := (
-    (string.head ~= '\\')?
-        newInteger(tag, string.head)
-    (string.tail.isEmpty)?
+    (string[0] ~= '\\')?
+        newInteger(tag, string[0])
+    (--string == [])?
         error("Error: missing escape code in " ++ showPrettyTag(tag))
-    newInteger(tag, parseEscapeCode(string.tail.head, tag))
+    newInteger(tag, parseEscapeCode((--string)[0], tag))
 )
 
 splitStringLiteral(string) := (
-    (string.isEmpty)? []
-    n := (string.head = '\\' /\ ~string.tail.isEmpty)? 2 || 1
+    string == [] ? []
+    n := (string[0] = '\\' /\ ~(--string == []))? 2 || 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 )
 
 buildStringLiteral(tag, characters) := (
-    characters.isEmpty? newNil(tag)
-    prependList(characters.head, buildStringLiteral(tag, characters.tail))
+    characters == [] ? newNil(tag)
+    prependList(characters[0], buildStringLiteral(tag, --characters))
 )
 
 getQuoteContents(tag) := (
     lexeme := getLexeme(tag)
-    (lexeme.last = lexeme.head)? dropLast(lexeme.tail)
+    (lexeme.last = lexeme[0])? dropLast(--lexeme)
     error("Error: missing end quote for " ++ showPrettyTag(tag))
 )
 
@@ -162,14 +162,14 @@ parseStringLiteral(tag) := buildStringLiteral(tag, getQuotedCharacters(tag))
 
 parseCharacterLiteral(tag) := (
     characters := getQuotedCharacters(tag)
-    (characters.length = 1)? characters.head
+    (characters.length = 1)? characters[0]
     error("Error: invalid character literal " ++ showPrettyTag(tag))
 )
 
 createToken(tag) := (
     lexeme := getLexeme(tag)
-    (lexeme.head = '"')? parseStringLiteral(tag)
-    (lexeme.head = '\'')? parseCharacterLiteral(tag)
+    (lexeme[0] = '"')? parseStringLiteral(tag)
+    (lexeme[0] = '\'')? parseCharacterLiteral(tag)
     isIntegerLexeme(lexeme)? newInteger(tag, parseInteger(lexeme, 10))
     isNameLexeme(lexeme)? newName(tag)
     isOperatorLexeme(lexeme)? newOperator(tag)
@@ -178,7 +178,7 @@ createToken(tag) := (
 
 lex(string) := scan(string).map(createToken)
 
-showLexeme(lexeme) := (lexeme.head = '\n')? "\\n" || lexeme
+showLexeme(lexeme) := (lexeme[0] = '\n')? "\\n" || lexeme
 showToken(token) := showLexeme(getLexeme(getTag(token)))
 showAST(node) := (
     node.isReference?
