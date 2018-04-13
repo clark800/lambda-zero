@@ -8,13 +8,12 @@
 ..
 -:
 ##
-//
 &
 |.|
 &&
 |..|
 
-'' comparison operators
+// comparison operators
 !=
 ==
 !==
@@ -35,7 +34,7 @@
 !<:
 !:>
 
-'' arrow operators
+// arrow operators
 <-
 ->
 <-->
@@ -55,7 +54,7 @@
 =>>
 <<=
 
-'' wedge and triangle operators
+// wedge and triangle operators
 \-/
 /\
 \/
@@ -67,8 +66,8 @@
 /|\
 /.\
 \./
-//\\
-\\//
+/^\
+\^/
 /+\
 /-\
 /*\
@@ -78,15 +77,15 @@
 ><|
 |><|
 
-'' circle and diamond operators
+// circle and diamond operators
 <>
 <+>
 <->
 <*>
+<**>
 </>
 <.>
 <\>
-<%>
 <|>
 <||>
 <==>
@@ -95,7 +94,7 @@
 <<>>
 <^>
 
-'' bar and turnstile operators
+// bar and turnstile operators
 ||
 |||
 |-
@@ -111,11 +110,11 @@
 =||=
 |==|
 
-'' boxed operators
+// boxed operators
 |+|
 |-|
 |*|
-|%|
+|**|
 |/|
 |\|
 |<>|
@@ -131,12 +130,12 @@
 |->|
 |?|
 
-'' superscript operators
+// superscript operators
 ^^(n)
 ^^(2)
 ^^(3)
 
-'' named operators
+// named operators
 grad
 sum
 product
@@ -145,7 +144,7 @@ partial
 div
 curl
 
-'' greek letters
+// greek letters
 alpha
 beta
 gamma
@@ -182,7 +181,7 @@ Phi
 Psi
 Omega
 
-'' subscripts and primes
+// subscripts and primes
 x'
 x''
 x'''
