@@ -140,6 +140,7 @@ Rules RULES[] = {
     {">=<", 11, 11, IN, N, infix},
     {"<:", 11, 11, IN, N, infix},
     {":", 11, 11, IN, N, infix},
+    {"~:", 11, 11, IN, N, infix},
 
     // monadic operators
     {"?:", 12, 12, IN, R, infix},
@@ -147,7 +148,7 @@ Rules RULES[] = {
     // list operators
     {"::", 13, 13, IN, R, infix},
     {"++", 13, 13, IN, R, infix},
-    {"--", 13, 13, IN, N, infix},
+    {"\\", 13, 13, IN, N, infix},
     {"**", 14, 14, IN, R, infix},
     {"..", 15, 15, IN, N, infix},
 
