@@ -115,7 +115,6 @@ Rules RULES[] = {
     {"\n", 2, 2, IN, R, apply},
     {":=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
-    {"|~", 4, 4, IN, L, infix},
     {"->", 5, 5, IN, R, newArrow},
 
     // conditional operators
@@ -131,8 +130,8 @@ Rules RULES[] = {
 
     // comparison/test operators
     {"=", 11, 11, IN, N, infix},
-    {"~=", 11, 11, IN, N, infix},
-    {"==", 11, 11, IN, N, infix},
+    {"!=", 11, 11, IN, N, infix},
+    {"=:=", 11, 11, IN, N, infix},
     {"<", 11, 11, IN, N, infix},
     {">", 11, 11, IN, N, infix},
     {"<=", 11, 11, IN, N, infix},
@@ -140,7 +139,7 @@ Rules RULES[] = {
     {">=<", 11, 11, IN, N, infix},
     {"<:", 11, 11, IN, N, infix},
     {":", 11, 11, IN, N, infix},
-    {"~:", 11, 11, IN, N, infix},
+    {"!:", 11, 11, IN, N, infix},
 
     // monadic operators
     {"?:", 12, 12, IN, R, infix},
@@ -167,7 +166,7 @@ Rules RULES[] = {
     // prefix operators
     {"-", 21, 21, PRE, L, negate},
     {"--", 21, 21, PRE, L, prefix},
-    {"~", 21, 21, PRE, L, prefix},
+    {"!", 21, 21, PRE, L, prefix},
     {"#", 21, 21, PRE, L, prefix},
 
     // higher than function application

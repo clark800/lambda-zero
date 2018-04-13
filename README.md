@@ -32,12 +32,16 @@
 ### Infinite list of natural numbers
 
     iterate(f, x) := x :: iterate(f, f(x))
-    countFrom := iterate(+ 1)
+    countFrom := iterate((+ 1))
     naturals := countFrom(0)
 
 ### Infinite list of prime numbers
 
-    primes := (f(ms) := ms ::? n -> ns -> n :: f(ns |~ n.divides)) f(countFrom(2))
+    primes := (
+        filterPrime(ns) := ns ::? n -> ns' ->
+            n :: filterPrime(ns' | n' -> n' % n != 0)
+        filterPrime(countFrom(2))
+    )
 
 # Motivation
 
@@ -95,8 +99,8 @@ The desugared language can be described by the grammar rules below
 grammar ignores some error cases):
 
     natural = [0-9]+
-    builtin = '+' | '-' | '*' | '/' | '%' | '=' | '~=' | '<' | '>' | '<=' | '>=' | 'error'
-    name = ("a token that is not an integer, builtin, delimiter, or arrow")
+    builtin = '+' | '-' | '*' | '/' | '%' | '=' | '!=' | '<' | '>' | '<=' | '>=' | 'error'
+    name = ("a token that is not a natural, builtin, delimiter, or arrow")
     expr = natural | builtin | name | (name -> expr) | (expr expr)
 
 ### Syntactic sugars
