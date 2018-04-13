@@ -1,1 +1,1 @@
-main(input) = showIntegerList(naturals.take(10000)) ++ "\n"
+main(input) := showIntegerList(naturals.take(10000)) ++ "\n"

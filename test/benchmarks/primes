@@ -1,1 +1,1 @@
-main(input) = showIntegerList(primes.take(1000)) ++ "\n"
+main(input) := showIntegerList(primes.take(1000)) ++ "\n"

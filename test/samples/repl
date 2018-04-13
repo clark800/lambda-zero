@@ -1,1 +1,1 @@
-main(input) = input.repl("> ", reverse)
+main(input) := input.repl("> ", reverse)

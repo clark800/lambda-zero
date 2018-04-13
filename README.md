@@ -26,7 +26,7 @@
 
 ### Quicksort
 
-    xs ::? f := xs.isEmpty ? [] || f(xs.head, xs.tail)
+    xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)
     sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 
 ### Infinite list of natural numbers
