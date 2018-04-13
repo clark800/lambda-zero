@@ -1,22 +1,22 @@
-'' naming conventions
-'' x, y, z unspecified type
-'' f, g, h function type
-'' n, m, k integer type
-'' b, c    boolean type
-'' p, q    boolean-valued function
-'' m*      maybe of *
-'' *s      list of *
-'' **      pair of * and *
+// naming conventions
+// x, y, z unspecified type
+// f, g, h function type
+// n, m, k integer type
+// b, c    boolean type
+// p, q    boolean-valued function
+// m*      maybe of *
+// *s      list of *
+// **      pair of * and *
 
-'' universal
-undefined := error("undefined")  '' runtime error if this is evaluated
-identity(x) := x                 '' identity function
-constant(x) := _ -> x            '' return value does not depend on parameter
-x.f := f(x)                      '' uniform function call syntax
-f || x := f(x)                   '' low precedence application
-f <> g := x -> f(g(x))           '' function composition
+// universal
+undefined := error("undefined")  // runtime error if this is evaluated
+identity(x) := x                 // identity function
+constant(x) := _ -> x            // return value does not depend on parameter
+x.f := f(x)                      // uniform function call syntax
+f || x := f(x)                   // low precedence application
+f <> g := x -> f(g(x))           // function composition
 
-'' boolean logic
+// boolean logic
 true(x, y) := x
 false(x, y) := y
 if(c, x, y) := c(x, y)
@@ -30,36 +30,36 @@ b <=> c := b ? c || !c
 (/\) := and
 (\/) := or
 
-'' pairs
-(,)(x, y)(f) := f(x, y)     '' this definition is for (,) and sections
+// pairs
+(,)(x, y)(f) := f(x, y)     // this definition is for (,) and sections
 left(xy) := xy(true)
 right(xy) := xy(false)
 swap((x, y)) := (y, x)
 
-'' function methods
-`f(x, y) := f(y, x)      '' flip order of first two arguments of function
-mirror(f)(x) := f(x, x)        '' convert binary function to unary function
-on(f, g) := x -> y -> f(g(x), g(y)) '' apply binary f with unary g applied first
+// function methods
+`f(x, y) := f(y, x)      // flip order of first two arguments of function
+mirror(f)(x) := f(x, x)        // convert binary function to unary function
+on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 f^^(n)(z) := n < 0 ? error("(^^): negative") || n = 0 ? z || f^^(n - 1)(f(z))
 until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
 curry(f) := x -> y -> f((x, y))
 uncurry(f) := xx -> f(left(xx), right(xx))
 
-'' more pairs
+// more pairs
 mapPair(xx, f) := (,).on(f).uncurry(xx)
 
-'' maybe
+// maybe
 nothing := z -> f -> z
 just(x) := z -> f -> f(x)
 isNothing(mx) := mx(true, constant(false))
 isJust(mx) := mx(false, constant(true))
 fromJust(mx) := mx(undefined, identity)
 maybe(x, f, mx) := mx(x, f)
-mx ?. f := mx(nothing, f)                   '' maybe chaining (bind)
-mx ?: x := mx(x, identity)                  '' just value or default
+mx ?. f := mx(nothing, f)                   // maybe chaining (bind)
+mx ?: x := mx(x, identity)                  // just value or default
 
-'' math
+// math
 abs(n) := n >= 0 ? n || -n
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
@@ -76,78 +76,78 @@ n ^ m := (
     n * n ^ (m - 1)
 )
 
-'' list basics
-x :: xs := (x, xs)                     '' prepend element to list (cons)
+// list basics
+x :: xs := (x, xs)                     // prepend element to list (cons)
 prepend := `(::)
 isEmpty(xs) := xs(_ -> _ -> false)
 head(xs) := isEmpty(xs) ? error("head: empty list") || left(xs)
 --xs := isEmpty(xs) ? error("(--): empty list") || right(xs)
-drop(xs, n) := (--)^^(n)(xs)            '' drop n elements from front of list
+drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
 splitAt(xs, n) := (xs.take(n), xs.drop(n))
-xs[n] := head(xs.drop(n))          '' get element of list at index
+xs[n] := head(xs.drop(n))          // get element of list at index
 xs =:= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
-    xs[0] = ys[0] /\ --xs =:= --ys       '' integer list equality
-last(xs) := (--).until(isEmpty <> (--), xs)[0] '' get last element of list
+    xs[0] = ys[0] /\ --xs =:= --ys       // integer list equality
+last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
 dropLast(xs) := xs =:= [] \/ --xs =:= [] ? [] || xs[0] :: dropLast(--xs)
 
-'' syntactic helpers
+// syntactic helpers
 xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)
 
-'' list folds
+// list folds
 foldr(xs, f, z) := if(isEmpty(xs), z, f(head(xs), foldr(--xs, f, z)))
 foldl(xs, f, z) := if(isEmpty(xs), z, foldl(--xs, f, f(z, head(xs))))
 reducer(xs, f) := (--xs).foldr(f, xs[0])
 reducel(xs, f) := (--xs).foldl(f, xs[0])
 
-'' list fold operations
-xs ++ ys := xs.foldr((::), ys)                   '' concatenate lists
-length(xs) := xs.foldr(constant((+ 1)), 0)         '' get length of list
+// list fold operations
+xs ++ ys := xs.foldr((::), ys)                   // concatenate lists
+length(xs) := xs.foldr(constant((+ 1)), 0)         // get length of list
 (#) := length
 
-'' generic list constructors
-iterate(f, x) := x :: iterate(f, f(x))       '' iteratively apply f
-repeat(x) := x :: repeat(x)                  '' infinitely repeat one element
-replicate(x, n) := (x ::)^^(n)([])         '' replicate one element n times
-cycle(xs) := xs ++ cycle(xs)                 '' infinitely cycle list
+// generic list constructors
+iterate(f, x) := x :: iterate(f, f(x))       // iteratively apply f
+repeat(x) := x :: repeat(x)                  // infinitely repeat one element
+replicate(x, n) := (x ::)^^(n)([])         // replicate one element n times
+cycle(xs) := xs ++ cycle(xs)                 // infinitely cycle list
 
-'' generic list transformations
+// generic list transformations
 filter(xs, p) := foldr(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
 (|) := filter
-map(xs, f) := foldr(xs, (::) <> f, [])          '' map function over list
+map(xs, f) := foldr(xs, (::) <> f, [])          // map function over list
 zipWith(xs, f, ys) := xs =:= [] \/ ys =:= [] ? [] ||
     f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(left), xs.map(right))
-concatenate(xss) := xss.foldr((++), [])     '' concatenate list of lists
-reverse(xs) := xs.foldl(`(::), [])       '' reverse a list
+concatenate(xss) := xss.foldr((++), [])     // concatenate list of lists
+reverse(xs) := xs.foldl(`(::), [])       // reverse a list
 interleave(xs, y) := xs ::? x -> xs' ->
     xs' =:= [] ? xs || x :: y :: interleave(xs', y)
 join(xss, ys) := concatenate(interleave(xss, ys))
 
-'' generic list reducers
-any(xs, p) := xs.map(p).foldr((\/), false)     '' test if any element satisfies p
-all(xs, p) := xs.map(p).foldr((/\), true)      '' test if all elements satisfy p
+// generic list reducers
+any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
+all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
 anyTrue(xs) := xs.any(identity)
 allTrue(xs) := xs.all(identity)
-'' find first element satisfying p, or return nothing
+// find first element satisfying p, or return nothing
 find(xs, p) := xs =:= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 lookup(nxs, n) := nxs =:= [] ? nothing ||
     nxs[0].left = n ? just(nxs[0].right) || (--nxs).lookup(n)
 
-'' integer list basics
+// integer list basics
 n : ns := ns.any((= n))
 n !: ns := !(n : ns)
 containsSorted(ns, n) := !(ns =:= []) /\ n >= ns[0] /\
         (n = ns[0] \/ (--ns).containsSorted(n))
 
-'' integer list constructors
+// integer list constructors
 n .. m := n > m ? [] || n :: (n + 1 .. m)
 
-'' integer list transformations
+// integer list transformations
 sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (!= k))
-ns \ ms := ns | (!: ms)             '' list difference
+ns \ ms := ns | (!: ms)             // list difference
 ns <: ms := ns.all((: ms))
 ns ** ms := concatenate(ns.map(n -> ms.map(m -> (n, m))))
 sortedDifference(ns, ms) := ns | (!) <> ms.containsSorted
@@ -178,13 +178,13 @@ lines(ns) := ns.split((= '\n'))
 
 repl(in, prompt, f) := prompt ++ in.lines.map(f).join("\n" ++ prompt)
 
-'' integer list reducers
+// integer list reducers
 sum(ns) := ns.foldl((+), 0)
 product(ns) := ns.foldl((*), 1)
 minimum(ns) := ns.reducel(min)
 maximum(ns) := ns.reducel(max)
 
-'' infinite lists
+// infinite lists
 countFrom := iterate((+ 1))
 naturals := countFrom(0)
 squares := naturals.map(mirror(*))
@@ -194,7 +194,7 @@ primes := (
     filterPrime(countFrom(2))
 )
 
-'' character classes
+// character classes
 isUppercase(n) := n >= 'A' /\ n <= 'Z'
 isLowercase(n) := n >= 'a' /\ n <= 'z'
 isDigit(n) := n >= '0' /\ n <= '9'
@@ -208,7 +208,7 @@ isPrintable(n) := !isControl(n)
 isGraphical(n) := isPrintable(n) /\ !isBlank(n)
 isPunctuation(n) := isGraphical(n) /\ !isAlphanumeric(n)
 
-'' serialization
+// serialization
 showBoolean(b) := b ? "true" || "false"
 showNatural(n) := (
     showReversedNatural(m) := m = 0 ? [] ||
@@ -216,7 +216,7 @@ showNatural(n) := (
     n = 0 ? "0" || reverse(showReversedNatural(n))
 )
 
-showString(ns) := "\"" ++ ns ++ "\""     '' todo: escape
+showString(ns) := "\"" ++ ns ++ "\""     // todo: escape
 showPair(xsxs) := "(" ++ xsxs.left ++ ", " ++ xsxs.right ++ ")"
 showList(xs) := "[" ++ xs.join(", ") ++ "]"
 showInteger(n) := (n < 0 ? "-" || "") ++ showNatural(abs(n))
@@ -233,7 +233,7 @@ showIntegerListPair(nsns) := showPair(nsns.mapPair(showIntegerList))
 showIntegerListList(nss) := showList(nss.map(showIntegerList))
 showStringIntegerPairList(nsns) := showList(nsns.map(showStringIntegerPair))
 
-'' parsing
+// parsing
 parseDigit(digit, base) :=
     isDigit(digit) /\ digit - '0' < base ? digit - '0' ||
     error("Invalid digit in base " ++ showInteger(base) ++ ": " ++ [digit])
