@@ -112,6 +112,7 @@ Rules RULES[] = {
     {"[", 22, 0, OPEN, L, unmatched},
     {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
+    //{";", 1, 1, IN, N, semicolon},
     {"\n", 2, 2, IN, R, apply},
     {":=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
@@ -121,40 +122,38 @@ Rules RULES[] = {
     {"||", 5, 5, IN, R, infix},
     {"::?", 5, 5, IN, R, infix},
     {"?", 6, 6, IN, R, infix},
+    {"?:", 6, 6, IN, R, infix},
 
     // logical operators
-    {"<=>", 7, 7, IN, N, infix},
-    {"=>", 8, 8, IN, N, infix},
-    {"\\/", 9, 9, IN, R, infix},
-    {"/\\", 10, 10, IN, R, infix},
+    {"<=>", 8, 8, IN, N, infix},
+    {"=>", 9, 9, IN, N, infix},
+    {"\\/", 10, 10, IN, R, infix},
+    {"/\\", 11, 11, IN, R, infix},
 
     // comparison/test operators
-    {"=", 11, 11, IN, N, infix},
-    {"!=", 11, 11, IN, N, infix},
-    {"=:=", 11, 11, IN, N, infix},
-    {"<", 11, 11, IN, N, infix},
-    {">", 11, 11, IN, N, infix},
-    {"<=", 11, 11, IN, N, infix},
-    {">=", 11, 11, IN, N, infix},
-    {">=<", 11, 11, IN, N, infix},
-    {"<:", 11, 11, IN, N, infix},
-    {":", 11, 11, IN, N, infix},
-    {"!:", 11, 11, IN, N, infix},
+    {"=", 12, 12, IN, N, infix},
+    {"!=", 12, 12, IN, N, infix},
+    {"=:=", 12, 12, IN, N, infix},
+    {"<", 12, 12, IN, N, infix},
+    {">", 12, 12, IN, N, infix},
+    {"<=", 12, 12, IN, N, infix},
+    {">=", 12, 12, IN, N, infix},
+    {">=<", 12, 12, IN, N, infix},
+    {"<:", 12, 12, IN, N, infix},
+    {":", 12, 12, IN, N, infix},
+    {"!:", 12, 12, IN, N, infix},
+    {"~", 12, 12, IN, N, infix},
 
-    // monadic operators
-    {"?:", 12, 12, IN, R, infix},
-
-    // list operators
-    {"::", 13, 13, IN, R, infix},
-    {"++", 13, 13, IN, R, infix},
-    {"\\", 13, 13, IN, N, infix},
-    {"**", 14, 14, IN, R, infix},
+    // precedence 14: default
+    // arithmetic/list operators
     {"..", 15, 15, IN, N, infix},
-
-    // arithmetic operators
+    {"::", 16, 16, IN, R, infix},
+    {"&", 16, 16, IN, L, infix},
     {"+", 16, 16, IN, L, infix},
+    {"++", 16, 16, IN, R, infix},
     {"-", 16, 16, IN, L, infix},
     {"*", 17, 17, IN, L, infix},
+    {"**", 17, 17, IN, R, infix},
     {"/", 17, 17, IN, L, infix},
     {"%", 17, 17, IN, L, infix},
     {"^", 18, 18, IN, R, infix},
@@ -162,21 +161,21 @@ Rules RULES[] = {
     // functional operators
     {"<>", 19, 19, IN, R, infix},
 
-    // higher than space operator
+    // precedence 20: space operator
     // prefix operators
     {"-", 21, 21, PRE, L, negate},
     {"--", 21, 21, PRE, L, prefix},
     {"!", 21, 21, PRE, L, prefix},
     {"#", 21, 21, PRE, L, prefix},
 
-    // higher than function application
+    // precedence 22: parentheses/brackets
     {"^^", 23, 23, IN, L, infix},
     {"?.", 24, 24, IN, L, infix},
     {".", 24, 24, IN, L, infix},
-    {"`", 24, 24, PRE, L, prefix}
+    {"`", 25, 25, PRE, L, prefix}
 };
 
-Rules DEFAULT = {"", 12, 12, IN, L, infix};
+Rules DEFAULT = {"", 14, 14, IN, L, infix};
 Rules SPACE = {" ", 20, 20, IN, L, apply};
 
 bool allowsOperatorBefore(Rules rules) {
