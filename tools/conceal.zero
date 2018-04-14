@@ -9,9 +9,9 @@
 -:
 ##
 &
-|.|
-&&
-|..|
+~~
++-
+-+
 
 // comparison operators
 !=
@@ -33,22 +33,25 @@
 :>
 !<:
 !:>
+!~
+~:
 
 // arrow operators
 <-
 ->
-<-->
 <=>
 =>
 -->
+<--
+<-->
 ~>
 <~
-->>
-<<-
 >->
 <-<
 <<
 >>
+->>
+<<-
 <<<
 >>>
 =>>
@@ -73,6 +76,8 @@
 /*\
 <|
 |>
+=<|
+|>=
 |><
 ><|
 |><|
@@ -83,8 +88,9 @@
 <->
 <*>
 <**>
-</>
 <.>
+</>
+<%>
 <\>
 <|>
 <||>
@@ -92,11 +98,12 @@
 <<>
 <>>
 <<>>
+<@>
 <^>
+<^^>
 
 // bar and turnstile operators
 ||
-|||
 |-
 -|
 ||-
@@ -111,10 +118,14 @@
 |==|
 
 // boxed operators
+|&|
+|..|
+|||
 |+|
 |-|
 |*|
 |**|
+|.|
 |/|
 |\|
 |<>|
@@ -129,6 +140,7 @@
 |<-|
 |->|
 |?|
+|^|
 
 // superscript operators
 ^^(n)
@@ -136,13 +148,17 @@
 ^^(3)
 
 // named operators
-grad
+int
+infinity
+powerSet
 sum
 product
 sqrt
 partial
+grad
 div
 curl
+laplacian
 
 // greek letters
 alpha
@@ -180,6 +196,34 @@ Upsilon
 Phi
 Psi
 Omega
+
+A
+B
+C
+D
+E
+F
+G
+H
+I
+J
+K
+L
+M
+N
+O
+P
+Q
+R
+S
+T
+U
+V
+W
+X
+Y
+Z
+i
 
 // subscripts and primes
 x'
