@@ -2,11 +2,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include "lib/tree.h"
 #include "lib/stack.h"
 #include "scan.h"
 #include "errors.h"
-#include "ast.h"
 #include "objects.h"
 #include "lex.h"
 
@@ -48,13 +46,15 @@ const char* skipQuoteCharacter(const char* start) {
 }
 
 char decodeCharacter(const char* start) {
+    lexerErrorIf(start[0] <= 0, start, "illegal character in quote");
     if (start[0] != '\\')
         return start[0];
     switch (start[1]) {
         case '0': return '\0';
-        case 'n': return '\n';
         case 't': return '\t';
         case 'r': return '\r';
+        case 'n': return '\n';
+        case '\n': return '\n';
         case '\\': return '\\';
         case '\"': return '\"';
         case '\'': return '\'';
@@ -73,21 +73,18 @@ Node* newCharacterLiteral(const char* lexeme) {
     return newInteger(getLexemeLocation(lexeme), code);
 }
 
-Node* newStringLiteral(const char* lexeme) {
-    char quote = lexeme[0];
+Node* buildStringLiteral(const char* lexeme, const char* start) {
+    char c = start[0];
     int location = getLexemeLocation(lexeme);
-    const char* close = lexeme + getLexemeLength(lexeme) - 1;
-    lexerErrorIf(close[0] != quote, lexeme, "missing end quote for");
-    Node* string = newNil(getLexemeLocation(lexeme));
-    Stack* stack = newStack(VOID);
-    const char* p = lexeme + 1;
-    for (; p < close; p = skipQuoteCharacter(p))
-        push(stack, newInteger(location, decodeCharacter(p)));
-    lexerErrorIf(p != close, lexeme, "invalid string literal");
-    for (Iterator* it = iterate(stack); !end(it); it = next(it))
-        string = prepend(getLexemeLocation(lexeme), cursor(it), string);
-    deleteStack(stack);
-    return string;
+    lexerErrorIf(c == '\n' || c == 0, lexeme, "invalid string literal");
+    if (c == lexeme[0])
+        return newNil(location);
+    return prepend(location, newInteger(location, decodeCharacter(start)),
+        buildStringLiteral(lexeme, skipQuoteCharacter(start)));
+}
+
+Node* newStringLiteral(const char* lexeme) {
+    return buildStringLiteral(lexeme, lexeme + 1);
 }
 
 long long parseInteger(const char* lexeme) {

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "ast.h"
 
-Program parse(const char* input, bool optimize, bool showDebug);
+extern bool TRACE_PARSING;
+
+Program parse(const char* input, bool optimize);
 
 #endif

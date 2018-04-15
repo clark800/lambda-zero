@@ -7,7 +7,7 @@ BLUE='\033[0;34m'
 NOCOLOR='\033[0m'
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CMD="$DIR/../main -n"
+CMD="$DIR/../main -t"
 
 function header {
     echo -e "${BLUE}========== $1 ==========${NOCOLOR}"

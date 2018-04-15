@@ -1,6 +1,4 @@
-#include "lib/tree.h"
 #include "lib/array.h"
-#include "ast.h"
 #include "objects.h"
 #include "lex.h"
 #include "errors.h"

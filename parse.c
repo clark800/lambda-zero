@@ -1,8 +1,6 @@
 #include <stddef.h>
-#include <stdbool.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "objects.h"
 #include "errors.h"
 #include "lex.h"
@@ -11,6 +9,8 @@
 #include "bind.h"
 #include "serialize.h"
 #include "parse.h"
+
+bool TRACE_PARSING = false;
 
 bool isOperatorTop(Stack* stack) {
     return isOperator(peek(stack, 0));
@@ -38,7 +38,7 @@ void pushOperand(Stack* stack, Node* node) {
         return;
     }
     Hold* left = pop(stack);
-    if (isTuple(node) && isApplication(getBody(node)))
+    if (isTuple(node) && !isComma(getBody(node)))
         push(stack, applyToCommaList(getNode(left), getBody(node)));
     else if (isList(node)) {
         if (!isApplication(getBody(node)))
@@ -180,8 +180,8 @@ Hold* collapseEOF(Stack* stack, Hold* token) {
     return result;
 }
 
-void debugParseState(Node* token, Stack* stack, bool showDebug) {
-    if (showDebug) {
+void debugParseState(Node* token, Stack* stack, bool trace) {
+    if (trace) {
         debug("Token: '");
         debugAST(token);
         debug("'  Stack: ");
@@ -190,12 +190,12 @@ void debugParseState(Node* token, Stack* stack, bool showDebug) {
     }
 }
 
-Hold* parseString(const char* input, bool showDebug) {
+Hold* parseString(const char* input, bool trace) {
     Stack* stack = newStack(VOID);
     push(stack, newEOF());
     Hold* token = getFirstToken(input);
     for (;; token = replaceHold(token, getNextToken(token))) {
-        debugParseState(getNode(token), stack, showDebug);
+        debugParseState(getNode(token), stack, trace);
         if (isEOF(getNode(token)))
             return collapseEOF(stack, token);
         if (isOperator(getNode(token)))
@@ -205,8 +205,8 @@ Hold* parseString(const char* input, bool showDebug) {
     }
 }
 
-void debugStage(const char* label, Node* node, bool showDebug) {
-    if (showDebug) {
+void debugStage(const char* label, Node* node, bool trace) {
+    if (trace) {
         debugLine();
         debug(label);
         debug(": ");
@@ -215,10 +215,11 @@ void debugStage(const char* label, Node* node, bool showDebug) {
     }
 }
 
-Program parse(const char* input, bool optimize, bool showDebug) {
-    Hold* result = parseString(input, showDebug);
-    debugStage("Parsed", getNode(result), showDebug);
+Program parse(const char* input, bool optimize) {
+    bool trace = TRACE_PARSING && input != INTERNAL_CODE;
+    Hold* result = parseString(input, trace);
+    debugStage("Parsed", getNode(result), trace);
     result = replaceHold(result, desugar(getNode(result)));
-    debugStage("Desugared", getNode(result), showDebug);
+    debugStage("Desugared", getNode(result), trace);
     return bind(result, optimize);
 }

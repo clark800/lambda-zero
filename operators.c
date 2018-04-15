@@ -1,6 +1,4 @@
 #include <stddef.h>
-#include <stdbool.h>
-#include "lib/tree.h"
 #include "ast.h"
 #include "objects.h"
 #include "errors.h"

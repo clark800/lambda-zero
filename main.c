@@ -16,10 +16,10 @@ void checkForMemoryLeak(const char* label, size_t expectedUsage) {
         printMemoryError(label, (long long)(usage - expectedUsage));
 }
 
-void interpret(const char* input, bool showDebug) {
+void interpret(const char* sourceCode) {
     initNodeAllocator();
-    initObjects(parse(INTERNAL_CODE, false, false));
-    Program program = parse(input, true, showDebug);
+    initObjects(parse(INTERNAL_CODE, false));
+    Program program = parse(sourceCode, true);
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     if (!program.IO) {
         serialize(getNode(valueClosure), program.globals);
@@ -32,13 +32,13 @@ void interpret(const char* input, bool showDebug) {
     checkForMemoryLeak("interpret", 0);
 }
 
-char* readScript(const char* filename) {
+char* readSourceCode(const char* filename) {
     FILE* stream = fopen(filename, "r");
     if (stream == NULL || stream == (FILE*)(-1))
         readError(filename);
-    char* script = readfile(stream);
+    char* sourceCode = readfile(stream);
     fclose(stream);
-    return script;
+    return sourceCode;
 }
 
 int main(int argc, char* argv[]) {
@@ -46,19 +46,19 @@ int main(int argc, char* argv[]) {
     // causing the shell to execute it, which is dangerous
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
-    bool showDebug = false;
+    char* programName = argv[0];
     while (--argc > 0 && (*++argv)[0] == '-')
         for (char* flag = argv[0] + 1; *flag != '\0'; flag++)
             switch (*flag) {
-                case 'd': showDebug = true; break;    // show parse steps
-                case 't': TRACE = true; break;        // show eval steps
-                case 'n': VERBOSITY = -1; break;      // hide line #s in errors
-                default: usageError(argv[0]); break;
+                case 'p': TRACE_PARSING = true; break;
+                case 'e': TRACE_EVALUATION = true; break;
+                case 't': TEST = true; break;      // hide line #s in errors
+                default: usageError(programName); break;
             }
     if (argc > 1)
-        usageError(argv[0]);
-    char* input = argc == 0 ? readfile(stdin) : readScript(argv[0]);
-    interpret(input, showDebug);
-    free(input);
+        usageError(programName);
+    char* sourceCode = argc == 0 ? readfile(stdin) : readSourceCode(argv[0]);
+    interpret(sourceCode);
+    free(sourceCode);
     return 0;
 }

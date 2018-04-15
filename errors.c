@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib/tree.h"
 #include "lib/stack.h"
 #include "lib/util.h"
 #include "scan.h"
-#include "closure.h"
 #include "errors.h"
 
-int VERBOSITY = 0;
+bool TEST = false;
 
 static inline const char* getLexeme(Node* node) {
     return getLexemeByLocation(getLocation(node));
@@ -36,7 +34,7 @@ void printLexemeAndLocationLine(const char* lexeme, const char* quote) {
     fputs(quote, stderr);
     printLexeme(lexeme, stderr);
     fputs(quote, stderr);
-    if (VERBOSITY >= 0) {
+    if (!TEST) {
         fputs(" at ", stderr);
         printLocationString(getLexemeLocation(lexeme));
     }
@@ -76,7 +74,7 @@ void printBacktrace(Closure* closure) {
 }
 
 void printRuntimeError(const char* message, Closure* closure) {
-    if (VERBOSITY >= 0 && !isEmpty(getBacktrace(closure)))
+    if (!TEST && !isEmpty(getBacktrace(closure)))
         printBacktrace(closure);
     printTokenError("\nRuntime", message, getTerm(closure));
 }
@@ -87,7 +85,7 @@ void runtimeError(const char* message, Closure* closure) {
 }
 
 void usageError(const char* name) {
-    printFour("Usage error: ", name, " [-dtpn]", " [FILE]\n");
+    printFour("Usage error: ", name, " [-p] [-e] [-t]", " [FILE]\n");
     exit(2);
 }
 

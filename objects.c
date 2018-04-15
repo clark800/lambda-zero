@@ -1,6 +1,3 @@
-#include "lib/tree.h"
-#include "lib/stack.h"
-#include "ast.h"
 #include "objects.h"
 
 // put(c) = id              -- with side effect of printing the character c
