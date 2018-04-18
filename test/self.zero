@@ -63,24 +63,24 @@ getColumn(tag) := tag.second.second
 showPrettyTag(tag) := "'" ++ getLexeme(tag) ++ "' at line " ++
     showInteger(getLine(tag)) ++ " column " ++ showInteger(getColumn(tag))
 
-REFERENCE := 0
-LAMBDA := 1
-APPLICATION := 2
-BUILTIN := 3
-INTEGER := 4
-GLOBAL := 5
+cREFERENCE := 0
+cLAMBDA := 1
+cAPPLICATION := 2
+cBUILTIN := 3
+cINTEGER := 4
+cGLOBAL := 5
 
-NAME := -1
-OPERATOR := -2
+cNAME := -1
+cOPERATOR := -2
 
-newReference(tag, debruijn) := ((tag, REFERENCE), debruijn)
-newName(tag) := newReference(tag, NAME)
-newOperator(tag) := newReference(tag, OPERATOR)
-newLambda(tag, parameter, body) := ((tag, LAMBDA), (parameter, body))
-newApplication(tag, left, right) := ((tag, APPLICATION), (left, right))
-newBuiltin(tag, code) := ((tag, BUILTIN), code)
-newInteger(tag, value) := ((tag, INTEGER), value)
-newGlobal(tag, code) := ((tag, GLOBAL), code)
+newReference(tag, debruijn) := ((tag, cREFERENCE), debruijn)
+newName(tag) := newReference(tag, cNAME)
+newOperator(tag) := newReference(tag, cOPERATOR)
+newLambda(tag, parameter, body) := ((tag, cLAMBDA), (parameter, body))
+newApplication(tag, left, right) := ((tag, cAPPLICATION), (left, right))
+newBuiltin(tag, code) := ((tag, cBUILTIN), code)
+newInteger(tag, value) := ((tag, cINTEGER), value)
+newGlobal(tag, code) := ((tag, cGLOBAL), code)
 
 getTag(node) := node.first.first
 getType(node) := node.first.second
@@ -90,35 +90,35 @@ getBody(node) := getData(node).second
 getFunction(node) := getData(node).first
 getArgument(node) := getData(node).second
 
-isReference(node) := node.getType = REFERENCE
-isName(node) := isReference(node) /\ node.getData = NAME
-isOperator(node) := isReference(node) /\ node.getData = OPERATOR
+isReference(node) := node.getType = cREFERENCE
+isName(node) := isReference(node) /\ node.getData = cNAME
+isOperator(node) := isReference(node) /\ node.getData = cOPERATOR
 isSymbol(node) := isName(node) \/ isOperator(node)
-isLambda(node) := node.getType = LAMBDA
-isApplication(node) := node.getType = APPLICATION
-isBuiltin(node) := node.getType = BUILTIN
-isInteger(node) := node.getType = INTEGER
-isGlobal(node) := node.getType = GLOBAL
+isLambda(node) := node.getType = cLAMBDA
+isApplication(node) := node.getType = cAPPLICATION
+isBuiltin(node) := node.getType = cBUILTIN
+isInteger(node) := node.getType = cINTEGER
+isGlobal(node) := node.getType = cGLOBAL
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
     isOperatorCharacter(lexeme[0]) \/ isDelimiterCharacter(lexeme[0])
 isIntegerLexeme(lexeme) := lexeme.all(isDigit)
 
-X := newName(("x", (0, 0)))
-Y := newName(("y", (0, 0)))
-Z := newName(("z", (0, 0)))
+cX := newName(("x", (0, 0)))
+cY := newName(("y", (0, 0)))
+cZ := newName(("z", (0, 0)))
 
 newNil(tag) :=
-    newLambda(tag, Z,
-        newLambda(getTag(X), X,
-            newLambda(getTag(Y), Y,
-                newReference(getTag(X), 2))))
+    newLambda(tag, cZ,
+        newLambda(getTag(cX), cX,
+            newLambda(getTag(cY), cY,
+                newReference(getTag(cX), 2))))
 
 prependList(character, list) :=
-    newLambda(getTag(list), X,
+    newLambda(getTag(list), cX,
         newApplication(getTag(list),
-            newApplication(getTag(list), X, character), list))
+            newApplication(getTag(list), cX, character), list))
 
 parseEscapeCode(code, tag) := (
     code = '0' ? '\0'
