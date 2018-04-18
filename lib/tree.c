@@ -18,7 +18,7 @@ Node VOID_NODE = {1, 0, {NULL}, {NULL}};    // same as integer "0"
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
-    initPool(sizeof(Node), 16384);
+    initPool(sizeof(Node), 4096);
 }
 
 void destroyNodeAllocator() {

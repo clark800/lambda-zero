@@ -23,11 +23,13 @@ static inline bool isDelimiterCharacter(char c) {
 }
 
 static inline bool isOperandCharacter(char c) {
-    return isalnum(c) || c == '\'' || c == '_';
+    // check c > 0 to ensure it is ASCII
+    return c > 0 && (isalnum(c) || c == '\'' || c == '_');
 }
 
 static inline bool isOperatorCharacter(char c) {
-    return ispunct(c) && !isDelimiterCharacter(c) && !isOperandCharacter(c)
+    // check c > 0 to ensure it is ASCII
+    return c > 0 && !isDelimiterCharacter(c) && !isOperandCharacter(c)
         && !isQuoteCharacter(c) && strchr("{};@$", c) == NULL;
 }
 

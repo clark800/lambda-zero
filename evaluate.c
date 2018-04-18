@@ -1,15 +1,11 @@
-#include <stdbool.h>
-#include "lib/tree.h"
 #include "lib/stack.h"
-#include "lib/array.h"
 #include "ast.h"
 #include "errors.h"
-#include "closure.h"
 #include "builtins.h"
 #include "serialize.h"
 #include "evaluate.h"
 
-bool TRACE = false;
+bool TRACE_EVALUATION = false;
 
 static inline void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
@@ -75,7 +71,7 @@ static inline void evaluateReferenceNode(Closure* closure, Stack* stack) {
 static inline void evaluateGlobalNode(Closure* closure, const Array* globals) {
     Node* global = getTerm(closure);
     setTerm(closure, getGlobalValue(global, globals));
-    if (VERBOSITY >= 0)     // backtraces are not shown for negative verbosity
+    if (!TEST)     // backtraces are not shown in test mode
         push(getBacktrace(closure), global);
     setLocals(closure, VOID);
 }
@@ -110,15 +106,8 @@ static inline void evaluateBuiltinNode(
         release(right);
 }
 
-static inline Hold* getIntegerResult(Closure* closure, Stack* stack) {
-    applyUpdates(closure, stack);
-    if (!isEmpty(stack))
-        runtimeError("extra argument", peek(stack, 0));
-    return hold(closure);
-}
-
 static inline void debugState(Closure* closure, Stack* stack) {
-    if (TRACE) {
+    if (TRACE_EVALUATION) {
         debugLine();
         debug("term: ");
         debugAST(getTerm(closure));
@@ -138,7 +127,11 @@ Hold* evaluateNode(Closure* closure, Stack* stack, const Array* globals) {
             case N_REFERENCE: evaluateReferenceNode(closure, stack); break;
             case N_BUILTIN: evaluateBuiltinNode(closure, stack, globals); break;
             case N_GLOBAL: evaluateGlobalNode(closure, globals); break;
-            case N_INTEGER: return getIntegerResult(closure, stack);
+            case N_INTEGER:
+                applyUpdates(closure, stack);
+                if (isEmpty(stack))
+                    return hold(closure);
+                runtimeError("extra argument", peek(stack, 0)); break;
             case N_LAMBDA:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))

@@ -15,7 +15,7 @@ Syntax error: invalid character literal ''abc''
 Syntax error: invalid character literal ''\\x''
 ===============================================================================
 "abc
-Syntax error: missing end quote for '"abc'
+Syntax error: invalid string literal '"abc'
 ===============================================================================
 abc"
 Syntax error: invalid string literal '"'
@@ -34,4 +34,10 @@ x -> 'a'x
 ===============================================================================
 "x\"
 Syntax error: invalid string literal '"x\"'
+===============================================================================
+"∈"
+Syntax error: illegal character in quote '?'
+===============================================================================
+'∈'
+Syntax error: invalid character literal ''∈''
 ===============================================================================

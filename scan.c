@@ -1,7 +1,4 @@
 #include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "objects.h"
 #include "scan.h"
@@ -91,7 +88,9 @@ Position getPosition(unsigned int location) {
 }
 
 void printLexeme(const char* lexeme, FILE* stream) {
-    switch (lexeme[0]) {
+    if (lexeme[0] < 0)
+        fputs("?", stream);
+    else switch (lexeme[0]) {
         case '\n': fputs("\\n", stream); break;
         case '\0': fputs("\\0", stream); break;
         default: fwrite(lexeme, sizeof(char), getLexemeLength(lexeme), stream);

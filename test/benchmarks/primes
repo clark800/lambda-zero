@@ -1,1 +1,4 @@
-main(input) := showIntegerList(primes.take(1000)) ++ "\n"
+#!/bin/bash -e
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODE='main(input) := showIntegerList(primes.take(1000)) ++ "\n"'
+time "$DIR/../../main" -t <(cat "$DIR/../prelude.zero" <(echo "$CODE"))

@@ -51,14 +51,14 @@ splitLexemes(string, splitter, location) := (
 )
 
 scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |
-    (!) <> isElided <> left
+    (!) <> isElided <> first
 
-showTag(x) := showPair((showString(x.left), showIntegerPair(x.right)))
+showTag(x) := showPair((showString(x.first), showIntegerPair(x.second)))
 //main(input) := showList(scan(input).map(showTag))
 
-getLexeme(tag) := tag.left
-getLine(tag) := tag.right.left
-getColumn(tag) := tag.right.right
+getLexeme(tag) := tag.first
+getLine(tag) := tag.second.first
+getColumn(tag) := tag.second.second
 
 showPrettyTag(tag) := "'" ++ getLexeme(tag) ++ "' at line " ++
     showInteger(getLine(tag)) ++ " column " ++ showInteger(getColumn(tag))
@@ -77,18 +77,18 @@ newReference(tag, debruijn) := ((tag, REFERENCE), debruijn)
 newName(tag) := newReference(tag, NAME)
 newOperator(tag) := newReference(tag, OPERATOR)
 newLambda(tag, parameter, body) := ((tag, LAMBDA), (parameter, body))
-newApplication(tag, left', right') := ((tag, APPLICATION), (left', right'))
+newApplication(tag, left, right) := ((tag, APPLICATION), (left, right))
 newBuiltin(tag, code) := ((tag, BUILTIN), code)
 newInteger(tag, value) := ((tag, INTEGER), value)
 newGlobal(tag, code) := ((tag, GLOBAL), code)
 
-getTag(node) := node.left.left
-getType(node) := node.left.right
-getData(node) := node.right
-getParameter(node) := getData(node).left
-getBody(node) := getData(node).right
-getFunction(node) := getData(node).left
-getArgument(node) := getData(node).right
+getTag(node) := node.first.first
+getType(node) := node.first.second
+getData(node) := node.second
+getParameter(node) := getData(node).first
+getBody(node) := getData(node).second
+getFunction(node) := getData(node).first
+getArgument(node) := getData(node).second
 
 isReference(node) := node.getType = REFERENCE
 isName(node) := isReference(node) /\ node.getData = NAME

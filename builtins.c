@@ -2,12 +2,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
-#include "lib/tree.h"
 #include "lib/util.h"
 #include "ast.h"
 #include "errors.h"
 #include "objects.h"
-#include "closure.h"
 #include "builtins.h"
 
 bool STDERR = false;

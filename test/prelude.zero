@@ -32,8 +32,8 @@ b <=> c := b ? c || !c
 
 // pairs
 (,)(x, y)(f) := f(x, y)     // this definition is for (,) and sections
-left(xy) := xy(true)
-right(xy) := xy(false)
+first(xy) := xy(true)
+second(xy) := xy(false)
 swap((x, y)) := (y, x)
 
 // function methods
@@ -44,7 +44,7 @@ f^^(n)(z) := n < 0 ? error("(^^): negative") || n = 0 ? z || f^^(n - 1)(f(z))
 until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
 curry(f) := x -> y -> f((x, y))
-uncurry(f) := xx -> f(left(xx), right(xx))
+uncurry(f) := xx -> f(first(xx), second(xx))
 
 // more pairs
 mapPair(xx, f) := (,).on(f).uncurry(xx)
@@ -80,10 +80,12 @@ n ^ m := (
 x :: xs := (x, xs)                     // prepend element to list (cons)
 prepend := `(::)
 isEmpty(xs) := xs(_ -> _ -> false)
-head(xs) := isEmpty(xs) ? error("head: empty list") || left(xs)
---xs := isEmpty(xs) ? error("(--): empty list") || right(xs)
+head(xs) := isEmpty(xs) ? error("head: empty list") || first(xs)
+tail(xs) := isEmpty(xs) ? error("(--): empty list") || second(xs)
+(--) := tail
 drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
+slice(xs, start, end) := xs.drop(start).take(end - start)
 splitAt(xs, n) := (xs.take(n), xs.drop(n))
 xs[n] := head(xs.drop(n))          // get element of list at index
 xs =:= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
@@ -101,7 +103,7 @@ reducer(xs, f) := (--xs).foldr(f, xs[0])
 reducel(xs, f) := (--xs).foldl(f, xs[0])
 
 // list fold operations
-xs ++ ys := xs.foldr((::), ys)                   // concatenate lists
+xs ++ ys := xs.foldr((::), ys)                   // concatenate two lists
 length(xs) := xs.foldr(constant((+ 1)), 0)         // get length of list
 (#) := length
 
@@ -118,12 +120,12 @@ map(xs, f) := foldr(xs, (::) <> f, [])          // map function over list
 zipWith(xs, f, ys) := xs =:= [] \/ ys =:= [] ? [] ||
     f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
-unzip(xs) := (xs.map(left), xs.map(right))
-concatenate(xss) := xss.foldr((++), [])     // concatenate list of lists
+unzip(xs) := (xs.map(first), xs.map(second))
+join(xss) := xss.foldr((++), [])       // concatenate list of lists
 reverse(xs) := xs.foldl(`(::), [])       // reverse a list
 interleave(xs, y) := xs ::? x -> xs' ->
     xs' =:= [] ? xs || x :: y :: interleave(xs', y)
-join(xss, ys) := concatenate(interleave(xss, ys))
+joinWith(xss, ys) := join(interleave(xss, ys))
 
 // generic list reducers
 any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
@@ -133,7 +135,7 @@ allTrue(xs) := xs.all(identity)
 // find first element satisfying p, or return nothing
 find(xs, p) := xs =:= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 lookup(nxs, n) := nxs =:= [] ? nothing ||
-    nxs[0].left = n ? just(nxs[0].right) || (--nxs).lookup(n)
+    nxs[0].first = n ? just(nxs[0].second) || (--nxs).lookup(n)
 
 // integer list basics
 n : ns := ns.any((= n))
@@ -147,9 +149,8 @@ n .. m := n > m ? [] || n :: (n + 1 .. m)
 // integer list transformations
 sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (!= k))
-ns \ ms := ns | (!: ms)             // list difference
 ns <: ms := ns.all((: ms))
-ns ** ms := concatenate(ns.map(n -> ms.map(m -> (n, m))))
+ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 sortedDifference(ns, ms) := ns | (!) <> ms.containsSorted
 
 break(ns, p) := (
@@ -176,7 +177,7 @@ startsWith(ns, ks) := allTrue(zipWith(ns, (=), ks))
 words(ns) := ns.split((= ' ')) | (!) <> isEmpty
 lines(ns) := ns.split((= '\n'))
 
-repl(in, prompt, f) := prompt ++ in.lines.map(f).join("\n" ++ prompt)
+repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)
 
 // integer list reducers
 sum(ns) := ns.foldl((+), 0)
@@ -217,14 +218,14 @@ showNatural(n) := (
 )
 
 showString(ns) := "\"" ++ ns ++ "\""     // todo: escape
-showPair(xsxs) := "(" ++ xsxs.left ++ ", " ++ xsxs.right ++ ")"
-showList(xs) := "[" ++ xs.join(", ") ++ "]"
+showPair(xsxs) := "(" ++ xsxs.first ++ ", " ++ xsxs.second ++ ")"
+showList(xs) := "[" ++ xs.joinWith(", ") ++ "]"
 showInteger(n) := (n < 0 ? "-" || "") ++ showNatural(abs(n))
 
 showStringPair(nsns) := showPair(nsns.mapPair(showString))
 showIntegerPair(nn) := showPair(nn.mapPair(showInteger))
 showStringIntegerPair(nsn) := showPair(
-    (showString(nsn.left), showInteger(nsn.right)))
+    (showString(nsn.first), showInteger(nsn.second)))
 
 showStringList(nss) := showList(nss.map(showString))
 showIntegerList(ns) := showList(ns.map(showInteger))

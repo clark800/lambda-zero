@@ -1,5 +1,4 @@
 #include <stdbool.h>
-#include "lib/tree.h"
 #include "ast.h"
 #include "errors.h"
 #include "lex.h"

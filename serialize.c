@@ -1,9 +1,6 @@
 #include <assert.h>
 #include "lib/util.h"
-#include "lib/tree.h"
-#include "lib/array.h"
 #include "ast.h"
-#include "closure.h"
 #include "lex.h"
 #include "serialize.h"
 

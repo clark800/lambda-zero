@@ -1,10 +1,11 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+#include <stdbool.h>
 #include "lib/tree.h"
 #include "closure.h"
 
-extern int VERBOSITY;
+extern bool TEST;
 
 void lexerErrorIf(bool condition, const char* lexeme, const char* message);
 void syntaxError(const char* message, Node* token);
