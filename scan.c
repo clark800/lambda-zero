@@ -5,11 +5,15 @@
 
 const char* SOURCE_CODE = NULL;
 
-static inline bool isComment(const char* s) {
+static inline bool isLineComment(const char* s) {
     return s[0] == '/' && s[1] == '/';
 }
 
-static inline bool isNotNewlineCharacter(char c) {
+static inline bool isBlockComment(const char* s) {
+    return s[0] == '/' && s[1] == '*';
+}
+
+static inline bool isNotNewline(char c) {
     return c != '\n';
 }
 
@@ -19,8 +23,16 @@ static inline const char* skipWhile(const char* s, bool (*predicate)(char)) {
     return s;
 }
 
-static inline const char* skipComment(const char* s) {
-    return isComment(s) ? skipWhile(s, isNotNewlineCharacter) : s;
+static inline const char* skipBlockComment(const char* s) {
+    while (s[0] != '\0' && (s[0] != '*' || s[1] != '/'))
+        s++;
+    return s[0] == '\0' ? s : s + 2;
+}
+
+static inline const char* skipComments(const char* s) {
+    while (isLineComment(s) || isBlockComment(s))
+        s = isLineComment(s) ? skipWhile(s, isNotNewline) : skipBlockComment(s);
+    return s;
 }
 
 static inline const char* skipQuote(const char* s) {
@@ -50,11 +62,11 @@ static inline const char* skipLexeme(const char* lexeme) {
 
 const char* getFirstLexeme(const char* input) {
     SOURCE_CODE = input;
-    return skipComment(input);
+    return skipComments(input);
 }
 
 const char* getNextLexeme(const char* lastLexeme) {
-    return skipComment(skipLexeme(lastLexeme));
+    return skipComments(skipLexeme(lastLexeme));
 }
 
 unsigned int getLexemeLength(const char* lexeme) {
