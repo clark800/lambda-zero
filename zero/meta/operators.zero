@@ -1,0 +1,58 @@
+leftAssociative := 0
+rightAssociative := 1
+nonAssociative := 2
+
+infix := 0
+prefix := 1
+openfix := 2
+closefix := 3
+
+reduceApply(operator, left, right) :=
+    newApplication(getTag(operator), left, right)
+reduceInfix(operator, left, right) :=
+    reduceApply(operator, reduceApply(operator, operator, left), right)
+
+syntax(rules) := rules.first
+collapse(rules) := rules.second
+ordering(rules) := rules.syntax.first
+fixity(rules) := rules.syntax.second
+precedence(rules) := rules.ordering.first
+associativity(rules) := rules.ordering.second
+leftPrecedence(rules) := rules.precedence.first
+rightPrecedence(rules) := rules.precedence.second
+
+getOperatorWithRules(operator) := (
+    spaceRules := ((((20, 20), leftAssociative), infix), reduceApply)
+    isSpace(operator) ? (operator, spaceRules)
+    operators := [
+        ("\0", ((((0, 0), leftAssociative), infix), reduceInfix)),
+        ("\n", ((((2, 2), rightAssociative), infix), reduceApply)),
+        ("+", ((((16, 16), leftAssociative), infix), reduceInfix)),
+        ("*", ((((17, 17), leftAssociative), infix), reduceInfix))
+    ]
+    defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
+    rules := operators.lookup(getLexeme(getTag(operator))) ?: defaultRules
+    (operator, rules)
+)
+
+collapseOperator(operatorWithRules, left, right) := (
+    (operator, rules) := operatorWithRules
+    rules.collapse(operator, left, right)
+)
+
+isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (
+    (leftOperator, leftRules) := leftOperatorWithRules
+    (rightOperator, rightRules) := rightOperatorWithRules
+
+    leftRules.rightPrecedence = rightRules.leftPrecedence /\
+        leftRules.associativity = nonAssociative ?
+            syntaxError("operator is non-associative", leftOperator)
+
+    leftRules.rightPrecedence = rightRules.leftPrecedence /\
+        rightRules.associativity = nonAssociative ?
+            syntaxError("operator is non-associative", leftOperator)
+
+    rightRules.associativity = rightAssociative ?
+        leftRules.rightPrecedence > rightRules.leftPrecedence
+    leftRules.rightPrecedence >= rightRules.leftPrecedence
+)

@@ -1,0 +1,4 @@
+
+//main(input) := showList(scan(input).map(showTag))
+//main(input) := showList(lex(input).map(showAST))
+main(input) := showAST(parse(input))

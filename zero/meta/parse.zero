@@ -1,0 +1,47 @@
+parse(input) := (
+    pushOperand(stack, token) := (
+        stack.isEmpty \/ isOperator(stack[0]) ? token :: stack
+        newApplication(getTag(token), stack[0], token) :: (--stack)
+    )
+
+    shouldCollapseStack(collapser, stack) := (
+        right := stack[0]
+        isOperator(right) ? false
+        operator := stack[1]
+        !isOperator(operator) \/ isEOF(operator) ? false
+        operatorWithRules := getOperatorWithRules(operator)
+        (_, rules) := operatorWithRules
+        left := stack[2]
+        isOperator(left) /\ rules.fixity != openfix /\ rules.fixity != prefix ?
+            false
+        isHigherPrecedence(operatorWithRules, getOperatorWithRules(collapser))
+    )
+
+    collapseStack(stack) := (
+        operatorWithRules := getOperatorWithRules(stack[1])
+        collapseOperator(operatorWithRules, stack[2], stack[0]) :: stack.drop(3)
+    )
+
+    collapseLeftOperand(stack, collapser) :=
+        collapseStack.while(shouldCollapseStack(collapser), stack)
+
+    pushOperator(stack, operator) := (
+        // ignore spaces before operators
+        stack' := isSpace(stack[0]) /\ !isOpenParen(operator) ? --stack || stack
+        // ignore spaces and newlines after operators
+        (isSpace(operator) \/ isNewline(operator)) /\ isOperator(stack'[0]) ?
+            stack'
+        isEOF(operator) ?
+            collapseLeftOperand(stack'.dropWhile(isNewline), operator)
+        operator :: collapseLeftOperand(stack', operator)
+    )
+
+    pushToken(stack, token) := isOperator(token) ?
+        pushOperator(stack, token) || pushOperand(stack, token)
+    // parser state is the pair (stack, tokens), similar to a list split
+    // except that the left side has been structured
+    // shiftToken is a state -> state transformer
+    shiftToken((stack, tokens)) := (pushToken(stack, tokens[0]), --tokens)
+    tokens := lex(input ++ [0])
+    head(first(shiftToken.until(isEmpty <> second, ([eof], tokens))))
+)

@@ -1,0 +1,18 @@
+#!/bin/bash -e
+# use bash process substitution to prepend prelude to source file
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# read input first to check for errors accessing files
+declare -a files=(
+    "../prelude.zero"
+    "scan.zero"
+    "ast.zero"
+    "lex.zero"
+    "operators.zero"
+    "parse.zero"
+    "serialize.zero"
+    "interpret.zero"
+)
+chmod -f +w meta.tmp || true
+cat ${files[@]} > meta.tmp
+chmod -w meta.tmp
+"$DIR/../../main" meta.tmp

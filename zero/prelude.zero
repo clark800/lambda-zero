@@ -83,11 +83,13 @@ head(xs) := isEmpty(xs) ? error("head: empty list") || first(xs)
 drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
 xs[n] := head(xs.drop(n))          // get element of list at index
-segment(xs, start, end) := xs.drop(start).take(end - start)
+slice(xs, start, end) := xs.drop(start).take(end - start)
 xs =:= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
     xs[0] = ys[0] /\ --xs =:= --ys       // integer list equality
 last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
 dropLast(xs) := xs =:= [] \/ --xs =:= [] ? [] || xs[0] :: dropLast(--xs)
+dropWhile(ns, p) := (--).while(p <> head, ns)
+takeWhile(ns, p) := ns.isEmpty \/ !p(ns[0]) ? [] || ns[0] :: takeWhile(--ns, p)
 
 // syntactic helpers
 xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)
@@ -122,14 +124,15 @@ reverse(xs) := xs.foldl(`(::), [])
 interleave(xs, y) := xs ::? x -> xs' ->
     xs' =:= [] ? xs || x :: y :: interleave(xs', y)
 joinWith(xss, ys) := join(interleave(xss, ys))
+bisect(xs, p) := (xs | p, xs | (!) <> p)
 
 // generic list reducers
 any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
 all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
 // find first element satisfying p, or return nothing
 find(xs, p) := xs =:= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
-lookup(nxs, n) := nxs =:= [] ? nothing ||
-    nxs[0].first = n ? just(nxs[0].second) || (--nxs).lookup(n)
+lookup(nxs, key) := nxs =:= [] ? nothing ||
+    nxs[0].first =:= key ? just(nxs[0].second) || (--nxs).lookup(key)
 
 // integer list basics
 n : ns := ns.any((= n))
@@ -147,7 +150,7 @@ ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 startsWith(ns, ks) := zipWith(ns, (=), ks).all()
 
 split(ns, p) := (
-    ns =:= [] ? ([], [])
+    ns.isEmpty ? ([], [])
     p(ns) ? ([], ns)
     (before, after) := (--ns).split(p)
     (ns[0] :: before, after)
@@ -156,28 +159,29 @@ split(ns, p) := (
 splitAt(xs, n) := (xs.take(n), xs.drop(n))
 splitWhen(ns, p) := ns.split(p <> head)
 splitOn(ns, delimiter) := ns.split(startsWith(delimiter))
-splitAfter(ns, p) := ns.splitWhen((!) <> p)
 
-splitWhile(ns, p, splitter) := ns =:= [] \/ !p(ns) ? ([], ns) || (
+splitWith(ns, splitter) := (
     (before, after) := splitter(ns)
-    (before', after') := after.splitWhile(p, splitter)
+    before.isEmpty ? ([], ns)
+    (before', after') := after.splitWith(splitter)
     (before ++ before', after')
 )
 
-slice(ns, splitter) := ns =:= [] ? [] || (
+partition(ns, splitter) := (
+    ns.isEmpty ? []
     (before, after) := splitter(ns)
-    before :: slice(after, splitter)
+    before :: partition(after, splitter)
 )
 
 dropIf(ns, p) := ns =:= [] ? [] || p(ns[0]) ? --ns || ns
-dropWhile(ns, p) := (--).while(p <> head, ns)
 dropPrefix(ns, prefix) := ns.startsWith(prefix) ? ns.drop(#prefix) || ns
 
-sliceWhen(ns, p) := ns.slice(`splitWhen(p) <> `dropIf(p))
-sliceOn(ns, delimiter) := ns.slice(`splitOn(delimiter) <> `dropPrefix(delimiter))
+partitionBy(ns, p) := ns.partition(`splitWhen(p) <> `dropIf(p))
+partitionOn(ns, delimiter) := ns.partition(
+    `splitOn(delimiter) <> `dropPrefix(delimiter))
 
-words(ns) := ns.sliceOn(" ") | (!) <> isEmpty
-lines(ns) := ns.sliceOn("\n")
+words(ns) := ns.partitionOn(" ") | (!) <> isEmpty
+lines(ns) := ns.partitionOn("\n")
 
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)
 

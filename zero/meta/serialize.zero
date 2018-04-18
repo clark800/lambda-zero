@@ -1,0 +1,18 @@
+showLexeme(lexeme) := (
+    lexeme.isEmpty \/ lexeme[0] = 0 ? "\\0"
+    lexeme[0] = '\n' ? "\\n"
+    lexeme
+)
+showToken(token) := showLexeme(getLexeme(getTag(token)))
+showAST(node) := (
+    node.isReference?
+        showToken(node)
+    node.isLambda?
+        showToken(getParameter(node)) ++ " -> " ++ showAST(getBody(node))
+    node.isApplication?
+        "(" ++ showAST(getFunction(node)) ++ " " ++
+               showAST(getArgument(node)) ++ ")"
+    node.isInteger?
+        "#" ++ showInteger(getData(node))
+    showToken(node)
+)

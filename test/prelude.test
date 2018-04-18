@@ -246,7 +246,7 @@ parseInteger("-1234567890", 10)
 (1..10)[5]
 6
 ===============================================================================
-main(input) := showIntegerList((0..10).segment(3, 7))
+main(input) := showIntegerList((0..10).slice(3, 7))
 [3, 4, 5, 6]
 ===============================================================================
 main(input) := showIntegerPairList((1..3) ** (2..4))
@@ -264,13 +264,13 @@ main(input) := showStringPair(" 12 3  4 ".split((= '3') <> head))
 main(input) := showStringPair(" 12 3  4 ".splitOn("3"))
 (" 12 ", "3  4 ")
 ===============================================================================
-main(input) := showStringList(" 12 3  4 ".sliceOn(" "))
+main(input) := showStringList(" 12 3  4 ".partitionOn(" "))
 ["12", "3", "", "4", ""]
 ===============================================================================
-main(input) := showStringList("12 3  4".sliceWhen((= ' ')))
+main(input) := showStringList("12 3  4".partitionBy((= ' ')))
 ["12", "3", "", "4"]
 ===============================================================================
-main(input) := showStringList("a..b...c....d..".sliceOn(".."))
+main(input) := showStringList("a..b...c....d..".partitionOn(".."))
 ["a", "b", ".c", "", "d", ""]
 ===============================================================================
 main(input) := showIntegerListList(words(" 12 3  4 "))
@@ -285,7 +285,7 @@ main(input) := showIntegerList(primes.take(5).map((0 -)))
 main(input) := showIntegerList(primes.take(10))
 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 ===============================================================================
-zip(naturals, primes.take(10)).lookup(7) ?: -1
+zip(naturals.map(showInteger), primes.take(10)).lookup("7") ?: -1
 19
 ===============================================================================
 main(input) := showIntegerPairList(zip(naturals, primes.take(8)))
