@@ -7,34 +7,28 @@ isOperatorCharacter(n) := isPunctuation(n) /\ !isDelimiterCharacter(n) /\
 isComment(lexeme) := lexeme.startsWith("//")
 isElided(lexeme) := isBlank(lexeme[0]) \/ isComment(lexeme)
 
-breakQuoteCharacter(ns) := (
+splitQuoteCharacter(ns) := (
     ns.isEmpty? ([], [])
-    (ns[0] = '\\' /\ !(--ns =:= []))? ns.splitAt(2)
-    ns.splitAt(1)
-)
-
-breakWith(ns, spanner, p) := (
-    ns =:= [] ? ([], [])
-    (a, b) := spanner(ns)
-    p(a) ? ([], ns)
-    (c, d) := b.breakWith(spanner, p)
-    (a ++ c, d)
+    n := (ns[0] = '\\' /\ !(--ns =:= []))? 2 || 1
+    ns.splitAt(n)
 )
 
 shiftSplit((a, b)) := b =:= [] ? (a, b) || (a ++ [b[0]], --b)
 
-spanQuote(ns, quote) := (
-    (a, b) := (--ns).breakWith(breakQuoteCharacter, (= quote) <> head)
+splitQuote(ns) := (
+    quote := ns[0]
+    (a, b) := (--ns).splitWhile((!= quote) <> head, splitQuoteCharacter)
     shiftSplit((quote :: a, b))
 )
 
-splitLexeme(ns) := ns ::? n -> ns' -> (
-    isComment(ns)? ns.break((= '\n'))
-    n.isBlank? ns.span(isBlank)
-    n.isQuote? ns.spanQuote(n)
-    n.isOperandCharacter? ns.span(isOperandCharacter)
-    n.isOperatorCharacter? ns.span(isOperatorCharacter)
-    ([n], ns')
+splitLexeme(ns) := (
+    ns.isEmpty? []
+    ns.isComment? ns.splitOn("\n")
+    ns[0].isBlank? ns.splitAfter(isBlank)
+    ns[0].isQuote? splitQuote(ns)
+    ns[0].isOperandCharacter? ns.splitAfter(isOperandCharacter)
+    ns[0].isOperatorCharacter?  ns.splitAfter(isOperatorCharacter)
+    ([ns[0]], --ns)
 )
 
 advanceLocation(location, lexeme) := (
@@ -44,7 +38,7 @@ advanceLocation(location, lexeme) := (
 )
 
 splitLexemes(string, splitter, location) := (
-    string =:= [] ? []
+    string.isEmpty? []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
     (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
