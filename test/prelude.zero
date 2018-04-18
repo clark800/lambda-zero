@@ -9,26 +9,26 @@
 // **      pair of * and *
 
 // universal
-undefined := error("undefined")  // runtime error if this is evaluated
-identity(x) := x                 // identity function
-constant(x) := _ -> x            // return value does not depend on parameter
 x.f := f(x)                      // uniform function call syntax
 f || x := f(x)                   // low precedence application
 f <> g := x -> f(g(x))           // function composition
+`f(x, y) := f(y, x)              // flip order of first two arguments of function
+id(x) := x                       // identity function
+constant(x) := _ -> x            // return value does not depend on parameter
+on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
+mirror(f)(x) := f(x, x)          // convert binary function to unary function
 
 // boolean logic
 true(x, y) := x
 false(x, y) := y
 if(c, x, y) := c(x, y)
 (?) := if
-and(b, c) := b ? c || false
-or(b, c) := b ? true || c
+
 !b := b ? false || true
-xor(b, c) := b ? !c || c
+b /\ c := b ? c || false
+b \/ c := b ? true || c
 b => c := b ? c || true
 b <=> c := b ? c || !c
-(/\) := and
-(\/) := or
 
 // pairs
 (,)(x, y)(f) := f(x, y)     // this definition is for (,) and sections
@@ -37,9 +37,6 @@ second(xy) := xy(false)
 swap((x, y)) := (y, x)
 
 // function methods
-`f(x, y) := f(y, x)      // flip order of first two arguments of function
-mirror(f)(x) := f(x, x)        // convert binary function to unary function
-on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 f^^(n)(z) := n < 0 ? error("(^^): negative") || n = 0 ? z || f^^(n - 1)(f(z))
 until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
@@ -54,13 +51,14 @@ nothing := z -> f -> z
 just(x) := z -> f -> f(x)
 isNothing(mx) := mx(true, constant(false))
 isJust(mx) := mx(false, constant(true))
-fromJust(mx) := mx(undefined, identity)
+fromJust(mx) := mx(error("fromJust: not a just"), id)
 maybe(x, f, mx) := mx(x, f)
 mx ?. f := mx(nothing, f)                   // maybe chaining (bind)
-mx ?: x := mx(x, identity)                  // just value or default
+mx ?: x := mx(x, id)                        // just value or default
 
 // math
 abs(n) := n >= 0 ? n || -n
+sign(n) := n = 0 ? 0 || n > 0 ? 1 || -1
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
 mod(n, m) := n % m
@@ -81,13 +79,11 @@ x :: xs := (x, xs)                     // prepend element to list (cons)
 prepend := `(::)
 isEmpty(xs) := xs(_ -> _ -> false)
 head(xs) := isEmpty(xs) ? error("head: empty list") || first(xs)
-tail(xs) := isEmpty(xs) ? error("(--): empty list") || second(xs)
-(--) := tail
+--xs := isEmpty(xs) ? error("dropHead: empty list") || second(xs)
 drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
-slice(xs, start, end) := xs.drop(start).take(end - start)
-splitAt(xs, n) := (xs.take(n), xs.drop(n))
 xs[n] := head(xs.drop(n))          // get element of list at index
+segment(xs, start, end) := xs.drop(start).take(end - start)
 xs =:= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
     xs[0] = ys[0] /\ --xs =:= --ys       // integer list equality
 last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
@@ -121,8 +117,8 @@ zipWith(xs, f, ys) := xs =:= [] \/ ys =:= [] ? [] ||
     f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(first), xs.map(second))
-join(xss) := xss.foldr((++), [])       // concatenate list of lists
-reverse(xs) := xs.foldl(`(::), [])       // reverse a list
+join(xss) := xss.foldr((++), [])            // concatenate list of lists
+reverse(xs) := xs.foldl(`(::), [])
 interleave(xs, y) := xs ::? x -> xs' ->
     xs' =:= [] ? xs || x :: y :: interleave(xs', y)
 joinWith(xss, ys) := join(interleave(xss, ys))
@@ -130,8 +126,6 @@ joinWith(xss, ys) := join(interleave(xss, ys))
 // generic list reducers
 any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
 all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
-anyTrue(xs) := xs.any(identity)
-allTrue(xs) := xs.all(identity)
 // find first element satisfying p, or return nothing
 find(xs, p) := xs =:= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 lookup(nxs, n) := nxs =:= [] ? nothing ||
@@ -140,8 +134,6 @@ lookup(nxs, n) := nxs =:= [] ? nothing ||
 // integer list basics
 n : ns := ns.any((= n))
 n !: ns := !(n : ns)
-containsSorted(ns, n) := !(ns =:= []) /\ n >= ns[0] /\
-        (n = ns[0] \/ (--ns).containsSorted(n))
 
 // integer list constructors
 n .. m := n > m ? [] || n :: (n + 1 .. m)
@@ -151,31 +143,41 @@ sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (!= k))
 ns <: ms := ns.all((: ms))
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
-sortedDifference(ns, ms) := ns | (!) <> ms.containsSorted
 
-break(ns, p) := (
+startsWith(ns, ks) := zipWith(ns, (=), ks).all()
+
+split(ns, p) := (
     ns =:= [] ? ([], [])
-    p(ns[0]) ? ([], ns)
-    (before, after) := (--ns).break(p)
+    p(ns) ? ([], ns)
+    (before, after) := (--ns).split(p)
     (ns[0] :: before, after)
 )
 
-span(ns, p) := ns.break((!) <> p)
+splitAt(xs, n) := (xs.take(n), xs.drop(n))
+splitWhen(ns, p) := ns.split(p <> head)
+splitOn(ns, delimiter) := ns.split(startsWith(delimiter))
+splitAfter(ns, p) := ns.splitWhen((!) <> p)
 
-chop(ns, f) := ns =:= [] ? [] || (
-    (a, b) := f(ns)
-    a :: chop(b, f)
+splitWhile(ns, p, splitter) := ns =:= [] \/ !p(ns) ? ([], ns) || (
+    (before, after) := splitter(ns)
+    (before', after') := after.splitWhile(p, splitter)
+    (before ++ before', after')
 )
 
-split(ns, p) := (
-    (a, b) := ns.break(p)
-    a :: (b =:= [] ? [] || (--b).split(p))
+slice(ns, splitter) := ns =:= [] ? [] || (
+    (before, after) := splitter(ns)
+    before :: slice(after, splitter)
 )
 
-startsWith(ns, ks) := allTrue(zipWith(ns, (=), ks))
+dropIf(ns, p) := ns =:= [] ? [] || p(ns[0]) ? --ns || ns
+dropWhile(ns, p) := (--).while(p <> head, ns)
+dropPrefix(ns, prefix) := ns.startsWith(prefix) ? ns.drop(#prefix) || ns
 
-words(ns) := ns.split((= ' ')) | (!) <> isEmpty
-lines(ns) := ns.split((= '\n'))
+sliceWhen(ns, p) := ns.slice(`splitWhen(p) <> `dropIf(p))
+sliceOn(ns, delimiter) := ns.slice(`splitOn(delimiter) <> `dropPrefix(delimiter))
+
+words(ns) := ns.sliceOn(" ") | (!) <> isEmpty
+lines(ns) := ns.sliceOn("\n")
 
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)
 
@@ -188,24 +190,23 @@ maximum(ns) := ns.reducel(max)
 // infinite lists
 countFrom := iterate((+ 1))
 naturals := countFrom(0)
-squares := naturals.map(mirror(*))
 primes := (
     filterPrime(ns) := ns ::? n -> ns' ->
         n :: filterPrime(ns' | n' -> n' % n != 0)
     filterPrime(countFrom(2))
 )
 
-// character classes
+// ASCII character classes
 isUppercase(n) := n >= 'A' /\ n <= 'Z'
 isLowercase(n) := n >= 'a' /\ n <= 'z'
 isDigit(n) := n >= '0' /\ n <= '9'
 isQuote(n) := n = '"' \/ n = '\''
 isWhitespace(n) := n = ' ' \/ n >= '\t' /\ n <= '\r'
 isBlank(n) := n = ' ' \/ n = '\t'
-isControl(n) := n < 32 \/ n >= 127
+isControl(n) := n >= 0 /\ n < 32 \/ n = 127
 isAlphabetic(n) := isUppercase(n) \/ isLowercase(n)
 isAlphanumeric(n) := isAlphabetic(n) \/ isDigit(n)
-isPrintable(n) := !isControl(n)
+isPrintable(n) := n < 127 /\ !isControl(n)
 isGraphical(n) := isPrintable(n) /\ !isBlank(n)
 isPunctuation(n) := isGraphical(n) /\ !isAlphanumeric(n)
 
