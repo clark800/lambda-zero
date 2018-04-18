@@ -26,7 +26,8 @@ void printToken(Node* token, FILE* stream) {
 }
 
 bool isNameLexeme(const char* lexeme) {
-    return isOperandCharacter(lexeme[0]) && !isdigit(lexeme[0]);
+    // note: the quote case is only for internal code
+    return islower(lexeme[0]) || lexeme[0] == '_' ||  lexeme[0] == '\'';
 }
 
 bool isOperatorLexeme(const char* lexeme) {
@@ -96,6 +97,7 @@ long long parseInteger(const char* lexeme) {
 }
 
 Node* createToken(const char* lexeme) {
+    lexerErrorIf(isupper(lexeme[0]), lexeme, "names can't start with uppercase");
     if (lexeme[0] == '"')
         return newStringLiteral(lexeme);
     // single quoted operands are internal names while parsing internal code
