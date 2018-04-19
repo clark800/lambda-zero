@@ -1,0 +1,57 @@
+isDelimiterCharacter(n) := n : " \n\0,;`()[]{}"
+isReservedCharacter(n) := n : "{};@$"
+isOperandCharacter(n) := isAlphanumeric(n) \/ n = '_' \/ n = '\''
+isOperatorCharacter(n) := isPunctuation(n) /\ !isDelimiterCharacter(n) /\
+    !isOperandCharacter(n) /\ !isQuote(n) /\ !isReservedCharacter(n)
+
+isComment(lexeme) := lexeme.startsWith("//")
+isElided(lexeme) := isBlank(lexeme[0]) \/ isComment(lexeme)
+
+splitQuoteCharacter(quote, ns) := (
+    ns.isEmpty \/ ns[0] = quote ? ([], ns)
+    n := (ns[0] = '\\' /\ !(--ns =:= []))? 2 || 1
+    ns.splitAt(n)
+)
+
+shiftSplit((a, b)) := b =:= [] ? (a, b) || (a ++ [b[0]], --b)
+
+splitQuote(ns) := (
+    quote := ns[0]
+    (a, b) := (--ns).splitWith(splitQuoteCharacter(quote))
+    shiftSplit((quote :: a, b))
+)
+
+splitLexeme(ns) := (
+    ns.isEmpty? []
+    ns.isComment? ns.splitOn("\n")
+    ns[0].isBlank? ns.splitWhen((!) <> isBlank)
+    ns[0].isQuote? splitQuote(ns)
+    ns[0].isOperandCharacter? ns.splitWhen((!) <> isOperandCharacter)
+    ns[0].isOperatorCharacter? ns.splitWhen((!) <> isOperatorCharacter)
+    ([ns[0]], --ns)
+)
+
+advanceLocation(location, lexeme) := (
+    (line, column) := location
+    (lexeme[0] = '\n')? (line + 1, 1)
+    (line, column + length(lexeme))
+)
+
+splitLexemes(string, splitter, location) := (
+    string.isEmpty? []
+    (lexeme, remaining) := splitter(string)
+    nextLocation := advanceLocation(location, lexeme)
+    (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
+)
+
+scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |
+    (!) <> isElided <> first
+
+showTag(tag) := showPair((showString(tag.first), showIntegerPair(tag.second)))
+
+getLexeme(tag) := tag.first
+getLine(tag) := tag.second.first
+getColumn(tag) := tag.second.second
+
+showPrettyTag(tag) := "'" ++ getLexeme(tag) ++ "' at line " ++
+    showInteger(getLine(tag)) ++ " column " ++ showInteger(getColumn(tag))

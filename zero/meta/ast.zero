@@ -1,0 +1,36 @@
+cREFERENCE := 0
+cLAMBDA := 1
+cAPPLICATION := 2
+cBUILTIN := 3
+cINTEGER := 4
+cGLOBAL := 5
+
+cNAME := -1
+cOPERATOR := -2
+
+newReference(tag, debruijn) := ((tag, cREFERENCE), debruijn)
+newName(tag) := newReference(tag, cNAME)
+newOperator(tag) := newReference(tag, cOPERATOR)
+newLambda(tag, parameter, body) := ((tag, cLAMBDA), (parameter, body))
+newApplication(tag, left, right) := ((tag, cAPPLICATION), (left, right))
+newBuiltin(tag, code) := ((tag, cBUILTIN), code)
+newInteger(tag, value) := ((tag, cINTEGER), value)
+newGlobal(tag, code) := ((tag, cGLOBAL), code)
+
+getTag(node) := node.first.first
+getType(node) := node.first.second
+getData(node) := node.second
+getParameter(node) := getData(node).first
+getBody(node) := getData(node).second
+getFunction(node) := getData(node).first
+getArgument(node) := getData(node).second
+
+isReference(node) := node.getType = cREFERENCE
+isName(node) := isReference(node) /\ node.getData = cNAME
+isOperator(node) := isReference(node) /\ node.getData = cOPERATOR
+isSymbol(node) := isName(node) \/ isOperator(node)
+isLambda(node) := node.getType = cLAMBDA
+isApplication(node) := node.getType = cAPPLICATION
+isBuiltin(node) := node.getType = cBUILTIN
+isInteger(node) := node.getType = cINTEGER
+isGlobal(node) := node.getType = cGLOBAL
