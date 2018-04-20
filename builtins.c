@@ -67,8 +67,10 @@ bool isStrictArgument(Node* builtin, unsigned int i) {
 
 Hold* evaluateError(Closure* builtin, Closure* message) {
     STDERR = true;
-    printRuntimeError("hit", builtin);
-    fputc((int)'\n', stderr);
+    if (!TEST) {
+        printRuntimeError("hit", builtin);
+        fputc((int)'\n', stderr);
+    }
     int location = getLocation(getTerm(builtin));
     Node* exit = newBuiltin(location, EXIT);
     Node* print = newApplication(location, getTerm(message), PRINT);

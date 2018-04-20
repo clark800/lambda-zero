@@ -106,7 +106,7 @@ fromJust(just(10))
 10
 ===============================================================================
 fromJust(nothing)
-\nRuntime error: hit 'error'\n\nfromJust: not a just
+fromJust: not a just
 ===============================================================================
 isJust(just(1))
 (x -> (y -> x))

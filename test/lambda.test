@@ -1,6 +1,6 @@
 ===============================================================================
 ((
-Syntax error: missing close for '('
+Syntax error: missing close for '(' at line 1 column 2
 ===============================================================================
 (x -> x)
 (x -> x)
@@ -51,14 +51,14 @@ a -> b -> c -> d -> (a (\n b \n c\n) \n d)
 (a -> a)
 ===============================================================================
 x
-Syntax error: undefined symbol 'x'
+Syntax error: undefined symbol 'x' at line 1 column 1
 ===============================================================================
 (x -> (x -> x))
-Syntax error: symbol already defined 'x'
+Syntax error: symbol already defined 'x' at line 1 column 8
 ===============================================================================
 (0 -> 5) 4
-Syntax error: invalid parameter '0'
+Syntax error: invalid parameter '0' at line 1 column 2
 ===============================================================================
 (->)
-Syntax error: operator cannot be parenthesized '->'
+Syntax error: operator cannot be parenthesized '->' at line 1 column 2
 ===============================================================================

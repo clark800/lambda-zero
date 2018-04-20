@@ -1,4 +1,6 @@
 
+execute(ast) := evaluate((ast, []), [])
 //main(input) := showList(scan(input).map(showTag))
 //main(input) := showList(lex(input).map(showAST))
-main(input) := showAST(parse(input))
+//main(input) := showAST(parse(input))
+main(input) := serialize(execute(parse(input)))

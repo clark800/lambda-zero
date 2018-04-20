@@ -3,16 +3,19 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # read input first to check for errors accessing files
 declare -a files=(
-    "../prelude.zero"
-    "scan.zero"
-    "ast.zero"
-    "lex.zero"
-    "operators.zero"
-    "parse.zero"
-    "serialize.zero"
-    "interpret.zero"
+    "$DIR/../prelude.zero"
+    "$DIR/scan.zero"
+    "$DIR/ast.zero"
+    "$DIR/lex.zero"
+    "$DIR/serialize.zero"
+    "$DIR/operators.zero"
+    "$DIR/builtins.zero"
+    "$DIR/bind.zero"
+    "$DIR/parse.zero"
+    "$DIR/evaluate.zero"
+    "$DIR/interpret.zero"
 )
 chmod -f +w meta.tmp || true
 cat ${files[@]} > meta.tmp
 chmod -w meta.tmp
-"$DIR/../../main" meta.tmp
+"$DIR/../../main" $* meta.tmp
