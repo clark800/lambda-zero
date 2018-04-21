@@ -9,31 +9,64 @@ parse(input) := (
         isOperator(right) ? false
         operator := stack[1]
         !isOperator(operator) \/ isEOF(operator) ? false
-        operatorWithRules := getOperatorWithRules(operator)
-        (_, rules) := operatorWithRules
+        rules := getRules(operator)
         left := stack[2]
         isOperator(left) /\ rules.fixity != openfix /\ rules.fixity != prefix ?
             false
-        isHigherPrecedence(operatorWithRules, getOperatorWithRules(collapser))
+        isHigherPrecedence((operator, rules), (collapser, getRules(collapser)))
     )
 
     collapseStack(stack) := (
-        operatorWithRules := getOperatorWithRules(stack[1])
-        collapseOperator(operatorWithRules, stack[2], stack[0]) :: stack.drop(3)
+        rules := getRules(stack[1])
+        rules.collapse(stack[1], stack[2], stack[0]) :: stack.drop(3)
     )
 
-    collapseLeftOperand(stack, collapser) :=
+    validateOperators(left, right) := (
+        leftRules := getRules(left)
+        isEOF(right) /\ leftRules.fixity = openfix ?
+            syntaxError("missing close for", left)
+        rightRules := getRules(right)
+        rightRules.fixity = closefix /\ !isCloseParen(right) /\
+            leftRules.fixity != openfix ?
+                syntaxError("missing right argument to", left)
+        rightRules.fixity = infix /\ !isOpenParen(left) ?
+            syntaxError("missing left argument to", right)
+        ()
+    )
+
+    validateOperator(stack, operator) :=
+        isOperator(stack[0]) ? validateOperators(stack[0], operator) || ()
+
+    collapseLeftOperand(stack, collapser) := (
+        validateOperator(stack, collapser)
         collapseStack.while(shouldCollapseStack(collapser), stack)
+    )
+
+    collapseBracket(stack, close, rules) := (
+        isEOF(stack[0]) ? syntaxError("missing open for", close)
+        rules.fixity = openfix ?
+            pushOperand(--stack, rules.collapse(close, stack[0], eof))
+        isEOF(stack[1]) ? syntaxError("missing open for", close)
+        pushOperand(stack.drop(2), rules.collapse(close, stack[1], stack[0]))
+    )
+
+    pushOperator'(stack, operator) := (
+        // ignore spaces and newlines after operators
+        (isSpace(operator) \/ isNewline(operator)) /\ isOperator(stack[0]) ?
+            stack
+        isEOF(operator) ? collapseLeftOperand(stack.dropIf(isNewline), operator)
+        rules := getRules(operator)
+        rules.fixity = closefix ? (
+            stack' := collapseLeftOperand(stack.dropIf(isNewline), operator)
+            collapseBracket(stack', operator, rules)
+        )
+        operator :: collapseLeftOperand(stack, operator)
+    )
 
     pushOperator(stack, operator) := (
         // ignore spaces before operators
-        stack' := isSpace(stack[0]) /\ !isOpenParen(operator) ? --stack || stack
-        // ignore spaces and newlines after operators
-        (isSpace(operator) \/ isNewline(operator)) /\ isOperator(stack'[0]) ?
-            stack'
-        isEOF(operator) ?
-            collapseLeftOperand(stack'.dropWhile(isNewline), operator)
-        operator :: collapseLeftOperand(stack', operator)
+        pushOperator'(
+            stack.dropIf((!isOpenParen(operator) /\) <> isSpace), operator)
     )
 
     pushToken(stack, token) := isOperator(token) ?
@@ -43,5 +76,5 @@ parse(input) := (
     // shiftToken is a state -> state transformer
     shiftToken((stack, tokens)) := (pushToken(stack, tokens[0]), --tokens)
     tokens := lex(input ++ [0])
-    head(first(shiftToken.until(isEmpty <> second, ([eof], tokens))))
+    bind(head(first(shiftToken.until(isEmpty <> second, ([eof], tokens)))))
 )

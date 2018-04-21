@@ -133,6 +133,14 @@ all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
 find(xs, p) := xs =:= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 lookup(nxs, key) := nxs =:= [] ? nothing ||
     nxs[0].first =:= key ? just(nxs[0].second) || (--nxs).lookup(key)
+indexOf(nss, key) := (
+    indexOf'(list, depth) := (
+        list =:= [] ? nothing
+        list[0] =:= key ? just(depth)
+        indexOf'(--list, depth + 1)
+    )
+    indexOf'(nss, 0)
+)
 
 // integer list basics
 n : ns := ns.any((= n))

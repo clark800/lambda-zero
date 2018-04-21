@@ -45,25 +45,25 @@
 9223372036854775807
 ===============================================================================
 9223372036854775808
-Syntax error: magnitude of integer is too large '9223372036854775808'
+Syntax error: magnitude of integer is too large '9223372036854775808' at line 1 column 1
 ===============================================================================
 -9223372036854775807
 -9223372036854775807
 ===============================================================================
 -9223372036854775808
-Syntax error: magnitude of integer is too large '9223372036854775808'
+Syntax error: magnitude of integer is too large '9223372036854775808' at line 1 column 2
 ===============================================================================
 9223372036854775807 + 1
-\nRuntime error: integer overflow in '+'
+\nRuntime error: integer overflow in '+' at line 1 column 21
 ===============================================================================
 9223372036854775807 + 0
 9223372036854775807
 ===============================================================================
 -9223372036854775807 - 1
-\nRuntime error: integer overflow in '-'
+\nRuntime error: integer overflow in '-' at line 1 column 22
 ===============================================================================
 1 / 0
-\nRuntime error: divide by zero in '/'
+\nRuntime error: divide by zero in '/' at line 1 column 3
 ===============================================================================
 (-5) % (-2)
 -1
@@ -72,16 +72,16 @@ Syntax error: magnitude of integer is too large '9223372036854775808'
 0
 ===============================================================================
 2 * (3 + 4
-Syntax error: missing close for '('
+Syntax error: missing close for '(' at line 1 column 5
 ===============================================================================
 +
-Syntax error: missing left argument to '+'
+Syntax error: missing left argument to '+' at line 1 column 1
 ===============================================================================
 (+)
-\nRuntime error: missing argument to '+'
+\nRuntime error: missing argument to '+' at line 1 column 2
 ===============================================================================
 1 + 2 3
-\nRuntime error: extra argument '3'
+\nRuntime error: extra argument '3' at line 1 column 7
 ===============================================================================
 5 - - 2
 7
@@ -93,7 +93,7 @@ Syntax error: missing left argument to '+'
 7
 ===============================================================================
 5 - * 2
-Syntax error: missing left argument to '*'
+Syntax error: missing left argument to '*' at line 1 column 5
 ===============================================================================
 (!x := -x) ((+) !2!3)
 -5
@@ -105,20 +105,20 @@ Syntax error: missing left argument to '*'
 1
 ===============================================================================
 (+ +)
-Syntax error: missing left argument to '+'
+Syntax error: missing left argument to '+' at line 1 column 4
 ===============================================================================
 (+ + +)
-Syntax error: missing left argument to '+'
+Syntax error: missing left argument to '+' at line 1 column 4
 ===============================================================================
 (! +)
-Syntax error: missing left argument to '+'
+Syntax error: missing left argument to '+' at line 1 column 4
 ===============================================================================
 (+ !)
-Syntax error: invalid operator in section '!'
+Syntax error: invalid operator in section '!' at line 1 column 4
 ===============================================================================
 1+2-3+4-5+6
 5
 ===============================================================================
 1 <= 2 <= 3
-Syntax error: operator is non-associative '<='
+Syntax error: operator is non-associative '<=' at line 1 column 3
 ===============================================================================

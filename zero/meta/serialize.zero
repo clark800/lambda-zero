@@ -3,16 +3,41 @@ showLexeme(lexeme) := (
     lexeme[0] = '\n' ? "\\n"
     lexeme
 )
+
 showToken(token) := showLexeme(getLexeme(getTag(token)))
+
 showAST(node) := (
     node.isReference?
-        showToken(node)
+        showToken(node) ++ "{" ++ showInteger(getData(node)) ++ "}"
     node.isLambda?
-        showToken(getParameter(node)) ++ " -> " ++ showAST(getBody(node))
+        "(" ++ showToken(getParameter(node)) ++ " -> " ++
+               showAST(getBody(node)) ++ ")"
     node.isApplication?
         "(" ++ showAST(getFunction(node)) ++ " " ++
                showAST(getArgument(node)) ++ ")"
     node.isInteger?
         "#" ++ showInteger(getData(node))
+    node.isBuiltin?
+        "$" ++ showToken(node)
     showToken(node)
+)
+
+serialize(closure) := (
+    serialize'(closure', depth) := (
+        (term, environment) := closure'
+        term.isApplication ?
+            "(" ++ serialize'((getFunction(term), environment), depth) ++
+            " " ++ serialize'((getArgument(term), environment), depth) ++ ")"
+        term.isLambda ?
+            "(" ++ showToken(getParameter(term)) ++ " -> " ++
+            serialize'((getBody(term), environment), depth + 1) ++ ")"
+        term.isReference ? (
+            debruijn := getData(term)
+            debruijn >= depth ? serialize'(environment[debruijn - depth], 0)
+            showToken(term)
+        )
+        term.isInteger ? showInteger(getData(term))
+        showToken(term)
+    )
+    serialize'(closure, 0)
 )

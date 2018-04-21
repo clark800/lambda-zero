@@ -14,11 +14,10 @@ cY := newName(("y", (0, 0)))
 cZ := newName(("z", (0, 0)))
 eof := newOperator(("\0", (0, 0)))
 
-newNil(tag) :=
-    newLambda(tag, cZ,
-        newLambda(getTag(cX), cX,
-            newLambda(getTag(cY), cY,
-                newReference(getTag(cX), 2))))
+newTrue(tag) := newLambda(tag, cX, newLambda(tag, cY, newReference(tag, 1)))
+newFalse(tag) := newLambda(tag, cX, newLambda(tag, cY, newReference(tag, 0)))
+newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
+newNil(tag) := newLambda(tag, cZ, newTrue(tag))
 
 prependList(character, list) :=
     newLambda(getTag(list), cX,
@@ -90,7 +89,7 @@ showLexemeAndLocationLine(tag, quote) :=
     quote ++ getLexeme(tag) ++ quote ++ " at " ++ showLocation(tag) ++ "\n"
 
 syntaxError(message, token) :=
-    error("Error: " ++ message ++ " " ++
-        showLexemeAndLocationLine(getTag(token)), "'")
+    error("Syntax error: " ++ message ++ " " ++
+        showLexemeAndLocationLine(getTag(token), "'"))
 
 lex(string) := scan(string).map(createToken)

@@ -1,0 +1,22 @@
+bind(root) := (
+    bind'(node, parameters) := (
+        node.isLambda ? (
+            parameter := getLexeme(getTag(getParameter(node)))
+            newBody := bind'(getBody(node), parameter :: parameters)
+            newLambda(getTag(node), getParameter(node), newBody)
+        )
+        node.isApplication ? (
+            newFunction := bind'(getFunction(node), parameters)
+            newArgument := bind'(getArgument(node), parameters)
+            newApplication(getTag(node), newFunction, newArgument)
+        )
+        node.isSymbol ? (
+            lexeme := getLexeme(getTag(node))
+            getBuiltin(node)?.(x -> just(newBuiltin(getTag(node), x))) ?:
+                newReference(getTag(node), parameters.indexOf(lexeme) ?:
+                syntaxError("undefined symbol", node))
+        )
+        node
+    )
+    bind'(root, [])
+)

@@ -1,9 +1,9 @@
 ==========================================================================
 [1 +]
-Syntax error: missing right argument to '+'
+Syntax error: missing right argument to '+' at line 1 column 4
 ==========================================================================
 1 + (1, 2)
-\nRuntime error: expected integer argument to '+'
+\nRuntime error: expected integer argument to '+' at line 1 column 3
 ==========================================================================
 ()
 (, -> ,)
@@ -12,19 +12,19 @@ Syntax error: missing right argument to '+'
 8
 ==========================================================================
 )
-Syntax error: missing open for ')'
+Syntax error: missing open for ')' at line 1 column 1
 ==========================================================================
 1)
-Syntax error: missing open for ')'
+Syntax error: missing open for ')' at line 1 column 2
 ==========================================================================
 ((a, b) -> a + b)((1, 2))
 3
 ==========================================================================
 (() -> 1) 2
-Syntax error: invalid parameter '('
+Syntax error: invalid parameter '(' at line 1 column 2
 ==========================================================================
 ((a, b, c) -> 1) 2
-Syntax error: invalid parameter '('
+Syntax error: invalid parameter '(' at line 1 column 2
 ==========================================================================
 f(x, y) := x + y \n f (1, 2)
 (y -> ((+ (, -> ((, 1) 2))) y))
@@ -48,5 +48,5 @@ f(x, y) := x + y \n f (1, 2)
 3
 ==========================================================================
 A(x) := x * x \n A(2)
-Syntax error: names can't start with uppercase 'A'
+Syntax error: names can't start with uppercase 'A' at line 1 column 1
 ==========================================================================

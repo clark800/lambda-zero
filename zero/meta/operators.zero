@@ -11,6 +11,12 @@ reduceApply(operator, left, right) :=
     newApplication(getTag(operator), left, right)
 reduceInfix(operator, left, right) :=
     reduceApply(operator, reduceApply(operator, operator, left), right)
+reduceLambda(operator, left, right) := newLambda(getTag(operator), left, right)
+reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
+reduceParentheses(close, open, contents) := (
+    !isOpenParen(open) ? syntaxError("missing open for", close)
+    contents
+)
 
 syntax(rules) := rules.first
 collapse(rules) := rules.second
@@ -21,23 +27,19 @@ associativity(rules) := rules.ordering.second
 leftPrecedence(rules) := rules.precedence.first
 rightPrecedence(rules) := rules.precedence.second
 
-getOperatorWithRules(operator) := (
-    spaceRules := ((((20, 20), leftAssociative), infix), reduceApply)
-    isSpace(operator) ? (operator, spaceRules)
+getRules(operator) := (
+    isSpace(operator) ? ((((20, 20), leftAssociative), infix), reduceApply)
     operators := [
-        ("\0", ((((0, 0), leftAssociative), infix), reduceInfix)),
+        ("\0", ((((0, 0), leftAssociative), closefix), reduceInfix)),
+        ("(", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
+        (")", ((((0, 22), rightAssociative), closefix), reduceParentheses)),
         ("\n", ((((2, 2), rightAssociative), infix), reduceApply)),
+        ("->", ((((5, 5), rightAssociative), infix), reduceLambda)),
         ("+", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("*", ((((17, 17), leftAssociative), infix), reduceInfix))
     ]
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
-    rules := operators.lookup(getLexeme(getTag(operator))) ?: defaultRules
-    (operator, rules)
-)
-
-collapseOperator(operatorWithRules, left, right) := (
-    (operator, rules) := operatorWithRules
-    rules.collapse(operator, left, right)
+    operators.lookup(getLexeme(getTag(operator))) ?: defaultRules
 )
 
 isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (
