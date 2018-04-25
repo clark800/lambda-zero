@@ -141,6 +141,7 @@ indexOf(nss, key) := (
     )
     indexOf'(nss, 0)
 )
+contains(nss, key) := isJust(nss.indexOf(key))
 
 // integer list basics
 n : ns := ns.any((= n))
@@ -155,7 +156,8 @@ deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (!= k))
 ns <: ms := ns.all((: ms))
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 
-startsWith(ns, ks) := zipWith(ns, (=), ks).all()
+startsWith(ns, ks) := ks.isEmpty ? true ||
+    ns.isEmpty \/ ns[0] != ks[0] ? false || startsWith(--ns, --ks)
 
 split(ns, p) := (
     ns.isEmpty ? ([], [])
@@ -166,7 +168,7 @@ split(ns, p) := (
 
 splitAt(xs, n) := (xs.take(n), xs.drop(n))
 splitWhen(ns, p) := ns.split(p <> head)
-splitOn(ns, delimiter) := ns.split(startsWith(delimiter))
+splitOn(ns, delimiter) := ns.split(`startsWith(delimiter))
 
 splitWith(ns, splitter) := (
     (before, after) := splitter(ns)

@@ -1,7 +1,14 @@
 bind(root) := (
+    isDefined(parameter, parameters) := (
+        // TODO: check if lexeme is a builtin
+        !(parameter =:= "_") /\ parameters.contains(parameter)
+    )
+
     bind'(node, parameters) := (
         node.isLambda ? (
             parameter := getLexeme(getTag(getParameter(node)))
+            isDefined(parameter, parameters) ?
+                syntaxError("symbol already defined", getParameter(node))
             newBody := bind'(getBody(node), parameter :: parameters)
             newLambda(getTag(node), getParameter(node), newBody)
         )

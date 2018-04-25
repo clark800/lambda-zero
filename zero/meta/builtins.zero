@@ -12,8 +12,16 @@ getBuiltin(builtin) := (
 
     builtins := [
         ("+", (2, makeIntegerBuiltin((+), newInteger))),
+        ("-", (2, makeIntegerBuiltin((-), newInteger))),
         ("*", (2, makeIntegerBuiltin((*), newInteger))),
-        ("=", (2, makeIntegerBuiltin((=), newBoolean)))
+        ("/", (2, makeIntegerBuiltin((/), newInteger))),
+        ("%", (2, makeIntegerBuiltin((%), newInteger))),
+        ("=", (2, makeIntegerBuiltin((=), newBoolean))),
+        ("!=", (2, makeIntegerBuiltin((!=), newBoolean))),
+        ("<", (2, makeIntegerBuiltin((<), newBoolean))),
+        (">", (2, makeIntegerBuiltin((>), newBoolean))),
+        ("<=", (2, makeIntegerBuiltin((<=), newBoolean))),
+        (">=", (2, makeIntegerBuiltin((>=), newBoolean)))
     ]
     builtins.lookup(getLexeme(getTag(builtin)))
 )

@@ -9,13 +9,31 @@ isOperatorLexeme(lexeme) :=
     isOperatorCharacter(lexeme[0]) \/ isDelimiterCharacter(lexeme[0])
 isIntegerLexeme(lexeme) := lexeme.all(isDigit)
 
+showLexeme(lexeme) := (
+    lexeme.isEmpty \/ lexeme[0] = 0 ? "\\0"
+    lexeme[0] = '\n' ? "\\n"
+    lexeme
+)
+
+showToken(token) := showLexeme(getLexeme(getTag(token)))
+
+showLocation(tag) :=
+    "line " ++ showNatural(getLine(tag)) ++
+    " column " ++ showNatural(getColumn(tag))
+
+showLexemeAndLocationLine(tag, quote) :=
+    quote ++ showLexeme(getLexeme(tag)) ++ quote ++
+        " at " ++ showLocation(tag) ++ "\n"
+
 cX := newName(("x", (0, 0)))
 cY := newName(("y", (0, 0)))
 cZ := newName(("z", (0, 0)))
 eof := newOperator(("\0", (0, 0)))
 
-newTrue(tag) := newLambda(tag, cX, newLambda(tag, cY, newReference(tag, 1)))
-newFalse(tag) := newLambda(tag, cX, newLambda(tag, cY, newReference(tag, 0)))
+newTrue(tag) := newLambda(tag, cX, newLambda(tag, cY,
+    newReference(getTag(cX), 1)))
+newFalse(tag) := newLambda(tag, cX, newLambda(tag, cY,
+    newReference(getTag(cY), 0)))
 newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
 newNil(tag) := newLambda(tag, cZ, newTrue(tag))
 
@@ -71,22 +89,29 @@ parseCharacterLiteral(tag) := (
     error("Error: invalid character literal " ++ showPrettyTag(tag))
 )
 
+createInteger(tag) := (
+    lexeme := getLexeme(tag)
+    maxInteger := "9223372036854775807"
+    integer := lexeme.dropIf((= '0'))
+    integer.length > maxInteger.length ?
+        error("Syntax error: magnitude of integer is too large " ++
+            showLexemeAndLocationLine(tag, "'"))
+    integer.length = maxInteger.length /\
+        zipWith(integer, (>), maxInteger).any() ?
+        error("Syntax error: magnitude of integer is too large " ++
+            showLexemeAndLocationLine(tag, "'"))
+    newInteger(tag, parseInteger(lexeme, 10))
+)
+
 createToken(tag) := (
     lexeme := getLexeme(tag)
     (lexeme[0] = '"')? parseStringLiteral(tag)
     (lexeme[0] = '\'')? parseCharacterLiteral(tag)
-    isIntegerLexeme(lexeme)? newInteger(tag, parseInteger(lexeme, 10))
+    isIntegerLexeme(lexeme)? createInteger(tag)
     isNameLexeme(lexeme)? newName(tag)
     isOperatorLexeme(lexeme)? newOperator(tag)
     error("Error: invalid token " ++ showPrettyTag(tag))
 )
-
-showLocation(tag) :=
-    "line " ++ showNatural(getLine(tag)) ++
-    " column " ++ showNatural(getColumn(tag))
-
-showLexemeAndLocationLine(tag, quote) :=
-    quote ++ getLexeme(tag) ++ quote ++ " at " ++ showLocation(tag) ++ "\n"
 
 syntaxError(message, token) :=
     error("Syntax error: " ++ message ++ " " ++
