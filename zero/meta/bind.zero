@@ -1,26 +1,31 @@
 bind(root) := (
-    isDefined(parameter, parameters) := (
-        // TODO: check if lexeme is a builtin
-        !(parameter =:= "_") /\ parameters.contains(parameter)
+    isDefined(parameter, parameterNames) := (
+        parameterName := getLexeme(getTag(parameter))
+        !(parameterName =:= "_") /\ parameterNames.contains(parameterName) \/
+            isJust(getBuiltin(parameter))
     )
 
-    bind'(node, parameters) := (
+    bind'(node, parameterNames) := (
         node.isLambda ? (
-            parameter := getLexeme(getTag(getParameter(node)))
-            isDefined(parameter, parameters) ?
-                syntaxError("symbol already defined", getParameter(node))
-            newBody := bind'(getBody(node), parameter :: parameters)
-            newLambda(getTag(node), getParameter(node), newBody)
+            parameter := getParameter(node)
+            isDefined(parameter, parameterNames) ?
+                syntaxError("symbol already defined", parameter)
+            parameterName := getLexeme(getTag(parameter))
+            newBody := bind'(getBody(node), parameterName :: parameterNames)
+            newLambda(getTag(node), parameter, newBody)
         )
         node.isApplication ? (
-            newFunction := bind'(getFunction(node), parameters)
-            newArgument := bind'(getArgument(node), parameters)
+            newFunction := bind'(getFunction(node), parameterNames)
+            newArgument := bind'(getArgument(node), parameterNames)
             newApplication(getTag(node), newFunction, newArgument)
         )
         node.isSymbol ? (
-            lexeme := getLexeme(getTag(node))
+            tag := getTag(node)
+            lexeme := getLexeme(tag)
+            lexeme =:= "_" /\ getLine(tag) > 0 ?
+                syntaxError("cannot reference", node)
             getBuiltin(node)?.(x -> just(newBuiltin(getTag(node), x))) ?:
-                newReference(getTag(node), parameters.indexOf(lexeme) ?:
+                newReference(getTag(node), parameterNames.indexOf(lexeme) ?:
                 syntaxError("undefined symbol", node))
         )
         node

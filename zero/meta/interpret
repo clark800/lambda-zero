@@ -10,6 +10,7 @@ declare -a files=(
     "$DIR/serialize.zero"
     "$DIR/operators.zero"
     "$DIR/builtins.zero"
+    "$DIR/desugar.zero"
     "$DIR/bind.zero"
     "$DIR/parse.zero"
     "$DIR/evaluate.zero"

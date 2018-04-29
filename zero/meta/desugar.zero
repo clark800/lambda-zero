@@ -1,0 +1,35 @@
+
+isDefinition(node) := isApplication(node) /\ getLexeme(getTag(node)) =:= ":="
+
+getNameAndValue(left, right) := (
+    !isApplication(left) ? (left, right)
+    getNameAndValue(getFunction(left),
+        newLambda(getTag(getArgument(left)), getArgument(left), right))
+)
+
+transformDefinition(definition, explicitScope) := (
+    (name, value) := getNameAndValue(
+        getFunction(definition), getArgument(definition))
+    scope := isEOF(explicitScope) ? name || explicitScope
+    transform := newLambda(getTag(definition), name, scope)
+    newApplication(getTag(name), transform, value)
+)
+
+desugar(node) := (
+    tag := getTag(node)
+    isLambda(node) ? newLambda(tag, getParameter(node), desugar(getBody(node)))
+    isApplication(node) ? (
+        isDefinition(node) ? (
+            isDefinition(getFunction(node)) ?
+                syntaxError("cannot define a definition", node)
+            desugar(transformDefinition(node, eof))
+        )
+        isDefinition(getFunction(node)) ?
+            transformDefinition(getFunction(node), desugar(getArgument(node)))
+        isDefinition(getArgument(node)) ?
+            transformDefinition(getArgument(node), eof)
+        newApplication(getTag(node),
+            desugar(getFunction(node)), desugar(getArgument(node)))
+    )
+    node        // all leaf nodes are returned unmodified
+)

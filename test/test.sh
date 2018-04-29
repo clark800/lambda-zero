@@ -89,6 +89,7 @@ function run {
         suites=(
             "lambda.test"
             "arithmetic.test"
+            "definition.test"
         )
     fi
     for suite in "${suites[@]}"; do
