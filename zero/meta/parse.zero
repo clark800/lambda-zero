@@ -5,27 +5,29 @@ parse(input) := (
     )
 
     shouldCollapseStack(collapser, stack) := (
-        right := stack[0]
-        isOperator(right) ? false
+        isOperator(stack[0]) ? false
         operator := stack[1]
         !isOperator(operator) \/ isEOF(operator) ? false
-        rules := getRules(operator)
         left := stack[2]
+        rules := getRules(operator, isOperator(left))
         isOperator(left) /\ rules.fixity != openfix /\ rules.fixity != prefix ?
             false
-        isHigherPrecedence((operator, rules), (collapser, getRules(collapser)))
+        isHigherPrecedence((operator, rules),
+            (collapser, getRules(collapser, false)))
     )
 
     collapseStack(stack) := (
-        rules := getRules(stack[1])
+        rules := getRules(stack[1], isOperator(stack[2]))
+        rules.fixity = prefix ?
+            rules.collapse(stack[1], eof, stack[0]) :: stack.drop(2)
         rules.collapse(stack[1], stack[2], stack[0]) :: stack.drop(3)
     )
 
     validateOperators(left, right) := (
-        leftRules := getRules(left)
+        leftRules := getRules(left, false)
         isEOF(right) /\ leftRules.fixity = openfix ?
             syntaxError("missing close for", left)
-        rightRules := getRules(right)
+        rightRules := getRules(right, isOperator(left))
         rightRules.fixity = closefix /\ !isCloseParen(right) /\
             leftRules.fixity != openfix ?
                 syntaxError("missing right argument to", left)
@@ -55,7 +57,7 @@ parse(input) := (
         (isSpace(operator) \/ isNewline(operator)) /\ isOperator(stack[0]) ?
             stack
         isEOF(operator) ? collapseLeftOperand(stack.dropIf(isNewline), operator)
-        rules := getRules(operator)
+        rules := getRules(operator, isOperator(stack[0]))
         rules.fixity = closefix ? (
             stack' := collapseLeftOperand(stack.dropIf(isNewline), operator)
             collapseBracket(stack', operator, rules)

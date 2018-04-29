@@ -86,7 +86,10 @@ function run {
         "prelude.test ../zero/prelude.zero"
     )
     if [[ "$META" -eq 1 ]]; then
-        suites=("lambda.test")
+        suites=(
+            "lambda.test"
+            "arithmetic.test"
+        )
     fi
     for suite in "${suites[@]}"; do
         # the next line allows us to continue running tests after a

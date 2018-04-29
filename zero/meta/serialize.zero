@@ -1,11 +1,3 @@
-showLexeme(lexeme) := (
-    lexeme.isEmpty \/ lexeme[0] = 0 ? "\\0"
-    lexeme[0] = '\n' ? "\\n"
-    lexeme
-)
-
-showToken(token) := showLexeme(getLexeme(getTag(token)))
-
 showAST(node) := (
     node.isReference?
         showToken(node) ++ "{" ++ showInteger(getData(node)) ++ "}"
@@ -39,5 +31,9 @@ serialize(closure) := (
         term.isInteger ? showInteger(getData(term))
         showToken(term)
     )
-    serialize'(closure, 0)
+    result := serialize'(closure, 0)
+    // ensure that full serialization succeeds before returning anything
+    // or else lazy output will show part of the serailization even if
+    // an error occurs during parsing
+    result.length = 0 ? "" || result
 )
