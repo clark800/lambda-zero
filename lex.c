@@ -16,13 +16,8 @@ static inline const char* getLexeme(Node* node) {
     return getLexemeByLocation(getLocation(node));
 }
 
-bool isInternalToken(Node* token) {
-    return isLeaf(token) && !isInteger(token) && getLexeme(token)[0] == '\'';
-}
-
 void printToken(Node* token, FILE* stream) {
-    const char* lexeme = getLexeme(token);
-    printLexeme(isInternalToken(token) ? lexeme + 1 : lexeme, stream);
+    printLexeme(getLexeme(token), stream);
 }
 
 bool isNameLexeme(const char* lexeme) {
@@ -101,7 +96,7 @@ Node* createToken(const char* lexeme) {
     if (lexeme[0] == '"')
         return newStringLiteral(lexeme);
     // single quoted operands are internal names while parsing internal code
-    if (lexeme[0] == '\'' && IDENTITY != NULL)
+    if (lexeme[0] == '\'')
         return newCharacterLiteral(lexeme);
 
     int location = getLexemeLocation(lexeme);

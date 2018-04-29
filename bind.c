@@ -13,8 +13,11 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
 
 unsigned long long lookupBuiltinCode(Node* token) {
     const char* const builtins[] = {"+", "-", "*", "/", "%", "=", "!=",
-        "<", ">", "<=", ">=", "error", "'exit'", "'put'", "'get'"};
-    for (unsigned long long i = 0; i < sizeof(builtins)/sizeof(char*); i++)
+        "<", ">", "<=", ">=", "error", "exit", "put", "get"};
+    unsigned long long length = sizeof(builtins)/sizeof(char*);
+    // the last three builtins are only accessible from the internal code
+    unsigned long long limit = IDENTITY == NULL ? length : length - 3;
+    for (unsigned long long i = 0; i < limit; i++)
         if (isThisToken(token, builtins[i]))
             return i + BUILTIN;
     return 0;
@@ -42,8 +45,8 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
 }
 
 bool isDefined(Node* symbol, Array* parameters) {
-    // internal tokens are exempted to allow e.g. lists
-    return !isThisToken(symbol, "_") && (lookupBuiltinCode(symbol) != 0 ||
+    return !isInternal(symbol) && !isThisToken(symbol, "_") &&
+        (lookupBuiltinCode(symbol) != 0 ||
              findDebruijnIndex(symbol, parameters) != 0);
 }
 

@@ -8,8 +8,11 @@
 
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
-        if (isSameToken(getParameter(node), name))
-            syntaxError("symbol already defined", getParameter(node));
+        if (isSameToken(getParameter(node), name)) {
+            if (!isInternal(getParameter(node)))
+                syntaxError("symbol already defined", getParameter(node));
+            return false;
+        }
         return hasRecursiveCalls(getBody(node), name);
     }
     if (isApplication(node))

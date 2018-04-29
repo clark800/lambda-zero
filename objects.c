@@ -1,27 +1,11 @@
 #include "objects.h"
 
-// put(c) = id              -- with side effect of printing the character c
-// print(c) = (put c) (cs -> cs print)   -- pass this into a string to print it
-// print = c -> (put c) (cs -> cs print)                 -- desugar
-// print = Y (print -> c -> (put c) (cs -> cs print))    -- desugar
-
-// get(n) = c               -- c is the ascii code for the nth input character
-// input(n) = (c -> c == -1 ? nil || c :: input(n + 1)) get(n)
-// input = n -> (c -> (c == -1)(nil)(c :: input(n + 1))) get(n)
-// input = n -> (c -> (c == -1)(z -> t -> f -> t)(g -> g c (input(n+1)))) get(n)
-// "(('y' -> ('x' -> 'y' ('x' 'x')) ('x' -> 'y' ('x' 'x'))) "
-// "('input' -> 'n' -> ('c' -> ('c' == -1)('z' -> 't' -> 'f' -> 't')"
-// "('g' -> 'g' 'c' ('input' ('n' + 1)))) ('get' 'n'))) 0 \n 0";
-
 const char* INTERNAL_CODE =
-    // identity, empty tuple, true, false
-    "(_ -> _) \n (,) -> (,) \n ('t' -> 'f' -> 't') \n ('t' -> 'f' -> 'f') \n"
-    // Y combinator
-    "('y' -> ('x' -> 'y' ('x' 'x')) ('x' -> 'y' ('x' 'x'))) "
-    // lazy string printer
-    "('print' -> 'c' -> (('put' 'c') ('cs' -> 'cs' 'print'))) \n"
-    // lazy input string
-    "('get' 0) \n 0";
+    "(_ -> _) \n (,) -> (,) \n"                     // identity, empty tuple
+    "(t -> f -> t) \n (t -> f -> f) \n"             // true, false
+    "(y -> (x -> y (x x)) (x -> y (x x))) "         // Y combinator
+    "(print -> c -> ((put c) (cs -> cs print))) \n" // lazy string printer
+    "(get 0) \n 0";                                 // lazy input string
 
 Program PROGRAM;
 Node *IDENTITY, *UNIT, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;

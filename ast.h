@@ -49,6 +49,10 @@ static inline void deleteProgram(Program program) {
 // Functions to test if a node is a certain type
 // =============================================
 
+static inline bool isInternal(Node* node) {
+    return getLocation(node) < 0;
+}
+
 static inline bool isInteger(Node* node) {
     return isLeaf(node) && getType(node) == INTEGER;
 }
