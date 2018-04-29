@@ -19,8 +19,8 @@ on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 mirror(f)(x) := f(x, x)          // convert binary function to unary function
 
 // boolean logic
-true(x, y) := x
-false(x, y) := y
+true(t, f) := t
+false(t, f) := f
 if(c, x, y) := c(x, y)
 (?) := if
 

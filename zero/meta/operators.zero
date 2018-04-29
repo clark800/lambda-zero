@@ -25,6 +25,7 @@ reduceLambda(operator, left, right) := (
 reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
 reduceParentheses(close, open, contents) := (
     !isOpenParen(open) ? syntaxError("missing open for", close)
+    isEOF(contents) ? newLambda(getTag(open), blank, blank)
     isOperator(contents) /\ isSpecialOperator(contents) ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
@@ -50,6 +51,7 @@ getRules(operator, isAfterOperator) := (
         ("(", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
         (")", ((((0, 22), rightAssociative), closefix), reduceParentheses)),
         ("\n", ((((2, 2), rightAssociative), infix), reduceApply)),
+        (":=", ((((3, 3), nonAssociative), infix), reduceApply)),
         ("->", ((((5, 5), rightAssociative), infix), reduceLambda)),
         ("=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("!=", ((((12, 12), nonAssociative), infix), reduceInfix)),
@@ -61,7 +63,8 @@ getRules(operator, isAfterOperator) := (
         ("-", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("*", ((((17, 17), leftAssociative), infix), reduceInfix)),
         ("/", ((((17, 17), leftAssociative), infix), reduceInfix)),
-        ("%", ((((17, 17), leftAssociative), infix), reduceInfix))
+        ("%", ((((17, 17), leftAssociative), infix), reduceInfix)),
+        ("!", ((((21, 21), leftAssociative), prefix), reducePrefix))
     ]
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
     operators.lookup(getLexeme(getTag(operator))) ?: defaultRules

@@ -25,22 +25,23 @@ showLexemeAndLocationLine(tag, quote) :=
     quote ++ showLexeme(getLexeme(tag)) ++ quote ++
         " at " ++ showLocation(tag) ++ "\n"
 
-cX := newName(("x", (0, 0)))
-cY := newName(("y", (0, 0)))
+blank := newName(("_", (0, 0)))
+cT := newName(("t", (0, 0)))
+cF := newName(("f", (0, 0)))
 cZ := newName(("z", (0, 0)))
 eof := newOperator(("\0", (0, 0)))
 
-newTrue(tag) := newLambda(tag, cX, newLambda(tag, cY,
-    newReference(getTag(cX), 1)))
-newFalse(tag) := newLambda(tag, cX, newLambda(tag, cY,
-    newReference(getTag(cY), 0)))
+newTrue(tag) := newLambda(tag, cT, newLambda(tag, cF,
+    newReference(getTag(cT), 1)))
+newFalse(tag) := newLambda(tag, cT, newLambda(tag, cF,
+    newReference(getTag(cF), 0)))
 newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
 newNil(tag) := newLambda(tag, cZ, newTrue(tag))
 
 prependList(character, list) :=
-    newLambda(getTag(list), cX,
+    newLambda(getTag(list), blank,
         newApplication(getTag(list),
-            newApplication(getTag(list), cX, character), list))
+            newApplication(getTag(list), blank, character), list))
 
 parseEscapeCode(code, tag) := (
     code = '0' ? '\0'

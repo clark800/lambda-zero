@@ -1,4 +1,6 @@
 parse(input) := (
+    isOpenOperator(operator) := getRules(operator, false).fixity = openfix
+
     pushOperand(stack, token) := (
         stack.isEmpty \/ isOperator(stack[0]) ? token :: stack
         newApplication(getTag(token), stack[0], token) :: (--stack)
@@ -44,11 +46,35 @@ parse(input) := (
         collapseStack.while(shouldCollapseStack(collapser), stack)
     )
 
+    newSection(operator, left, right) := (
+        rules := getRules(operator, false)
+        isSpecialOperator(operator) \/ rules.fixity != infix ?
+            syntaxError("invalid operator in section", operator)
+        newLambda(getTag(operator), blank,
+            rules.collapse(operator, left, right))
+    )
+
+    constructSection(left, right) := (
+        isOperator(left) /\ isOperator(right) ?
+            syntaxError("invalid operator in section", right)
+        isOperator(left) ? newSection(left, blank, right)
+        newSection(right, left, blank)
+    )
+
+    collapseSection(stack, close) := (
+        // close is a close parenthesis, stack[0] is not EOF or open operator,
+        // and stack[1] is not EOF or open operator
+        !isOpenParen(stack[2]) ? syntaxError("missing open for", close)
+        constructSection(stack[1], stack[0]) :: stack.drop(3)
+    )
+
     collapseBracket(stack, close, rules) := (
         isEOF(stack[0]) ? syntaxError("missing open for", close)
-        rules.fixity = openfix ?
+        isOpenOperator(stack[0]) ?
             pushOperand(--stack, rules.collapse(close, stack[0], eof))
         isEOF(stack[1]) ? syntaxError("missing open for", close)
+        isCloseParen(close) /\ !isOpenOperator(stack[1]) ?
+            collapseSection(stack, close)
         pushOperand(stack.drop(2), rules.collapse(close, stack[1], stack[0]))
     )
 
@@ -78,5 +104,6 @@ parse(input) := (
     // shiftToken is a state -> state transformer
     shiftToken((stack, tokens)) := (pushToken(stack, tokens[0]), --tokens)
     tokens := lex(input ++ [0])
-    bind(head(first(shiftToken.until(isEmpty <> second, ([eof], tokens)))))
+    ast := head(first(shiftToken.until(isEmpty <> second, ([eof], tokens))))
+    bind(desugar(ast))
 )
