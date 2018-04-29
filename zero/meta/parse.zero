@@ -21,8 +21,8 @@ parse(input) := (
     collapseStack(stack) := (
         rules := getRules(stack[1], isOperator(stack[2]))
         rules.fixity = prefix ?
-            rules.collapse(stack[1], eof, stack[0]) :: stack.drop(2)
-        rules.collapse(stack[1], stack[2], stack[0]) :: stack.drop(3)
+            pushOperand(stack.drop(2), rules.collapse(stack[1], eof, stack[0]))
+        pushOperand(stack.drop(3), rules.collapse(stack[1], stack[2], stack[0]))
     )
 
     validateOperators(left, right) := (
@@ -88,6 +88,9 @@ parse(input) := (
             stack' := collapseLeftOperand(stack.dropIf(isNewline), operator)
             collapseBracket(stack', operator, rules)
         )
+        // redundant call to validateOperator to make errors match which
+        // appears first under strict evaluation
+        validateOperator(stack, operator)
         operator :: collapseLeftOperand(stack, operator)
     )
 

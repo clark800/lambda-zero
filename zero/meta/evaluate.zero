@@ -3,7 +3,8 @@ evaluate(closure, stack) := (
     isReference(term) ?
         evaluate(environment[getData(term)], stack)
     isInteger(term) ?
-        (stack.isEmpty ? closure || syntaxError("extra argument", stack[0]))
+        (stack.isEmpty ? closure || runtimeError("extra argument",
+            getTerm(stack[0])))
     isApplication(term) ?
         evaluate(newClosure(getFunction(term), environment),
                  newClosure(getArgument(term), environment) :: stack)
@@ -14,9 +15,9 @@ evaluate(closure, stack) := (
     isBuiltin(term) ? (
         (arity, builtin) := getData(term)
         arity = 0 ? evaluate(builtin((), ()), stack)
-        stack.isEmpty ? syntaxError("missing argument to", term)
+        stack.isEmpty ? runtimeError("missing argument to", term)
         arity = 1 ? evaluate(builtin(evaluate(stack[0], []), ()), --stack)
-        (--stack).isEmpty ? syntaxError("missing argument to", term)
+        (--stack).isEmpty ? runtimeError("missing argument to", term)
         result := builtin(evaluate(stack[0], []), evaluate(stack[1], []))
         evaluate(result, stack.drop(2))
     )

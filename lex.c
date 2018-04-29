@@ -72,7 +72,7 @@ Node* newCharacterLiteral(const char* lexeme) {
 Node* buildStringLiteral(const char* lexeme, const char* start) {
     char c = start[0];
     int location = getLexemeLocation(lexeme);
-    lexerErrorIf(c == '\n' || c == 0, lexeme, "invalid string literal");
+    lexerErrorIf(c == '\n' || c == 0, lexeme, "missing end quote for");
     if (c == lexeme[0])
         return newNil(location);
     return prepend(location, newInteger(location, decodeCharacter(start)),

@@ -155,7 +155,7 @@ output and interactive programs. See the samples below for examples of this.
 
 ### Conclusion
 
-That's the whole language! Take a look at the [prelude](test/prelude.zero)
+That's the whole language! Take a look at the [prelude](zero/prelude.zero)
 for more examples.
 
 # Building
@@ -175,7 +175,7 @@ This sample program runs an interactive REPL that reverses each line entered:
 
     ./run test/samples/repl
 
-The `run` script prepends the [prelude](test/prelude.zero) to the `SOURCEFILE` and
+The `run` script prepends the [prelude](zero/prelude.zero) to the `SOURCEFILE` and
 passes the result to `main`.
 
 Note that when using the `run` script, line numbers in error messages will be
