@@ -51,14 +51,16 @@ parseEscapeCode(code, tag) := (
     code = '\\' ? '\\'
     code = '\"' ? '\"'
     code = '\'' ? '\''
-    error("Error: invalid escape sequence after" ++ showPrettyTag(tag))
+    error("Syntax error: invalid escape sequence in " ++ showPrettyTag(tag))
 )
 
 parseQuotedCharacter(tag, string) := (
+    string[0] < 0 \/ string[0] > 127 ?
+        error("Syntax error: illegal character in quote " ++ showPrettyTag(tag))
     string[0] != '\\' ?
         newInteger(tag, string[0])
     --string =:= [] ?
-        error("Error: missing escape code in " ++ showPrettyTag(tag))
+        error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
     newInteger(tag, parseEscapeCode((--string)[0], tag))
 )
 
@@ -76,7 +78,7 @@ buildStringLiteral(tag, characters) := (
 getQuoteContents(tag) := (
     lexeme := getLexeme(tag)
     (lexeme.last = lexeme[0])? dropLast(--lexeme)
-    error("Error: missing end quote for " ++ showPrettyTag(tag))
+    error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
 )
 
 getQuotedCharacters(tag) :=
@@ -87,7 +89,7 @@ parseStringLiteral(tag) := buildStringLiteral(tag, getQuotedCharacters(tag))
 parseCharacterLiteral(tag) := (
     characters := getQuotedCharacters(tag)
     (characters.length = 1)? characters[0]
-    error("Error: invalid character literal " ++ showPrettyTag(tag))
+    error("Syntax error: invalid character literal " ++ showPrettyTag(tag))
 )
 
 createInteger(tag) := (
@@ -111,11 +113,14 @@ createToken(tag) := (
     isIntegerLexeme(lexeme)? createInteger(tag)
     isNameLexeme(lexeme)? newName(tag)
     isOperatorLexeme(lexeme)? newOperator(tag)
-    error("Error: invalid token " ++ showPrettyTag(tag))
+    error("Syntax error: invalid token " ++ showPrettyTag(tag))
 )
 
-syntaxError(message, token) :=
-    error("Syntax error: " ++ message ++ " " ++
+tokenError(title, message, token) :=
+    error(title ++ message ++ " " ++
         showLexemeAndLocationLine(getTag(token), "'"))
+
+syntaxError(message, token) := tokenError("Syntax error: ", message, token)
+runtimeError(message, token) := tokenError("\nRuntime error: ", message, token)
 
 lex(string) := scan(string).map(createToken)

@@ -8,7 +8,7 @@ isComment(lexeme) := lexeme.startsWith("//")
 isElided(lexeme) := isBlank(lexeme[0]) \/ isComment(lexeme)
 
 splitQuoteCharacter(quote, ns) := (
-    ns.isEmpty \/ ns[0] = quote ? ([], ns)
+    ns.isEmpty \/ ns[0] = quote \/ ns[0] = '\n' ? ([], ns)
     n := (ns[0] = '\\' /\ !(--ns =:= []))? 2 || 1
     ns.splitAt(n)
 )
@@ -18,7 +18,7 @@ shiftSplit((a, b)) := b =:= [] ? (a, b) || (a ++ [b[0]], --b)
 splitQuote(ns) := (
     quote := ns[0]
     (a, b) := (--ns).splitWith(splitQuoteCharacter(quote))
-    shiftSplit((quote :: a, b))
+    !b.isEmpty /\ b[0] = quote ? shiftSplit((quote :: a, b)) || (quote :: a, b)
 )
 
 splitLexeme(ns) := (

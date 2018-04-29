@@ -1,4 +1,6 @@
 getBuiltin(builtin) := (
+    maxInteger := 9223372036854775807
+
     getInteger(term) := (
         isInteger(term) ? getData(term)
         syntaxError("expected integer argument to", builtin)
@@ -10,12 +12,44 @@ getBuiltin(builtin) := (
     makeIntegerBuiltin(f, newType, left, right) :=
         newClosure(newType(getTag(builtin), f.compute(left, right)), [])
 
+    add(left, right) := (
+        left > 0 /\ right > 0 /\ left > maxInteger - right ?
+            runtimeError("integer overflow in", builtin)
+        left < 0 /\ right < 0 /\ left < -maxInteger - right ?
+            runtimeError("integer overflow in", builtin)
+        left + right
+    )
+
+    subtract(left, right) := (
+        left > 0 /\ right < 0 /\ left > maxInteger + right ?
+            runtimeError("integer overflow in", builtin)
+        left < 0 /\ right > 0 /\ left < -maxInteger + right ?
+            runtimeError("integer overflow in", builtin)
+        left - right
+    )
+
+    multiply(left, right) := (
+        right != 0 /\ abs(left) > abs(maxInteger / right) ?
+            runtimeError("integer overflow in", builtin)
+        left * right
+    )
+
+    divide(left, right) := (
+        right = 0 ? runtimeError("divide by zero in", builtin)
+        left / right
+    )
+
+    modulo(left, right) := (
+        right = 0 ? runtimeError("divide by zero in", builtin)
+        left % right
+    )
+
     builtins := [
-        ("+", (2, makeIntegerBuiltin((+), newInteger))),
-        ("-", (2, makeIntegerBuiltin((-), newInteger))),
-        ("*", (2, makeIntegerBuiltin((*), newInteger))),
-        ("/", (2, makeIntegerBuiltin((/), newInteger))),
-        ("%", (2, makeIntegerBuiltin((%), newInteger))),
+        ("+", (2, makeIntegerBuiltin(add, newInteger))),
+        ("-", (2, makeIntegerBuiltin(subtract, newInteger))),
+        ("*", (2, makeIntegerBuiltin(multiply, newInteger))),
+        ("/", (2, makeIntegerBuiltin(divide, newInteger))),
+        ("%", (2, makeIntegerBuiltin(modulo, newInteger))),
         ("=", (2, makeIntegerBuiltin((=), newBoolean))),
         ("!=", (2, makeIntegerBuiltin((!=), newBoolean))),
         ("<", (2, makeIntegerBuiltin((<), newBoolean))),
