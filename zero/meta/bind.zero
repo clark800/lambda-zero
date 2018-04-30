@@ -24,8 +24,8 @@ bind(root) := (
             lexeme := getLexeme(tag)
             lexeme =:= "_" /\ getLine(tag) > 0 ?
                 syntaxError("cannot reference", node)
-            getBuiltin(node)?.(x -> just(newBuiltin(getTag(node), x))) ?:
-                newReference(getTag(node), parameterNames.indexOf(lexeme) ?:
+            getBuiltin(node) >>= just <> newBuiltin(getTag(node)) ?||
+                newReference(getTag(node), parameterNames.indexOf(lexeme) ?||
                 syntaxError("undefined symbol", node))
         )
         node

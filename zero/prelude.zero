@@ -17,6 +17,7 @@ id(x) := x                       // identity function
 constant(x) := _ -> x            // return value does not depend on parameter
 on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 mirror(f)(x) := f(x, x)          // convert binary function to unary function
+undefined := error("undefined")
 
 // boolean logic
 true(t, f) := t
@@ -53,8 +54,8 @@ isNothing(mx) := mx(true, constant(false))
 isJust(mx) := mx(false, constant(true))
 fromJust(mx) := mx(error("fromJust: not a just"), id)
 maybe(x, f, mx) := mx(x, f)
-mx ?. f := mx(nothing, f)                   // maybe chaining (bind)
-mx ?: x := mx(x, id)                        // just value or default
+mx >>= f := mx(nothing, f)                   // maybe chaining (bind)
+mx ?|| x := mx(x, id)                        // just value or default
 
 // math
 abs(n) := n >= 0 ? n || -n
@@ -90,6 +91,17 @@ last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
 dropLast(xs) := xs =:= [] \/ --xs =:= [] ? [] || xs[0] :: dropLast(--xs)
 dropWhile(ns, p) := (--).while(p <> head, ns)
 takeWhile(ns, p) := ns.isEmpty \/ !p(ns[0]) ? [] || ns[0] :: takeWhile(--ns, p)
+
+takeSafe(xs, n) := (
+    n = 0 ? just([])
+    xs.isEmpty ? nothing
+    takeSafe(--xs, n - 1) >>= just <> (xs[0] ::)
+)
+
+apply(f, arguments) := (
+    arguments.isEmpty ? f
+    apply(f(arguments[0]), --arguments)
+)
 
 // syntactic helpers
 xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)

@@ -25,6 +25,7 @@ getParameter(node) := getData(node).first
 getBody(node) := getData(node).second
 getFunction(node) := getData(node).first
 getArgument(node) := getData(node).second
+getDebruijnIndex(node) := getData(node)
 
 isSymbol(node) := node.getType = cSYMBOL
 isReference(node) := node.getType = cREFERENCE
