@@ -67,7 +67,7 @@ getRules(operator, isAfterOperator) := (
         ("!", ((((21, 21), leftAssociative), prefix), reducePrefix))
     ]
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
-    operators.lookup(getLexeme(getTag(operator))) ?: defaultRules
+    operators.lookup(getLexeme(getTag(operator))) ?|| defaultRules
 )
 
 isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (

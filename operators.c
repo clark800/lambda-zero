@@ -120,7 +120,10 @@ Rules RULES[] = {
     {"||", 5, 5, IN, R, infix},
     {"::?", 5, 5, IN, R, infix},
     {"?", 6, 6, IN, R, infix},
-    {"?:", 6, 6, IN, R, infix},
+    {"?||", 6, 6, IN, R, infix},
+
+    // monadic operators
+    {">>=", 7, 7, IN, L, infix},
 
     // logical operators
     {"<=>", 8, 8, IN, N, infix},
@@ -168,7 +171,6 @@ Rules RULES[] = {
 
     // precedence 22: parentheses/brackets
     {"^^", 23, 23, IN, L, infix},
-    {"?.", 24, 24, IN, L, infix},
     {".", 24, 24, IN, L, infix},
     {"`", 25, 25, PRE, L, prefix}
 };

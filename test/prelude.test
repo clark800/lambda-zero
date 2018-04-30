@@ -87,10 +87,10 @@ main(input) := showIntegerList(5..9)
 maximum(take(naturals.map(mirror(*)), 7) | odd)
 25
 ===============================================================================
-"aceswild".find(even) ?: -1
+"aceswild".find(even) ?|| -1
 108
 ===============================================================================
-"aces".find(even) ?: -1
+"aces".find(even) ?|| -1
 -1
 ===============================================================================
 main(input) := deduplicate("abc" ++ "bbd")
@@ -120,7 +120,7 @@ isNothing(nothing)
 isNothing(just(10))
 (t -> (f -> f))
 ===============================================================================
-main(input) := showBoolean((just(2) ?. (x -> just(2 * x)) ?: 0) = 4)
+main(input) := showBoolean((just(2) >>= just <> (2 *) ?|| 0) = 4)
 true
 ===============================================================================
 0 ^ 0
@@ -285,7 +285,7 @@ main(input) := showIntegerList(primes.take(5).map((0 -)))
 main(input) := showIntegerList(primes.take(10))
 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 ===============================================================================
-zip(naturals.map(showInteger), primes.take(10)).lookup("7") ?: -1
+zip(naturals.map(showInteger), primes.take(10)).lookup("7") ?|| -1
 19
 ===============================================================================
 main(input) := showIntegerPairList(zip(naturals, primes.take(8)))
