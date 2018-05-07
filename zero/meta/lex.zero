@@ -3,6 +3,8 @@ isCloseParen(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= ")"
 isSpace(node) := isOperator(node) /\ isBlank(getLexeme(getTag(node))[0])
 isNewline(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= "\n"
 isEOF(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= "\0"
+isCommaList(node) := isApplication(node) /\ getLexeme(getTag(node)) =:= ","
+isTuple(node) := isLambda(node) /\ getLexeme(getTag(getParameter(node))) =:= ","
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
@@ -26,6 +28,7 @@ showLexemeAndLocationLine(tag, quote) :=
         " at " ++ showLocation(tag) ++ "\n"
 
 blank := newName(("_", (0, 0)))
+comma := newName((",", (0, 0)))
 cT := newName(("t", (0, 0)))
 cF := newName(("f", (0, 0)))
 cZ := newName(("z", (0, 0)))
@@ -37,6 +40,16 @@ newFalse(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cF), 0)))
 newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
 newNil(tag) := newLambda(tag, cZ, newTrue(tag))
+
+applyToCommaList(tag, f, commaList) := (
+    isCommaList(commaList) ?
+        newApplication(tag, applyToCommaList(tag, f, getFunction(commaList)),
+        getArgument(commaList))
+    newApplication(tag, f, commaList)
+)
+
+newTuple(tag, commaList) :=
+   newLambda(tag, comma, applyToCommaList(tag, comma, commaList))
 
 prependList(character, list) :=
     newLambda(getTag(list), blank,

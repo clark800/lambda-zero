@@ -29,6 +29,8 @@ reduceParentheses(close, open, contents) := (
     isOperator(contents) /\ isSpecialOperator(contents) ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
+    isCommaList(contents) \/ isTuple(contents) ?
+        newTuple(getTag(open), contents)
     contents
 )
 reduceIllegal(_, _, _) := error("Internal error")
@@ -50,6 +52,7 @@ getRules(operator, isAfterOperator) := (
         ("\0", ((((0, 0), leftAssociative), closefix), reduceIllegal)),
         ("(", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
         (")", ((((0, 22), rightAssociative), closefix), reduceParentheses)),
+        (",", ((((1, 1), leftAssociative), infix), reduceApply)),
         ("\n", ((((2, 2), rightAssociative), infix), reduceApply)),
         (":=", ((((3, 3), nonAssociative), infix), reduceApply)),
         ("->", ((((5, 5), rightAssociative), infix), reduceLambda)),

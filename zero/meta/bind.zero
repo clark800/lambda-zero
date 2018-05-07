@@ -8,7 +8,7 @@ bind(root) := (
     bind'(node, parameterNames) := (
         node.isLambda ? (
             parameter := getParameter(node)
-            isDefined(parameter, parameterNames) ?
+            !isTuple(node) /\ isDefined(parameter, parameterNames) ?
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(getTag(parameter))
             newBody := bind'(getBody(node), parameterName :: parameterNames)

@@ -1,5 +1,6 @@
 parse(input) := (
-    isOpenOperator(operator) := getRules(operator, false).fixity = openfix
+    isOpenOperator(operator) :=
+        isOperator(operator) /\ getRules(operator, false).fixity = openfix
 
     pushOperand(stack, token) := (
         stack.isEmpty \/ isOperator(stack[0]) ? token :: stack
