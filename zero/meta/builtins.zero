@@ -57,5 +57,5 @@ getBuiltin(builtin) := (
         ("<=", (2, makeIntegerBuiltin((<=), newBoolean))),
         (">=", (2, makeIntegerBuiltin((>=), newBoolean)))
     ]
-    builtins.lookup(getLexeme(getTag(builtin)))
+    builtins.lookup(getLexeme(builtin))
 )

@@ -1,8 +1,30 @@
 
-isDefinition(node) := isApplication(node) /\ getLexeme(getTag(node)) =:= ":="
+isDefinition(node) := isApplication(node) /\ getLexeme(node) =:= ":="
+
+hasRecursiveCalls(node, name) := (
+    isLambda(node) ? (
+        getLexeme(getParameter(node)) =:= getLexeme(name) ? (
+            isInternal(getParameter(node)) ? false
+            syntaxError("symbol already defined", getParameter(node))
+        )
+        hasRecursiveCalls(getBody(node), name)
+    )
+    isApplication(node) ?
+        hasRecursiveCalls(getFunction(node), name) \/
+        hasRecursiveCalls(getArgument(node), name)
+    isSymbol(node) \/ isReference(node) ?
+        getLexeme(node) =:= getLexeme(name)
+    false
+)
+
+transformRecursion(name, value) := (
+    !isSymbol(name) \/ !hasRecursiveCalls(value, name) ? value
+    newApplication(getTag(name), yCombinator,
+        newLambda(getTag(name), newName(getTag(name)), value))
+)
 
 getNameAndValue(left, right) := (
-    !isApplication(left) ? (left, right)
+    !isApplication(left) ? (left, transformRecursion(left, right))
     getNameAndValue(getFunction(left),
         newLambda(getTag(getArgument(left)), getArgument(left), right))
 )

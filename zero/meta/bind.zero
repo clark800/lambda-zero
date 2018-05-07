@@ -1,6 +1,6 @@
 bind(root) := (
     isDefined(parameter, parameterNames) := (
-        parameterName := getLexeme(getTag(parameter))
+        parameterName := getLexeme(parameter)
         !(parameterName =:= "_") /\ parameterNames.contains(parameterName) \/
             isJust(getBuiltin(parameter))
     )
@@ -10,7 +10,7 @@ bind(root) := (
             parameter := getParameter(node)
             !isTuple(node) /\ isDefined(parameter, parameterNames) ?
                 syntaxError("symbol already defined", parameter)
-            parameterName := getLexeme(getTag(parameter))
+            parameterName := getLexeme(parameter)
             newBody := bind'(getBody(node), parameterName :: parameterNames)
             newLambda(getTag(node), parameter, newBody)
         )
@@ -21,8 +21,8 @@ bind(root) := (
         )
         node.isSymbol ? (
             tag := getTag(node)
-            lexeme := getLexeme(tag)
-            lexeme =:= "_" /\ getLine(tag) > 0 ?
+            lexeme := getLexeme(node)
+            lexeme =:= "_" /\ !isInternal(node) ?
                 syntaxError("cannot reference", node)
             getBuiltin(node) >>= just <> newBuiltin(getTag(node)) ?||
                 newReference(getTag(node), parameterNames.indexOf(lexeme) ?||

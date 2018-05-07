@@ -9,7 +9,7 @@ closefix := 3
 
 isSpecialOperator(operator) := isOperator(operator) /\
     ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
-    contains(getLexeme(getTag(operator)))
+    contains(getLexeme(operator))
 
 reduceApply(operator, left, right) :=
     newApplication(getTag(operator), left, right)
@@ -47,7 +47,7 @@ rightPrecedence(rules) := rules.precedence.second
 
 getRules(operator, isAfterOperator) := (
     isSpace(operator) ? ((((20, 20), leftAssociative), infix), reduceApply)
-    getLexeme(getTag(operator)) =:= "-" /\ isAfterOperator ?
+    getLexeme(operator) =:= "-" /\ isAfterOperator ?
         ((((21, 21), leftAssociative), prefix), reduceNegate)
     operators := [
         // syntactic operators
@@ -117,7 +117,7 @@ getRules(operator, isAfterOperator) := (
         ("`", ((((25, 25), leftAssociative), prefix), reducePrefix))
     ]
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
-    operators.lookup(getLexeme(getTag(operator))) ?|| defaultRules
+    operators.lookup(getLexeme(operator)) ?|| defaultRules
 )
 
 isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (

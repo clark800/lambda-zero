@@ -49,9 +49,10 @@ scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |
 
 showTag(tag) := showPair((showString(tag.first), showIntegerPair(tag.second)))
 
-getLexeme(tag) := tag.first
-getLine(tag) := tag.second.first
-getColumn(tag) := tag.second.second
+getTagLexeme(tag) := tag.first
+getTagLine(tag) := tag.second.first
+getTagColumn(tag) := tag.second.second
 
-showPrettyTag(tag) := "'" ++ getLexeme(tag) ++ "' at line " ++
-    showInteger(getLine(tag)) ++ " column " ++ showInteger(getColumn(tag))
+showPrettyTag(tag) := "'" ++ getTagLexeme(tag) ++
+    "' at line " ++ showInteger(getTagLine(tag)) ++
+    " column " ++ showInteger(getTagColumn(tag))
