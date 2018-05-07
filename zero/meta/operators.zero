@@ -7,7 +7,7 @@ prefix := 1
 openfix := 2
 closefix := 3
 
-isSpecialOperator(operator) :=
+isSpecialOperator(operator) := isOperator(operator) /\
     ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
     contains(getLexeme(getTag(operator)))
 
@@ -26,7 +26,7 @@ reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
 reduceParentheses(close, open, contents) := (
     !isOpenParen(open) ? syntaxError("missing open for", close)
     isEOF(contents) ? newLambda(getTag(open), blank, blank)
-    isOperator(contents) /\ isSpecialOperator(contents) ?
+    isSpecialOperator(contents) ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
     isCommaList(contents) \/ isTuple(contents) ?

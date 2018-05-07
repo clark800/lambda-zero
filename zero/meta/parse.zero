@@ -2,9 +2,11 @@ parse(input) := (
     isOpenOperator(operator) :=
         isOperator(operator) /\ getRules(operator, false).fixity = openfix
 
-    pushOperand(stack, token) := (
-        stack.isEmpty \/ isOperator(stack[0]) ? token :: stack
-        newApplication(getTag(token), stack[0], token) :: (--stack)
+    pushOperand(stack, operand) := (
+        stack.isEmpty \/ isOperator(stack[0]) ? operand :: stack
+        isTuple(operand) /\ !isUnit(operand) ?
+            applyToCommaList(stack[0], getBody(operand)) :: (--stack)
+        newApplication(getTag(operand), stack[0], operand) :: (--stack)
     )
 
     shouldCollapseStack(collapser, stack) := (
@@ -66,7 +68,7 @@ parse(input) := (
         // close is a close parenthesis, stack[0] is not EOF or open operator,
         // and stack[1] is not EOF or open operator
         !isOpenParen(stack[2]) ? syntaxError("missing open for", close)
-        constructSection(stack[1], stack[0]) :: stack.drop(3)
+        pushOperand(stack.drop(3), constructSection(stack[1], stack[0]))
     )
 
     collapseBracket(stack, close, rules) := (
