@@ -33,6 +33,7 @@ reduceParentheses(close, open, contents) := (
         newTuple(getTag(open), contents)
     contents
 )
+reduceBrackets(close, open, contents) := syntaxError("not implemented")
 reduceIllegal(_, _, _) := error("Internal error")
 
 syntax(rules) := rules.first
@@ -49,25 +50,71 @@ getRules(operator, isAfterOperator) := (
     getLexeme(getTag(operator)) =:= "-" /\ isAfterOperator ?
         ((((21, 21), leftAssociative), prefix), reduceNegate)
     operators := [
+        // syntactic operators
         ("\0", ((((0, 0), leftAssociative), closefix), reduceIllegal)),
         ("(", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
         (")", ((((0, 22), rightAssociative), closefix), reduceParentheses)),
+        ("[", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
+        ("]", ((((0, 22), rightAssociative), closefix), reduceBrackets)),
         (",", ((((1, 1), leftAssociative), infix), reduceApply)),
         ("\n", ((((2, 2), rightAssociative), infix), reduceApply)),
         (":=", ((((3, 3), nonAssociative), infix), reduceApply)),
+        ("|", ((((4, 4), leftAssociative), infix), reduceInfix)),
         ("->", ((((5, 5), rightAssociative), infix), reduceLambda)),
+
+        // conditional operators
+        ("||", ((((5, 5), rightAssociative), infix), reduceInfix)),
+        ("::?", ((((5, 5), rightAssociative), infix), reduceInfix)),
+        ("?", ((((6, 6), rightAssociative), infix), reduceInfix)),
+        ("?||", ((((6, 6), rightAssociative), infix), reduceInfix)),
+
+        // monadic operators
+        (">>=", ((((7, 7), leftAssociative), infix), reduceInfix)),
+
+        // logical operators
+        ("<=>", ((((8, 8), nonAssociative), infix), reduceInfix)),
+        ("=>", ((((9, 9), nonAssociative), infix), reduceInfix)),
+        ("\\/", ((((10, 10), rightAssociative), infix), reduceInfix)),
+        ("\\/", ((((10, 10), rightAssociative), infix), reduceInfix)),
+        ("/\\", ((((11, 11), rightAssociative), infix), reduceInfix)),
+
+        // comparison/test operators
         ("=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("!=", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("=:=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (">", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (">=", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        (">=<", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("<:", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        (":", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("!:", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("~", ((((12, 12), nonAssociative), infix), reduceInfix)),
+
+        // arithmetic/list operators
+        ("..", ((((15, 15), nonAssociative), infix), reduceInfix)),
+        ("::", ((((16, 16), rightAssociative), infix), reduceInfix)),
+        ("&", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("+", ((((16, 16), leftAssociative), infix), reduceInfix)),
+        ("++", ((((16, 16), rightAssociative), infix), reduceInfix)),
         ("-", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("*", ((((17, 17), leftAssociative), infix), reduceInfix)),
+        ("**", ((((17, 17), rightAssociative), infix), reduceInfix)),
         ("/", ((((17, 17), leftAssociative), infix), reduceInfix)),
         ("%", ((((17, 17), leftAssociative), infix), reduceInfix)),
-        ("!", ((((21, 21), leftAssociative), prefix), reducePrefix))
+        ("^", ((((18, 18), rightAssociative), infix), reduceInfix)),
+
+        // functional operators
+        ("<>", ((((19, 19), rightAssociative), infix), reduceInfix)),
+
+        // prefix operators
+        ("--", ((((21, 21), leftAssociative), prefix), reducePrefix)),
+        ("!", ((((21, 21), leftAssociative), prefix), reducePrefix)),
+        ("#", ((((21, 21), leftAssociative), prefix), reducePrefix)),
+        ("^^", ((((23, 23), leftAssociative), infix), reduceInfix)),
+        (".", ((((24, 24), leftAssociative), infix), reduceInfix)),
+        ("`", ((((25, 25), leftAssociative), prefix), reducePrefix))
     ]
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
     operators.lookup(getLexeme(getTag(operator))) ?|| defaultRules
