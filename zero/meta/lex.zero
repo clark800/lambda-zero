@@ -69,10 +69,9 @@ getCommaListSize(commaList) := (
 
 getTupleSize(tuple) := getCommaListSize(getBody(tuple))
 
-prependList(character, list) :=
-    newLambda(getTag(list), blank,
-        newApplication(getTag(list),
-            newApplication(getTag(list), blank, character), list))
+prependList(tag, item, list) :=
+    newLambda(tag, blank, newApplication(tag,
+        newApplication(tag, blank, item), list))
 
 parseEscapeCode(code, tag) := (
     code = '0' ? '\0'
@@ -103,7 +102,7 @@ splitStringLiteral(string) := (
 
 buildStringLiteral(tag, characters) := (
     characters =:= [] ? newNil(tag)
-    prependList(characters[0], buildStringLiteral(tag, --characters))
+    prependList(tag, characters[0], buildStringLiteral(tag, --characters))
 )
 
 getQuoteContents(tag) := (

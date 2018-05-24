@@ -48,7 +48,18 @@ reduceParentheses(close, open, contents) := (
         newTuple(getTag(open), contents)
     contents
 )
-reduceBrackets(close, open, contents) := syntaxError("not implemented")
+
+createList(tag, commaList, list) := (
+    isEOF(commaList) ? list
+    !isCommaList(commaList) ? prependList(tag, commaList, list)
+    createList(tag, getLeft(commaList),
+        prependList(tag, getRight(commaList), list))
+)
+
+reduceBrackets(close, open, contents) := (
+    !(getLexeme(open) =:= "[") ? syntaxError("missing open for", close)
+    createList(getTag(open), contents, newNil(getTag(open)))
+)
 reduceIllegal(_, _, _) := error("Internal error")
 
 syntax(rules) := rules.first
