@@ -4,7 +4,9 @@ isOperandCharacter(n) := isAlphanumeric(n) \/ n = '_' \/ n = '\''
 isOperatorCharacter(n) := isPunctuation(n) /\ !isDelimiterCharacter(n) /\
     !isOperandCharacter(n) /\ !isQuote(n) /\ !isReservedCharacter(n)
 
-isComment(lexeme) := lexeme.startsWith("//")
+isLineComment(lexeme) := lexeme.startsWith("//")
+isBlockComment(lexeme) := lexeme.startsWith("/*")
+isComment(lexeme) := isLineComment(lexeme) \/ isBlockComment(lexeme)
 
 splitQuoteCharacter(quote, ns) := (
     ns.isEmpty \/ ns[0] = quote \/ ns[0] = '\n' ? ([], ns)
@@ -22,7 +24,8 @@ splitQuote(ns) := (
 
 splitLexeme(ns) := (
     ns.isEmpty? []
-    ns.isComment? ns.splitOn("\n")
+    ns.isLineComment? ns.splitOn("\n")
+    ns.isBlockComment? ns.splitOn("*/").shiftSplit.shiftSplit
     ns[0].isBlank? ns.splitWhen((!) <> isBlank)
     ns[0].isQuote? splitQuote(ns)
     ns[0].isOperandCharacter? ns.splitWhen((!) <> isOperandCharacter)

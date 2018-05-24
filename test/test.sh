@@ -90,8 +90,8 @@ function run {
             "lambda.test"
             "arithmetic.test"
             "definition.test"
-            "quote.test"
             "syntax.test"
+            "quote.test"
         )
     fi
     for suite in "${suites[@]}"; do

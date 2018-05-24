@@ -93,7 +93,7 @@ parseEscapeCode(code, tag) := (
 
 parseQuotedCharacter(tag, string) := (
     string[0] < 0 \/ string[0] > 127 ?
-        error("Syntax error: illegal character in quote " ++ showPrettyTag(tag))
+        error("Syntax error: illegal character in " ++ showPrettyTag(tag))
     string[0] != '\\' ?
         newInteger(tag, string[0])
     --string =:= [] ?
@@ -114,7 +114,7 @@ buildStringLiteral(tag, characters) := (
 
 getQuoteContents(tag) := (
     lexeme := getTagLexeme(tag)
-    (lexeme.last = lexeme[0])? dropLast(--lexeme)
+    lexeme.length > 1 /\ lexeme.last = lexeme[0] ? dropLast(--lexeme)
     error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
 )
 

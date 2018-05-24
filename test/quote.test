@@ -5,29 +5,29 @@
 ' '
 32
 ===============================================================================
-'abc
-Syntax error: missing end quote for ''abc' at line 1 column 1
+'123
+Syntax error: missing end quote for ''123' at line 1 column 1
 ===============================================================================
-'abc'
-Syntax error: invalid character literal ''abc'' at line 1 column 1
+'123'
+Syntax error: invalid character literal ''123'' at line 1 column 1
 ===============================================================================
 '\\x'
 Syntax error: invalid character literal ''\\x'' at line 1 column 1
 ===============================================================================
-"abc
-Syntax error: missing end quote for '"abc' at line 1 column 1
+"123
+Syntax error: missing end quote for '"123' at line 1 column 1
 ===============================================================================
-abc"
+123"
 Syntax error: missing end quote for '"' at line 1 column 4
 ===============================================================================
-"abc"def"
+"123"456"
 Syntax error: missing end quote for '"' at line 1 column 9
 ===============================================================================
 '\x'
-Syntax error: invalid escape sequence after '\' at line 1 column 2
+Syntax error: invalid escape sequence in ''\x'' at line 1 column 1
 ===============================================================================
-(x -> "abc"x) 0
-\nRuntime error: extra argument '"abc"' at line 1 column 7
+(x -> "123"x) 0
+\nRuntime error: extra argument '"123"' at line 1 column 7
 ===============================================================================
 x -> 'a'x
 (x -> (97 x))
@@ -36,7 +36,7 @@ x -> 'a'x
 Syntax error: missing end quote for '"x\"' at line 1 column 1
 ===============================================================================
 "∈"
-Syntax error: illegal character in quote '?' at line 1 column 4
+Syntax error: illegal character in '"∈"' at line 1 column 1
 ===============================================================================
 '∈'
 Syntax error: invalid character literal ''∈'' at line 1 column 1
