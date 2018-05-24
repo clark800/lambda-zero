@@ -5,7 +5,6 @@ isOperatorCharacter(n) := isPunctuation(n) /\ !isDelimiterCharacter(n) /\
     !isOperandCharacter(n) /\ !isQuote(n) /\ !isReservedCharacter(n)
 
 isComment(lexeme) := lexeme.startsWith("//")
-isElided(lexeme) := isBlank(lexeme[0]) \/ isComment(lexeme)
 
 splitQuoteCharacter(quote, ns) := (
     ns.isEmpty \/ ns[0] = quote \/ ns[0] = '\n' ? ([], ns)
@@ -45,7 +44,7 @@ splitLexemes(string, splitter, location) := (
 )
 
 scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |
-    (!) <> isElided <> first
+    (!) <> isComment <> first
 
 showTag(tag) := showPair((showString(tag.first), showIntegerPair(tag.second)))
 

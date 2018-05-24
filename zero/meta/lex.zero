@@ -11,6 +11,7 @@ isComma(node) := isSymbol(node) /\ getLexeme(node) =:= ","
 isCommaList(node) := isApplication(node) /\ getLexeme(node) =:= ","
 isTuple(node) := isLambda(node) /\ isComma(getParameter(node))
 isUnit(node) := isTuple(node) /\ isComma(getBody(node))
+isList(node) := isLambda(node) /\ getLexeme(node) =:= "["
 isInternal(node) := getLine(node) = 0 /\ getColumn(node) = 0
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
@@ -50,7 +51,7 @@ newTrue(tag) := newLambda(tag, cT, newLambda(tag, cF,
 newFalse(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cF), 0)))
 newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
-newNil(tag) := newLambda(tag, cX, newTrue(tag))
+newNil(tag) := newLambda(tag, blank, newTrue(tag))
 
 applyToCommaList(f, commaList) := (
     isCommaList(commaList) ? newApplication(getTag(f),
@@ -70,8 +71,14 @@ getCommaListSize(commaList) := (
 getTupleSize(tuple) := getCommaListSize(getBody(tuple))
 
 prependList(tag, item, list) :=
-    newLambda(tag, blank, newApplication(tag,
-        newApplication(tag, blank, item), list))
+    newLambda(tag, comma, newApplication(tag,
+        newApplication(tag, comma, item), list))
+
+getListLength(list) := (
+    !isTuple(list) ? 0
+    tail := getRight(getBody(list))
+    getListLength(tail) + 1
+)
 
 parseEscapeCode(code, tag) := (
     code = '0' ? '\0'
@@ -138,6 +145,9 @@ createInteger(tag) := (
 
 createToken(tag) := (
     lexeme := getTagLexeme(tag)
+    isUppercase(lexeme[0]) ?
+        error("Syntax error: names can't start with uppercase " ++
+            showLexemeAndLocationLine(tag, "'"))
     (lexeme[0] = '"')? parseStringLiteral(tag)
     (lexeme[0] = '\'')? parseCharacterLiteral(tag)
     isIntegerLexeme(lexeme)? createInteger(tag)

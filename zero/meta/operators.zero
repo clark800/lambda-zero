@@ -33,18 +33,16 @@ reduceInfix(operator, left, right) :=
 reducePrefix(operator, _, right) := reduceApply(operator, operator, right)
 reduceNegate(operator, _, right) :=
     reduceInfix(operator, newInteger(getTag(operator), 0), right)
-reduceLambda(operator, left, right) := (
-    !isSymbol(left) ? syntaxError("invalid parameter", left)
+reduceLambda(operator, left, right) :=
     newPatternLambda(getTag(operator), left, right)
-)
 reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
 reduceParentheses(close, open, contents) := (
     !isOpenParen(open) ? syntaxError("missing open for", close)
-    isEOF(contents) ? newLambda(getTag(open), blank, blank)
+    isEOF(contents) ? newLambda(getTag(open), comma, comma)
     isSpecialOperator(contents) ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
-    isCommaList(contents) \/ isTuple(contents) ?
+    isCommaList(contents) \/ isTuple(contents) \/ isList(contents) ?
         newTuple(getTag(open), contents)
     contents
 )

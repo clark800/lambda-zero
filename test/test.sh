@@ -91,6 +91,7 @@ function run {
             "arithmetic.test"
             "definition.test"
             "quote.test"
+            "syntax.test"
         )
     fi
     for suite in "${suites[@]}"; do

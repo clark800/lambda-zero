@@ -3,7 +3,7 @@ getBuiltin(builtin) := (
 
     getInteger(term) := (
         isInteger(term) ? getData(term)
-        syntaxError("expected integer argument to", builtin)
+        runtimeError("expected integer argument to", builtin)
     )
 
     compute(f, left, right) :=
