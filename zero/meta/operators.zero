@@ -11,6 +11,21 @@ isSpecialOperator(operator) := isOperator(operator) /\
     ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
     contains(getLexeme(operator))
 
+newPatternLambda(tag, pattern, body) := (
+    isSymbol(pattern) ? newLambda(tag, pattern, body)
+    !(isTuple(pattern) /\ getTupleSize(pattern) = 2) ?
+        syntaxError("invalid parameter", pattern)
+    leftName := getRight(getLeft(getBody(pattern)))
+    rightName := getRight(getBody(pattern))
+    leftComponent := newApplication(tag, blank, newTrue(tag))
+    rightComponent := newApplication(tag, blank, newFalse(tag))
+    function := newLambda(tag, newName(getTag(leftName)),
+               newLambda(tag, newName(getTag(rightName)), body))
+    application := newApplication(tag,
+        newApplication(tag, function, leftComponent), rightComponent)
+    newLambda(tag, blank, application)
+)
+
 reduceApply(operator, left, right) :=
     newApplication(getTag(operator), left, right)
 reduceInfix(operator, left, right) :=
@@ -20,7 +35,7 @@ reduceNegate(operator, _, right) :=
     reduceInfix(operator, newInteger(getTag(operator), 0), right)
 reduceLambda(operator, left, right) := (
     !isSymbol(left) ? syntaxError("invalid parameter", left)
-    newLambda(getTag(operator), left, right)
+    newPatternLambda(getTag(operator), left, right)
 )
 reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
 reduceParentheses(close, open, contents) := (

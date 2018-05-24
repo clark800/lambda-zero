@@ -54,13 +54,20 @@ newNil(tag) := newLambda(tag, cX, newTrue(tag))
 
 applyToCommaList(f, commaList) := (
     isCommaList(commaList) ? newApplication(getTag(f),
-        applyToCommaList(f, getFunction(commaList)), getArgument(commaList))
+        applyToCommaList(f, getLeft(commaList)), getRight(commaList))
     isComma(commaList) ? f          // allow applying to tuple body
     newApplication(getTag(f), f, commaList)
 )
 
 newTuple(tag, commaList) :=
    newLambda(tag, comma, applyToCommaList(comma, commaList))
+
+getCommaListSize(commaList) := (
+    isCommaList(commaList) ? getCommaListSize(getLeft(commaList)) + 1
+    isComma(commaList) ? 0 || 1
+)
+
+getTupleSize(tuple) := getCommaListSize(getBody(tuple))
 
 prependList(character, list) :=
     newLambda(getTag(list), blank,

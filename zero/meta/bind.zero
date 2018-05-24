@@ -15,8 +15,8 @@ bind(root) := (
             newLambda(getTag(node), parameter, newBody)
         )
         node.isApplication ? (
-            newFunction := bind'(getFunction(node), parameterNames)
-            newArgument := bind'(getArgument(node), parameterNames)
+            newFunction := bind'(getLeft(node), parameterNames)
+            newArgument := bind'(getRight(node), parameterNames)
             newApplication(getTag(node), newFunction, newArgument)
         )
         node.isSymbol ? (

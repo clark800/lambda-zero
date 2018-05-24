@@ -10,8 +10,8 @@ hasRecursiveCalls(node, name) := (
         hasRecursiveCalls(getBody(node), name)
     )
     isApplication(node) ?
-        hasRecursiveCalls(getFunction(node), name) \/
-        hasRecursiveCalls(getArgument(node), name)
+        hasRecursiveCalls(getLeft(node), name) \/
+        hasRecursiveCalls(getRight(node), name)
     isSymbol(node) \/ isReference(node) ?
         getLexeme(node) =:= getLexeme(name)
     false
@@ -25,15 +25,14 @@ transformRecursion(name, value) := (
 
 getNameAndValue(left, right) := (
     !isApplication(left) ? (left, transformRecursion(left, right))
-    getNameAndValue(getFunction(left),
-        newLambda(getTag(getArgument(left)), getArgument(left), right))
+    getNameAndValue(getLeft(left),
+        newLambda(getTag(getRight(left)), getRight(left), right))
 )
 
-transformDefinition(definition, explicitScope) := (
-    (name, value) := getNameAndValue(
-        getFunction(definition), getArgument(definition))
+transformDefinition(left, right, explicitScope) := (
+    (name, value) := getNameAndValue(left, right)
     scope := isEOF(explicitScope) ? name || explicitScope
-    transform := newLambda(getTag(definition), name, scope)
+    transform := newPatternLambda(getTag(name), name, scope)
     newApplication(getTag(name), transform, value)
 )
 
@@ -42,16 +41,16 @@ desugar(node) := (
     isLambda(node) ? newLambda(tag, getParameter(node), desugar(getBody(node)))
     isApplication(node) ? (
         isDefinition(node) ? (
-            isDefinition(getFunction(node)) ?
+            isDefinition(getLeft(node)) ?
                 syntaxError("cannot define a definition", node)
-            desugar(transformDefinition(node, eof))
+            transformDefinition(
+                desugar(getLeft(node)), desugar(getRight(node)), eof)
         )
-        isDefinition(getFunction(node)) ?
-            transformDefinition(getFunction(node), desugar(getArgument(node)))
-        isDefinition(getArgument(node)) ?
-            transformDefinition(getArgument(node), eof)
+        isDefinition(getLeft(node)) ?
+            transformDefinition(desugar(getLeft(getLeft(node))),
+                desugar(getRight(getLeft(node))), desugar(getRight(node)))
         newApplication(getTag(node),
-            desugar(getFunction(node)), desugar(getArgument(node)))
+            desugar(getLeft(node)), desugar(getRight(node)))
     )
     node        // all leaf nodes are returned unmodified
 )
