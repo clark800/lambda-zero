@@ -92,6 +92,7 @@ function run {
             "definition.test"
             "syntax.test"
             "quote.test"
+            #"prelude.test ../zero/prelude.zero"
         )
     fi
     for suite in "${suites[@]}"; do
