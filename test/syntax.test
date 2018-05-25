@@ -59,3 +59,6 @@ Syntax error: undefined symbol 'put' at line 1 column 1
 get(0)
 Syntax error: undefined symbol 'get' at line 1 column 1
 ==========================================================================
+(f -> ((x, y) := (1, 2) \n x)) 0
+1
+==========================================================================

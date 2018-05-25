@@ -1,7 +1,8 @@
 bind(root) := (
     isDefined(parameter, parameterNames) := (
         parameterName := getLexeme(parameter)
-        !(parameterName =:= "_") /\ parameterNames.contains(parameterName) \/
+        !isInternal(parameter) /\ !(parameterName =:= "_") /\
+            parameterNames.contains(parameterName) \/
             isJust(getBuiltin(parameter))
     )
 
