@@ -5,8 +5,8 @@ showAST(node) := (
         "(" ++ showToken(getParameter(node)) ++ " -> " ++
                showAST(getBody(node)) ++ ")"
     node.isApplication?
-        "(" ++ showAST(getFunction(node)) ++ " " ++
-               showAST(getArgument(node)) ++ ")"
+        "(" ++ showAST(getLeft(node)) ++ " " ++
+               showAST(getRight(node)) ++ ")"
     node.isInteger?
         "#" ++ showInteger(getData(node))
     node.isBuiltin?
@@ -18,8 +18,8 @@ serialize(closure) := (
     serialize'(closure', depth) := (
         (term, environment) := closure'
         term.isApplication ?
-            "(" ++ serialize'((getFunction(term), environment), depth) ++
-            " " ++ serialize'((getArgument(term), environment), depth) ++ ")"
+            "(" ++ serialize'((getLeft(term), environment), depth) ++
+            " " ++ serialize'((getRight(term), environment), depth) ++ ")"
         term.isLambda ?
             "(" ++ showToken(getParameter(term)) ++ " -> " ++
             serialize'((getBody(term), environment), depth + 1) ++ ")"

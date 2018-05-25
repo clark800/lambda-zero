@@ -1,17 +1,38 @@
 
-isDefinition(node) := isApplication(node) /\ getLexeme(getTag(node)) =:= ":="
+isDefinition(node) := isApplication(node) /\ getLexeme(node) =:= ":="
 
-getNameAndValue(left, right) := (
-    !isApplication(left) ? (left, right)
-    getNameAndValue(getFunction(left),
-        newLambda(getTag(getArgument(left)), getArgument(left), right))
+hasRecursiveCalls(node, name) := (
+    isLambda(node) ? (
+        getLexeme(getParameter(node)) =:= getLexeme(name) ? (
+            isInternal(getParameter(node)) ? false
+            syntaxError("symbol already defined", getParameter(node))
+        )
+        hasRecursiveCalls(getBody(node), name)
+    )
+    isApplication(node) ?
+        hasRecursiveCalls(getLeft(node), name) \/
+        hasRecursiveCalls(getRight(node), name)
+    isSymbol(node) \/ isReference(node) ?
+        getLexeme(node) =:= getLexeme(name)
+    false
 )
 
-transformDefinition(definition, explicitScope) := (
-    (name, value) := getNameAndValue(
-        getFunction(definition), getArgument(definition))
+transformRecursion(name, value) := (
+    !isSymbol(name) \/ !hasRecursiveCalls(value, name) ? value
+    newApplication(getTag(name), yCombinator,
+        newLambda(getTag(name), newName(getTag(name)), value))
+)
+
+getNameAndValue(left, right) := (
+    !isApplication(left) ? (left, transformRecursion(left, right))
+    getNameAndValue(getLeft(left),
+        newLambda(getTag(getRight(left)), getRight(left), right))
+)
+
+transformDefinition(left, right, explicitScope) := (
+    (name, value) := getNameAndValue(left, right)
     scope := isEOF(explicitScope) ? name || explicitScope
-    transform := newLambda(getTag(definition), name, scope)
+    transform := newPatternLambda(getTag(name), name, scope)
     newApplication(getTag(name), transform, value)
 )
 
@@ -20,16 +41,16 @@ desugar(node) := (
     isLambda(node) ? newLambda(tag, getParameter(node), desugar(getBody(node)))
     isApplication(node) ? (
         isDefinition(node) ? (
-            isDefinition(getFunction(node)) ?
+            isDefinition(getLeft(node)) ?
                 syntaxError("cannot define a definition", node)
-            desugar(transformDefinition(node, eof))
+            transformDefinition(
+                desugar(getLeft(node)), desugar(getRight(node)), eof)
         )
-        isDefinition(getFunction(node)) ?
-            transformDefinition(getFunction(node), desugar(getArgument(node)))
-        isDefinition(getArgument(node)) ?
-            transformDefinition(getArgument(node), eof)
+        isDefinition(getLeft(node)) ?
+            transformDefinition(desugar(getLeft(getLeft(node))),
+                desugar(getRight(getLeft(node))), desugar(getRight(node)))
         newApplication(getTag(node),
-            desugar(getFunction(node)), desugar(getArgument(node)))
+            desugar(getLeft(node)), desugar(getRight(node)))
     )
     node        // all leaf nodes are returned unmodified
 )

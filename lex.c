@@ -41,8 +41,8 @@ const char* skipQuoteCharacter(const char* start) {
     return start[0] == '\\' ? start + 2 : start + 1;
 }
 
-char decodeCharacter(const char* start) {
-    lexerErrorIf(start[0] <= 0, start, "illegal character in quote");
+char decodeCharacter(const char* start, const char* lexeme) {
+    lexerErrorIf(start[0] <= 0, lexeme, "illegal character in");
     if (start[0] != '\\')
         return start[0];
     switch (start[1]) {
@@ -54,7 +54,7 @@ char decodeCharacter(const char* start) {
         case '\\': return '\\';
         case '\"': return '\"';
         case '\'': return '\'';
-        default: lexerErrorIf(true, start, "invalid escape sequence after");
+        default: lexerErrorIf(true, lexeme, "invalid escape sequence in");
     }
     return 0;
 }
@@ -65,7 +65,7 @@ Node* newCharacterLiteral(const char* lexeme) {
     lexerErrorIf(end[0] != quote, lexeme, "missing end quote for");
     const char* skip = skipQuoteCharacter(lexeme + 1);
     lexerErrorIf(skip != end, lexeme, "invalid character literal");
-    unsigned char code = (unsigned char)decodeCharacter(lexeme + 1);
+    unsigned char code = (unsigned char)decodeCharacter(lexeme + 1, lexeme);
     return newInteger(getLexemeLocation(lexeme), code);
 }
 
@@ -75,8 +75,8 @@ Node* buildStringLiteral(const char* lexeme, const char* start) {
     lexerErrorIf(c == '\n' || c == 0, lexeme, "missing end quote for");
     if (c == lexeme[0])
         return newNil(location);
-    return prepend(location, newInteger(location, decodeCharacter(start)),
-        buildStringLiteral(lexeme, skipQuoteCharacter(start)));
+    return prepend(location, newInteger(location, decodeCharacter(start,
+        lexeme)), buildStringLiteral(lexeme, skipQuoteCharacter(start)));
 }
 
 Node* newStringLiteral(const char* lexeme) {

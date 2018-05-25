@@ -7,9 +7,24 @@ prefix := 1
 openfix := 2
 closefix := 3
 
-isSpecialOperator(operator) :=
+isSpecialOperator(operator) := isOperator(operator) /\
     ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
-    contains(getLexeme(getTag(operator)))
+    contains(getLexeme(operator))
+
+newPatternLambda(tag, pattern, body) := (
+    isSymbol(pattern) ? newLambda(tag, pattern, body)
+    !(isTuple(pattern) /\ getTupleSize(pattern) = 2) ?
+        syntaxError("invalid parameter", pattern)
+    leftName := getRight(getLeft(getBody(pattern)))
+    rightName := getRight(getBody(pattern))
+    leftComponent := newApplication(tag, blank, newTrue(tag))
+    rightComponent := newApplication(tag, blank, newFalse(tag))
+    function := newLambda(tag, newName(getTag(leftName)),
+               newLambda(tag, newName(getTag(rightName)), body))
+    application := newApplication(tag,
+        newApplication(tag, function, leftComponent), rightComponent)
+    newLambda(tag, blank, application)
+)
 
 reduceApply(operator, left, right) :=
     newApplication(getTag(operator), left, right)
@@ -18,18 +33,30 @@ reduceInfix(operator, left, right) :=
 reducePrefix(operator, _, right) := reduceApply(operator, operator, right)
 reduceNegate(operator, _, right) :=
     reduceInfix(operator, newInteger(getTag(operator), 0), right)
-reduceLambda(operator, left, right) := (
-    !isSymbol(left) ? syntaxError("invalid parameter", left)
-    newLambda(getTag(operator), left, right)
-)
+reduceLambda(operator, left, right) :=
+    newPatternLambda(getTag(operator), left, right)
 reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
 reduceParentheses(close, open, contents) := (
     !isOpenParen(open) ? syntaxError("missing open for", close)
-    isEOF(contents) ? newLambda(getTag(open), blank, blank)
-    isOperator(contents) /\ isSpecialOperator(contents) ?
+    isEOF(contents) ? newLambda(getTag(open), comma, comma)
+    isSpecialOperator(contents) ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
+    isCommaList(contents) \/ isTuple(contents) \/ isList(contents) ?
+        newTuple(getTag(open), contents)
     contents
+)
+
+createList(tag, commaList, list) := (
+    isEOF(commaList) ? list
+    !isCommaList(commaList) ? prependList(tag, commaList, list)
+    createList(tag, getLeft(commaList),
+        prependList(tag, getRight(commaList), list))
+)
+
+reduceBrackets(close, open, contents) := (
+    !(getLexeme(open) =:= "[") ? syntaxError("missing open for", close)
+    createList(getTag(open), contents, newNil(getTag(open)))
 )
 reduceIllegal(_, _, _) := error("Internal error")
 
@@ -44,30 +71,77 @@ rightPrecedence(rules) := rules.precedence.second
 
 getRules(operator, isAfterOperator) := (
     isSpace(operator) ? ((((20, 20), leftAssociative), infix), reduceApply)
-    getLexeme(getTag(operator)) =:= "-" /\ isAfterOperator ?
+    getLexeme(operator) =:= "-" /\ isAfterOperator ?
         ((((21, 21), leftAssociative), prefix), reduceNegate)
     operators := [
+        // syntactic operators
         ("\0", ((((0, 0), leftAssociative), closefix), reduceIllegal)),
         ("(", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
         (")", ((((0, 22), rightAssociative), closefix), reduceParentheses)),
+        ("[", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
+        ("]", ((((0, 22), rightAssociative), closefix), reduceBrackets)),
+        (",", ((((1, 1), leftAssociative), infix), reduceApply)),
         ("\n", ((((2, 2), rightAssociative), infix), reduceApply)),
         (":=", ((((3, 3), nonAssociative), infix), reduceApply)),
+        ("|", ((((4, 4), leftAssociative), infix), reduceInfix)),
         ("->", ((((5, 5), rightAssociative), infix), reduceLambda)),
+
+        // conditional operators
+        ("||", ((((5, 5), rightAssociative), infix), reduceInfix)),
+        ("::?", ((((5, 5), rightAssociative), infix), reduceInfix)),
+        ("?", ((((6, 6), rightAssociative), infix), reduceInfix)),
+        ("?||", ((((6, 6), rightAssociative), infix), reduceInfix)),
+
+        // monadic operators
+        (">>=", ((((7, 7), leftAssociative), infix), reduceInfix)),
+
+        // logical operators
+        ("<=>", ((((8, 8), nonAssociative), infix), reduceInfix)),
+        ("=>", ((((9, 9), nonAssociative), infix), reduceInfix)),
+        ("\\/", ((((10, 10), rightAssociative), infix), reduceInfix)),
+        ("\\/", ((((10, 10), rightAssociative), infix), reduceInfix)),
+        ("/\\", ((((11, 11), rightAssociative), infix), reduceInfix)),
+
+        // comparison/test operators
         ("=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("!=", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("=:=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (">", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (">=", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        (">=<", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("<:", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        (":", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("!:", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("~", ((((12, 12), nonAssociative), infix), reduceInfix)),
+
+        // arithmetic/list operators
+        ("..", ((((15, 15), nonAssociative), infix), reduceInfix)),
+        ("::", ((((16, 16), rightAssociative), infix), reduceInfix)),
+        ("&", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("+", ((((16, 16), leftAssociative), infix), reduceInfix)),
+        ("++", ((((16, 16), rightAssociative), infix), reduceInfix)),
         ("-", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("*", ((((17, 17), leftAssociative), infix), reduceInfix)),
+        ("**", ((((17, 17), rightAssociative), infix), reduceInfix)),
         ("/", ((((17, 17), leftAssociative), infix), reduceInfix)),
         ("%", ((((17, 17), leftAssociative), infix), reduceInfix)),
-        ("!", ((((21, 21), leftAssociative), prefix), reducePrefix))
+        ("^", ((((18, 18), rightAssociative), infix), reduceInfix)),
+
+        // functional operators
+        ("<>", ((((19, 19), rightAssociative), infix), reduceInfix)),
+
+        // prefix operators
+        ("--", ((((21, 21), leftAssociative), prefix), reducePrefix)),
+        ("!", ((((21, 21), leftAssociative), prefix), reducePrefix)),
+        ("#", ((((21, 21), leftAssociative), prefix), reducePrefix)),
+        ("^^", ((((23, 23), leftAssociative), infix), reduceInfix)),
+        (".", ((((24, 24), leftAssociative), infix), reduceInfix)),
+        ("`", ((((25, 25), leftAssociative), prefix), reducePrefix))
     ]
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
-    operators.lookup(getLexeme(getTag(operator))) ?|| defaultRules
+    operators.lookup(getLexeme(operator)) ?|| defaultRules
 )
 
 isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (

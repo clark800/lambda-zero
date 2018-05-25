@@ -23,8 +23,8 @@ getType(node) := node.first.second
 getData(node) := node.second
 getParameter(node) := getData(node).first
 getBody(node) := getData(node).second
-getFunction(node) := getData(node).first
-getArgument(node) := getData(node).second
+getLeft(node) := getData(node).first
+getRight(node) := getData(node).second
 getDebruijnIndex(node) := getData(node)
 
 isSymbol(node) := node.getType = cSYMBOL

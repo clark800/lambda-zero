@@ -4,8 +4,8 @@ evaluate(closure, stack) := (
     isReference(term) ?
         evaluate(environment[getDebruijnIndex(term)], stack)
     isApplication(term) ?
-        evaluate(newClosure(getFunction(term), environment),
-                 newClosure(getArgument(term), environment) :: stack)
+        evaluate(newClosure(getLeft(term), environment),
+                 newClosure(getRight(term), environment) :: stack)
     isLambda(term) ? (
         stack.isEmpty ? closure
         evaluate(newClosure(getBody(term), stack[0] :: environment), --stack)

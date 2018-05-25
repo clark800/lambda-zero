@@ -90,6 +90,7 @@ function run {
             "lambda.test"
             "arithmetic.test"
             "definition.test"
+            "syntax.test"
             "quote.test"
         )
     fi

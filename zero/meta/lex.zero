@@ -1,8 +1,18 @@
-isOpenParen(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= "("
-isCloseParen(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= ")"
-isSpace(node) := isOperator(node) /\ isBlank(getLexeme(getTag(node))[0])
-isNewline(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= "\n"
-isEOF(node) := isOperator(node) /\ getLexeme(getTag(node)) =:= "\0"
+getLexeme(node) := getTagLexeme(getTag(node))
+getLine(node) := getTagLine(getTag(node))
+getColumn(node) := getTagColumn(getTag(node))
+
+isOpenParen(node) := isOperator(node) /\ getLexeme(node) =:= "("
+isCloseParen(node) := isOperator(node) /\ getLexeme(node) =:= ")"
+isSpace(node) := isOperator(node) /\ isBlank(getLexeme(node)[0])
+isNewline(node) := isOperator(node) /\ getLexeme(node) =:= "\n"
+isEOF(node) := isOperator(node) /\ getLexeme(node) =:= "\0"
+isComma(node) := isSymbol(node) /\ getLexeme(node) =:= ","
+isCommaList(node) := isApplication(node) /\ getLexeme(node) =:= ","
+isTuple(node) := isLambda(node) /\ isComma(getParameter(node))
+isUnit(node) := isTuple(node) /\ isComma(getBody(node))
+isList(node) := isLambda(node) /\ getLexeme(node) =:= "["
+isInternal(node) := getLine(node) = 0 /\ getColumn(node) = 0
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
@@ -15,33 +25,60 @@ showLexeme(lexeme) := (
     lexeme
 )
 
-showToken(token) := showLexeme(getLexeme(getTag(token)))
+showToken(token) := showLexeme(getLexeme(token))
 
 showLocation(tag) :=
-    "line " ++ showNatural(getLine(tag)) ++
-    " column " ++ showNatural(getColumn(tag))
+    "line " ++ showNatural(getTagLine(tag)) ++
+    " column " ++ showNatural(getTagColumn(tag))
 
 showLexemeAndLocationLine(tag, quote) :=
-    quote ++ showLexeme(getLexeme(tag)) ++ quote ++
+    quote ++ showLexeme(getTagLexeme(tag)) ++ quote ++
         " at " ++ showLocation(tag) ++ "\n"
 
 blank := newName(("_", (0, 0)))
+comma := newName((",", (0, 0)))
 cT := newName(("t", (0, 0)))
 cF := newName(("f", (0, 0)))
-cZ := newName(("z", (0, 0)))
+cX := newName(("x", (0, 0)))
+cY := newName(("y", (0, 0)))
 eof := newOperator(("\0", (0, 0)))
+cXY := newLambda(getTag(cX), cX, newApplication(getTag(cX), cY,
+        newApplication(getTag(cX), cX, cX)))
+yCombinator := newLambda(getTag(cY), cY, newApplication(getTag(cY), cXY, cXY))
 
 newTrue(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cT), 1)))
 newFalse(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cF), 0)))
 newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
-newNil(tag) := newLambda(tag, cZ, newTrue(tag))
+newNil(tag) := newLambda(tag, blank, newTrue(tag))
 
-prependList(character, list) :=
-    newLambda(getTag(list), blank,
-        newApplication(getTag(list),
-            newApplication(getTag(list), blank, character), list))
+applyToCommaList(f, commaList) := (
+    isCommaList(commaList) ? newApplication(getTag(f),
+        applyToCommaList(f, getLeft(commaList)), getRight(commaList))
+    isComma(commaList) ? f          // allow applying to tuple body
+    newApplication(getTag(f), f, commaList)
+)
+
+newTuple(tag, commaList) :=
+   newLambda(tag, comma, applyToCommaList(comma, commaList))
+
+getCommaListSize(commaList) := (
+    isCommaList(commaList) ? getCommaListSize(getLeft(commaList)) + 1
+    isComma(commaList) ? 0 || 1
+)
+
+getTupleSize(tuple) := getCommaListSize(getBody(tuple))
+
+prependList(tag, item, list) :=
+    newLambda(tag, comma, newApplication(tag,
+        newApplication(tag, comma, item), list))
+
+getListLength(list) := (
+    !isTuple(list) ? 0
+    tail := getRight(getBody(list))
+    getListLength(tail) + 1
+)
 
 parseEscapeCode(code, tag) := (
     code = '0' ? '\0'
@@ -56,7 +93,7 @@ parseEscapeCode(code, tag) := (
 
 parseQuotedCharacter(tag, string) := (
     string[0] < 0 \/ string[0] > 127 ?
-        error("Syntax error: illegal character in quote " ++ showPrettyTag(tag))
+        error("Syntax error: illegal character in " ++ showPrettyTag(tag))
     string[0] != '\\' ?
         newInteger(tag, string[0])
     --string =:= [] ?
@@ -72,12 +109,12 @@ splitStringLiteral(string) := (
 
 buildStringLiteral(tag, characters) := (
     characters =:= [] ? newNil(tag)
-    prependList(characters[0], buildStringLiteral(tag, --characters))
+    prependList(tag, characters[0], buildStringLiteral(tag, --characters))
 )
 
 getQuoteContents(tag) := (
-    lexeme := getLexeme(tag)
-    (lexeme.last = lexeme[0])? dropLast(--lexeme)
+    lexeme := getTagLexeme(tag)
+    lexeme.length > 1 /\ lexeme.last = lexeme[0] ? dropLast(--lexeme)
     error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
 )
 
@@ -93,7 +130,7 @@ parseCharacterLiteral(tag) := (
 )
 
 createInteger(tag) := (
-    lexeme := getLexeme(tag)
+    lexeme := getTagLexeme(tag)
     maxInteger := "9223372036854775807"
     integer := lexeme.dropIf((= '0'))
     integer.length > maxInteger.length ?
@@ -107,7 +144,10 @@ createInteger(tag) := (
 )
 
 createToken(tag) := (
-    lexeme := getLexeme(tag)
+    lexeme := getTagLexeme(tag)
+    isUppercase(lexeme[0]) ?
+        error("Syntax error: names can't start with uppercase " ++
+            showLexemeAndLocationLine(tag, "'"))
     (lexeme[0] = '"')? parseStringLiteral(tag)
     (lexeme[0] = '\'')? parseCharacterLiteral(tag)
     isIntegerLexeme(lexeme)? createInteger(tag)
