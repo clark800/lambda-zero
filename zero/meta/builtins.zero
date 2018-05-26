@@ -44,12 +44,6 @@ getBuiltin(builtin) := (
         left % right
     )
 
-    extractString(astString) := (
-        !isTuple(astString) ? []
-        getInteger(getRight(getLeft(getBody(astString)))) ::
-            extractString(getRight(getBody(astString)))
-    )
-
     builtins := [
         ("+", (2, makeIntegerBuiltin(add, newInteger))),
         ("-", (2, makeIntegerBuiltin(subtract, newInteger))),

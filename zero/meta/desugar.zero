@@ -29,28 +29,42 @@ getNameAndValue(left, right) := (
         newLambda(getTag(getRight(left)), getRight(left), right))
 )
 
-transformDefinition(left, right, explicitScope) := (
+createScope(name, explicitScope, input) := (
+    getLexeme(name) =:= "main" ? (
+        !isEOF(explicitScope) ?
+            syntaxError("main must be the last function defined", name)
+        newApplication(getTag(name), name,
+            buildStringLiteral(inputTag, input.map(newInteger(blank))))
+    )
+    isEOF(explicitScope) ? name || explicitScope
+)
+
+transformDefinition(left, right, explicitScope, input) := (
     (name, value) := getNameAndValue(left, right)
-    scope := isEOF(explicitScope) ? name || explicitScope
+    scope := createScope(name, explicitScope, input)
     transform := newPatternLambda(getTag(name), name, scope)
     newApplication(getTag(name), transform, value)
 )
 
-desugar(node) := (
+desugar(node, input) := (
     tag := getTag(node)
-    isLambda(node) ? newLambda(tag, getParameter(node), desugar(getBody(node)))
+    isLambda(node) ?
+        newLambda(tag, getParameter(node), desugar(getBody(node), input))
     isApplication(node) ? (
         isDefinition(node) ? (
             isDefinition(getLeft(node)) ?
                 syntaxError("cannot define a definition", node)
             transformDefinition(
-                desugar(getLeft(node)), desugar(getRight(node)), eof)
+                desugar(getLeft(node), input),
+                desugar(getRight(node), input), eof, input)
         )
         isDefinition(getLeft(node)) ?
-            transformDefinition(desugar(getLeft(getLeft(node))),
-                desugar(getRight(getLeft(node))), desugar(getRight(node)))
+            transformDefinition(
+                desugar(getLeft(getLeft(node)), input),
+                desugar(getRight(getLeft(node)), input),
+                desugar(getRight(node), input), input)
         newApplication(getTag(node),
-            desugar(getLeft(node)), desugar(getRight(node)))
+            desugar(getLeft(node), input), desugar(getRight(node), input))
     )
     node        // all leaf nodes are returned unmodified
 )

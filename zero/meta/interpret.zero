@@ -2,5 +2,46 @@
 execute(ast) := evaluate((ast, []), [])
 //main(input) := showList(scan(input).map(showTag))
 //main(input) := showList(lex(input).map(showAST))
-//main(input) := showAST(parse(input))
-main(input) := serialize(execute(parse(input)))
+splitCodeAndInput(input) := (
+    (code, afterCode) := input.splitOn("\0")
+    input' := afterCode.isEmpty ? [] || --afterCode
+    (code, input')
+)
+
+isIONode(node) := getLexeme(getLeft(node)) =:= "main" /\ isInput(getRight(node))
+
+isIO(node) := (
+    isLambda(node) ? isIO(getBody(node))
+    isApplication(node) /\ (isIONode(node) \/ isIO(getLeft(node)))
+)
+
+/*main(input) := (
+    (code, input') := splitCodeAndInput(input)
+    showAST(parse(code, input'))
+)*/
+
+getCharacter(node) := (
+    isInteger(node) ? getData(node)
+    runtimeError("expected integer", node)
+)
+
+extractOutputString(closure) := (
+    term := getTerm(closure)
+    !isTuple(term) ? []
+    //isNil(term) ? []    // TODO: define isNil
+    //!isPair(term) ? runtimeError("expected a string", term)
+    // add dummy item to environment corresponding to pair lambda
+    environment' := eof :: getEnvironment(closure)
+    characterTerm := getRight(getLeft(getBody(term)))
+    characterClosure := newClosure(characterTerm, environment')
+    character := getCharacter(getTerm(evaluate(characterClosure, [])))
+    remaining := evaluate(newClosure(getRight(getBody(term)), environment'), [])
+    character :: extractOutputString(remaining)
+)
+
+main(input) := (
+    (code, input') := splitCodeAndInput(input)
+    parsed := parse(code, input')
+    result := execute(parsed)
+    isIO(parsed) ? extractOutputString(result) || serialize(result)
+)
