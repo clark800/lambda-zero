@@ -1,4 +1,4 @@
-parse(input) := (
+parse(code, input) := (
     isOpenOperator(operator) :=
         isOperator(operator) /\ getRules(operator, false).fixity = openfix
 
@@ -116,7 +116,7 @@ parse(input) := (
     // except that the left side has been structured
     // shiftToken is a state -> state transformer
     shiftToken((stack, tokens)) := (pushToken(stack, tokens[0]), --tokens)
-    tokens := lex(input ++ [0])
+    tokens := lex(code ++ [0])
     ast := head(first(shiftToken.until(isEmpty <> second, ([eof], tokens))))
-    bind(desugar(ast))
+    bind(desugar(ast, input))
 )
