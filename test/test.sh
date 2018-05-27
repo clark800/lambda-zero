@@ -83,16 +83,21 @@ function run {
         "arithmetic.test"
         "definition.test"
         "quote.test"
+        "math.test ../zero/prelude.zero"
         "prelude.test ../zero/prelude.zero"
+        "show.test ../zero/prelude.zero"
+        "infinite.test ../zero/prelude.zero"
     )
     if [[ "$META" -eq 1 ]]; then
+        ulimit -s unlimited     # prevent segfaults due to high recursion depth
         suites=(
             "lambda.test"
             "arithmetic.test"
             "definition.test"
             "syntax.test"
             "quote.test"
-            #"prelude.test ../zero/prelude.zero"
+            "math.test ../zero/prelude.zero"
+            "prelude.test ../zero/prelude.zero"
         )
     fi
     for suite in "${suites[@]}"; do

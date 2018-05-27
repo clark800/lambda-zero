@@ -28,6 +28,8 @@ void append(Array* array, void* value) {
         array->capacity = array->capacity == 0 ? 1 : 2 * array->capacity;
         size_t newSize = array->capacity * sizeof(void*);
         array->elements = realloc(array->elements, newSize);
+        if (array->elements == NULL)
+            error("\nError: out of memory\n");
     }
     array->elements[array->length++] = value;
 }

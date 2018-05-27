@@ -34,10 +34,8 @@ void printLexemeAndLocationLine(const char* lexeme, const char* quote) {
     fputs(quote, stderr);
     printLexeme(lexeme, stderr);
     fputs(quote, stderr);
-    if (!TEST) {
-        fputs(" at ", stderr);
-        printLocationString(getLexemeLocation(lexeme));
-    }
+    fputs(" at ", stderr);
+    printLocationString(getLexemeLocation(lexeme));
     fputs("\n", stderr);
 }
 
