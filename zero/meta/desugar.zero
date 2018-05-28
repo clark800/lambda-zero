@@ -26,7 +26,7 @@ transformRecursion(name, value) := (
 getNameAndValue(left, right) := (
     !isApplication(left) ? (left, transformRecursion(left, right))
     getNameAndValue(getLeft(left),
-        newLambda(getTag(getRight(left)), getRight(left), right))
+        newPatternLambda(getTag(getRight(left)), getRight(left), right))
 )
 
 createScope(name, explicitScope, input) := (

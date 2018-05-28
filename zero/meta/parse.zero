@@ -60,8 +60,7 @@ parse(code, input) := (
         rules := getRules(operator, false)
         isSpecialOperator(operator) \/ rules.fixity != infix ?
             syntaxError("invalid operator in section", operator)
-        newLambda(getTag(operator), blank,
-            rules.collapse(operator, left, right))
+        newLambda(getTag(operator), blank, reduceInfix(operator, left, right))
     )
 
     constructSection(left, right) := (
@@ -107,7 +106,7 @@ parse(code, input) := (
     pushOperator(stack, operator) := (
         // ignore spaces before operators
         pushOperator'(
-            stack.dropIf((!isOpenParen(operator) /\) <> isSpace), operator)
+            stack.dropIf((!isOpenOperator(operator) /\) <> isSpace), operator)
     )
 
     pushToken(stack, token) := isOperator(token) ?
