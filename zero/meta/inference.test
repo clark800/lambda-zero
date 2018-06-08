@@ -1,0 +1,9 @@
+id(x) := x
+
+const(x) := _ -> x
+
+f(x, y) := y(x)
+
+g(x) := x * x
+
+h(x, y) := x > y

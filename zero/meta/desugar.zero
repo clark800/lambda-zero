@@ -39,11 +39,11 @@ createScope(name, explicitScope, input) := (
     isEOF(explicitScope) ? name || explicitScope
 )
 
-transformDefinition(left, right, explicitScope, input) := (
+transformDefinition(tag, left, right, explicitScope, input) := (
     (name, value) := getNameAndValue(left, right)
     scope := createScope(name, explicitScope, input)
-    transform := newPatternLambda(getTag(name), name, scope)
-    newApplication(getTag(name), transform, value)
+    transform := newPatternLambda(tag, name, scope)
+    newApplication(tag, transform, value)
 )
 
 desugar(node, input) := (
@@ -54,12 +54,12 @@ desugar(node, input) := (
         isDefinition(node) ? (
             isDefinition(getLeft(node)) ?
                 syntaxError("cannot define a definition", node)
-            transformDefinition(
+            transformDefinition(getTag(node),
                 desugar(getLeft(node), input),
                 desugar(getRight(node), input), eof, input)
         )
         isDefinition(getLeft(node)) ?
-            transformDefinition(
+            transformDefinition(getTag(getLeft(node)),
                 desugar(getLeft(getLeft(node)), input),
                 desugar(getRight(getLeft(node)), input),
                 desugar(getRight(node), input), input)
