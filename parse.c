@@ -143,6 +143,12 @@ void collapseBracket(Stack* stack, Operator op) {
         if (isCloseParen(close) && !isOpenParen(peek(stack, 0)))
             contents = replaceHold(contents, collapseSection(stack, right));
         Hold* open = pop(stack);
+        // if this is function call syntax, and the contents are a tuple or
+        // list, wrap it in a singleton so it gets passed as a single parameter
+        if (isOpenParen(getNode(open)) && !isOperator(peek(stack, 0)) &&
+            (isTuple(getNode(contents)) || isList(getNode(contents))))
+            contents = replaceHold(contents, hold(newSingleton(
+                getLocation(getNode(open)), getNode(contents))));
         pushOperand(stack, applyOperator(op, getNode(open), getNode(contents)));
         release(open);
     }

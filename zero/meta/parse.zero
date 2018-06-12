@@ -84,7 +84,12 @@ parse(code, input) := (
         isEOF(stack[1]) ? syntaxError("missing open for", close)
         isCloseParen(close) /\ !isOpenOperator(stack[1]) ?
             collapseSection(stack, close)
-        pushOperand(stack.drop(2), rules.collapse(close, stack[1], stack[0]))
+        open := stack[1]
+        contents := stack[0]
+        contents' := isOpenParen(open) /\ !isOperator(stack[2]) /\
+            (isTuple(contents) \/ isList(contents)) ?
+            newTuple(getTag(open), contents) || contents
+        pushOperand(stack.drop(2), rules.collapse(close, open, contents'))
     )
 
     pushOperator'(stack, operator) := (

@@ -91,8 +91,6 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
     }
     if (isCommaList(contents))
         return newTuple(getLocation(open), contents);
-    if (isTuple(contents) || isList(contents))
-        return newSingleton(getLocation(open), contents);
     return contents;
 }
 
