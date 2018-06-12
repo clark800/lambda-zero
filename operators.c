@@ -45,8 +45,8 @@ Node* newArrow(Node* operator, Node* left, Node* right) {
     Node* rightName = getRight(getBody(left));
     Node* leftComponent = newApplication(location, getBody(IDENTITY), TRUE);
     Node* rightComponent = newApplication(location, getBody(IDENTITY), FALSE);
-    Node* lambda = newLambda(location, newParameter(getLocation(leftName)),
-        newLambda(location, newParameter(getLocation(rightName)), right));
+    Node* lambda = newArrow(operator, leftName,
+        newArrow(operator, rightName, right));
     Node* application = newApplication(location,
         newApplication(location, lambda, leftComponent), rightComponent);
     return newLambda(location, getParameter(IDENTITY), application);
