@@ -4,7 +4,6 @@ cLAMBDA := 2
 cAPPLICATION := 3
 cBUILTIN := 4
 cINTEGER := 5
-cGLOBAL := 6
 
 cNAME := 0
 cOPERATOR := 1
@@ -16,7 +15,6 @@ newLambda(tag, parameter, body) := ((tag, cLAMBDA), (parameter, body))
 newApplication(tag, left, right) := ((tag, cAPPLICATION), (left, right))
 newBuiltin(tag, builtin) := ((tag, cBUILTIN), builtin)
 newInteger(tag, value) := ((tag, cINTEGER), value)
-newGlobal(tag, code) := ((tag, cGLOBAL), code)
 
 getTag(node) := node.first.first
 getType(node) := node.first.second
@@ -35,7 +33,6 @@ isLambda(node) := node.getType = cLAMBDA
 isApplication(node) := node.getType = cAPPLICATION
 isBuiltin(node) := node.getType = cBUILTIN
 isInteger(node) := node.getType = cINTEGER
-isGlobal(node) := node.getType = cGLOBAL
 
 newClosure(term, environment) := (term, environment)
 getTerm(closure) := closure.first
