@@ -42,8 +42,7 @@ reduceParentheses(close, open, contents) := (
     isSpecialOperator(contents) ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
-    isCommaList(contents) \/ isTuple(contents) \/ isList(contents) ?
-        newTuple(getTag(open), contents)
+    isCommaList(contents) ? newTuple(getTag(open), contents)
     contents
 )
 
