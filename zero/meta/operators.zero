@@ -19,8 +19,8 @@ newPatternLambda(tag, pattern, body) := (
     rightName := getRight(getBody(pattern))
     leftComponent := newApplication(tag, blank, newTrue(tag))
     rightComponent := newApplication(tag, blank, newFalse(tag))
-    function := newLambda(tag, newName(getTag(leftName)),
-               newLambda(tag, newName(getTag(rightName)), body))
+    function := newPatternLambda(tag, leftName,
+               newPatternLambda(tag, rightName, body))
     application := newApplication(tag,
         newApplication(tag, function, leftComponent), rightComponent)
     newLambda(tag, blank, application)
