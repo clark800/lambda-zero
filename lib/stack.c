@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "tree.h"
 #include "stack.h"
 
 Stack* newStack(Node* head) {

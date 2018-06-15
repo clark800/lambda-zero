@@ -1,9 +1,3 @@
-#ifndef STACK_H
-#define STACK_H
-
-#include <stddef.h>
-#include "tree.h"
-
 typedef struct Stack Stack;
 typedef struct Iterator Iterator;
 
@@ -17,5 +11,3 @@ Iterator* iterate(Stack* stack);
 Iterator* next(Iterator* iterator);
 Node* cursor(Iterator* iterator);
 bool end(Iterator* iterator);
-
-#endif

@@ -1,37 +1,12 @@
-#ifndef SCAN_H
-#define SCAN_H
-
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <ctype.h>
-
 typedef struct {
     unsigned int line, column;
 } Position;
 
-static inline bool isSpaceCharacter(char c) {
-    return c == ' ' || c == '\t' || c == '\r';
-}
-
-static inline bool isQuoteCharacter(char c) {
-    return c == '"' || c == '\'';
-}
-
-static inline bool isDelimiterCharacter(char c) {
-    return c == '\0' || strchr(" \n,;`()[]{}", c) != NULL;
-}
-
-static inline bool isOperandCharacter(char c) {
-    // check c > 0 to ensure it is ASCII
-    return c > 0 && (isalnum(c) || c == '\'' || c == '_');
-}
-
-static inline bool isOperatorCharacter(char c) {
-    // check c > 0 to ensure it is ASCII
-    return c > 0 && !isDelimiterCharacter(c) && !isOperandCharacter(c)
-        && !isQuoteCharacter(c) && strchr("{};@$", c) == NULL;
-}
+bool isSpaceCharacter(char c);
+bool isQuoteCharacter(char c);
+bool isDelimiterCharacter(char c);
+bool isOperandCharacter(char c);
+bool isOperatorCharacter(char c);
 
 const char* getFirstLexeme(const char* input);
 const char* getNextLexeme(const char* lastLexeme);
@@ -40,6 +15,3 @@ bool isSameLexeme(const char* a, const char* b);
 int getLexemeLocation(const char* lexeme);
 const char* getLexemeByLocation(int location);
 Position getPosition(unsigned int location);
-void printLexeme(const char* lexeme, FILE* stream);
-
-#endif

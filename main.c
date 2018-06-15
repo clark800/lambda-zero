@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "lib/util.h"
+#include "lib/readfile.h"
 #include "lib/tree.h"
+#include "lib/array.h"
 #include "lib/freelist.h"
-#include "ast.h"
-#include "objects.h"
+#include "closure.h"
 #include "errors.h"
-#include "serialize.h"
 #include "parse.h"
 #include "evaluate.h"
+#include "serialize.h"
 
 void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
@@ -18,16 +18,14 @@ void checkForMemoryLeak(const char* label, size_t expectedUsage) {
 
 void interpret(const char* sourceCode) {
     initNodeAllocator();
-    initObjects(parse(INTERNAL_CODE, false));
-    Program program = parse(sourceCode, true);
+    Program internal = parse(NULL);
+    Program program = parse(sourceCode);
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
-    if (!program.IO) {
+    if (!isIO(program))
         serialize(getNode(valueClosure), program.globals);
-        fputs("\n", stdout);
-    }
     release(valueClosure);
     deleteProgram(program);
-    deleteObjects();
+    deleteProgram(internal);
     destroyNodeAllocator();
     checkForMemoryLeak("interpret", 0);
 }

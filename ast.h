@@ -1,11 +1,3 @@
-#ifndef AST_H
-#define AST_H
-
-#include <assert.h>
-#include <stdbool.h>
-#include "lib/tree.h"
-#include "lib/array.h"
-
 // a symbol identifies a thing e.g. the parameter *named* x
 // constructed from (x -> y) is not a symbol
 // but the parameter name x is a symbol
@@ -32,18 +24,6 @@ enum BuiltinCode {PLUS=BUILTIN, MINUS, TIMES, DIVIDE, MODULUS,
 
 enum NodeType {
     N_INTEGER, N_BUILTIN, N_REFERENCE, N_GLOBAL, N_LAMBDA, N_APPLICATION};
-
-typedef struct Program {
-    Hold* root;
-    Node* entry;
-    Array* globals;
-    bool IO;
-} Program;
-
-static inline void deleteProgram(Program program) {
-    release(program.root);
-    deleteArray(program.globals);
-}
 
 // =============================================
 // Functions to test if a node is a certain type
@@ -205,4 +185,59 @@ static inline void convertToGlobal(Node* node, unsigned long long index) {
     setType(node, (long long)(GLOBAL + index));
 }
 
-#endif
+const char* getLexeme(Node* node);
+bool isSameToken(Node* tokenA, Node* tokenB);
+bool isThisToken(Node* token, const char* lexeme);
+bool isSpace(Node* token);
+
+static inline bool isNewline(Node* node) {
+    return isLeaf(node) && isThisToken(node, "\n");
+}
+
+static inline bool isDefinition(Node* node) {
+    return isApplication(node) && isThisToken(node, ":=");
+}
+
+static inline bool isOpenParen(Node* node) {
+    return isLeaf(node) && isThisToken(node, "(");
+}
+
+static inline bool isCloseParen(Node* node) {
+    return isLeaf(node) && isThisToken(node, ")");
+}
+
+static inline bool isEOF(Node* node) {
+    return isLeaf(node) && isThisToken(node, "\0");
+}
+
+static inline bool isComma(Node* node) {
+    return isLeaf(node) && isThisToken(node, ",");
+}
+
+static inline bool isCommaList(Node* node) {
+    return isApplication(node) && isThisToken(node, ",");
+}
+
+static inline bool isTuple(Node* node) {
+    // must check the body to exclude the definition of ","
+    return isLambda(node) && isComma(getParameter(node)) &&
+           (isComma(getBody(node)) || isCommaList(getBody(node)));
+}
+
+static inline bool isList(Node* node) {
+    return isLambda(node) && isThisToken(node, "[") &&
+           isThisToken(getParameter(node), "_");
+}
+
+static inline Node* newEOF(void) {
+    return newOperator(0);
+}
+
+extern const char* OBJECTS_CODE;
+extern Node *IDENTITY, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
+void initObjects(Node* internal);
+
+Node* newNil(int location);
+Node* prepend(int location, Node* item, Node* list);
+Node* newUnit(int location);
+Node* newSingleton(int location, Node* item);

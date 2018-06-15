@@ -1,19 +1,17 @@
-#include "objects.h"
+#include "lib/tree.h"
+#include "scan.h"
+#include "ast.h"
 
-const char* INTERNAL_CODE =
+Node *IDENTITY, *UNIT, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
+
+const char* OBJECTS_CODE =
     "(_ -> _) \n (,) -> (,) \n"                     // identity, empty tuple
     "(t -> f -> t) \n (t -> f -> f) \n"             // true, false
     "(y -> (x -> y (x x)) (x -> y (x x))) "         // Y combinator
     "(print -> c -> ((put c) (cs -> cs print))) \n" // lazy string printer
     "(get 0) \n 0";                                 // lazy input string
 
-Program PROGRAM;
-Node *IDENTITY, *UNIT, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
-Stack* INPUT_STACK;
-
-void initObjects(Program program) {
-    PROGRAM = program;
-    Node* objects = getNode(program.root);
+void initObjects(Node* objects) {
     negateLocations(objects);
     IDENTITY = getListElement(objects, 0);
     UNIT = getListElement(objects, 1);
@@ -22,12 +20,6 @@ void initObjects(Program program) {
     PRINT = getListElement(objects, 4);
     YCOMBINATOR = getLeft(PRINT);
     INPUT = getListElement(objects, 5);
-    INPUT_STACK = newStack(VOID);
-}
-
-void deleteObjects() {
-    deleteProgram(PROGRAM);
-    deleteStack(INPUT_STACK);
 }
 
 Node* newNil(int location) {
@@ -46,4 +38,20 @@ Node* newUnit(int location) {
 Node* newSingleton(int location, Node* item) {
     return newLambda(location, getParameter(UNIT),
         newApplication(getLocation(getBody(UNIT)), getBody(UNIT), item));
+}
+
+const char* getLexeme(Node* node) {
+    return getLexemeByLocation(getLocation(node));
+}
+
+bool isSameToken(Node* tokenA, Node* tokenB) {
+    return isSameLexeme(getLexeme(tokenA), getLexeme(tokenB));
+}
+
+bool isThisToken(Node* token, const char* lexeme) {
+    return isSameLexeme(getLexeme(token), lexeme);
+}
+
+bool isSpace(Node* token) {
+    return isLeaf(token) && isSpaceCharacter(getLexeme(token)[0]);
 }

@@ -1,13 +1,13 @@
-#include <stddef.h>
 #include "lib/tree.h"
+#include "lib/array.h"
 #include "lib/stack.h"
-#include "objects.h"
+#include "ast.h"
 #include "errors.h"
 #include "lex.h"
 #include "operators.h"
 #include "desugar.h"
 #include "bind.h"
-#include "serialize.h"
+#include "debug.h"
 #include "parse.h"
 
 bool TRACE_PARSING = false;
@@ -221,11 +221,27 @@ void debugStage(const char* label, Node* node, bool trace) {
     }
 }
 
-Program parse(const char* input, bool optimize) {
-    bool trace = TRACE_PARSING && input != INTERNAL_CODE;
-    Hold* result = parseString(input, trace);
+bool isIO(Program program) {
+    return isApplication(program.entry) &&
+        isApplication(getLeft(program.entry)) &&
+        isGlobal(getLeft(getLeft(program.entry))) &&
+        isThisToken(getLeft(getLeft(program.entry)), "main");
+}
+
+void deleteProgram(Program program) {
+    release(program.root);
+    deleteArray(program.globals);
+}
+
+Program parse(const char* input) {
+    bool trace = TRACE_PARSING && input != NULL;
+    Hold* result = parseString(input == NULL ? OBJECTS_CODE : input, trace);
     debugStage("Parsed", getNode(result), trace);
     result = replaceHold(result, desugar(getNode(result)));
     debugStage("Desugared", getNode(result), trace);
-    return bind(result, optimize);
+    Array* globals = bind(result, input == NULL);
+    if (input == NULL)
+        initObjects(getNode(result));
+    Node* entry = elementAt(globals, length(globals) - 1);
+    return (Program){result, entry, globals};
 }

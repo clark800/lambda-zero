@@ -1,7 +1,6 @@
-#ifndef TREE_H
-#define TREE_H
-
+#include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct Node Node;
 extern Node* const VOID;
@@ -34,5 +33,3 @@ Node* getNode(Hold* hold);
 
 void negateLocations(Node* node);
 Node* getListElement(Node* node, unsigned long long n);
-
-#endif

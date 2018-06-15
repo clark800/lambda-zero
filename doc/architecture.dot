@@ -5,7 +5,7 @@ digraph graphname {
     size=6;
     ranksep=1.2;
     nodesep=0.8;
-    mclimit=2;
+    mclimit=100;
 
     subgraph cluster_interpreter {
         label="interpreter";
@@ -15,20 +15,16 @@ digraph graphname {
             bind;
             operators;
             parse;
-            subgraph cluster_lexer {
-                label="lexer";
-                scan;
-                lex;
-                subgraph cluster_shared {
-                    label="shared";
-                    objects;
-                    ast;
-                }
-            }
+            lex;
         }
-        main;
+        debug;
+        scan;
+        ast;
         serialize;
+        print;
+        errors;
         closure;
+        main;
         subgraph cluster_evaluator {
             label="evaluator";
             evaluate;
@@ -36,48 +32,56 @@ digraph graphname {
         }
     }
 
-    objects -> ast;
+    ast -> scan;
 
-    bind -> ast;
-    bind -> lex;
+    print -> scan;
 
-    builtins -> ast;
-    builtins -> objects;
-    builtins -> lex;
-    builtins -> closure;
+    errors -> scan;
+    errors -> print;
 
-    desugar -> ast;
-    desugar -> lex;
-    desugar -> objects;
+    debug -> ast;
+    debug -> print;
 
-    evaluate -> ast;
-    evaluate -> serialize;
-    evaluate -> builtins;
-    evaluate -> closure;
+    serialize -> ast;
+    serialize -> print;
+    serialize -> closure;
 
     lex -> scan;
     lex -> ast;
-    lex -> objects;
+    lex -> errors;
 
-    serialize -> closure;
-    serialize -> ast;
-    serialize -> lex;
+    bind -> ast;
+    bind -> errors;
+
+    desugar -> ast;
+    desugar -> errors;
+    desugar -> operators;
+
+    operators -> ast;
+    operators -> errors;
+
+    parse -> ast;
+    parse -> errors;
+    parse -> lex;
+    parse -> operators;
+    parse -> desugar;
+    parse -> bind;
+    parse -> debug;
+
+    builtins -> ast;
+    builtins -> errors;
+    builtins -> closure;
+
+    evaluate -> ast;
+    evaluate -> errors;
+    evaluate -> debug;
+    evaluate -> closure;
+    evaluate -> builtins;
 
     main -> parse;
     main -> evaluate;
     main -> serialize;
-    main -> objects;
+    main -> errors;
     main -> closure;
-    main -> ast;
 
-    operators -> ast;
-    operators -> lex;
-
-    parse -> lex;
-    parse -> operators;
-    parse -> objects;
-    parse -> desugar;
-    parse -> bind;
-    parse -> serialize;
-    parse -> ast;
 }

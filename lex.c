@@ -2,23 +2,11 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include "lib/stack.h"
+#include "lib/tree.h"
 #include "scan.h"
+#include "ast.h"
 #include "errors.h"
-#include "objects.h"
 #include "lex.h"
-
-Node* newEOF() {
-    return newOperator(0);
-}
-
-static inline const char* getLexeme(Node* node) {
-    return getLexemeByLocation(getLocation(node));
-}
-
-void printToken(Node* token, FILE* stream) {
-    printLexeme(getLexeme(token), stream);
-}
 
 bool isNameLexeme(const char* lexeme) {
     // note: the quote case is only for internal code
@@ -117,16 +105,4 @@ Hold* getFirstToken(const char* sourceCode) {
 
 Hold* getNextToken(Hold* token) {
     return hold(createToken(getNextLexeme(getLexeme(getNode(token)))));
-}
-
-bool isSameToken(Node* tokenA, Node* tokenB) {
-    return isSameLexeme(getLexeme(tokenA), getLexeme(tokenB));
-}
-
-bool isThisToken(Node* token, const char* lexeme) {
-    return isSameLexeme(getLexeme(token), lexeme);
-}
-
-bool isSpace(Node* token) {
-    return isLeaf(token) && isSpaceCharacter(getLexeme(token)[0]);
 }
