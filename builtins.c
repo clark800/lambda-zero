@@ -1,14 +1,34 @@
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include "lib/tree.h"
+#include "lib/stack.h"
 #include "lib/util.h"
 #include "ast.h"
 #include "errors.h"
-#include "objects.h"
+#include "closure.h"
 #include "builtins.h"
 
 bool STDERR = false;
+Stack* INPUT_STACK;
+
+void printBacktrace(Closure* closure) {
+    fputs("\n\nBacktrace:\n", stderr);
+    Stack* backtrace = (Stack*)getBacktrace(closure);
+    for (Iterator* it = iterate(backtrace); !end(it); it = next(it))
+        printTokenAndLocationLine(cursor(it), "");
+}
+
+void printRuntimeError(const char* message, Closure* closure) {
+    if (!TEST && !isEmpty((Stack*)getBacktrace(closure)))
+        printBacktrace(closure);
+    printTokenError("\nRuntime", message, getTerm(closure));
+}
+
+void runtimeError(const char* message, Closure* closure) {
+    printRuntimeError(message, closure);
+    exit(1);
+}
 
 static inline Node* toBoolean(int value) {
     return value == 0 ? FALSE : TRUE;

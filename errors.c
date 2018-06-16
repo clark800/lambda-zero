@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lib/stack.h"
-#include "lib/util.h"
+#include "lib/tree.h"
 #include "scan.h"
+#include "print.h"
 #include "errors.h"
 
 bool TEST = false;
@@ -39,6 +39,10 @@ void printLexemeAndLocationLine(const char* lexeme, const char* quote) {
     fputs("\n", stderr);
 }
 
+void printTokenAndLocationLine(Node* token, const char* quote) {
+    printLexemeAndLocationLine(getLexeme(token), quote);
+}
+
 void printError(const char* type, const char* message, const char* lexeme) {
     printFour(type, " error: ", message, " ");
     printLexemeAndLocationLine(lexeme, "\'");
@@ -63,23 +67,6 @@ void syntaxError(const char* message, Node* token) {
 void syntaxErrorIf(bool condition, const char* message, Node* token) {
     if (condition)
         syntaxError(message, token);
-}
-
-void printBacktrace(Closure* closure) {
-    fputs("\n\nBacktrace:\n", stderr);
-    for (Iterator* it = iterate(getBacktrace(closure)); !end(it); it = next(it))
-        printLexemeAndLocationLine(getLexeme(cursor(it)), "");
-}
-
-void printRuntimeError(const char* message, Closure* closure) {
-    if (!TEST && !isEmpty(getBacktrace(closure)))
-        printBacktrace(closure);
-    printTokenError("\nRuntime", message, getTerm(closure));
-}
-
-void runtimeError(const char* message, Closure* closure) {
-    printRuntimeError(message, closure);
-    exit(1);
 }
 
 void usageError(const char* name) {

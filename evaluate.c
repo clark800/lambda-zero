@@ -1,8 +1,11 @@
+#include "lib/tree.h"
+#include "lib/array.h"
 #include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
+#include "debug.h"
+#include "closure.h"
 #include "builtins.h"
-#include "serialize.h"
 #include "evaluate.h"
 
 bool TRACE_EVALUATION = false;
@@ -49,7 +52,7 @@ static inline void evaluateApplicationNode(Closure* closure, Stack* stack) {
 static inline void evaluateLambdaNode(Closure* closure, Stack* stack) {
     // move argument from stack to local environment and step into body
     Hold* argument = pop(stack);
-    pushLocal(closure, getNode(argument));
+    push((Stack*)closure, getNode(argument));
     release(argument);
     setTerm(closure, getBody(getTerm(closure)));
 }
@@ -72,7 +75,7 @@ static inline void evaluateGlobalNode(Closure* closure, const Array* globals) {
     Node* global = getTerm(closure);
     setTerm(closure, getGlobalValue(global, globals));
     if (!TEST)     // backtraces are not shown in test mode
-        push(getBacktrace(closure), global);
+        push((Stack*)getBacktrace(closure), global);
     setLocals(closure, VOID);
 }
 
@@ -149,8 +152,10 @@ Hold* evaluateClosure(Closure* closure, const Array* globals) {
 }
 
 Hold* evaluateTerm(Node* term, const Array* globals) {
+    INPUT_STACK = newStack(VOID);
     Hold* closure = hold(newClosure(term, VOID, VOID));
     Hold* result = evaluateClosure(getNode(closure), globals);
     release(closure);
+    deleteStack(INPUT_STACK);
     return result;
 }

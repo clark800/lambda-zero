@@ -1,4 +1,5 @@
 #include <stdlib.h>     // llabs
+#include <stdio.h>
 #include "util.h"
 
 void* error(const char* message) {
@@ -48,31 +49,4 @@ char* lltoa(long long n, char* buffer, int radix) {
         buffer[i++] = '-';
     buffer[i] = '\0';
     return reverse(buffer, i);
-}
-
-void fputll(long long n, FILE* stream) {
-    char buffer[3 * sizeof(long long)];
-    fputs(lltoa(n, buffer, 10), stream);
-}
-
-char* readfile(FILE* stream) {
-    size_t length = 0;
-    size_t bufferLength = READ_CHUNK_SIZE;
-    size_t bytesRead = 0;
-    char* buffer = (char*)smalloc(bufferLength * sizeof(char));
-
-    do {
-        length += (size_t)bytesRead * sizeof(char);
-        if (length == bufferLength) {
-            bufferLength += READ_CHUNK_SIZE;
-            buffer = realloc(buffer, bufferLength * sizeof(char));
-        }
-        bytesRead = fread(buffer + length, sizeof(char),
-            (bufferLength - length), stream);
-    } while (bytesRead > 0);
-
-    if (length == bufferLength)
-        buffer = realloc(buffer, (length + 1) * sizeof(char));
-    buffer[length] = '\0';
-    return buffer;
 }

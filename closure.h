@@ -1,9 +1,3 @@
-#ifndef CLOSURE_H
-#define CLOSURE_H
-
-#include "lib/tree.h"
-#include "lib/stack.h"
-
 typedef Node Closure;
 
 static inline Closure* newClosure(Node* term, Node* locals, Node* trace) {
@@ -22,8 +16,8 @@ static inline Node* getTrace(Closure* closure) {
     return getRight(getLeft(closure));
 }
 
-static inline Stack* getBacktrace(Closure* closure) {
-    return (Stack*)getLeft(closure);
+static inline Node* getBacktrace(Closure* closure) {
+    return getLeft(closure);        // can be cast to a Stack
 }
 
 static inline void setTerm(Closure* closure, Node* term) {
@@ -47,10 +41,6 @@ static inline void setClosure(Closure* closure, Closure* update) {
     setLocals(closure, getLocals(update));
 }
 
-static inline void pushLocal(Closure* closure, Closure* local) {
-    push((Stack*)closure, local);
-}
-
 static inline Closure* newUpdate(Closure* closure) {
     return newClosure(VOID, closure, VOID);
 }
@@ -62,5 +52,3 @@ static inline bool isUpdate(Closure* closure) {
 static inline Closure* getUpdateClosure(Closure* update) {
     return getLocals(update);
 }
-
-#endif

@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stddef.h>
+#include "pool.h"
 #include "freelist.h"
 
 // NEXT is a pointer to a linked list of unallocated slots, where the elements

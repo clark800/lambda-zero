@@ -1,9 +1,35 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stdlib.h>
-#include "objects.h"
+#include <string.h>
+#include <ctype.h>
 #include "scan.h"
 
+const char* INTERNAL_CODE = NULL;
 const char* SOURCE_CODE = NULL;
+
+bool isSpaceCharacter(char c) {
+    return c == ' ' || c == '\t' || c == '\r';
+}
+
+bool isQuoteCharacter(char c) {
+    return c == '"' || c == '\'';
+}
+
+bool isDelimiterCharacter(char c) {
+    return c == '\0' || strchr(" \n,;`()[]{}", c) != NULL;
+}
+
+bool isOperandCharacter(char c) {
+    // check c > 0 to ensure it is ASCII
+    return c > 0 && (isalnum(c) || c == '\'' || c == '_');
+}
+
+bool isOperatorCharacter(char c) {
+    // check c > 0 to ensure it is ASCII
+    return c > 0 && !isDelimiterCharacter(c) && !isOperandCharacter(c)
+        && !isQuoteCharacter(c) && strchr("{};@$", c) == NULL;
+}
 
 static inline bool isLineComment(const char* s) {
     return s[0] == '/' && s[1] == '/';
@@ -61,6 +87,8 @@ static inline const char* skipLexeme(const char* lexeme) {
 }
 
 const char* getFirstLexeme(const char* input) {
+    if (INTERNAL_CODE == NULL)
+        INTERNAL_CODE = input;
     SOURCE_CODE = input;
     return skipComments(input);
 }
@@ -97,14 +125,4 @@ Position getPosition(unsigned int location) {
         }
     }
     return position;
-}
-
-void printLexeme(const char* lexeme, FILE* stream) {
-    if (lexeme[0] < 0)
-        fputs("?", stream);
-    else switch (lexeme[0]) {
-        case '\n': fputs("\\n", stream); break;
-        case '\0': fputs("\\0", stream); break;
-        default: fwrite(lexeme, sizeof(char), getLexemeLength(lexeme), stream);
-    }
 }

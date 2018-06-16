@@ -1,8 +1,6 @@
-#include <stdbool.h>
+#include "lib/tree.h"
 #include "ast.h"
 #include "errors.h"
-#include "lex.h"
-#include "objects.h"
 #include "operators.h"
 #include "desugar.h"
 

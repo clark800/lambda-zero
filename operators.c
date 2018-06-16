@@ -1,8 +1,6 @@
-#include <stddef.h>
+#include "lib/tree.h"
 #include "ast.h"
-#include "objects.h"
 #include "errors.h"
-#include "lex.h"
 #include "operators.h"
 
 typedef enum {L, R, N} Associativity;
