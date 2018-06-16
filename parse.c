@@ -38,7 +38,7 @@ void pushOperand(Stack* stack, Node* node) {
         return;
     }
     Hold* left = pop(stack);
-    if (isTuple(node) && !isComma(getBody(node)))
+    if (isTuple(node) && getTupleSize(node) > 0)
         push(stack, applyToCommaList(getNode(left), getBody(node)));
     else if (isList(node)) {
         if (!isApplication(getBody(node)))

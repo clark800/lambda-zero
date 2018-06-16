@@ -131,9 +131,11 @@ When operators are chained like `x * y * z` there are precedence and associatvit
 - Character literals: `'a'` desugars to the ascii character code for `a`
 - List literals: `[x, y, z]` desugars to the Church-encoded list of
   `x`, `y`, and `z`.
-- Pair pattern matching: `(a, b) = x` desugars to the equivalent of
-  `a = left(x)` followed by `b = right(x)`. Pairs can also be used on the left
-  side of `->` and in parameters on the left side of function definitions.
+- Tuple destructuring: `(a, b, c) := x` desugars to the equivalent of
+  `a := first(x)`, `b := second(x)`, and `c := third(x)`. Tuples can also be
+  used on the left side of `->` and in parameters on the left side of
+  function definitions. Destructuring is also recursive e.g.
+  `((a, b), (c, d)) := x`.
 
 ### I/O
 

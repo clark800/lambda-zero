@@ -11,18 +11,30 @@ isSpecialOperator(operator) := isOperator(operator) /\
     ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
     contains(getLexeme(operator))
 
+newProjection(tag, size, index) := (
+    reference := newReference(tag, size - index - 1)
+    (newLambda(tag, blank))^^(size)(reference)
+)
+
+getElements(tuple) := (
+    getElements'(body) := (
+        !isApplication(body) ? []
+        getElements'(getLeft(body)) ++ [getRight(body)]
+    )
+    getElements'(getBody(tuple))
+)
+
 newPatternLambda(tag, pattern, body) := (
     isSymbol(pattern) ? newLambda(tag, pattern, body)
-    !(isTuple(pattern) /\ getTupleSize(pattern) = 2) ?
+    !isTuple(pattern) \/ getTupleSize(pattern) = 0 ?
         syntaxError("invalid parameter", pattern)
-    leftName := getRight(getLeft(getBody(pattern)))
-    rightName := getRight(getBody(pattern))
-    leftComponent := newApplication(tag, blank, newTrue(tag))
-    rightComponent := newApplication(tag, blank, newFalse(tag))
-    function := newPatternLambda(tag, leftName,
-               newPatternLambda(tag, rightName, body))
-    application := newApplication(tag,
-        newApplication(tag, function, leftComponent), rightComponent)
+    size := getTupleSize(pattern)
+    function := getElements(pattern).foldr(element -> x ->
+        newPatternLambda(tag, element, x), body)
+    projections := (0 .. size - 1).map(n ->
+        newApplication(tag, blank, newProjection(tag, size, n)))
+    application := projections.foldl(x -> projection ->
+        newApplication(tag, x, projection), function)
     newLambda(tag, blank, application)
 )
 

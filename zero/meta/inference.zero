@@ -132,16 +132,16 @@ unify(typeA, typeB) := (
     error("types do not unify")
 )
 
-// infer : ASTNode -> Context -> ((Substitution, Type), State)
+// infer : ASTNode -> Context -> (Substitution, Type, State)
 infer(node, context, state) := (
     tag := getTag(node)
     isInteger(node) ? (
-        ((nullSubstitution, newIntegerType(tag)), state)
+        (nullSubstitution, newIntegerType(tag), state)
     )
     isReference(node) \/ isBuiltin(node) ? (
         scheme := context.lookup(getLexeme(node)) ?|| error("unbound variable")
         (type, state') := instantiate(scheme, state)
-        ((nullSubstitution, type), state')
+        (nullSubstitution, type, state')
     )
     isLambda(node) ? (
         (typeVariable, state') := getFreshTypeVariable(state)
@@ -149,43 +149,43 @@ infer(node, context, state) := (
         parameterName := getLexeme(getParameter(node))
         context' := context.remove(parameterName)
         context'' := (parameterName, ([], variableType)) :: context'
-        ((substitution, bodyType), state'') :=
+        (substitution, bodyType, state'') :=
             infer(getBody(node), context'', state')
         parameterType := substitution.substituteInType(variableType)
-        ((substitution, newFunctionType(tag, parameterType, bodyType)), state'')
+        (substitution, newFunctionType(tag, parameterType, bodyType), state'')
     )
     isDefinition(node) ? (
-        ((substitution, rightType), state') :=
+        (substitution, rightType, state') :=
             infer(getRight(node), context, state)
         context' := context.remove(getLexeme(getParameter(getLeft(node))))
         rightType' := generalize(rightType,
             substitution.substituteInContext(context))
         name := getLexeme(getParameter(getLeft(node)))
         context'' := (name, rightType') :: context'
-        ((substitution', scopeType), state'') :=
+        (substitution', scopeType, state'') :=
             infer(getBody(getLeft(node)), context'', state')
         substitution'' := composeSubstitutions(substitution, substitution')
-        ((substitution'', scopeType), state'')
+        (substitution'', scopeType, state'')
     )
     isApplication(node) ? (
         (typeVariable, state') := getFreshTypeVariable(state)
         variableType := newVariableType(tag, typeVariable)
-        ((substitution, leftType), state'') :=
+        (substitution, leftType, state'') :=
             infer(getLeft(node), context, state')
-        ((substitution', rightType), state''') := infer(getRight(node),
+        (substitution', rightType, state''') := infer(getRight(node),
             substitution.substituteInContext(context), state'')
         substitution'' := unify(substitution'.substituteInType(leftType),
             newFunctionType(tag, rightType, variableType))
-        ((composeSubstitutions(composeSubstitutions(substitution'',
+        (composeSubstitutions(composeSubstitutions(substitution'',
             substitution'), substitution),
-            substitution''.substituteInType(variableType)), state''')
+            substitution''.substituteInType(variableType), state''')
     )
     undefined
 )
 
 // inferType : ASTNode -> Context -> Type
 inferType(node, context) := (
-    ((substitution, type), state') := infer(node, context, getInitialState())
+    (substitution, type, state') := infer(node, context, getInitialState())
     substitution.substituteInType(type)
 )
 

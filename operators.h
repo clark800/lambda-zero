@@ -10,5 +10,6 @@ bool isSpecialOperator(Operator operator);
 Fixity getFixity(Operator operator);
 bool isHigherPrecedence(Operator left, Operator right);
 Node* applyOperator(Operator operator, Node* left, Node* right);
-Node* newArrow(Node* operator, Node* left, Node* right);
+Node* newPatternLambda(Node* operator, Node* left, Node* right);
 Node* infix(Node* operator, Node* left, Node* right);
+int getTupleSize(Node* tuple);
