@@ -45,11 +45,11 @@ Node* transformDefine(Node* definition, Node* explicitScope) {
     Node* left = getLeft(definition);
     Node* right = getRight(definition);
     for (; isApplication(left); left = getLeft(left))
-        right = newArrow(definition, getRight(left), right);
+        right = newPatternLambda(definition, getRight(left), right);
     Node* value = transformRecursion(left, right);
     Node* scope = getScope(explicitScope, left);
     return newApplication(getLocation(left),
-        newArrow(definition, left, scope), value);
+        newPatternLambda(definition, left, scope), value);
 }
 
 Node* constructDefine(Node* node, Node* left, Node* right) {

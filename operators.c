@@ -13,13 +13,6 @@ struct Rules {
     Node* (*apply)(Node* operator, Node* left, Node* right);
 };
 
-int getTupleSize(Node* tuple) {
-    int i = 0;
-    for (Node* n = getBody(tuple); isApplication(n); i++)
-        n = getLeft(n);
-    return i;
-}
-
 Node* apply(Node* operator, Node* left, Node* right) {
     return newApplication(getLocation(operator), left, right);
 }
@@ -32,22 +25,38 @@ Node* comma(Node* operator, Node* left, Node* right) {
     return (isCommaList(left) ? apply : infix)(operator, left, right);
 }
 
-Node* newArrow(Node* operator, Node* left, Node* right) {
+int getTupleSize(Node* tuple) {
+    int i = 0;
+    for (Node* n = getBody(tuple); isApplication(n); i++)
+        n = getLeft(n);
+    return i;
+}
+
+Node* newProjection(int location, int size, int index) {
+    Node* projection = newReference(location,
+        (unsigned long long)(size - index));
+    for (int i = 0; i < size; i++)
+        projection = newLambda(location, getParameter(IDENTITY), projection);
+    return projection;
+}
+
+Node* newPatternLambda(Node* operator, Node* left, Node* right) {
     int location = getLocation(operator);
     if (isSymbol(left))
         return newLambda(location, newParameter(getLocation(left)), right);
-    if (!(isTuple(left) && getTupleSize(left) == 2))
+    if (!isTuple(left) || getTupleSize(left) == 0)
         syntaxError("invalid parameter", left);
     // (x, y) -> body ---> p -> (x -> y -> body) left(p) right(p)
-    Node* leftName = getRight(getLeft(getBody(left)));
-    Node* rightName = getRight(getBody(left));
-    Node* leftComponent = newApplication(location, getBody(IDENTITY), TRUE);
-    Node* rightComponent = newApplication(location, getBody(IDENTITY), FALSE);
-    Node* lambda = newArrow(operator, leftName,
-        newArrow(operator, rightName, right));
-    Node* application = newApplication(location,
-        newApplication(location, lambda, leftComponent), rightComponent);
-    return newLambda(location, getParameter(IDENTITY), application);
+    Node* body = right;
+    for (Node* items = getBody(left); isApplication(items);
+            items = getLeft(items))
+        body = newPatternLambda(operator, getRight(items), body);
+    int size = getTupleSize(left);
+    for (int i = 0; i < size; i++)
+        body = newApplication(location, body,
+            newApplication(location, getBody(IDENTITY),
+                newProjection(location, size, i)));
+    return newLambda(location, getParameter(IDENTITY), body);
 }
 
 Node* prefix(Node* operator, Node* left, Node* right) {
@@ -110,7 +119,7 @@ Rules RULES[] = {
     {"\n", 2, 2, IN, R, apply},
     {":=", 3, 3, IN, N, apply},
     {"|", 4, 4, IN, L, infix},
-    {"->", 5, 5, IN, R, newArrow},
+    {"->", 5, 5, IN, R, newPatternLambda},
 
     // conditional operators
     {"||", 5, 5, IN, R, infix},
