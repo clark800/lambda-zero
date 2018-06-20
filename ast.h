@@ -13,6 +13,11 @@
 // atom = reference | integer | builtin
 // leaf = atom | parameter
 
+extern const char OBJECTS_CODE[];
+extern Node *IDENTITY, *UNIT, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
+void initObjects(Node* internal);
+bool isInternal(String lexeme);
+
 // INTEGER must be zero and BUILTIN must be last
 enum LeafType {INTEGER=0, NAME, OPERATOR, PARAMETER, BUILTIN};
 
@@ -29,8 +34,16 @@ enum NodeType {
 // Functions to test if a node is a certain type
 // =============================================
 
-static inline bool isInternal(Node* node) {
-    return getLocation(node) < 0;
+static inline String getLexeme(Node* node) {
+    return getLabel(node);
+}
+
+static inline bool isSameToken(Node* tokenA, Node* tokenB) {
+    return isSameString(getLexeme(tokenA), getLexeme(tokenB));
+}
+
+static inline bool isThisToken(Node* token, const char* lexeme) {
+    return isThisString(getLexeme(token), lexeme);
 }
 
 static inline bool isInteger(Node* node) {
@@ -121,49 +134,49 @@ static inline Node* getBody(Node* lambda) {
 // Functions to construct new nodes
 // ================================
 
-static inline Node* newInteger(int location, long long value) {
-    Node* result = newLeaf(location, INTEGER);
+static inline Node* newInteger(String lexeme, long long value) {
+    Node* result = newLeaf(lexeme, INTEGER);
     setValue(result, value);
     return result;
 }
 
-static inline Node* newName(int location) {
-    return newLeaf(location, NAME);
+static inline Node* newName(String lexeme) {
+    return newLeaf(lexeme, NAME);
 }
 
-static inline Node* newParameter(int location) {
-    return newLeaf(location, PARAMETER);
+static inline Node* newParameter(String lexeme) {
+    return newLeaf(lexeme, PARAMETER);
 }
 
-static inline Node* newOperator(int location) {
-    return newLeaf(location, OPERATOR);
+static inline Node* newOperator(String lexeme) {
+    return newLeaf(lexeme, OPERATOR);
 }
 
-static inline Node* newBuiltin(int location, unsigned long long code) {
+static inline Node* newBuiltin(String lexeme, unsigned long long code) {
     assert(code >= BUILTIN);
-    return newLeaf(location, (long long)code);
+    return newLeaf(lexeme, (long long)code);
 }
 
-static inline Node* newReference(int location, unsigned long long debruijn) {
-    return newLeaf(location, -(long long)debruijn);
+static inline Node* newReference(String lexeme, unsigned long long debruijn) {
+    return newLeaf(lexeme, -(long long)debruijn);
 }
 
-static inline Node* newLambda(int location, Node* parameter, Node* body) {
+static inline Node* newLambda(String lexeme, Node* parameter, Node* body) {
     // we could make the left child of a lambda VOID, but storing a parameter
     // lets us decouple the location of the lambda from the parameter name,
     // which is useful in cases like string literals where we need to point
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
     assert(isParameter(parameter));
-    return newBranch(location, parameter, body);
+    return newBranch(lexeme, parameter, body);
 }
 
-static inline Node* newApplication(int location, Node* left, Node* right) {
-    return newBranch(location, left, right);
+static inline Node* newApplication(String lexeme, Node* left, Node* right) {
+    return newBranch(lexeme, left, right);
 }
 
-static inline Node* newTuple(int location, Node* items) {
-    return newLambda(location, newParameter(getLocation(items)), items);
+static inline Node* newTuple(String lexeme, Node* items) {
+    return newLambda(lexeme, newParameter(getLexeme(items)), items);
 }
 
 // =======================================
@@ -184,11 +197,6 @@ static inline void convertToGlobal(Node* node, unsigned long long index) {
     assert(isSymbol(node));
     setType(node, (long long)(GLOBAL + index));
 }
-
-const char* getLexeme(Node* node);
-bool isSameToken(Node* tokenA, Node* tokenB);
-bool isThisToken(Node* token, const char* lexeme);
-bool isSpace(Node* token);
 
 static inline bool isNewline(Node* node) {
     return isLeaf(node) && isThisToken(node, "\n");
@@ -230,14 +238,23 @@ static inline bool isList(Node* node) {
 }
 
 static inline Node* newEOF(void) {
-    return newOperator(0);
+    return newOperator(newString("\0", 0));
 }
 
-extern const char* OBJECTS_CODE;
-extern Node *IDENTITY, *TRUE, *FALSE, *YCOMBINATOR, *PRINT, *INPUT;
-void initObjects(Node* internal);
+static inline Node* newNil(String lexeme) {
+    return newLambda(lexeme, getParameter(IDENTITY), TRUE);
+}
 
-Node* newNil(int location);
-Node* prepend(int location, Node* item, Node* list);
-Node* newUnit(int location);
-Node* newSingleton(int location, Node* item);
+static inline Node* prepend(String lexeme, Node* item, Node* list) {
+    return newLambda(lexeme, getParameter(IDENTITY), newApplication(lexeme,
+            newApplication(lexeme, getBody(IDENTITY), item), list));
+}
+
+static inline Node* newUnit(String lexeme) {
+    return newLambda(lexeme, getParameter(UNIT), getBody(UNIT));
+}
+
+static inline Node* newSingleton(String lexeme, Node* item) {
+    return newLambda(lexeme, getParameter(UNIT),
+        newApplication(getLexeme(getBody(UNIT)), getBody(UNIT), item));
+}

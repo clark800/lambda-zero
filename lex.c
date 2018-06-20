@@ -8,19 +8,19 @@
 #include "errors.h"
 #include "lex.h"
 
-bool isNameLexeme(const char* lexeme) {
+bool isNameLexeme(char head) {
     // note: the quote case is only for internal code
-    return islower(lexeme[0]) || lexeme[0] == '_' ||  lexeme[0] == '\'';
+    return islower(head) || head == '_' || head == '\'';
 }
 
-bool isOperatorLexeme(const char* lexeme) {
-    return isDelimiterCharacter(lexeme[0]) || isOperatorCharacter(lexeme[0]) ||
-        isSpaceCharacter(lexeme[0]);
+bool isOperatorLexeme(char head) {
+    return isDelimiterCharacter(head) || isOperatorCharacter(head) ||
+        isSpaceCharacter(head);
 }
 
-bool isIntegerLexeme(const char* lexeme) {
-    for (unsigned int i = 0; i < getLexemeLength(lexeme); i++)
-        if (!isdigit(lexeme[i]))
+bool isIntegerLexeme(String lexeme) {
+    for (unsigned int i = 0; i < lexeme.length; i++)
+        if (!isdigit(lexeme.start[i]))
             return false;
     return true;
 }
@@ -29,7 +29,7 @@ const char* skipQuoteCharacter(const char* start) {
     return start[0] == '\\' ? start + 2 : start + 1;
 }
 
-char decodeCharacter(const char* start, const char* lexeme) {
+char decodeCharacter(const char* start, String lexeme) {
     lexerErrorIf(start[0] <= 0, lexeme, "illegal character in");
     if (start[0] != '\\')
         return start[0];
@@ -47,53 +47,51 @@ char decodeCharacter(const char* start, const char* lexeme) {
     return 0;
 }
 
-Node* newCharacterLiteral(const char* lexeme) {
-    char quote = lexeme[0];
-    const char* end = lexeme + getLexemeLength(lexeme) - 1;
+Node* newCharacterLiteral(String lexeme) {
+    char quote = lexeme.start[0];
+    const char* end = lexeme.start + lexeme.length - 1;
     lexerErrorIf(end[0] != quote, lexeme, "missing end quote for");
-    const char* skip = skipQuoteCharacter(lexeme + 1);
+    const char* skip = skipQuoteCharacter(lexeme.start + 1);
     lexerErrorIf(skip != end, lexeme, "invalid character literal");
-    unsigned char code = (unsigned char)decodeCharacter(lexeme + 1, lexeme);
-    return newInteger(getLexemeLocation(lexeme), code);
+    return newInteger(lexeme, decodeCharacter(lexeme.start + 1, lexeme));
 }
 
-Node* buildStringLiteral(const char* lexeme, const char* start) {
+Node* buildStringLiteral(String lexeme, const char* start) {
     char c = start[0];
-    int location = getLexemeLocation(lexeme);
     lexerErrorIf(c == '\n' || c == 0, lexeme, "missing end quote for");
-    if (c == lexeme[0])
-        return newNil(location);
-    return prepend(location, newInteger(location, decodeCharacter(start,
+    if (c == lexeme.start[0])
+        return newNil(lexeme);
+    return prepend(lexeme, newInteger(lexeme, decodeCharacter(start,
         lexeme)), buildStringLiteral(lexeme, skipQuoteCharacter(start)));
 }
 
-Node* newStringLiteral(const char* lexeme) {
-    return buildStringLiteral(lexeme, lexeme + 1);
+Node* newStringLiteral(String lexeme) {
+    return buildStringLiteral(lexeme, lexeme.start + 1);
 }
 
-long long parseInteger(const char* lexeme) {
+long long parseInteger(String lexeme) {
     errno = 0;
-    long long result = strtoll(lexeme, NULL, 10);
+    long long result = strtoll(lexeme.start, NULL, 10);
     lexerErrorIf((result == LLONG_MIN || result == LLONG_MAX) &&
         errno == ERANGE, lexeme, "magnitude of integer is too large");
     return result;
 }
 
-Node* createToken(const char* lexeme) {
-    lexerErrorIf(isupper(lexeme[0]), lexeme, "names can't start with uppercase");
-    if (lexeme[0] == '"')
+Node* createToken(String lexeme) {
+    char head = lexeme.start[0];
+    lexerErrorIf(isupper(head), lexeme, "names can't start with uppercase");
+    if (head == '"')
         return newStringLiteral(lexeme);
     // single quoted operands are internal names while parsing internal code
-    if (lexeme[0] == '\'')
+    if (head == '\'')
         return newCharacterLiteral(lexeme);
 
-    int location = getLexemeLocation(lexeme);
     if (isIntegerLexeme(lexeme))
-        return newInteger(location, parseInteger(lexeme));
-    if (isNameLexeme(lexeme))
-        return newName(location);
-    if (isOperatorLexeme(lexeme))
-        return newOperator(location);
+        return newInteger(lexeme, parseInteger(lexeme));
+    if (isNameLexeme(head))
+        return newName(lexeme);
+    if (isOperatorLexeme(head))
+        return newOperator(lexeme);
 
     lexerErrorIf(true, lexeme, "invalid token");
     return NULL;

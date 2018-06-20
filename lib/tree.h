@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "rstring.h"
 
 typedef struct Node Node;
 extern Node* const VOID;
@@ -8,12 +9,12 @@ extern Node* const VOID;
 void initNodeAllocator(void);
 void destroyNodeAllocator(void);
 
-Node* newBranch(int location, Node* left, Node* right);
-Node* newLeaf(int location, long long type);
+Node* newBranch(String label, Node* left, Node* right);
+Node* newLeaf(String label, long long type);
 
 bool isLeaf(Node* node);
 bool isBranch(Node* node);
-int getLocation(Node* node);
+String getLabel(Node* node);
 
 Node* getLeft(Node* branchNode);
 Node* getRight(Node* branchNode);
@@ -31,5 +32,4 @@ void release(Hold* node);
 Hold* replaceHold(Hold* oldHold, Hold* newHold);
 Node* getNode(Hold* hold);
 
-void negateLocations(Node* node);
 Node* getListElement(Node* node, unsigned long long n);

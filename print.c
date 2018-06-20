@@ -1,21 +1,21 @@
 #include <stdio.h>
 #include "lib/tree.h"
 #include "lib/util.h"
-#include "scan.h"
+#include "ast.h"
 #include "print.h"
 
-void printLexeme(const char* lexeme, FILE* stream) {
-    if (lexeme[0] < 0)
+void printLexeme(String lexeme, FILE* stream) {
+    if (lexeme.start[0] < 0)
         fputs("?", stream);
-    else switch (lexeme[0]) {
+    else switch (lexeme.start[0]) {
         case '\n': fputs("\\n", stream); break;
         case '\0': fputs("\\0", stream); break;
-        default: fwrite(lexeme, sizeof(char), getLexemeLength(lexeme), stream);
+        default: fwrite(lexeme.start, sizeof(char), lexeme.length, stream);
     }
 }
 
 void printToken(Node* token, FILE* stream) {
-    printLexeme(getLexemeByLocation(getLocation(token)), stream);
+    printLexeme(getLexeme(token), stream);
 }
 
 void fputll(long long n, FILE* stream) {

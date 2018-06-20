@@ -46,7 +46,7 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth,
 }
 
 bool isDefined(Node* symbol, Array* parameters, bool internal) {
-    return !isInternal(symbol) && !isThisToken(symbol, "_") &&
+    return !isInternal(getLexeme(symbol)) && !isThisToken(symbol, "_") &&
         (lookupBuiltinCode(symbol, internal) != 0 ||
              findDebruijnIndex(symbol, parameters) != 0);
 }

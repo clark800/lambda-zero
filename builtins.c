@@ -91,10 +91,10 @@ Hold* evaluateError(Closure* builtin, Closure* message) {
         printRuntimeError("hit", builtin);
         fputc((int)'\n', stderr);
     }
-    int location = getLocation(getTerm(builtin));
-    Node* exit = newBuiltin(location, EXIT);
-    Node* print = newApplication(location, getTerm(message), PRINT);
-    setTerm(builtin, newApplication(location, exit, print));
+    String lexeme = getLexeme(getTerm(builtin));
+    Node* exit = newBuiltin(lexeme, EXIT);
+    Node* print = newApplication(lexeme, getTerm(message), PRINT);
+    setTerm(builtin, newApplication(lexeme, exit, print));
     return hold(builtin);
 }
 
@@ -112,21 +112,21 @@ Node* evaluateGet(Closure* builtin, long long index) {
         return peek(INPUT_STACK, (size_t)(inputIndex - index - 1));
     inputIndex += 1;
     int c = fgetc(stdin);
-    int location = getLocation(getTerm(builtin));
-    push(INPUT_STACK, c == EOF ? newNil(location) : prepend(location,
-        newInteger(location, c), newApplication(location, getLeft(INPUT),
-            newInteger(location, index + 1))));
+    String lexeme = getLexeme(getTerm(builtin));
+    push(INPUT_STACK, c == EOF ? newNil(lexeme) : prepend(lexeme,
+        newInteger(lexeme, c), newApplication(lexeme, getLeft(INPUT),
+            newInteger(lexeme, index + 1))));
     return peek(INPUT_STACK, 0);
 }
 
 Node* computeBuiltin(Closure* builtin, long long left, long long right) {
-    int location = getLocation(getTerm(builtin));
+    String lexeme = getLexeme(getTerm(builtin));
     switch (getBuiltinCode(getTerm(builtin))) {
-        case PLUS: return newInteger(location, add(left, right, builtin));
-        case MINUS: return newInteger(location, subtract(left, right, builtin));
-        case TIMES: return newInteger(location, multiply(left, right, builtin));
-        case DIVIDE: return newInteger(location, divide(left, right, builtin));
-        case MODULUS: return newInteger(location, modulo(left, right, builtin));
+        case PLUS: return newInteger(lexeme, add(left, right, builtin));
+        case MINUS: return newInteger(lexeme, subtract(left, right, builtin));
+        case TIMES: return newInteger(lexeme, multiply(left, right, builtin));
+        case DIVIDE: return newInteger(lexeme, divide(left, right, builtin));
+        case MODULUS: return newInteger(lexeme, modulo(left, right, builtin));
         case EQUAL: return toBoolean(left == right);
         case NOTEQUAL: return toBoolean(left != right);
         case LESSTHAN: return toBoolean(left < right);

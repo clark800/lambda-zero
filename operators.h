@@ -13,3 +13,4 @@ Node* applyOperator(Operator operator, Node* left, Node* right);
 Node* newPatternLambda(Node* operator, Node* left, Node* right);
 Node* infix(Node* operator, Node* left, Node* right);
 int getTupleSize(Node* tuple);
+bool isSpace(Node* token);

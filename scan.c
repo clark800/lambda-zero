@@ -1,12 +1,8 @@
-#include <assert.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "lib/rstring.h"
 #include "scan.h"
-
-const char* INTERNAL_CODE = NULL;
-const char* SOURCE_CODE = NULL;
 
 bool isSpaceCharacter(char c) {
     return c == ' ' || c == '\t' || c == '\r';
@@ -73,56 +69,27 @@ static inline const char* skipQuote(const char* s) {
     return s;
 }
 
-static inline const char* skipLexeme(const char* lexeme) {
-    assert(lexeme[0] != '\0');
-    if (isSpaceCharacter(lexeme[0]))
-        return skipWhile(lexeme, isSpaceCharacter);
-    if (isQuoteCharacter(lexeme[0]))
-        return skipQuote(lexeme);
-    if (isOperandCharacter(lexeme[0]))
-        return skipWhile(lexeme, isOperandCharacter);
-    if (isOperatorCharacter(lexeme[0]))
-        return skipWhile(lexeme, isOperatorCharacter);
-    return lexeme + 1;    // delimiter or illegal character
+static inline const char* skipLexeme(const char* s) {
+    if (isSpaceCharacter(s[0]))
+        return skipWhile(s, isSpaceCharacter);
+    if (isQuoteCharacter(s[0]))
+        return skipQuote(s);
+    if (isOperandCharacter(s[0]))
+        return skipWhile(s, isOperandCharacter);
+    if (isOperatorCharacter(s[0]))
+        return skipWhile(s, isOperatorCharacter);
+    return s[0] == '\0' ? s : s + 1;    // delimiter or illegal character
 }
 
-const char* getFirstLexeme(const char* input) {
-    if (INTERNAL_CODE == NULL)
-        INTERNAL_CODE = input;
-    SOURCE_CODE = input;
-    return skipComments(input);
+static inline String newLexeme(const char* start) {
+    const char* next = skipLexeme(start);
+    return newString(start, (unsigned int)(next - start));
 }
 
-const char* getNextLexeme(const char* lastLexeme) {
-    return skipComments(skipLexeme(lastLexeme));
+String getFirstLexeme(const char* input) {
+    return newLexeme(skipComments(input));
 }
 
-unsigned int getLexemeLength(const char* lexeme) {
-    return (unsigned int)(lexeme[0] == '\0' ? 1 : skipLexeme(lexeme) - lexeme);
-}
-
-bool isSameLexeme(const char* a, const char* b) {
-    unsigned int lengthA = getLexemeLength(a);
-    return getLexemeLength(b) == lengthA && strncmp(a, b, lengthA) == 0;
-}
-
-int getLexemeLocation(const char* lexeme) {
-    return (int)(lexeme - SOURCE_CODE + 1);
-}
-
-const char* getLexemeByLocation(int location) {
-    const char* start = location < 0 ? INTERNAL_CODE : SOURCE_CODE;
-    return location == 0 ? "\0" : &start[abs(location) - 1];
-}
-
-Position getPosition(unsigned int location) {
-    Position position = {1, 1};  // use 1-based indexing
-    for (unsigned int i = 0; i < location - 1; i++) {
-        position.column += 1;
-        if (SOURCE_CODE[i] == '\n') {
-            position.line += 1;
-            position.column = 1;
-        }
-    }
-    return position;
+String getNextLexeme(String lastLexeme) {
+    return newLexeme(skipComments(&(lastLexeme.start[lastLexeme.length])));
 }

@@ -1,7 +1,8 @@
 typedef Node Closure;
 
 static inline Closure* newClosure(Node* term, Node* locals, Node* trace) {
-    return newBranch(0, newBranch(0, term, trace), locals);
+    String none = newString("\0", 0);
+    return newBranch(none, newBranch(none, term, trace), locals);
 }
 
 static inline Node* getTerm(Closure* closure) {

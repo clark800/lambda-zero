@@ -6,11 +6,8 @@
 
 bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
-        if (isSameToken(getParameter(node), name)) {
-            if (!isInternal(getParameter(node)))
-                syntaxError("symbol already defined", getParameter(node));
-            return false;
-        }
+        if (isSameToken(getParameter(node), name))
+            syntaxError("symbol already defined", getParameter(node));
         return hasRecursiveCalls(getBody(node), name);
     }
     if (isApplication(node))
@@ -25,9 +22,9 @@ Node* transformRecursion(Node* name, Node* value) {
     if (!isSymbol(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
-    int location = getLocation(name);
-    return newApplication(location, YCOMBINATOR,
-        newLambda(location, newParameter(location), value));
+    String lexeme = getLexeme(name);
+    return newApplication(lexeme, YCOMBINATOR,
+        newLambda(lexeme, newParameter(lexeme), value));
 }
 
 Node* getScope(Node* explicitScope, Node* name) {
@@ -35,9 +32,8 @@ Node* getScope(Node* explicitScope, Node* name) {
         return explicitScope;
     if (!isName(name) || !isThisToken(name, "main"))
         return name;
-    int location = getLocation(name);
-    return newApplication(location,
-        newApplication(location, name, INPUT), PRINT);
+    String lexeme = getLexeme(name);
+    return newApplication(lexeme, newApplication(lexeme, name, INPUT), PRINT);
 }
 
 Node* transformDefine(Node* definition, Node* explicitScope) {
@@ -48,7 +44,7 @@ Node* transformDefine(Node* definition, Node* explicitScope) {
         right = newPatternLambda(definition, getRight(left), right);
     Node* value = transformRecursion(left, right);
     Node* scope = getScope(explicitScope, left);
-    return newApplication(getLocation(left),
+    return newApplication(getLexeme(left),
         newPatternLambda(definition, left, scope), value);
 }
 
@@ -59,7 +55,7 @@ Node* constructDefine(Node* node, Node* left, Node* right) {
         syntaxErrorIf(isDefinition(node), "cannot define a definition", node);
         return transformDefine(left, right);
     }
-    return newApplication(getLocation(node), left, right);
+    return newApplication(getLexeme(node), left, right);
 }
 
 Hold* desugarDefine(Node* node) {
