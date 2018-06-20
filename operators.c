@@ -1,5 +1,6 @@
 #include "lib/tree.h"
 #include "ast.h"
+#include "scan.h"
 #include "errors.h"
 #include "operators.h"
 
@@ -14,7 +15,7 @@ struct Rules {
 };
 
 Node* apply(Node* operator, Node* left, Node* right) {
-    return newApplication(getLocation(operator), left, right);
+    return newApplication(getLexeme(operator), left, right);
 }
 
 Node* infix(Node* operator, Node* left, Node* right) {
@@ -32,18 +33,18 @@ int getTupleSize(Node* tuple) {
     return i;
 }
 
-Node* newProjection(int location, int size, int index) {
-    Node* projection = newReference(location,
+Node* newProjection(String lexeme, int size, int index) {
+    Node* projection = newReference(lexeme,
         (unsigned long long)(size - index));
     for (int i = 0; i < size; i++)
-        projection = newLambda(location, getParameter(IDENTITY), projection);
+        projection = newLambda(lexeme, getParameter(IDENTITY), projection);
     return projection;
 }
 
 Node* newPatternLambda(Node* operator, Node* left, Node* right) {
-    int location = getLocation(operator);
+    String lexeme = getLexeme(operator);
     if (isSymbol(left))
-        return newLambda(location, newParameter(getLocation(left)), right);
+        return newLambda(lexeme, newParameter(getLexeme(left)), right);
     if (!isTuple(left) || getTupleSize(left) == 0)
         syntaxError("invalid parameter", left);
     // (x, y) -> body ---> p -> (x -> y -> body) left(p) right(p)
@@ -51,12 +52,11 @@ Node* newPatternLambda(Node* operator, Node* left, Node* right) {
     for (Node* items = getBody(left); isApplication(items);
             items = getLeft(items))
         body = newPatternLambda(operator, getRight(items), body);
-    int size = getTupleSize(left);
-    for (int i = 0; i < size; i++)
-        body = newApplication(location, body,
-            newApplication(location, getBody(IDENTITY),
-                newProjection(location, size, i)));
-    return newLambda(location, getParameter(IDENTITY), body);
+    for (int i = 0, size = getTupleSize(left); i < size; i++)
+        body = newApplication(lexeme, body,
+            newApplication(lexeme, getBody(IDENTITY),
+                newProjection(lexeme, size, i)));
+    return newLambda(lexeme, getParameter(IDENTITY), body);
 }
 
 Node* prefix(Node* operator, Node* left, Node* right) {
@@ -66,7 +66,7 @@ Node* prefix(Node* operator, Node* left, Node* right) {
 
 Node* negate(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    return infix(operator, newInteger(getLocation(operator), 0), right);
+    return infix(operator, newInteger(getLexeme(operator), 0), right);
 }
 
 Node* unmatched(Node* operator, Node* left, Node* right) {
@@ -77,27 +77,27 @@ Node* unmatched(Node* operator, Node* left, Node* right) {
 Node* brackets(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
     if (contents == NULL)
-        return newNil(getLocation(open));
-    int location = getLocation(open);
+        return newNil(getLexeme(open));
+    String lexeme = getLexeme(open);
     if (!isCommaList(contents))
-        return prepend(location, contents, newNil(getLocation(open)));
-    Node* list = newNil(getLocation(open));
+        return prepend(lexeme, contents, newNil(getLexeme(open)));
+    Node* list = newNil(getLexeme(open));
     for(; isCommaList(getLeft(contents)); contents = getLeft(contents))
-        list = prepend(location, getRight(contents), list);
-    return prepend(location, getRight(contents), list);
+        list = prepend(lexeme, getRight(contents), list);
+    return prepend(lexeme, getRight(contents), list);
 }
 
 Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
     if (contents == NULL)
-        return newUnit(getLocation(open));
+        return newUnit(getLexeme(open));
     if (isOperator(contents)) {
         if (isSpecialOperator(getOperator(contents, false)))
             syntaxError("operator cannot be parenthesized", contents);
-        return newName(getLocation(contents));
+        return newName(getLexeme(contents));
     }
     if (isCommaList(contents))
-        return newTuple(getLocation(open), contents);
+        return newTuple(getLexeme(open), contents);
     return contents;
 }
 
@@ -185,6 +185,10 @@ Rules SPACE = {" ", 20, 20, IN, L, apply};
 
 bool allowsOperatorBefore(Rules rules) {
     return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
+}
+
+bool isSpace(Node* token) {
+    return isLeaf(token) && isSpaceCharacter(getLexeme(token).start[0]);
 }
 
 Operator getOperator(Node* token, bool isAfterOperator) {

@@ -16,27 +16,25 @@ digraph graphname {
             operators;
             parse;
             lex;
+            scan;
         }
-        debug;
-        scan;
         ast;
-        serialize;
         print;
+        debug;
         errors;
-        closure;
-        main;
         subgraph cluster_evaluator {
             label="evaluator";
             evaluate;
             builtins;
         }
+        closure;
+        serialize;
+        main;
     }
 
-    ast -> scan;
+    print -> ast;
 
-    print -> scan;
-
-    errors -> scan;
+    errors -> ast;
     errors -> print;
 
     debug -> ast;
@@ -58,6 +56,7 @@ digraph graphname {
     desugar -> operators;
 
     operators -> ast;
+    operators -> scan;
     operators -> errors;
 
     parse -> ast;
@@ -78,10 +77,9 @@ digraph graphname {
     evaluate -> closure;
     evaluate -> builtins;
 
+    main -> closure;
+    main -> errors;
     main -> parse;
     main -> evaluate;
     main -> serialize;
-    main -> errors;
-    main -> closure;
-
 }

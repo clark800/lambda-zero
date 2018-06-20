@@ -27,8 +27,8 @@ void eraseNewlines(Stack* stack) {
 
 Node* applyToCommaList(Node* base, Node* arguments) {
     if (!isCommaList(getLeft(arguments)))
-        return newApplication(getLocation(base), base, getRight(arguments));
-    return newApplication(getLocation(base),
+        return newApplication(getLexeme(base), base, getRight(arguments));
+    return newApplication(getLexeme(base),
             applyToCommaList(base, getLeft(arguments)), getRight(arguments));
 }
 
@@ -45,10 +45,10 @@ void pushOperand(Stack* stack, Node* node) {
             syntaxError("missing argument to", node);
         if (isApplication(getBody(getRight(getBody(node)))))
             syntaxError("too many arguments to", node);
-        push(stack, infix(newName(getLocation(node)), getNode(left),
+        push(stack, infix(newName(getLexeme(node)), getNode(left),
             getRight(getLeft(getBody(node)))));
     } else
-        push(stack, newApplication(getLocation(node), getNode(left), node));
+        push(stack, newApplication(getLexeme(node), getNode(left), node));
     release(hold(node));
     release(left);
 }
@@ -114,7 +114,7 @@ Node* newSection(Node* operator, Node* left, Node* right) {
     if (getFixity(op) == PRE || isSpecialOperator(op))
         syntaxError("invalid operator in section", operator);
     Node* body = applyOperator(op, left, right);
-    return newLambda(getLocation(operator), getParameter(IDENTITY), body);
+    return newLambda(getLexeme(operator), getParameter(IDENTITY), body);
 }
 
 Node* constructSection(Node* left, Node* right) {
@@ -148,7 +148,7 @@ void collapseBracket(Stack* stack, Operator op) {
         if (isOpenParen(getNode(open)) && !isOperator(peek(stack, 0)) &&
             (isTuple(getNode(contents)) || isList(getNode(contents))))
             contents = replaceHold(contents, hold(newSingleton(
-                getLocation(getNode(open)), getNode(contents))));
+                getLexeme(getNode(open)), getNode(contents))));
         pushOperand(stack, applyOperator(op, getNode(open), getNode(contents)));
         release(open);
     }
@@ -234,6 +234,7 @@ void deleteProgram(Program program) {
 }
 
 Program parse(const char* input) {
+    SOURCE_CODE = input;
     bool trace = TRACE_PARSING && input != NULL;
     Hold* result = parseString(input == NULL ? OBJECTS_CODE : input, trace);
     debugStage("Parsed", getNode(result), trace);

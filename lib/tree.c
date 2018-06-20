@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "freelist.h"
 #include "tree.h"
 
@@ -10,12 +11,12 @@ typedef union {
 
 struct Node {
     unsigned int referenceCount;
-    int location;
+    String label;
     Branch left;
     Branch right;
 };
 
-Node VOID_NODE = {1, 0, {NULL}, {NULL}};    // same as integer "0"
+Node VOID_NODE = {1, {"VOID", 4}, {NULL}, {NULL}};    // same as integer "0"
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
@@ -26,10 +27,10 @@ void destroyNodeAllocator() {
     destroyPool();
 }
 
-Node* newBranch(int location, Node* left, Node* right) {
+Node* newBranch(String label, Node* left, Node* right) {
     assert(left != NULL && right != NULL);
     Node* node = (Node*)allocate();
-    node->location = location;
+    node->label = label;
     node->referenceCount = 0;
     node->left.child = left;
     node->right.child = right;
@@ -38,9 +39,9 @@ Node* newBranch(int location, Node* left, Node* right) {
     return node;
 }
 
-Node* newLeaf(int location, long long type) {
+Node* newLeaf(String label, long long type) {
     Node* node = (Node*)allocate();
-    node->location = location;
+    node->label = label;
     node->referenceCount = 0;
     node->left.child = (Node*)type;
     node->right.child = NULL;
@@ -53,10 +54,6 @@ bool isLeaf(Node* node) {
 
 bool isBranch(Node* node) {
     return node->left.child != NULL && node->right.child != NULL;
-}
-
-int getLocation(Node* node) {
-    return node->location;
 }
 
 void releaseNode(Node* node) {
@@ -80,6 +77,10 @@ Node* getLeft(Node* node) {
 Node* getRight(Node* node) {
     assert(isBranch(node));
     return node->right.child;
+}
+
+String getLabel(Node* node) {
+    return node->label;
 }
 
 void setLeft(Node* node, Node* left) {
@@ -134,14 +135,6 @@ Hold* replaceHold(Hold* oldHold, Hold* newHold) {
 
 Node* getNode(Hold* nodeHold) {
     return (Node*)nodeHold;
-}
-
-void negateLocations(Node* node) {
-    node->location = -node->location;
-    if (isBranch(node)) {
-        negateLocations(node->left.child);
-        negateLocations(node->right.child);
-    }
 }
 
 Node* getListElement(Node* node, unsigned long long n) {
