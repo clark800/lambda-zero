@@ -44,6 +44,8 @@ digraph graphname {
     serialize -> print;
     serialize -> closure;
 
+    closure -> errors;
+
     lex -> scan;
     lex -> ast;
     lex -> errors;

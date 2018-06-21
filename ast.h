@@ -238,7 +238,7 @@ static inline bool isList(Node* node) {
 }
 
 static inline Node* newEOF(void) {
-    return newOperator(newString("\0", 0));
+    return newOperator(EMPTY);
 }
 
 static inline Node* newNil(String lexeme) {

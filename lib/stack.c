@@ -3,7 +3,7 @@
 #include "stack.h"
 
 Stack* newStack(Node* head) {
-    return (Stack*)hold(newBranch(newString("\0", 0), VOID, head));
+    return (Stack*)hold(newBranch(EMPTY, VOID, head));
 }
 
 void deleteStack(Stack* stack) {
@@ -23,7 +23,7 @@ bool isEmpty(Stack* stack) {
 }
 
 void push(Stack* stack, Node* node) {
-    setHead(stack, newBranch(newString("\0", 0), node, getHead(stack)));
+    setHead(stack, newBranch(EMPTY, node, getHead(stack)));
 }
 
 Hold* pop(Stack* stack) {
