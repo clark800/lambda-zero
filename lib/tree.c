@@ -11,12 +11,13 @@ typedef union {
 
 struct Node {
     unsigned int referenceCount;
-    String label;
+    unsigned int labelLength;
+    const char* labelStart;
     Branch left;
     Branch right;
 };
 
-Node VOID_NODE = {1, {"VOID", 4}, {NULL}, {NULL}};    // same as integer "0"
+Node VOID_NODE = {1, 4, "VOID", {NULL}, {NULL}};    // same as integer "0"
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
@@ -30,7 +31,8 @@ void destroyNodeAllocator() {
 Node* newBranch(String label, Node* left, Node* right) {
     assert(left != NULL && right != NULL);
     Node* node = (Node*)allocate();
-    node->label = label;
+    node->labelLength = label.length;
+    node->labelStart = label.start;
     node->referenceCount = 0;
     node->left.child = left;
     node->right.child = right;
@@ -41,7 +43,8 @@ Node* newBranch(String label, Node* left, Node* right) {
 
 Node* newLeaf(String label, long long type) {
     Node* node = (Node*)allocate();
-    node->label = label;
+    node->labelLength = label.length;
+    node->labelStart = label.start;
     node->referenceCount = 0;
     node->left.child = (Node*)type;
     node->right.child = NULL;
@@ -80,7 +83,7 @@ Node* getRight(Node* node) {
 }
 
 String getLabel(Node* node) {
-    return node->label;
+    return newString(node->labelStart, node->labelLength);
 }
 
 void setLeft(Node* node, Node* left) {

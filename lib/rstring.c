@@ -2,6 +2,8 @@
 #include <string.h>
 #include "rstring.h"
 
+String EMPTY = {"\0", 0};
+
 String newString(const char* start, unsigned int length) {
     return (String){start, length};
 }
