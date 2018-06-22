@@ -8,7 +8,7 @@ splitCodeAndInput(input) := (
     (code, input')
 )
 
-isIONode(node) := getLexeme(getLeft(node)) =:= "main" /\ isInput(getRight(node))
+isIONode(node) := getLexeme(getLeft(node)) =*= "main" /\ isInput(getRight(node))
 
 isIO(node) := (
     isLambda(node) ? isIO(getBody(node))

@@ -46,13 +46,13 @@ getFreeTypeVariablesInType(type) := (
     []
 )
 
-// Substitution := [(TypeVariable, Type)]
-nullSubstitution := []
+// Substitution := Dictionary(TypeVariable, Type)
+nullSubstitution := newDictionary([])
 
 // substituteInType : Substitution -> Type -> Type
 substituteInType(substitution, type) := (
     isVariableType(type) ?
-        substitution.lookup(getTypeVariable(type)) ?|| type
+        substitution.get(getTypeVariable(type), type)
     isFunctionType(type) ?
         newFunctionType(getTag(type),
             substitution.substituteInType(getParameter(type)),
@@ -62,22 +62,19 @@ substituteInType(substitution, type) := (
 
 // Scheme : (universals : [TypeVariable], type)
 
-nss \ mss := nss | (!) <> mss.contains
-
 // getFreeTypeVariablesInScheme : TypeScheme -> [TypeVariable]
 getFreeTypeVariablesInScheme((universals, type)) :=
-    getFreeTypeVariablesInType(type) \ universals
+    getFreeTypeVariablesInType(type) | (!) <> universals.contains
 
 substituteInScheme(substitution, (universals, type)) :=
-    (universals, universals.foldr(`remove, substitution).substituteInType(type))
+    (universals, universals.foldr(`delete, substitution).substituteInType(type))
 
 // composeSubstitutions : Substitution -> Substitution -> Substitution
 composeSubstitutions(substitutionA, substitutionB) :=
-    union(substitutionB.mapValues(substitutionA.substituteInType),
-          substitutionA)
+    substitutionB.mapValues(substitutionA.substituteInType) \./ substitutionA
 
 // Name := String
-// Context := [(Name, Scheme)]
+// Context := Dictionary(Name, Scheme)
 
 getFreeTypeVariablesInContext(context) :=
     join(getValues(context).map(getFreeTypeVariablesInScheme))
@@ -87,7 +84,8 @@ substituteInContext(substitution, context) :=
 
 // generalize : Type -> Context -> Scheme
 generalize(type, context) :=
-    (getFreeTypeVariablesInType(type) \ getFreeTypeVariablesInContext(context),
+    (getFreeTypeVariablesInType(type) |
+        (!) <> getFreeTypeVariablesInContext(context).contains,
         type)
 
 getInitialState(_) := 0
@@ -102,17 +100,18 @@ instantiate((universals, type), state) := (
         (newUniversal :: universals'', state''')),
         ([], state))
     tag := getTag(type)
-    substitution := zip(universals, universals'.map(newVariableType(tag)))
+    substitution := newDictionary(
+        zip(universals, universals'.map(newVariableType(tag))))
     (substitution.substituteInType(type), state')
 )
 
 // bindTypeVariable : TypeVariable -> Type -> Substitution
 bindTypeVariable(typeVariable, type) := (
-    isVariableType(type) /\ getTypeVariable(type) =:= typeVariable ?
+    isVariableType(type) /\ getTypeVariable(type) =*= typeVariable ?
         nullSubstitution
     getFreeTypeVariablesInType(type).contains(typeVariable) ?
         error("occurs check failed")
-    [(typeVariable, type)]
+    newDictionary([(typeVariable, type)])
 )
 
 // unify : Type -> Type -> Substitution
@@ -139,7 +138,7 @@ infer(node, context, state) := (
         (nullSubstitution, newIntegerType(tag), state)
     )
     isReference(node) \/ isBuiltin(node) ? (
-        scheme := context.lookup(getLexeme(node)) ?|| error("unbound variable")
+        scheme := context.get(getLexeme(node), error("unbound variable"))
         (type, state') := instantiate(scheme, state)
         (nullSubstitution, type, state')
     )
@@ -147,8 +146,8 @@ infer(node, context, state) := (
         (typeVariable, state') := getFreshTypeVariable(state)
         variableType := newVariableType(tag, typeVariable)
         parameterName := getLexeme(getParameter(node))
-        context' := context.remove(parameterName)
-        context'' := (parameterName, ([], variableType)) :: context'
+        context' := context.delete(parameterName)
+        context'' := context'.insert(parameterName, ([], variableType))
         (substitution, bodyType, state'') :=
             infer(getBody(node), context'', state')
         parameterType := substitution.substituteInType(variableType)
@@ -157,11 +156,11 @@ infer(node, context, state) := (
     isDefinition(node) ? (
         (substitution, rightType, state') :=
             infer(getRight(node), context, state)
-        context' := context.remove(getLexeme(getParameter(getLeft(node))))
+        context' := context.delete(getLexeme(getParameter(getLeft(node))))
         rightType' := generalize(rightType,
             substitution.substituteInContext(context))
         name := getLexeme(getParameter(getLeft(node)))
-        context'' := (name, rightType') :: context'
+        context'' := context'.insert(name, rightType')
         (substitution', scopeType, state'') :=
             infer(getBody(getLeft(node)), context'', state')
         substitution'' := composeSubstitutions(substitution, substitution')
@@ -202,21 +201,13 @@ getDefinitions(node) := (
 )
 
 showDefinition((name, value)) := name ++ " := " ++ showAST(value)
-
-showDefinitions(definitions) :=
-    definitions.map(showDefinition).joinWith("\n")
+showDefinitions(definitions) := definitions.map(showDefinition).joinWith("\n")
 
 addDefinitionToContext(context, definition) := (
     (name, value) := definition
     type := inferType(value, context)
     scheme := generalize(type, context)
-    (name, scheme) :: context
-)
-
-showContext(context) := (
-    showContextItem((name, scheme)) :=
-        name ++ " : " ++ showType(second(scheme))
-    context.map(showContextItem).joinWith("\n\n")
+    context.insert(name, scheme)
 )
 
 newBinaryOperatorType(name) := (
@@ -231,7 +222,7 @@ newComparisonOperatorType(name) := (
         newIntegerType(tag), newBooleanType(tag)))
 )
 
-initialContext := [
+initialContext := newDictionary([
     ("+", ([], newBinaryOperatorType("+"))),
     ("-", ([], newBinaryOperatorType("-"))),
     ("*", ([], newBinaryOperatorType("*"))),
@@ -243,11 +234,16 @@ initialContext := [
     (">", ([], newComparisonOperatorType(">"))),
     ("<=", ([], newComparisonOperatorType("<="))),
     (">=", ([], newComparisonOperatorType(">=")))
-]
+])
+
+showTypes(types) :=
+    types.map((name, type) -> name ++ " : " ++ showType(type)).joinWith("\n\n")
 
 main(input) := (
     node := parse(input, "")
     definitions := getDefinitions(node)
     context := definitions.foldl(addDefinitionToContext, initialContext)
-    showContext(reverse(context).drop(11))
+    (names, _) := unzip(definitions)
+    types := names.map(name -> second(context.get(name, undefined)))
+    showTypes(zip(names, types))
 )

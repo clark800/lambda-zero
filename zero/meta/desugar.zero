@@ -1,9 +1,9 @@
 
-isDefinition(node) := isApplication(node) /\ getLexeme(node) =:= ":="
+isDefinition(node) := isApplication(node) /\ getLexeme(node) =*= ":="
 
 hasRecursiveCalls(node, name) := (
     isLambda(node) ? (
-        getLexeme(getParameter(node)) =:= getLexeme(name) ? (
+        getLexeme(getParameter(node)) =*= getLexeme(name) ? (
             isInternal(getParameter(node)) ? false
             syntaxError("symbol already defined", getParameter(node))
         )
@@ -13,7 +13,7 @@ hasRecursiveCalls(node, name) := (
         hasRecursiveCalls(getLeft(node), name) \/
         hasRecursiveCalls(getRight(node), name)
     isSymbol(node) \/ isReference(node) ?
-        getLexeme(node) =:= getLexeme(name)
+        getLexeme(node) =*= getLexeme(name)
     false
 )
 
@@ -30,7 +30,7 @@ getNameAndValue(left, right) := (
 )
 
 createScope(name, explicitScope, input) := (
-    getLexeme(name) =:= "main" ? (
+    getLexeme(name) =*= "main" ? (
         !isEOF(explicitScope) ?
             syntaxError("main must be the last function defined", name)
         newApplication(getTag(name), name,

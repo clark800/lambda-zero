@@ -1,0 +1,50 @@
+// todo: store size in data structure for constant time cardinality
+// totally preordered set (total proset)
+newProtoset((~<), elements) := ((~<), elements)
+
+getElements := second
+(#) := length <> getElements
+
+elicit(protoset, object) := (
+    ((~<), elements) := protoset
+    elements.isEmpty ? nothing
+    element := elements[0]
+    object ~< element /\ element ~< object ?
+        just(element)
+    ((~<), --elements).elicit(object)
+)
+
+object : protoset := isJust(protoset.elicit(object))
+object !: protoset := !(object : protoset)
+
+mapElements(protoset, f) := (
+    ((~<), elements) := protoset
+    ((~<), elements.map(f))
+)
+
+filterElements(protoset, p) := (
+    ((~<), elements) := protoset
+    ((~<), elements | p)
+)
+
+add(protoset, object) := (
+    object : protoset ? protoset
+    ((~<), elements) := protoset
+    ((~<), object :: elements)
+)
+
+remove(protoset, object) := (
+    ((~<), elements) := protoset
+    a ~ b := a ~< b /\ b ~< a
+    protoset.filterElements((!) <> (~ object))
+)
+
+protoset \./ protoset' := (
+    (order', elements') := protoset'
+    elements'.isEmpty ? protoset
+    elements'[0] : protoset ? protoset \./ (order', --elements')
+    (order, elements) := protoset
+    (order, elements'[0] :: elements) \./ (order', --elements')
+)
+
+protoset \ protoset' := protoset.filterElements((!: protoset'))

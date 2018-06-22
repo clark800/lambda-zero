@@ -2,18 +2,18 @@ getLexeme(node) := getTagLexeme(getTag(node))
 getLine(node) := getTagLine(getTag(node))
 getColumn(node) := getTagColumn(getTag(node))
 
-isOpenParen(node) := isOperator(node) /\ getLexeme(node) =:= "("
-isCloseParen(node) := isOperator(node) /\ getLexeme(node) =:= ")"
+isOpenParen(node) := isOperator(node) /\ getLexeme(node) =*= "("
+isCloseParen(node) := isOperator(node) /\ getLexeme(node) =*= ")"
 isSpace(node) := isOperator(node) /\ isBlank(getLexeme(node)[0])
-isNewline(node) := isOperator(node) /\ getLexeme(node) =:= "\n"
-isEOF(node) := isOperator(node) /\ getLexeme(node) =:= "\0"
-isComma(node) := isSymbol(node) /\ getLexeme(node) =:= ","
-isCommaList(node) := isApplication(node) /\ getLexeme(node) =:= ","
+isNewline(node) := isOperator(node) /\ getLexeme(node) =*= "\n"
+isEOF(node) := isOperator(node) /\ getLexeme(node) =*= "\0"
+isComma(node) := isSymbol(node) /\ getLexeme(node) =*= ","
+isCommaList(node) := isApplication(node) /\ getLexeme(node) =*= ","
 isTuple(node) := isLambda(node) /\ isComma(getParameter(node))
 isUnit(node) := isTuple(node) /\ isComma(getBody(node))
-isList(node) := isLambda(node) /\ getLexeme(node) =:= "["
+isList(node) := isLambda(node) /\ getLexeme(node) =*= "["
 isInternal(node) := getLine(node) = 0 /\ getColumn(node) = 0
-isInput(node) := isInternal(node) /\ getLexeme(node) =:= "input"
+isInput(node) := isInternal(node) /\ getLexeme(node) =*= "input"
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
@@ -98,14 +98,14 @@ parseQuotedCharacter(tag, string) := (
         error("Syntax error: illegal character in " ++ showPrettyTag(tag))
     string[0] != '\\' ?
         newInteger(tag, string[0])
-    --string =:= [] ?
+    --string =*= [] ?
         error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
     newInteger(tag, parseEscapeCode((--string)[0], tag))
 )
 
 splitStringLiteral(string) := (
-    string =:= [] ? []
-    n := (string[0] = '\\' /\ !(--string =:= [])) ? 2 || 1
+    string =*= [] ? []
+    n := (string[0] = '\\' /\ !(--string =*= [])) ? 2 || 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 )
 

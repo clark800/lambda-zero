@@ -85,10 +85,10 @@ drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
 xs[n] := head(xs.drop(n))          // get element of list at index
 slice(xs, start, end) := xs.drop(start).take(end - start)
-xs =:= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
-    xs[0] = ys[0] /\ --xs =:= --ys       // integer list equality
+xs =*= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
+    xs[0] = ys[0] /\ --xs =*= --ys       // integer list equality
 last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
-dropLast(xs) := xs =:= [] \/ --xs =:= [] ? [] || xs[0] :: dropLast(--xs)
+dropLast(xs) := xs =*= [] \/ --xs =*= [] ? [] || xs[0] :: dropLast(--xs)
 dropWhile(ns, p) := (--).while(p <> head, ns)
 takeWhile(ns, p) := ns.isEmpty \/ !p(ns[0]) ? [] || ns[0] :: takeWhile(--ns, p)
 
@@ -115,7 +115,6 @@ reducel(xs, f) := (--xs).foldl(f, xs[0])
 // list fold operations
 xs ++ ys := xs.foldr((::), ys)                   // concatenate two lists
 length(xs) := xs.foldr(constant((+ 1)), 0)         // get length of list
-(#) := length
 
 // generic list constructors
 iterate(f, x) := x :: iterate(f, f(x))       // iteratively apply f
@@ -127,14 +126,14 @@ cycle(xs) := xs ++ cycle(xs)                 // infinitely cycle list
 filter(xs, p) := foldr(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
 (|) := filter
 map(xs, f) := foldr(xs, (::) <> f, [])          // map function over list
-zipWith(xs, f, ys) := xs =:= [] \/ ys =:= [] ? [] ||
+zipWith(xs, f, ys) := xs =*= [] \/ ys =*= [] ? [] ||
     f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(first), xs.map(second))
 join(xss) := xss.foldr((++), [])            // concatenate list of lists
 reverse(xs) := xs.foldl(`(::), [])
 interleave(xs, y) := xs ::? x -> xs' ->
-    xs' =:= [] ? xs || x :: y :: interleave(xs', y)
+    xs' =*= [] ? xs || x :: y :: interleave(xs', y)
 joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs | p, xs | (!) <> p)
 
@@ -142,27 +141,12 @@ bisect(xs, p) := (xs | p, xs | (!) <> p)
 any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
 all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
 // find first element satisfying p, or return nothing
-find(xs, p) := xs =:= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
-
-lookup(table, key) := table.isEmpty ? nothing ||
-    table[0].first =:= key ? just(table[0].second) || (--table).lookup(key)
-containsKey(table, key) := isJust(table.lookup(key))
-remove(table, key) := table | (key', _) -> !(key' =:= key)
-insert(table, key, value) := (key, value) :: table.remove(key)
-getKeys(table) := table.map(first)
-getValues(table) := table.map(second)
-mapKeys(table, f) := table.map((key, value) -> (f(key), value))
-mapValues(table, f) := table.map((key, value) -> (key, f(value)))
-union(tableA, tableB) := (
-    tableB.isEmpty ? tableA
-    tableA.containsKey(tableB[0].first) ? union(tableA, --tableB)
-    union(tableB[0] :: tableA, --tableB)
-)
+find(xs, p) := xs =*= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 
 indexOf(nss, key) := (
     indexOf'(list, depth) := (
-        list =:= [] ? nothing
-        list[0] =:= key ? just(depth)
+        list =*= [] ? nothing
+        list[0] =*= key ? just(depth)
         indexOf'(--list, depth + 1)
     )
     indexOf'(nss, 0)
@@ -170,8 +154,8 @@ indexOf(nss, key) := (
 contains(nss, key) := isJust(nss.indexOf(key))
 
 // integer list basics
-n : ns := ns.any((= n))
-n !: ns := !(n : ns)
+ns <*= ms := ns.isEmpty \/ !ms.isEmpty /\
+    (head(ns) < head(ms) \/ head(ns) = head(ms) /\ --ns <*= --ms)
 
 // integer list constructors
 n .. m := n > m ? [] || n :: (n + 1 .. m)
@@ -179,7 +163,6 @@ n .. m := n > m ? [] || n :: (n + 1 .. m)
 // integer list transformations
 sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
 deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (!= k))
-ns <: ms := ns.all((: ms))
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 
 startsWith(ns, ks) := ks.isEmpty ? true ||
@@ -209,8 +192,8 @@ partition(ns, splitter) := (
     before :: partition(after, splitter)
 )
 
-dropIf(ns, p) := ns =:= [] ? [] || p(ns[0]) ? --ns || ns
-dropPrefix(ns, prefix) := ns.startsWith(prefix) ? ns.drop(#prefix) || ns
+dropIf(ns, p) := ns =*= [] ? [] || p(ns[0]) ? --ns || ns
+dropPrefix(ns, prefix) := ns.startsWith(prefix) ? ns.drop(length(prefix)) || ns
 
 partitionBy(ns, p) := ns.partition(`splitWhen(p) <> `dropIf(p))
 partitionOn(ns, delimiter) := ns.partition(
