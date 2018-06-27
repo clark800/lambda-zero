@@ -12,7 +12,7 @@ getBuiltin(builtin) := (
     makeIntegerBuiltin(f, newType, left, right) :=
         newClosure(newType(getTag(builtin), f.compute(left, right)), [])
 
-    add(left, right) := (
+    addBuiltin(left, right) := (
         left > 0 /\ right > 0 /\ left > maxInteger - right ?
             runtimeError("integer overflow in", builtin)
         left < 0 /\ right < 0 /\ left < -maxInteger - right ?
@@ -20,7 +20,7 @@ getBuiltin(builtin) := (
         left + right
     )
 
-    subtract(left, right) := (
+    subtractBuiltin(left, right) := (
         left > 0 /\ right < 0 /\ left > maxInteger + right ?
             runtimeError("integer overflow in", builtin)
         left < 0 /\ right > 0 /\ left < -maxInteger + right ?
@@ -28,28 +28,28 @@ getBuiltin(builtin) := (
         left - right
     )
 
-    multiply(left, right) := (
+    multiplyBuiltin(left, right) := (
         right != 0 /\ abs(left) > abs(maxInteger / right) ?
             runtimeError("integer overflow in", builtin)
         left * right
     )
 
-    divide(left, right) := (
+    divideBuiltin(left, right) := (
         right = 0 ? runtimeError("divide by zero in", builtin)
         left / right
     )
 
-    modulo(left, right) := (
+    moduloBuiltin(left, right) := (
         right = 0 ? runtimeError("divide by zero in", builtin)
         left % right
     )
 
-    builtins := [
-        ("+", (2, makeIntegerBuiltin(add, newInteger))),
-        ("-", (2, makeIntegerBuiltin(subtract, newInteger))),
-        ("*", (2, makeIntegerBuiltin(multiply, newInteger))),
-        ("/", (2, makeIntegerBuiltin(divide, newInteger))),
-        ("%", (2, makeIntegerBuiltin(modulo, newInteger))),
+    builtins := newDictionary([
+        ("+", (2, makeIntegerBuiltin(addBuiltin, newInteger))),
+        ("-", (2, makeIntegerBuiltin(subtractBuiltin, newInteger))),
+        ("*", (2, makeIntegerBuiltin(multiplyBuiltin, newInteger))),
+        ("/", (2, makeIntegerBuiltin(divideBuiltin, newInteger))),
+        ("%", (2, makeIntegerBuiltin(moduloBuiltin, newInteger))),
         ("=", (2, makeIntegerBuiltin((=), newBoolean))),
         ("!=", (2, makeIntegerBuiltin((!=), newBoolean))),
         ("<", (2, makeIntegerBuiltin((<), newBoolean))),
@@ -57,6 +57,6 @@ getBuiltin(builtin) := (
         ("<=", (2, makeIntegerBuiltin((<=), newBoolean))),
         (">=", (2, makeIntegerBuiltin((>=), newBoolean))),
         ("error", (1, closure -> error(extractString(getTerm(closure)))))
-    ]
+    ])
     builtins.lookup(getLexeme(builtin))
 )

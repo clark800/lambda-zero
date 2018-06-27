@@ -4,6 +4,8 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # read input first to check for errors accessing files
 declare -a files=(
     "$DIR/../prelude.zero"
+    "$DIR/../protoset.zero"
+    "$DIR/../table.zero"
     "$DIR/scan.zero"
     "$DIR/ast.zero"
     "$DIR/lex.zero"

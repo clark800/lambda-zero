@@ -16,12 +16,12 @@ newProjection(tag, size, index) := (
     (newLambda(tag, blank))^^(size)(reference)
 )
 
-getElements(tuple) := (
-    getElements'(body) := (
+getTupleElements(tuple) := (
+    getTupleElements'(body) := (
         !isApplication(body) ? []
-        getElements'(getLeft(body)) ++ [getRight(body)]
+        getTupleElements'(getLeft(body)) ++ [getRight(body)]
     )
-    getElements'(getBody(tuple))
+    getTupleElements'(getBody(tuple))
 )
 
 newPatternLambda(tag, pattern, body) := (
@@ -29,7 +29,7 @@ newPatternLambda(tag, pattern, body) := (
     !isTuple(pattern) \/ getTupleSize(pattern) = 0 ?
         syntaxError("invalid parameter", pattern)
     size := getTupleSize(pattern)
-    function := getElements(pattern).foldr(element -> x ->
+    function := getTupleElements(pattern).foldr(element -> x ->
         newPatternLambda(tag, element, x), body)
     projections := (0 .. size - 1).map(n ->
         newApplication(tag, blank, newProjection(tag, size, n)))
@@ -66,7 +66,7 @@ createList(tag, commaList, list) := (
 )
 
 reduceBrackets(close, open, contents) := (
-    !(getLexeme(open) =:= "[") ? syntaxError("missing open for", close)
+    !(getLexeme(open) =*= "[") ? syntaxError("missing open for", close)
     createList(getTag(open), contents, newNil(getTag(open)))
 )
 reduceIllegal(_, _, _) := error("Internal error")
@@ -82,9 +82,9 @@ rightPrecedence(rules) := rules.precedence.second
 
 getRules(operator, isAfterOperator) := (
     isSpace(operator) ? ((((20, 20), leftAssociative), infix), reduceApply)
-    getLexeme(operator) =:= "-" /\ isAfterOperator ?
+    getLexeme(operator) =*= "-" /\ isAfterOperator ?
         ((((21, 21), leftAssociative), prefix), reduceNegate)
-    operators := [
+    operators := newDictionary([
         // syntactic operators
         ("\0", ((((0, 0), leftAssociative), closefix), reduceIllegal)),
         ("(", ((((22, 0), leftAssociative), openfix), reduceUnmatched)),
@@ -110,18 +110,18 @@ getRules(operator, isAfterOperator) := (
         ("<=>", ((((8, 8), nonAssociative), infix), reduceInfix)),
         ("=>", ((((9, 9), nonAssociative), infix), reduceInfix)),
         ("\\/", ((((10, 10), rightAssociative), infix), reduceInfix)),
-        ("\\/", ((((10, 10), rightAssociative), infix), reduceInfix)),
         ("/\\", ((((11, 11), rightAssociative), infix), reduceInfix)),
 
         // comparison/test operators
         ("=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("!=", ((((12, 12), nonAssociative), infix), reduceInfix)),
-        ("=:=", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("=*=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (">", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<=", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (">=", ((((12, 12), nonAssociative), infix), reduceInfix)),
-        (">=<", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("=<", ((((12, 12), nonAssociative), infix), reduceInfix)),
+        ("~<", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("<:", ((((12, 12), nonAssociative), infix), reduceInfix)),
         (":", ((((12, 12), nonAssociative), infix), reduceInfix)),
         ("!:", ((((12, 12), nonAssociative), infix), reduceInfix)),
@@ -132,8 +132,10 @@ getRules(operator, isAfterOperator) := (
         ("::", ((((16, 16), rightAssociative), infix), reduceInfix)),
         ("&", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("+", ((((16, 16), leftAssociative), infix), reduceInfix)),
+        ("\\./", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("++", ((((16, 16), rightAssociative), infix), reduceInfix)),
         ("-", ((((16, 16), leftAssociative), infix), reduceInfix)),
+        ("\\", ((((16, 16), leftAssociative), infix), reduceInfix)),
         ("*", ((((17, 17), leftAssociative), infix), reduceInfix)),
         ("**", ((((17, 17), rightAssociative), infix), reduceInfix)),
         ("/", ((((17, 17), leftAssociative), infix), reduceInfix)),
@@ -150,9 +152,9 @@ getRules(operator, isAfterOperator) := (
         ("^^", ((((23, 23), leftAssociative), infix), reduceInfix)),
         (".", ((((24, 24), leftAssociative), infix), reduceInfix)),
         ("`", ((((25, 25), leftAssociative), prefix), reducePrefix))
-    ]
+    ])
     defaultRules := ((((14, 14), leftAssociative), infix), reduceInfix)
-    operators.lookup(getLexeme(operator)) ?|| defaultRules
+    operators.get(getLexeme(operator), defaultRules)
 )
 
 isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (

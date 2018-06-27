@@ -1,5 +1,5 @@
-isDelimiterCharacter(n) := n : " \n\0,;`()[]{}"
-isReservedCharacter(n) := n : "{};@$"
+isDelimiterCharacter(n) := " \n\0,;`()[]{}".any((= n))
+isReservedCharacter(n) := "{};@$".any((= n))
 isOperandCharacter(n) := isAlphanumeric(n) \/ n = '_' \/ n = '\''
 isOperatorCharacter(n) := isPunctuation(n) /\ !isDelimiterCharacter(n) /\
     !isOperandCharacter(n) /\ !isQuote(n) /\ !isReservedCharacter(n)
@@ -10,11 +10,11 @@ isComment(lexeme) := isLineComment(lexeme) \/ isBlockComment(lexeme)
 
 splitQuoteCharacter(quote, ns) := (
     ns.isEmpty \/ ns[0] = quote \/ ns[0] = '\n' ? ([], ns)
-    n := (ns[0] = '\\' /\ !(--ns =:= []))? 2 || 1
+    n := (ns[0] = '\\' /\ !(--ns =*= []))? 2 || 1
     ns.splitAt(n)
 )
 
-shiftSplit((a, b)) := b =:= [] ? (a, b) || (a ++ [b[0]], --b)
+shiftSplit((a, b)) := b =*= [] ? (a, b) || (a ++ [b[0]], --b)
 
 splitQuote(ns) := (
     quote := ns[0]

@@ -1,7 +1,7 @@
 bind(root) := (
     isDefined(parameter, parameterNames) := (
         parameterName := getLexeme(parameter)
-        !isInternal(parameter) /\ !(parameterName =:= "_") /\
+        !isInternal(parameter) /\ !(parameterName =*= "_") /\
             parameterNames.contains(parameterName) \/
             isJust(getBuiltin(parameter))
     )
@@ -23,7 +23,7 @@ bind(root) := (
         node.isSymbol ? (
             tag := getTag(node)
             lexeme := getLexeme(node)
-            lexeme =:= "_" /\ !isInternal(node) ?
+            lexeme =*= "_" /\ !isInternal(node) ?
                 syntaxError("cannot reference", node)
             getBuiltin(node) >>= just <> newBuiltin(getTag(node)) ?||
                 newReference(getTag(node), parameterNames.indexOf(lexeme) ?||
