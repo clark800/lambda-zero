@@ -123,7 +123,6 @@ Rules RULES[] = {
 
     // conditional operators
     {"||", 5, 5, IN, R, infix},
-    {"::?", 5, 5, IN, R, infix},
     {"?", 6, 6, IN, R, infix},
     {"?||", 6, 6, IN, R, infix},
 

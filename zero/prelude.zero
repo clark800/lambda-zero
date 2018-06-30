@@ -103,9 +103,6 @@ apply(f, arguments) := (
     apply(f(arguments[0]), --arguments)
 )
 
-// syntactic helpers
-xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)
-
 // list folds
 foldr(xs, f, z) := if(isEmpty(xs), z, f(head(xs), foldr(--xs, f, z)))
 foldl(xs, f, z) := if(isEmpty(xs), z, foldl(--xs, f, f(z, head(xs))))
@@ -132,8 +129,11 @@ zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(first), xs.map(second))
 join(xss) := xss.foldr((++), [])            // concatenate list of lists
 reverse(xs) := xs.foldl(`(::), [])
-interleave(xs, y) := xs ::? x -> xs' ->
-    xs' =*= [] ? xs || x :: y :: interleave(xs', y)
+interleave(xs, y) := (
+    isEmpty(xs) ? []
+    (x, xs') := xs
+    isEmpty(xs') ? xs || x :: y :: interleave(xs', y)
+)
 joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs | p, xs | (!) <> p)
 
@@ -161,8 +161,16 @@ ns <*= ms := ns.isEmpty \/ !ms.isEmpty /\
 n .. m := n > m ? [] || n :: (n + 1 .. m)
 
 // integer list transformations
-sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
-deduplicate(ns) := ns ::? k -> ks -> k :: deduplicate(ks | (!= k))
+sort(ns) := (
+    isEmpty(ns) ? []
+    (n, ns') := ns
+    sort(ns' | (<= n)) ++ [n] ++ sort(ns' | (> n))
+)
+deduplicate(ns) := (
+    isEmpty(ns) ? []
+    (n, ns') := ns
+    n :: deduplicate(ns' | (!= n))
+)
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 
 startsWith(ns, ks) := ks.isEmpty ? true ||
@@ -214,8 +222,7 @@ maximum(ns) := ns.reducel(max)
 countFrom := iterate((+ 1))
 naturals := countFrom(0)
 primes := (
-    filterPrime(ns) := ns ::? n -> ns' ->
-        n :: filterPrime(ns' | n' -> n' % n != 0)
+    filterPrime((n, ns)) := n :: filterPrime(ns | n' -> n' % n != 0)
     filterPrime(countFrom(2))
 )
 

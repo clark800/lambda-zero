@@ -26,8 +26,11 @@
 
 ### Quicksort
 
-    xs ::? f := isEmpty(xs) ? [] || f(head(xs), --xs)
-    sort(ns) := ns ::? k -> ks -> sort(ks | (<= k)) ++ [k] ++ sort(ks | (> k))
+    sort(ns) := (
+        isEmpty(ns) ? []
+        (n, ns') := ns
+        sort(ns' | (<= n)) ++ [n] ++ sort(ns' | (> n))
+    )
 
 ### Infinite list of natural numbers
 
@@ -38,8 +41,7 @@
 ### Infinite list of prime numbers
 
     primes := (
-        filterPrime(ns) := ns ::? n -> ns' ->
-            n :: filterPrime(ns' | n' -> n' % n != 0)
+        filterPrime((n, ns)) := n ∷ filterPrime(ns | n' -> n' % n != 0)
         filterPrime(countFrom(2))
     )
 

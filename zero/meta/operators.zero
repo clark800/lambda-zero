@@ -99,7 +99,6 @@ getRules(operator, isAfterOperator) := (
 
         // conditional operators
         ("||", ((((5, 5), rightAssociative), infix), reduceInfix)),
-        ("::?", ((((5, 5), rightAssociative), infix), reduceInfix)),
         ("?", ((((6, 6), rightAssociative), infix), reduceInfix)),
         ("?||", ((((6, 6), rightAssociative), infix), reduceInfix)),
 
