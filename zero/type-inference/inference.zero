@@ -1,0 +1,208 @@
+
+getDefinitionName(definition) := getLexeme(getParameter(getLeft(definition)))
+getDefinitionValue(definition) := getRight(definition)
+getDefinitionScope(definition) := getBody(getLeft(definition))
+
+newFunctionType := newLambda
+newFreeType(tag) := newInteger(tag, -1)
+newIntegerType(tag) := newInteger(tag, -2)
+newBooleanType(tag) := newInteger(tag, -3)
+newScheme(universals, type) := (universals, type)
+newTypeVariable(variables, tag) := (
+    type := newInteger(tag, #variables)
+    (type, variables.insert(type, newFreeType(tag)))
+)
+
+isFunctionType := isLambda
+isTypeVariable(type) := isInteger(type) /\ getData(type) >= 0
+isFreeType(type) := isInteger(type) /\ getData(type) = -1
+isIntegerType(type) := isInteger(type) /\ getData(type) = -2
+isBooleanType(type) := isInteger(type) /\ getData(type) = -3
+isFree(type, variables) := !variables.hasKey(type) \/
+    isFreeType(variables.get(type, undefined))
+
+isSameType(a, b) := (
+    isIntegerType(a) /\ isIntegerType(b) \/
+    isBooleanType(a) /\ isBooleanType(b) \/
+    isTypeVariable(a) /\ isTypeVariable(b) /\ getData(a) = getData(b) \/
+    isFunctionType(a) /\ isFunctionType(b) /\
+        isSameType(getParameter(a), getParameter(b)) /\
+        isSameType(getBody(a), getBody(b))
+)
+
+newBinaryOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
+    newFunctionType(tag, newIntegerType(tag), newIntegerType(tag)))
+
+newComparisonOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
+    newFunctionType(tag, newIntegerType(tag), newBooleanType(tag)))
+
+builtinTypeConstructors := newDictionary([
+    ("+", newBinaryOperatorType),
+    ("-", newBinaryOperatorType),
+    ("*", newBinaryOperatorType),
+    ("/", newBinaryOperatorType),
+    ("%", newBinaryOperatorType),
+    ("=", newComparisonOperatorType),
+    ("!=", newComparisonOperatorType),
+    ("<", newComparisonOperatorType),
+    (">", newComparisonOperatorType),
+    ("<=", newComparisonOperatorType),
+    (">=", newComparisonOperatorType)
+])
+
+getBuiltinType(node) := (
+    typeConstructor := builtinTypeConstructors.get(getLexeme(node),
+        error("builtin not found: " ++ getLexeme(node)))
+    typeConstructor(getTag(node))
+)
+
+newVariableMap(mappings) := newTable((<=).on(getData), mappings)
+
+substitute(type, variables) := (
+    isTypeVariable(type) /\ !type.isFree(variables) ?
+        variables.get(type, undefined).substitute(variables)
+    isFunctionType(type) ?
+        newFunctionType(getTag(type),
+            getParameter(type).substitute(variables),
+            getBody(type).substitute(variables))
+    type
+)
+
+// Robinson's Unification Algorithm
+// see Comparing Unification Algorithms in First-Order Theorem Proving
+// by Krystof Hoder and Andrei Voronkov
+unify(variables, left, right) := (
+    isTypeVariable(left) /\ !left.isFree(variables) ?
+        variables.unify(left.substitute(variables), right)
+    isTypeVariable(right) /\ !right.isFree(variables) ?
+        variables.unify(left, right.substitute(variables))
+    isSameType(left, right) ? variables
+    isTypeVariable(left) ? variables.insert(left, right)
+    isTypeVariable(right) ? variables.insert(right, left)
+    isFunctionType(left) /\ isFunctionType(right) ?
+        variables.unify(getParameter(left), getParameter(right)).unify(
+            getBody(left), getBody(right))
+    error("unification error")
+)
+
+getFreeVariables(type, variables) := (
+    isTypeVariable(type) /\ type.isFree(variables) ?
+        [type]
+    isFunctionType(type) ?
+        getParameter(type).getFreeVariables(variables) ++
+        getBody(type).getFreeVariables(variables)
+    []
+)
+
+generalize(type, variables) :=
+    newScheme(type.getFreeVariables(variables), type)
+
+instantiate(scheme, variables) := (
+    (universals, type) := scheme
+    (substitution, variables') := universals.foldl((s', s) -> variable -> (
+        (fresh, s'') := s.newTypeVariable(getTag(variable))
+        (s'.insert(variable, fresh), s'')
+    ), (newVariableMap([]), variables))
+    (type.substitute(substitution), variables')
+)
+
+// returns (type, variables)
+// i think generalize can be done at each reference, but that would duplicate
+// work because you would have to search for free type variables again at
+// each reference. to prevent this, we can store the free type variables in
+// the stack alongside the types.
+infer(node, stack, variables) := (
+    tag := getTag(node)
+    isInteger(node) ? (newIntegerType(tag), variables)
+    isBuiltin(node) ? (getBuiltinType(node), variables)
+    isReference(node) ? stack[getDebruijnIndex(node)].instantiate(variables)
+    isLambda(node) ? (
+        (parameterType, variables') := variables.newTypeVariable(tag)
+        stack' := newScheme([], parameterType) :: stack
+        (bodyType, variables'') := getBody(node).infer(stack', variables')
+        (newFunctionType(tag, parameterType, bodyType), variables'')
+    )
+    isDefinition(node) ? (
+        (valueType, variables') := getRight(node).infer(stack, variables)
+        stack' := valueType.generalize(variables') :: stack
+        getDefinitionScope(node).infer(stack', variables')
+    )
+    isApplication(node) ? (
+        (rightType, variables') := getRight(node).infer(stack, variables)
+        (leftType, variables'') := getLeft(node).infer(stack, variables')
+        (returnType, variables''') := variables''.newTypeVariable(tag)
+        functionType := newFunctionType(getTag(leftType), rightType, returnType)
+        (returnType, variables'''.unify(leftType, functionType))
+    )
+    undefined
+)
+
+inferType(node) := (
+    (type, variables) := infer(node, [], newVariableMap([]))
+    type.substitute(variables)
+)
+
+// todo: make this work for arbitrarily high index
+getVariableName(index) := ['a' + index]
+
+showType(type) := (
+    isIntegerType(type) ? "Integer"
+    isBooleanType(type) ? "Boolean"
+    isTypeVariable(type) ? getVariableName(getData(type))
+    isFunctionType(type) ?
+        "(" ++ showType(getParameter(type)) ++ " -> " ++
+            showType(getBody(type)) ++ ")"
+    undefined
+)
+
+showVariableMap(variables) := (
+    variables.getElements.map((key, value) ->
+        showType(key) ++ " := " ++ showType(value)).joinWith("\n")
+)
+
+addLabels(labels, type) := (
+    isTypeVariable(type) ? (
+        labels.hasKey(type) ? labels
+        labels.insert(type, #labels)
+    )
+    isFunctionType(type) ?
+        labels.addLabels(getParameter(type)).addLabels(getBody(type))
+    labels
+)
+
+showTypeWithLabels(type, labels) := (
+    isIntegerType(type) ? "Integer"
+    isBooleanType(type) ? "Boolean"
+    isTypeVariable(type) ? getVariableName(labels.get(type, undefined))
+    isFunctionType(type) ?
+        "(" ++ showTypeWithLabels(getParameter(type), labels) ++ " -> " ++
+            showTypeWithLabels(getBody(type), labels) ++ ")"
+    undefined
+)
+
+showPrettyType(type) := (
+    labels := newVariableMap([]).addLabels(type)
+    showTypeWithLabels(type, labels)
+)
+
+newDefinition(definition) :=
+    (getDefinitionName(definition), getDefinitionValue(definition))
+
+getDefinitions(node) := (
+    !isDefinition(node) ? []
+    newDefinition(node) :: getDefinitions(getDefinitionScope(node))
+)
+
+showDefinition((name, value)) := name ++ " := " ++ showAST(value)
+showDefinitions(definitions) := definitions.map(showDefinition).joinWith("\n")
+
+showTypings(typings) :=
+    typings.map((name, type) ->
+        name ++ " : " ++ showPrettyType(type)).joinWith("\n\n")
+
+main(input) := (
+    node := parse(input, "")
+    (names, values) := unzip(getDefinitions(node))
+    types := values.map(inferType)
+    showTypings(zip(names, types))
+)
