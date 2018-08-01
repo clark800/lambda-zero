@@ -244,6 +244,7 @@ syntax match lambdaZeroGreek "\<Phi\ze\(\A\|$\)" conceal contained cchar=𝚽
 syntax match lambdaZeroGreek "\<Psi\ze\(\A\|$\)" conceal contained cchar=𝚿
 syntax match lambdaZeroGreek "\<Omega\ze\(\A\|$\)" conceal contained cchar=𝛀
 
+syntax match lambdaZeroPrime "''''\ze\([^']\|$\)" conceal contained cchar=⁗
 syntax match lambdaZeroPrime "'''\ze\([^']\|$\)" conceal contained cchar=‴
 syntax match lambdaZeroPrime "''\ze\([^']\|$\)" conceal contained cchar=″
 syntax match lambdaZeroPrime "'\ze\([^']\|$\)" conceal contained cchar=′
