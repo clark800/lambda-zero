@@ -159,27 +159,29 @@ output and interactive programs. See the samples below for examples of this.
 
 ### Conclusion
 
-That's the whole language! Take a look at the [prelude](zero/prelude.zero)
+That's the whole language! Take a look at the [prelude](libraries/prelude.zero)
 for more examples.
 
 # Building
 
-Make sure gcc and bash are installed and run the `make` script.
+Make sure gcc and bash are installed and run the `make` script in the
+bootstrap-interpreter directory.
 
 # Running
+First `cd` to the bootstrap-interpreter directory.
 
     ./run SOURCEFILE
 
 For example, try this sample program that prints out an infinite list of prime
 numbers:
 
-    ./run test/samples/showprimes
+    ./run ../sample-code/showprimes
 
 This sample program runs an interactive REPL that reverses each line entered:
 
-    ./run test/samples/repl
+    ./run ../sample-code/repl
 
-The `run` script prepends the [prelude](zero/prelude.zero) to the `SOURCEFILE` and
+The `run` script prepends the [prelude](libraries/prelude.zero) to the `SOURCEFILE` and
 passes the result to `main`.
 
 Note that when using the `run` script, line numbers in error messages will be

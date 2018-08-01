@@ -10,7 +10,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CMD="$DIR/../main"
 if [[ "$#" > 0 && "$1" == "meta" ]]; then
     META=1
-    CMD="$DIR/../zero/meta/interpret -t"
+    CMD="$DIR/../../self-interpreter/interpret -t"
 else
     META=0
 fi
@@ -83,10 +83,10 @@ function run {
         "arithmetic.test"
         "definition.test"
         "quote.test"
-        "math.test ../zero/prelude.zero"
-        "prelude.test ../zero/prelude.zero"
-        "show.test ../zero/prelude.zero"
-        "infinite.test ../zero/prelude.zero"
+        "math.test ../../libraries/prelude.zero"
+        "prelude.test ../../libraries/prelude.zero"
+        "show.test ../../libraries/prelude.zero"
+        "infinite.test ../../libraries/prelude.zero"
     )
     if [[ "$META" -eq 1 ]]; then
         ulimit -s unlimited     # prevent segfaults due to high recursion depth
@@ -96,8 +96,8 @@ function run {
             "definition.test"
             "syntax.test"
             "quote.test"
-            "math.test ../zero/prelude.zero"
-            "prelude.test ../zero/prelude.zero"
+            "math.test ../../libraries/prelude.zero"
+            "prelude.test ../../libraries/prelude.zero"
         )
     fi
     for suite in "${suites[@]}"; do
