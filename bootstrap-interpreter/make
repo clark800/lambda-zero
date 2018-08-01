@@ -23,8 +23,8 @@ CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors \
 # increases the executable size; here we set it back to the default
 
 LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
-SOURCES=`find -L . -name "*.c" -not -path "./lib/libc/*"`
-HEADERS=`find -L . -name "*.h" -not -path "./lib/libc/*"`
+SOURCES=`find -L ./src -name "*.c" -not -path "./src/lib/libc/*"`
+HEADERS=`find -L ./src -name "*.h" -not -path "./src/lib/libc/*"`
 OBJECTS="*.o"
 
 echoexec() {
@@ -43,7 +43,7 @@ is_up_to_date() {
 }
 
 build_libc() {
-    (cd lib/libc && ./make)
+    (cd src/lib/libc && ./make)
 }
 
 build() {
@@ -69,11 +69,11 @@ config_debug() {
 }
 
 config_custom() {
-    custom="-nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin"
+    custom="-nostdlib -nostdinc -isystem ./src/lib/libc/include/ -fno-builtin"
     CC_FLAGS="$custom $CC_FLAGS"
     LINK_FLAGS="-nostdlib $LINK_FLAGS"
     SOURCES=`find -L . -name "*.c"`
-    OBJECTS="*.o lib/libc/sys.o"
+    OBJECTS="*.o src/lib/libc/sys.o"
 }
 
 config_small() {

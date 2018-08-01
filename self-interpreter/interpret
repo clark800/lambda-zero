@@ -1,11 +1,12 @@
 #!/bin/bash -e
 # use bash process substitution to prepend prelude to source file
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB="$DIR/../libraries"
 # read input first to check for errors accessing files
 declare -a files=(
-    "$DIR/../prelude.zero"
-    "$DIR/../protoset.zero"
-    "$DIR/../table.zero"
+    "$LIB/prelude.zero"
+    "$LIB/protoset.zero"
+    "$LIB/table.zero"
     "$DIR/scan.zero"
     "$DIR/ast.zero"
     "$DIR/lex.zero"
@@ -21,4 +22,4 @@ declare -a files=(
 chmod -f +w meta.tmp || true
 cat ${files[@]} > meta.tmp
 chmod -w meta.tmp
-"$DIR/../../main" $* meta.tmp
+"$DIR/../bootstrap-interpreter/main" $* meta.tmp

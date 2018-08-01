@@ -7,4 +7,4 @@ jobs:
       - run: apt-get update
       - run: apt-get -y install gcc
       - checkout
-      - run: ./make test
+      - run: cd bootstrap-interpreter && ./make test
