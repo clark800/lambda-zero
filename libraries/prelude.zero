@@ -9,14 +9,14 @@
 // **      pair of * and *
 
 // universal
-x.f := f(x)                      // uniform function call syntax
-f || x := f(x)                   // low precedence application
-f <> g := x -> f(g(x))           // function composition
-`f(x, y) := f(y, x)              // flip order of first two arguments of function
-id(x) := x                       // identity function
-constant(x) := _ -> x            // return value does not depend on parameter
+x.f := f(x)                     // uniform function call syntax
+f || x := f(x)                  // low precedence application
+f <> g := x -> f(g(x))          // function composition
+`f(x, y) := f(y, x)             // flip order of first two arguments of function
+id(x) := x                      // identity function
+constant(x) := _ -> x           // return value does not depend on parameter
 on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
-mirror(f)(x) := f(x, x)          // convert binary function to unary function
+mirror(f)(x) := f(x, x)         // convert binary function to unary function
 undefined := error("undefined")
 
 // boolean logic

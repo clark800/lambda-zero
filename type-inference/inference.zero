@@ -1,5 +1,5 @@
 
-getDefinitionName(definition) := getLexeme(getParameter(getLeft(definition)))
+getDefinitionName(definition) := getParameter(getLeft(definition))
 getDefinitionValue(definition) := getRight(definition)
 getDefinitionScope(definition) := getBody(getLeft(definition))
 
@@ -50,10 +50,20 @@ builtinTypeConstructors := newDictionary([
     (">=", newComparisonOperatorType)
 ])
 
+knownTypeConstructors := newDictionary([
+    ("true", newBooleanType),
+    ("false", newBooleanType)
+])
+
 getBuiltinType(node) := (
-    typeConstructor := builtinTypeConstructors.get(getLexeme(node),
+    constructor := builtinTypeConstructors.get(getLexeme(node),
         error("builtin not found: " ++ getLexeme(node)))
-    typeConstructor(getTag(node))
+    constructor(getTag(node))
+)
+
+getKnownType(name) := (
+    constructor := knownTypeConstructors.get(getLexeme(name), newFreeType)
+    constructor(getTag(name))
 )
 
 newVariableMap(mappings) := newTable((<=).on(getData), mappings)
@@ -137,9 +147,12 @@ infer(node, stack, variables) := (
     undefined
 )
 
-inferType(node) := (
-    (type, variables) := infer(node, [], newVariableMap([]))
-    type.substitute(variables)
+inferType(stack, definition) := (
+    (name, value) := definition
+    knownType := getKnownType(name)
+    !isFreeType(knownType) ? knownType.generalize(newVariableMap([])) :: stack
+    (type, variables) := infer(value, stack, newVariableMap([]))
+    type.substitute(variables).generalize(variables) :: stack
 )
 
 // todo: make this work for arbitrarily high index
@@ -193,16 +206,18 @@ getDefinitions(node) := (
     newDefinition(node) :: getDefinitions(getDefinitionScope(node))
 )
 
-showDefinition((name, value)) := name ++ " := " ++ showAST(value)
+showDefinition((name, value)) := getLexeme(name) ++ " := " ++ showAST(value)
 showDefinitions(definitions) := definitions.map(showDefinition).joinWith("\n")
 
 showTypings(typings) :=
     typings.map((name, type) ->
-        name ++ " : " ++ showPrettyType(type)).joinWith("\n\n")
+        getLexeme(name) ++ " : " ++ showPrettyType(type)).joinWith("\n\n")
 
 main(input) := (
     node := parse(input, "")
-    (names, values) := unzip(getDefinitions(node))
-    types := values.map(inferType)
+    definitions := getDefinitions(node)
+    stack := definitions.foldl(inferType, [])
+    types := reverse(stack.map(second))
+    (names, _) := unzip(definitions)
     showTypings(zip(names, types))
 )

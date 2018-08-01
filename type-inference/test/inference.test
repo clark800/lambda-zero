@@ -2,6 +2,8 @@ id(x) := x
 
 const(x) := _ -> x
 
+true(t, f) := t
+
 f(x, y) := y(x)
 
 f'(x, y) := x(y)
@@ -10,3 +12,4 @@ g(x) := x * x
 
 h(x, y) := x > y
 
+q(x) := true
