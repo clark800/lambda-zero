@@ -45,6 +45,8 @@ curry(f) := x -> y -> f((x, y))
 uncurry(f) := xx -> f(first(xx), second(xx))
 
 // more pairs
+mapFirst(xy, f) := (f(first(xy)), second(xy))
+mapSecond(xy, f) := (first(xy), f(second(xy)))
 mapPair(xx, f) := (,).on(f).uncurry(xx)
 
 // maybe
@@ -142,6 +144,10 @@ any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies 
 all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
 // find first element satisfying p, or return nothing
 find(xs, p) := xs =*= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
+
+// foldMap : a[] --> ((a; s) --> (b; s)) --> s --> (b[], s)
+foldMap(xs, f, z) := xs.foldl((ys, s) -> x ->
+    f(x, s).mapFirst((:: ys)), ([], z)).mapFirst(reverse)
 
 indexOf(nss, key) := (
     indexOf'(list, depth) := (

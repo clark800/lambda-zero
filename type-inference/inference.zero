@@ -3,39 +3,34 @@ getDefinitionName(definition) := getParameter(getLeft(definition))
 getDefinitionValue(definition) := getRight(definition)
 getDefinitionScope(definition) := getBody(getLeft(definition))
 
-newFunctionType := newLambda
-newFreeType(tag) := newInteger(tag, -1)
-newIntegerType(tag) := newInteger(tag, -2)
-newBooleanType(tag) := newInteger(tag, -3)
-newScheme(universals, type) := (universals, type)
-newTupleType(tag, types) := newApplication(tag, 0, types)
+newType(tag, code, components) := ((tag, code), components)
+newFreeType(tag) := newType(tag, -1, [])
+newBooleanType(tag) := newType(tag, -2, [])
+newIntegerType(tag) := newType(tag, -3, [])
+newFunctionType(tag, left, right) := newType(tag, -4, [left, right])
+newTupleType(tag, types) := newType(tag, -5, types)
+newDummyTypeVariable(tag, index) := newType(tag, index, [])
 newTypeVariable(variables, tag) := (
-    type := newInteger(tag, #variables)
+    type := newDummyTypeVariable(tag, #variables)
     (type, variables.insert(type, newFreeType(tag)))
 )
-variableA := newInteger(("", (0, 0)), 0)
+newScheme(universals, type) := (universals, type)
 
-isFunctionType := isLambda
-isTypeVariable(type) := isInteger(type) /\ getData(type) >= 0
-isFreeType(type) := isInteger(type) /\ getData(type) = -1
-isIntegerType(type) := isInteger(type) /\ getData(type) = -2
-isBooleanType(type) := isInteger(type) /\ getData(type) = -3
-isTupleType(type) := isApplication(type) /\ getLeft(type) = 0
+getTypeCode := second <> first
+getComponentTypes := second
+isCompositeType(type) := length(getComponentTypes(type)) > 0
+isTypeVariable(type) := getTypeCode(type) >= 0
+isFreeType(type) := getTypeCode(type) = -1
+isBooleanType(type) := getTypeCode(type) = -2
+isIntegerType(type) := getTypeCode(type) = -3
+isFunctionType(type) := getTypeCode(type) = -4
+isTupleType(type) := getTypeCode(type) = -5
 isFree(type, variables) := !variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
-getTupleElementTypes := getRight
-
-isSameType(a, b) := (
-    isIntegerType(a) /\ isIntegerType(b) \/
-    isBooleanType(a) /\ isBooleanType(b) \/
-    isTypeVariable(a) /\ isTypeVariable(b) /\ getData(a) = getData(b) \/
-    isFunctionType(a) /\ isFunctionType(b) /\
-        isSameType(getParameter(a), getParameter(b)) /\
-        isSameType(getBody(a), getBody(b)) \/
-    isTupleType(a) /\ isTupleType(b) /\
-        zip(getTupleElementTypes(a), getTupleElementTypes(b)).all(
-            uncurry(isSameType))
-)
+isSameType(a, b) := getTypeCode(a) = getTypeCode(b) /\
+    zip(getComponentTypes(a), getComponentTypes(b)).all(uncurry(isSameType))
+mapComponents(type, f) := newType(getTag(type), getTypeCode(type),
+    getComponentTypes(type).map(f))
 
 newBinaryOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
     newFunctionType(tag, newIntegerType(tag), newIntegerType(tag)))
@@ -62,14 +57,13 @@ knownTypeSchemeConstructors := newDictionary([
     ("false", tag -> newScheme([], newBooleanType(tag))),
     ("if", tag -> (
         (-->) := newFunctionType(tag)
-        newScheme([variableA],
-            newBooleanType(tag) --> (variableA --> (variableA --> variableA)))
+        a := newDummyTypeVariable(tag, 0)
+        newScheme([a], newBooleanType(tag) --> (a --> (a --> a)))
     ))
 ])
 
 getBuiltinType(node) := (
-    constructor := builtinTypeConstructors.get(getLexeme(node),
-        error("builtin not found: " ++ getLexeme(node)))
+    constructor := builtinTypeConstructors.get(getLexeme(node), undefined)
     constructor(getTag(node))
 )
 
@@ -79,62 +73,46 @@ getKnownTypeScheme(name) := (
     constructor(getTag(name))
 )
 
-newVariableMap(mappings) := newTable((<=).on(getData), mappings)
+newVariableMap(mappings) := newTable((<=).on(getTypeCode), mappings)
 
 substitute(type, variables) := (
     isTypeVariable(type) /\ !type.isFree(variables) ?
         variables.get(type, undefined).substitute(variables)
-    isFunctionType(type) ?
-        newFunctionType(getTag(type),
-            getParameter(type).substitute(variables),
-            getBody(type).substitute(variables))
-    isTupleType(type) ?
-        newTupleType(getTag(type),
-            getTupleElementTypes(type).map(`substitute(variables)))
-    type
+    type.mapComponents(`substitute(variables))
 )
 
 // Robinson's Unification Algorithm
 // see Comparing Unification Algorithms in First-Order Theorem Proving
 // by Krystof Hoder and Andrei Voronkov
-unify(variables, left, right) := (
+unify(variables, (left, right)) := (
     isTypeVariable(left) /\ !left.isFree(variables) ?
-        variables.unify(left.substitute(variables), right)
+        variables.unify((left.substitute(variables), right))
     isTypeVariable(right) /\ !right.isFree(variables) ?
-        variables.unify(left, right.substitute(variables))
+        variables.unify((left, right.substitute(variables)))
     isSameType(left, right) ? variables
     isTypeVariable(left) ? variables.insert(left, right)
     isTypeVariable(right) ? variables.insert(right, left)
-    isFunctionType(left) /\ isFunctionType(right) ?
-        variables.unify(getParameter(left), getParameter(right)).unify(
-            getBody(left), getBody(right))
-    isTupleType(left) /\ isTupleType(right) ?
-        zip(getTupleElementTypes(left), getTupleElementTypes(right)).foldl(
-            variables' -> (left', right') -> variables'.unify(left', right'),
-            variables)
+    getTypeCode(left) = getTypeCode(right) ?
+        zip(getComponentTypes(left), getComponentTypes(right)).
+            foldl(unify, variables)
     error("unification error")
 )
 
 getFreeVariables(type, variables) := (
     isTypeVariable(type) /\ type.isFree(variables) ?
         [type]
-    isFunctionType(type) ?
-        getParameter(type).getFreeVariables(variables) ++
-        getBody(type).getFreeVariables(variables)
-    isTupleType(type) ?
-        join(getTupleElementTypes(type).map(`getFreeVariables(variables)))
-    []
+    join(getComponentTypes(type).map(`getFreeVariables(variables)))
 )
 
-generalize(type, variables) :=
-    newScheme(type.getFreeVariables(variables), type)
+generalize(type, variables) := newScheme(type.getFreeVariables(variables), type)
+
+newTypeVariables(originals, variables) := originals.map(getTag).
+    foldMap(`newTypeVariable, variables)
 
 instantiate(scheme, variables) := (
     (universals, type) := scheme
-    (substitution, variables') := universals.foldl((s', s) -> variable -> (
-        (fresh, s'') := s.newTypeVariable(getTag(variable))
-        (s'.insert(variable, fresh), s'')
-    ), (newVariableMap([]), variables))
+    (freshVariables, variables') := newTypeVariables(universals, variables)
+    substitution := newVariableMap(zip(universals, freshVariables))
     (type.substitute(substitution), variables')
 )
 
@@ -147,15 +125,8 @@ infer(node, stack, variables) := (
     tag := getTag(node)
     isInteger(node) ? (newIntegerType(tag), variables)
     isBuiltin(node) ? (getBuiltinType(node), variables)
-    isTuple(node) ? (
-        stack' := undefined :: stack
-        (types, variables') := getTupleElements(node).foldl(
-            (types, variables') -> element -> (
-                (type, variables'') := infer(element, stack', variables')
-                (types ++ [type], variables'')
-            ), ([], variables))
-        (newTupleType(tag, types), variables')
-    )
+    isTuple(node) ? getTupleElements(node).foldMap(
+        `infer(undefined :: stack), variables).mapFirst(newTupleType(tag))
     isReference(node) ? stack[getDebruijnIndex(node)].instantiate(variables)
     isLambda(node) ? (
         (parameterType, variables') := variables.newTypeVariable(tag)
@@ -173,7 +144,7 @@ infer(node, stack, variables) := (
         (leftType, variables'') := getLeft(node).infer(stack, variables')
         (returnType, variables''') := variables''.newTypeVariable(tag)
         functionType := newFunctionType(getTag(leftType), rightType, returnType)
-        (returnType, variables'''.unify(leftType, functionType))
+        (returnType, variables'''.unify((leftType, functionType)))
     )
     undefined
 )
@@ -192,12 +163,11 @@ getVariableName(index) := ['a' + index]
 showType(type) := (
     isIntegerType(type) ? "Integer"
     isBooleanType(type) ? "Boolean"
-    isTypeVariable(type) ? getVariableName(getData(type))
+    isTypeVariable(type) ? getVariableName(getTypeCode(type))
     isFunctionType(type) ?
-        "(" ++ showType(getParameter(type)) ++ " --> " ++
-            showType(getBody(type)) ++ ")"
+        "(" ++ getComponentTypes(type).map(showType).joinWith(" --> ") ++ ")"
     isTupleType(type) ?
-        "(" ++ getTupleElementTypes(type).map(showType).joinWith("; ") ++ ")"
+        "(" ++ getComponentTypes(type).map(showType).joinWith("; ") ++ ")"
     undefined
 )
 
@@ -211,11 +181,7 @@ addLabels(labels, type) := (
         labels.hasKey(type) ? labels
         labels.insert(type, #labels)
     )
-    isFunctionType(type) ?
-        labels.addLabels(getParameter(type)).addLabels(getBody(type))
-    isTupleType(type) ?
-        getTupleElementTypes(type).foldl(addLabels, labels)
-    labels
+    getComponentTypes(type).foldl(addLabels, labels)
 )
 
 showTypeWithLabels(type, labels) := (
@@ -223,10 +189,10 @@ showTypeWithLabels(type, labels) := (
     isBooleanType(type) ? "Boolean"
     isTypeVariable(type) ? getVariableName(labels.get(type, undefined))
     isFunctionType(type) ?
-        "(" ++ showTypeWithLabels(getParameter(type), labels) ++ " --> " ++
-            showTypeWithLabels(getBody(type), labels) ++ ")"
+        "(" ++ getComponentTypes(type).map(
+            `showTypeWithLabels(labels)).joinWith(" --> ") ++ ")"
     isTupleType(type) ?
-        "(" ++ getTupleElementTypes(type).map(
+        "(" ++ getComponentTypes(type).map(
             `showTypeWithLabels(labels)).joinWith("; ") ++ ")"
     undefined
 )
