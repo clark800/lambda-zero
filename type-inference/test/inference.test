@@ -13,8 +13,12 @@ g(x) := x * x
 
 h(x, y) := x > y
 
-q(x) := true
+v(x) := true
 
 if(c, a, b) := c(a, b)
 
 c(a) := if(a = 0, 1, a)
+
+p := (1, true, c(1))
+
+q(x, y) := (x, y)
