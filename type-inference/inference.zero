@@ -12,6 +12,7 @@ newTypeVariable(variables, tag) := (
     type := newInteger(tag, #variables)
     (type, variables.insert(type, newFreeType(tag)))
 )
+variableA := newInteger(("", (0, 0)), 0)
 
 isFunctionType := isLambda
 isTypeVariable(type) := isInteger(type) /\ getData(type) >= 0
@@ -50,9 +51,14 @@ builtinTypeConstructors := newDictionary([
     (">=", newComparisonOperatorType)
 ])
 
-knownTypeConstructors := newDictionary([
-    ("true", newBooleanType),
-    ("false", newBooleanType)
+knownTypeSchemeConstructors := newDictionary([
+    ("true", tag -> newScheme([], newBooleanType(tag))),
+    ("false", tag -> newScheme([], newBooleanType(tag))),
+    ("if", tag -> (
+        (-->) := newFunctionType(tag)
+        newScheme([variableA],
+            newBooleanType(tag) --> (variableA --> (variableA --> variableA)))
+    ))
 ])
 
 getBuiltinType(node) := (
@@ -61,8 +67,9 @@ getBuiltinType(node) := (
     constructor(getTag(node))
 )
 
-getKnownType(name) := (
-    constructor := knownTypeConstructors.get(getLexeme(name), newFreeType)
+getKnownTypeScheme(name) := (
+    constructor := knownTypeSchemeConstructors.get(getLexeme(name),
+        tag -> newScheme([], newFreeType(tag)))
     constructor(getTag(name))
 )
 
@@ -149,8 +156,8 @@ infer(node, stack, variables) := (
 
 inferType(stack, definition) := (
     (name, value) := definition
-    knownType := getKnownType(name)
-    !isFreeType(knownType) ? knownType.generalize(newVariableMap([])) :: stack
+    knownTypeScheme := getKnownTypeScheme(name)
+    !isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
     (type, variables) := infer(value, stack, newVariableMap([]))
     type.substitute(variables).generalize(variables) :: stack
 )

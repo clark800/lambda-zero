@@ -3,6 +3,7 @@ id(x) := x
 const(x) := _ -> x
 
 true(t, f) := t
+false(t, f) := f
 
 f(x, y) := y(x)
 
@@ -13,3 +14,7 @@ g(x) := x * x
 h(x, y) := x > y
 
 q(x) := true
+
+if(c, a, b) := c(a, b)
+
+c(a) := if(a = 0, 1, a)
