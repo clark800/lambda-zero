@@ -8,6 +8,7 @@ newFreeType(tag) := newInteger(tag, -1)
 newIntegerType(tag) := newInteger(tag, -2)
 newBooleanType(tag) := newInteger(tag, -3)
 newScheme(universals, type) := (universals, type)
+newTupleType(tag, types) := newApplication(tag, 0, types)
 newTypeVariable(variables, tag) := (
     type := newInteger(tag, #variables)
     (type, variables.insert(type, newFreeType(tag)))
@@ -19,8 +20,10 @@ isTypeVariable(type) := isInteger(type) /\ getData(type) >= 0
 isFreeType(type) := isInteger(type) /\ getData(type) = -1
 isIntegerType(type) := isInteger(type) /\ getData(type) = -2
 isBooleanType(type) := isInteger(type) /\ getData(type) = -3
+isTupleType(type) := isApplication(type) /\ getLeft(type) = 0
 isFree(type, variables) := !variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
+getTupleElementTypes := getRight
 
 isSameType(a, b) := (
     isIntegerType(a) /\ isIntegerType(b) \/
@@ -28,7 +31,10 @@ isSameType(a, b) := (
     isTypeVariable(a) /\ isTypeVariable(b) /\ getData(a) = getData(b) \/
     isFunctionType(a) /\ isFunctionType(b) /\
         isSameType(getParameter(a), getParameter(b)) /\
-        isSameType(getBody(a), getBody(b))
+        isSameType(getBody(a), getBody(b)) \/
+    isTupleType(a) /\ isTupleType(b) /\
+        zip(getTupleElementTypes(a), getTupleElementTypes(b)).all(
+            uncurry(isSameType))
 )
 
 newBinaryOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
@@ -82,6 +88,9 @@ substitute(type, variables) := (
         newFunctionType(getTag(type),
             getParameter(type).substitute(variables),
             getBody(type).substitute(variables))
+    isTupleType(type) ?
+        newTupleType(getTag(type),
+            getTupleElementTypes(type).map(`substitute(variables)))
     type
 )
 
@@ -99,6 +108,10 @@ unify(variables, left, right) := (
     isFunctionType(left) /\ isFunctionType(right) ?
         variables.unify(getParameter(left), getParameter(right)).unify(
             getBody(left), getBody(right))
+    isTupleType(left) /\ isTupleType(right) ?
+        zip(getTupleElementTypes(left), getTupleElementTypes(right)).foldl(
+            variables' -> (left', right') -> variables'.unify(left', right'),
+            variables)
     error("unification error")
 )
 
@@ -108,6 +121,8 @@ getFreeVariables(type, variables) := (
     isFunctionType(type) ?
         getParameter(type).getFreeVariables(variables) ++
         getBody(type).getFreeVariables(variables)
+    isTupleType(type) ?
+        join(getTupleElementTypes(type).map(`getFreeVariables(variables)))
     []
 )
 
@@ -132,6 +147,15 @@ infer(node, stack, variables) := (
     tag := getTag(node)
     isInteger(node) ? (newIntegerType(tag), variables)
     isBuiltin(node) ? (getBuiltinType(node), variables)
+    isTuple(node) ? (
+        stack' := undefined :: stack
+        (types, variables') := getTupleElements(node).foldl(
+            (types, variables') -> element -> (
+                (type, variables'') := infer(element, stack', variables')
+                (types ++ [type], variables'')
+            ), ([], variables))
+        (newTupleType(tag, types), variables')
+    )
     isReference(node) ? stack[getDebruijnIndex(node)].instantiate(variables)
     isLambda(node) ? (
         (parameterType, variables') := variables.newTypeVariable(tag)
@@ -170,8 +194,10 @@ showType(type) := (
     isBooleanType(type) ? "Boolean"
     isTypeVariable(type) ? getVariableName(getData(type))
     isFunctionType(type) ?
-        "(" ++ showType(getParameter(type)) ++ " -> " ++
+        "(" ++ showType(getParameter(type)) ++ " --> " ++
             showType(getBody(type)) ++ ")"
+    isTupleType(type) ?
+        "(" ++ getTupleElementTypes(type).map(showType).joinWith("; ") ++ ")"
     undefined
 )
 
@@ -187,6 +213,8 @@ addLabels(labels, type) := (
     )
     isFunctionType(type) ?
         labels.addLabels(getParameter(type)).addLabels(getBody(type))
+    isTupleType(type) ?
+        getTupleElementTypes(type).foldl(addLabels, labels)
     labels
 )
 
@@ -195,8 +223,11 @@ showTypeWithLabels(type, labels) := (
     isBooleanType(type) ? "Boolean"
     isTypeVariable(type) ? getVariableName(labels.get(type, undefined))
     isFunctionType(type) ?
-        "(" ++ showTypeWithLabels(getParameter(type), labels) ++ " -> " ++
+        "(" ++ showTypeWithLabels(getParameter(type), labels) ++ " --> " ++
             showTypeWithLabels(getBody(type), labels) ++ ")"
+    isTupleType(type) ?
+        "(" ++ getTupleElementTypes(type).map(
+            `showTypeWithLabels(labels)).joinWith("; ") ++ ")"
     undefined
 )
 
