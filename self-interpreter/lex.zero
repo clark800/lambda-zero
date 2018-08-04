@@ -38,6 +38,7 @@ showLexemeAndLocationLine(tag, quote) :=
 
 inputTag := ("input", (0, 0))
 blank := newName(("_", (0, 0)))
+projectionBlank := newName(("(_)", (0, 0)))
 comma := newName((",", (0, 0)))
 cT := newName(("t", (0, 0)))
 cF := newName(("f", (0, 0)))

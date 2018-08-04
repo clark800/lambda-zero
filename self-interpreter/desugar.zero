@@ -18,7 +18,7 @@ hasRecursiveCalls(node, name) := (
 )
 
 transformRecursion(name, value) := (
-    !isSymbol(name) \/ !hasRecursiveCalls(value, name) ? value
+    isComma(name) \/ !isSymbol(name) \/ !hasRecursiveCalls(value, name) ? value
     newApplication(getTag(name), yCombinator,
         newLambda(getTag(name), newName(getTag(name)), value))
 )
