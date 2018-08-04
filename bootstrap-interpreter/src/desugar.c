@@ -19,7 +19,7 @@ bool hasRecursiveCalls(Node* node, Node* name) {
 }
 
 Node* transformRecursion(Node* name, Node* value) {
-    if (!isSymbol(name) || !hasRecursiveCalls(value, name))
+    if (isComma(name) || !isSymbol(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
     String lexeme = getLexeme(name);

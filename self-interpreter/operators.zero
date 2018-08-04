@@ -11,9 +11,14 @@ isSpecialOperator(operator) := isOperator(operator) /\
     ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
     contains(getLexeme(operator))
 
+isProjection(node) := isLambda(node) /\
+    getLexeme(getParameter(node)) =*= getLexeme(projectionBlank)
+
 newProjection(tag, size, index) := (
     reference := newReference(tag, size - index - 1)
-    (newLambda(tag, blank))^^(size)(reference)
+    function := (newLambda(tag, blank))^^(size)(reference)
+    newLambda(tag, projectionBlank,
+        newApplication(tag, projectionBlank, function))
 )
 
 getTupleElements(tuple) := (
@@ -32,7 +37,7 @@ newPatternLambda(tag, pattern, body) := (
     function := getTupleElements(pattern).foldr(element -> x ->
         newPatternLambda(tag, element, x), body)
     projections := (0 .. size - 1).map(n ->
-        newApplication(tag, blank, newProjection(tag, size, n)))
+        newApplication(tag, newProjection(tag, size, n), blank))
     application := projections.foldl(x -> projection ->
         newApplication(tag, x, projection), function)
     newLambda(tag, blank, application)

@@ -4,8 +4,8 @@ const(x) := _ -> x
 
 true(t, f) := t
 false(t, f) := f
-first(xy) := xy(true)
-second(xy) := xy(false)
+first((x, y)) := x
+second((x, y)) := y
 
 f(x, y) := y(x)
 
@@ -25,6 +25,12 @@ p := (1, true, c(1))
 
 q(x, y) := (x, y)
 
-z := [1 + 2, c(3), first(q(1, true)), f(2, c)]
+q'(x, y) := first((x, y))
 
-z' := [x -> x, y -> y, x -> y -> y]
+list := [1 + 2, c(3), first(q(1, true)), f(2, c)]
+
+list' := [x -> x, y -> y, x -> y -> y]
+
+swap((x, y)) := (y, x)
+
+rot((w, x, y, z)) := (x, y, z, w)

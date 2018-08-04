@@ -32,9 +32,9 @@ b => c := b ? c || true
 b <=> c := b ? c || !c
 
 // pairs
-(,)(x, y)(f) := f(x, y)     // this definition is for (,) and sections
-first(xy) := xy(true)
-second(xy) := xy(false)
+(,)(x, y) := (x, y)     // this definition is for (,) and sections
+first((x, y)) := x
+second((x, y)) := y
 swap((x, y)) := (y, x)
 
 // function methods
@@ -176,6 +176,11 @@ deduplicate(ns) := (
     isEmpty(ns) ? []
     (n, ns') := ns
     n :: deduplicate(ns' | (!= n))
+)
+deduplicateBy(xs, (=?=)) := (
+    isEmpty(xs) ? []
+    (x, xs') := xs
+    x :: deduplicateBy(xs' | (!) <> (=?= x), (=?=))
 )
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 
