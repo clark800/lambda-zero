@@ -4,6 +4,8 @@ const(x) := _ -> x
 
 true(t, f) := t
 false(t, f) := f
+first(xy) := xy(true)
+second(xy) := xy(false)
 
 f(x, y) := y(x)
 
@@ -22,3 +24,7 @@ c(a) := if(a = 0, 1, a)
 p := (1, true, c(1))
 
 q(x, y) := (x, y)
+
+z := [1 + 2, c(3), first(q(1, true)), f(2, c)]
+
+z' := [x -> x, y -> y, x -> y -> y]
