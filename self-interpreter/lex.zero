@@ -76,6 +76,11 @@ prependList(tag, item, list) :=
     newLambda(tag, comma, newApplication(tag,
         newApplication(tag, comma, item), list))
 
+getListElements(list) := (
+    !isTuple(list) ? []
+    getRight(getLeft(getBody(list))) :: getListElements(getRight(getBody(list)))
+)
+
 getListLength(list) := (
     !isTuple(list) ? 0
     tail := getRight(getBody(list))

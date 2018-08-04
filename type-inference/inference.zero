@@ -9,6 +9,7 @@ newBooleanType(tag) := newType(tag, -2, [])
 newIntegerType(tag) := newType(tag, -3, [])
 newFunctionType(tag, left, right) := newType(tag, -4, [left, right])
 newTupleType(tag, types) := newType(tag, -5, types)
+newListType(tag, type) := newType(tag, -6, [type])
 newDummyTypeVariable(tag, index) := newType(tag, index, [])
 newTypeVariable(variables, tag) := (
     type := newDummyTypeVariable(tag, #variables)
@@ -25,6 +26,7 @@ isBooleanType(type) := getTypeCode(type) = -2
 isIntegerType(type) := getTypeCode(type) = -3
 isFunctionType(type) := getTypeCode(type) = -4
 isTupleType(type) := getTypeCode(type) = -5
+isListType(type) := getTypeCode(type) = -6
 isFree(type, variables) := !variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
 isSameType(a, b) := getTypeCode(a) = getTypeCode(b) /\
@@ -59,6 +61,47 @@ knownTypeSchemeConstructors := newDictionary([
         (-->) := newFunctionType(tag)
         a := newDummyTypeVariable(tag, 0)
         newScheme([a], newBooleanType(tag) --> (a --> (a --> a)))
+    )),
+    ("first", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        b := newDummyTypeVariable(tag, 1)
+        newScheme([a, b], newTupleType(tag, [a, b]) --> a)
+    )),
+    ("second", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        b := newDummyTypeVariable(tag, 1)
+        newScheme([a, b], newTupleType(tag, [a, b]) --> b)
+    )),
+    (",", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        b := newDummyTypeVariable(tag, 1)
+        newScheme([a, b], a --> (b --> newTupleType(tag, [a, b])))
+    )),
+    ("::", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        aList := newListType(tag, a)
+        newScheme([a], a --> (aList --> aList))
+    )),
+    ("head", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        aList := newListType(tag, a)
+        newScheme([a], aList --> a)
+    )),
+    ("--", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        aList := newListType(tag, a)
+        newScheme([a], aList --> aList)
+    )),
+    ("isEmpty", tag -> (
+        (-->) := newFunctionType(tag)
+        a := newDummyTypeVariable(tag, 0)
+        newScheme([a], newListType(tag, a) --> newBooleanType(tag))
     ))
 ])
 
@@ -98,6 +141,11 @@ unify(variables, (left, right)) := (
     error("unification error")
 )
 
+unifyAll(variables, types) := (
+    isEmpty(types) ? variables
+    zip(repeat(types[0]), --types).foldl(unify, variables)
+)
+
 getFreeVariables(type, variables) := (
     isTypeVariable(type) /\ type.isFree(variables) ?
         [type]
@@ -116,15 +164,21 @@ instantiate(scheme, variables) := (
     (type.substitute(substitution), variables')
 )
 
-// returns (type, variables)
-// i think generalize can be done at each reference, but that would duplicate
-// work because you would have to search for free type variables again at
-// each reference. to prevent this, we can store the free type variables in
-// the stack alongside the types.
 infer(node, stack, variables) := (
     tag := getTag(node)
     isInteger(node) ? (newIntegerType(tag), variables)
     isBuiltin(node) ? (getBuiltinType(node), variables)
+    isList(node) ? (
+        elements := getListElements(node)
+        isEmpty(elements) ?
+            variables.newTypeVariable(tag).mapFirst(newListType(tag))
+        (elementTypes, variables') := elements.foldl(
+            (types, variables'') -> element -> (
+                stack' := repeat(undefined).take(length(types) + 1) ++ stack
+                infer(element, stack', variables'').mapFirst((:: types))
+            ), ([], variables)).mapFirst(reverse)
+        (newListType(tag, elementTypes[0]), variables'.unifyAll(elementTypes))
+    )
     isTuple(node) ? getTupleElements(node).foldMap(
         `infer(undefined :: stack), variables).mapFirst(newTupleType(tag))
     isReference(node) ? stack[getDebruijnIndex(node)].instantiate(variables)
@@ -168,6 +222,8 @@ showType(type) := (
         "(" ++ getComponentTypes(type).map(showType).joinWith(" --> ") ++ ")"
     isTupleType(type) ?
         "(" ++ getComponentTypes(type).map(showType).joinWith("; ") ++ ")"
+    isListType(type) ?
+        "(" ++ showType(getComponentTypes(type)[0]) ++ ")[]"
     undefined
 )
 
@@ -194,6 +250,8 @@ showTypeWithLabels(type, labels) := (
     isTupleType(type) ?
         "(" ++ getComponentTypes(type).map(
             `showTypeWithLabels(labels)).joinWith("; ") ++ ")"
+    isListType(type) ?
+        showTypeWithLabels(getComponentTypes(type)[0], labels) ++ "[]"
     undefined
 )
 
