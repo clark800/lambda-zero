@@ -10,6 +10,7 @@ newIntegerType(tag) := newType(tag, -3, [])
 newFunctionType(tag, left, right) := newType(tag, -4, [left, right])
 newTupleType(tag, types) := newType(tag, -5, types)
 newListType(tag, type) := newType(tag, -6, [type])
+newMaybeType(tag, type) := newType(tag, -7, [type])
 newTypeVariable(variables, tag) := (
     type := newType(tag, #variables, [])
     (type, variables.insert(type, newFreeType(tag)))
@@ -28,6 +29,7 @@ isIntegerType(type) := getTypeCode(type) = -3
 isFunctionType(type) := getTypeCode(type) = -4
 isTupleType(type) := getTypeCode(type) = -5
 isListType(type) := getTypeCode(type) = -6
+isMaybeType(type) := getTypeCode(type) = -7
 isFree(type, variables) := !variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
 isSameType(a, b) := getTypeCode(a) = getTypeCode(b) /\
@@ -50,6 +52,8 @@ showType(type) := (
         "(" ++ getComponentTypes(type).map(showType).joinWith("; ") ++ ")"
     isListType(type) ?
         "(" ++ showType(getComponentTypes(type)[0]) ++ ")[]"
+    isMaybeType(type) ?
+        "Maybe(" ++ showType(getComponentTypes(type)[0]) ++ ")"
     undefined
 )
 
@@ -90,6 +94,7 @@ getKnownTypeScheme(name) := (
     boolean := newBooleanType(tag)
     variables := newVariableMap([])
     (a, variables') := variables.newTypeVariable(tag)
+    (b, variables'') := variables'.newTypeVariable(tag)
     aList := newListType(tag, a)
     lexeme =*= "true" ? (newScheme([], boolean), variables)
     lexeme =*= "false" ? (newScheme([], boolean), variables)
@@ -99,6 +104,10 @@ getKnownTypeScheme(name) := (
     lexeme =*= "head" ? (newScheme([a], aList --> a), variables')
     lexeme =*= "--" ? (newScheme([a], aList --> aList), variables')
     lexeme =*= "isEmpty" ? (newScheme([a], aList --> boolean), variables')
+    lexeme =*= "nothing" ? (newScheme([a], newMaybeType(tag, a)), variables')
+    lexeme =*= "just" ? (newScheme([a], a --> newMaybeType(tag, a)), variables')
+    lexeme =*= "maybe" ? (newScheme([a, b],
+        newMaybeType(tag, a) --> ((a --> b) --> (a --> b))), variables'')
     (newScheme([], newFreeType(tag)), variables)
 )
 
@@ -136,7 +145,8 @@ unify(variables, (left, right)) := (
     isSameType(left, right) ? variables
     isTypeVariable(left) ? variables.insert(left, right)
     isTypeVariable(right) ? variables.insert(right, left)
-    getTypeCode(left) = getTypeCode(right) ?
+    (getTypeCode(left) = getTypeCode(right) /\
+        length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
         zip(getComponentTypes(left), getComponentTypes(right)).
             foldl(unify, variables)
     error("unification error")
@@ -244,6 +254,9 @@ showTypeWithLabels(type, labels) := (
             `showTypeWithLabels(labels)).joinWith("; ") ++ ")"
     isListType(type) ?
         showTypeWithLabels(getComponentTypes(type)[0], labels) ++ "[]"
+    isMaybeType(type) ?
+        "Maybe(" ++ showTypeWithLabels(
+            getComponentTypes(type)[0], labels) ++ ")"
     undefined
 )
 

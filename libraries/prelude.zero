@@ -52,12 +52,12 @@ mapPair(xx, f) := (,).on(f).uncurry(xx)
 // maybe
 nothing := z -> f -> z
 just(x) := z -> f -> f(x)
-isNothing(mx) := mx(true, constant(false))
-isJust(mx) := mx(false, constant(true))
-fromJust(mx) := mx(error("fromJust: not a just"), id)
-maybe(x, f, mx) := mx(x, f)
-mx >>= f := mx(nothing, f)                   // maybe chaining (bind)
-mx ?|| x := mx(x, id)                        // just value or default
+maybe(mx, f, x) := mx(x, f)
+isNothing(mx) := mx.maybe(constant(false), true)
+isJust(mx) := mx.maybe(constant(true), false)
+fromJust(mx) := mx.maybe(id, error("fromJust: not a just"))
+mx >>= f := mx.maybe(f, nothing)         // maybe chaining (bind)
+mx ?|| x := mx.maybe(id, x)              // just value or default
 
 // math
 abs(n) := n >= 0 ? n || -n
