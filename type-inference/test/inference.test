@@ -34,3 +34,15 @@ list' := [x -> x, y -> y, x -> y -> y]
 swap((x, y)) := (y, x)
 
 rot((w, x, y, z)) := (x, y, z, w)
+
+nothing := z -> f -> z
+
+just(x) := z -> f -> f(x)
+
+maybe(mx, f, x) := mx(x, f)
+
+maybeTest := maybe(just(2), (* 2), 0)
+
+string := "test"
+
+e := if(true, 1, error("..."))
