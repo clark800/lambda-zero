@@ -42,3 +42,7 @@ just(x) := z -> f -> f(x)
 maybe(mx, f, x) := mx(x, f)
 
 maybeTest := maybe(just(2), (* 2), 0)
+
+string := "test"
+
+e := if(true, 1, error("..."))

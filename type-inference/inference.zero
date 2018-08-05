@@ -11,6 +11,7 @@ newFunctionType(tag, left, right) := newType(tag, -4, [left, right])
 newTupleType(tag, types) := newType(tag, -5, types)
 newListType(tag, type) := newType(tag, -6, [type])
 newMaybeType(tag, type) := newType(tag, -7, [type])
+newBottomType(tag) := newType(tag, -8, [])
 newTypeVariable(variables, tag) := (
     type := newType(tag, #variables, [])
     (type, variables.insert(type, newFreeType(tag)))
@@ -30,6 +31,7 @@ isFunctionType(type) := getTypeCode(type) = -4
 isTupleType(type) := getTypeCode(type) = -5
 isListType(type) := getTypeCode(type) = -6
 isMaybeType(type) := getTypeCode(type) = -7
+isBottomType(type) := getTypeCode(type) = -8
 isFree(type, variables) := !variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
 isSameType(a, b) := getTypeCode(a) = getTypeCode(b) /\
@@ -43,6 +45,7 @@ newVariableMap(mappings) := newTable((<=).on(getTypeCode), mappings)
 getVariableName(index) := ['a' + index]
 
 showType(type) := (
+    isBottomType(type) ? "Bottom"
     isIntegerType(type) ? "Integer"
     isBooleanType(type) ? "Boolean"
     isTypeVariable(type) ? getVariableName(getTypeCode(type))
@@ -68,6 +71,9 @@ newBinaryOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
 newComparisonOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
     newFunctionType(tag, newIntegerType(tag), newBooleanType(tag)))
 
+newErrorBuiltinType(tag) := newFunctionType(tag,
+    newListType(tag, newIntegerType(tag)), newBottomType(tag))
+
 builtinTypeConstructors := newDictionary([
     ("+", newBinaryOperatorType),
     ("-", newBinaryOperatorType),
@@ -79,7 +85,8 @@ builtinTypeConstructors := newDictionary([
     ("<", newComparisonOperatorType),
     (">", newComparisonOperatorType),
     ("<=", newComparisonOperatorType),
-    (">=", newComparisonOperatorType)
+    (">=", newComparisonOperatorType),
+    ("error", newErrorBuiltinType)
 ])
 
 getBuiltinType(node) := (
@@ -142,6 +149,7 @@ unify(variables, (left, right)) := (
         variables.unify((left.substitute(variables), right))
     isTypeVariable(right) /\ !right.isFree(variables) ?
         variables.unify((left, right.substitute(variables)))
+    isBottomType(left) \/ isBottomType(right) ? variables
     isSameType(left, right) ? variables
     isTypeVariable(left) ? variables.insert(left, right)
     isTypeVariable(right) ? variables.insert(right, left)
@@ -188,6 +196,7 @@ infer(node, stack, variables) := (
     tag := getTag(node)
     isInteger(node) ? (newIntegerType(tag), variables)
     isBuiltin(node) ? (getBuiltinType(node), variables)
+    isStringLiteral(node) ? (newListType(tag, newIntegerType(tag)), variables)
     isList(node) ? (
         elements := getListElements(node)
         isEmpty(elements) ?
@@ -243,6 +252,7 @@ addLabels(labels, type) := (
 makeLabels(type) := newVariableMap([]).addLabels(type)
 
 showTypeWithLabels(type, labels) := (
+    isBottomType(type) ? "Bottom"
     isIntegerType(type) ? "Integer"
     isBooleanType(type) ? "Boolean"
     isTypeVariable(type) ? getVariableName(labels.get(type, undefined))

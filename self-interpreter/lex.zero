@@ -14,6 +14,7 @@ isUnit(node) := isTuple(node) /\ isComma(getBody(node))
 isList(node) := isLambda(node) /\ getLexeme(node) =*= "["
 isInternal(node) := getLine(node) = 0 /\ getColumn(node) = 0
 isInput(node) := isInternal(node) /\ getLexeme(node) =*= "input"
+isStringLiteral(node) := isTuple(node) /\ getLexeme(node)[0] = '"'
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
