@@ -43,12 +43,15 @@ projectionBlank := newName(("(_)", (0, 0)))
 comma := newName((",", (0, 0)))
 cT := newName(("t", (0, 0)))
 cF := newName(("f", (0, 0)))
-cX := newName(("x", (0, 0)))
-cY := newName(("y", (0, 0)))
+cX := newName(("(x)", (0, 0)))
+cY := newName(("(y)", (0, 0)))
 eof := newOperator(("\0", (0, 0)))
 cXY := newLambda(getTag(cX), cX, newApplication(getTag(cX), cY,
         newApplication(getTag(cX), cX, cX)))
 yCombinator := newLambda(getTag(cY), cY, newApplication(getTag(cY), cXY, cXY))
+isYCombinator(node) := isLambda(node) /\
+    getLexeme(getParameter(node)) =*= getLexeme(cY)
+isRecursiveFunction(node) := isApplication(node) /\ isYCombinator(getLeft(node))
 
 newTrue(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cT), 1)))
@@ -112,7 +115,7 @@ parseQuotedCharacter(tag, string) := (
 
 splitStringLiteral(string) := (
     string =*= [] ? []
-    n := (string[0] = '\\' /\ !(--string =*= [])) ? 2 || 1
+    n := (string[0] = '\\' /\ !isEmpty(--string)) ? 2 || 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 )
 

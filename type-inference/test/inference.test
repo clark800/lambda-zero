@@ -1,6 +1,6 @@
 id(x) := x
 
-const(x) := _ -> x
+constant(x) := _ -> x
 
 true(t, f) := t
 false(t, f) := f
@@ -46,3 +46,9 @@ maybeTest := maybe(just(2), (* 2), 0)
 string := "test"
 
 e := if(true, 1, error("..."))
+
+x :: xs := (x, xs)
+
+repeat(x) := x :: repeat(x)
+
+isNothing(mx) := maybe(mx, constant(false), true)

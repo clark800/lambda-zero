@@ -114,7 +114,7 @@ getKnownTypeScheme(name) := (
     lexeme =*= "nothing" ? (newScheme([a], newMaybeType(tag, a)), variables')
     lexeme =*= "just" ? (newScheme([a], a --> newMaybeType(tag, a)), variables')
     lexeme =*= "maybe" ? (newScheme([a, b],
-        newMaybeType(tag, a) --> ((a --> b) --> (a --> b))), variables'')
+        newMaybeType(tag, a) --> ((a --> b) --> (b --> b))), variables'')
     (newScheme([], newFreeType(tag)), variables)
 )
 
@@ -211,6 +211,13 @@ infer(node, stack, variables) := (
     isTuple(node) ? getTupleElements(node).foldMap(
         `infer(undefined :: stack), variables).mapFirst(newTupleType(tag))
     isProjection(node) ? inferProjection(node, variables)
+    isRecursiveFunction(node) ? (
+        (functionType, variables') := variables.newTypeVariable(tag)
+        body := getBody(getRight(node))
+        stack' := newScheme([], functionType) :: stack
+        (functionType', variables'') := body.infer(stack', variables')
+        (functionType, variables''.unify((functionType, functionType')))
+    )
     isReference(node) ? stack[getDebruijnIndex(node)].instantiate(variables)
     isLambda(node) ? (
         (parameterType, variables') := variables.newTypeVariable(tag)
