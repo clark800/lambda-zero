@@ -90,7 +90,7 @@ slice(xs, start, end) := xs.drop(start).take(end - start)
 xs =*= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
     xs[0] = ys[0] /\ --xs =*= --ys       // integer list equality
 last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
-dropLast(xs) := xs =*= [] \/ --xs =*= [] ? [] || xs[0] :: dropLast(--xs)
+dropLast(xs) := isEmpty(xs) \/ isEmpty(--xs) ? [] || xs[0] :: dropLast(--xs)
 dropWhile(ns, p) := (--).while(p <> head, ns)
 takeWhile(ns, p) := ns.isEmpty \/ !p(ns[0]) ? [] || ns[0] :: takeWhile(--ns, p)
 
@@ -125,7 +125,7 @@ cycle(xs) := xs ++ cycle(xs)                 // infinitely cycle list
 filter(xs, p) := foldr(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
 (|) := filter
 map(xs, f) := foldr(xs, (::) <> f, [])          // map function over list
-zipWith(xs, f, ys) := xs =*= [] \/ ys =*= [] ? [] ||
+zipWith(xs, f, ys) := isEmpty(xs) \/ isEmpty(ys) ? [] ||
     f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(first), xs.map(second))
@@ -143,7 +143,7 @@ bisect(xs, p) := (xs | p, xs | (!) <> p)
 any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
 all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
 // find first element satisfying p, or return nothing
-find(xs, p) := xs =*= [] ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
+find(xs, p) := isEmpty(xs) ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 
 // foldMap : a[] --> ((a; s) --> (b; s)) --> s --> (b[], s)
 foldMap(xs, f, z) := xs.foldl((ys, s) -> x ->
@@ -151,7 +151,7 @@ foldMap(xs, f, z) := xs.foldl((ys, s) -> x ->
 
 indexOf(nss, key) := (
     indexOf'(list, depth) := (
-        list =*= [] ? nothing
+        isEmpty(list) ? nothing
         list[0] =*= key ? just(depth)
         indexOf'(--list, depth + 1)
     )
@@ -211,7 +211,7 @@ partition(ns, splitter) := (
     before :: partition(after, splitter)
 )
 
-dropIf(ns, p) := ns =*= [] ? [] || p(ns[0]) ? --ns || ns
+dropIf(ns, p) := isEmpty(ns) ? [] || p(ns[0]) ? --ns || ns
 dropPrefix(ns, prefix) := ns.startsWith(prefix) ? ns.drop(length(prefix)) || ns
 
 partitionBy(ns, p) := ns.partition(`splitWhen(p) <> `dropIf(p))
