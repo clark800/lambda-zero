@@ -100,11 +100,6 @@ takeSafe(xs, n) := (
     takeSafe(--xs, n - 1) >>= just <> (xs[0] ::)
 )
 
-apply(f, arguments) := (
-    arguments.isEmpty ? f
-    apply(f(arguments[0]), --arguments)
-)
-
 // list folds
 foldr(xs, f, z) := if(isEmpty(xs), z, f(head(xs), foldr(--xs, f, z)))
 foldl(xs, f, z) := if(isEmpty(xs), z, foldl(--xs, f, f(z, head(xs))))
@@ -233,7 +228,7 @@ maximum(ns) := ns.reducel(max)
 countFrom := iterate((+ 1))
 naturals := countFrom(0)
 primes := (
-    filterPrime((n, ns)) := n :: filterPrime(ns | n' -> n' % n != 0)
+    filterPrime(ns) := head(ns) :: filterPrime(--ns | n' -> n' % head(ns) != 0)
     filterPrime(countFrom(2))
 )
 

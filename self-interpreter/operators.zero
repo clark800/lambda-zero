@@ -36,10 +36,11 @@ newPatternLambda(tag, pattern, body) := (
     size := getTupleSize(pattern)
     function := getTupleElements(pattern).foldr(element -> x ->
         newPatternLambda(tag, element, x), body)
+    tag' := getTag(pattern)
     projections := (0 .. size - 1).map(n ->
-        newApplication(tag, newProjection(tag, size, n), blank))
+        newApplication(tag', newProjection(tag', size, n), blank))
     application := projections.foldl(x -> projection ->
-        newApplication(tag, x, projection), function)
+        newApplication(tag', x, projection), function)
     newLambda(tag, blank, application)
 )
 

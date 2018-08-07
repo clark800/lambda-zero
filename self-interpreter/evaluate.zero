@@ -1,3 +1,7 @@
+apply(f, arguments) := (
+    arguments.isEmpty ? f
+    apply(f(arguments[0]), --arguments)
+)
 
 evaluate(closure, stack) := (
     (term, environment) := closure
