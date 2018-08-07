@@ -14,7 +14,6 @@ isUnit(node) := isTuple(node) /\ isComma(getBody(node))
 isList(node) := isLambda(node) /\ getLexeme(node) =*= "["
 isInternal(node) := getLine(node) = 0 /\ getColumn(node) = 0
 isInput(node) := isInternal(node) /\ getLexeme(node) =*= "input"
-isStringLiteral(node) := isTuple(node) /\ getLexeme(node)[0] = '"'
 
 isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
 isOperatorLexeme(lexeme) :=
@@ -45,6 +44,7 @@ cT := newName(("t", (0, 0)))
 cF := newName(("f", (0, 0)))
 cX := newName(("(x)", (0, 0)))
 cY := newName(("(y)", (0, 0)))
+cZ := newName(("(z)", (0, 0)))
 eof := newOperator(("\0", (0, 0)))
 cXY := newLambda(getTag(cX), cX, newApplication(getTag(cX), cY,
         newApplication(getTag(cX), cX, cX)))
@@ -52,13 +52,16 @@ yCombinator := newLambda(getTag(cY), cY, newApplication(getTag(cY), cXY, cXY))
 isYCombinator(node) := isLambda(node) /\
     getLexeme(getParameter(node)) =*= getLexeme(cY)
 isRecursiveFunction(node) := isApplication(node) /\ isYCombinator(getLeft(node))
+isNil(node) := isLambda(node) /\ getLexeme(getParameter(node)) =*= getLexeme(cZ)
+isStringLiteral(node) := (isTuple(node) \/ isNil(node)) /\
+    getLexeme(node)[0] = '"'
 
 newTrue(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cT), 1)))
 newFalse(tag) := newLambda(tag, cT, newLambda(tag, cF,
     newReference(getTag(cF), 0)))
 newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
-newNil(tag) := newLambda(tag, blank, newTrue(tag))
+newNil(tag) := newLambda(tag, cZ, newTrue(tag))
 
 applyToCommaList(f, commaList) := (
     isCommaList(commaList) ? newApplication(getTag(f),

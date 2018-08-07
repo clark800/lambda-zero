@@ -45,25 +45,29 @@ newVariableMap(mappings) := newTable((<=).on(getTypeCode), mappings)
 getVariableName(index) := ['a' + index]
 
 showType(type) := (
+    showType'(type') :=
+        isFunctionType(type') ? "(" ++ showType(type') ++ ")" || showType(type')
+    arrowUTF8 := [226, 134, 146]
     isBottomType(type) ? "Bottom"
-    isIntegerType(type) ? "Integer"
-    isBooleanType(type) ? "Boolean"
+    isIntegerType(type) ? [226, 132, 164]
+    isBooleanType(type) ? [240, 157, 148, 185]
     isTypeVariable(type) ? getVariableName(getTypeCode(type))
-    isFunctionType(type) ?
-        "(" ++ getComponentTypes(type).map(showType).joinWith(" --> ") ++ ")"
     isTupleType(type) ?
         "(" ++ getComponentTypes(type).map(showType).joinWith("; ") ++ ")"
-    isListType(type) ?
-        "(" ++ showType(getComponentTypes(type)[0]) ++ ")[]"
     isMaybeType(type) ?
         "Maybe(" ++ showType(getComponentTypes(type)[0]) ++ ")"
+    isListType(type) ? showType'(getComponentTypes(type)[0]) ++ "[]"
+    isFunctionType(type) ? (
+        components := getComponentTypes(type)
+        showType'(components[0]) ++ " " ++ arrowUTF8 ++ " " ++
+            showType(components[1])
+    )
     undefined
 )
 
-showVariableMap(variables) := (
+showVariableMap(variables) :=
     variables.getElements.map((key, value) ->
         showType(key) ++ " := " ++ showType(value)).joinWith("\n")
-)
 
 newBinaryOperatorType(tag) := newFunctionType(tag, newIntegerType(tag),
     newFunctionType(tag, newIntegerType(tag), newIntegerType(tag)))
@@ -141,6 +145,14 @@ substitute(type, variables) := (
     type.mapComponents(`substitute(variables))
 )
 
+showTypeAndLocation(type) := showType(type) ++ " at " ++
+    showLocation(getTag(type))
+
+unificationError(left, right) := (
+    error("type unification error:\n" ++ showTypeAndLocation(left) ++
+        "\nvs\n" ++ showTypeAndLocation(right))
+)
+
 // Robinson's Unification Algorithm
 // see Comparing Unification Algorithms in First-Order Theorem Proving
 // by Krystof Hoder and Andrei Voronkov
@@ -157,7 +169,7 @@ unify(variables, (left, right)) := (
         length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
         zip(getComponentTypes(left), getComponentTypes(right)).
             foldl(unify, variables)
-    error("unification error")
+    unificationError(left, right)
 )
 
 unifyAll(variables, types) := (
@@ -248,36 +260,19 @@ inferType(stack, definition) := (
     type.substitute(variables').generalize(variables') :: stack
 )
 
-addLabels(labels, type) := (
+addRenaming((renaming, variables), type) := (
     isTypeVariable(type) ? (
-        labels.hasKey(type) ? labels
-        labels.insert(type, #labels)
+        renaming.hasKey(type) ? (renaming, variables)
+        (type', variables') := variables.newTypeVariable(getTag(type))
+        (renaming.insert(type, type'), variables')
     )
-    getComponentTypes(type).foldl(addLabels, labels)
+    getComponentTypes(type).foldl(addRenaming, (renaming, variables))
 )
 
-makeLabels(type) := newVariableMap([]).addLabels(type)
+makeRenaming(type) :=
+    first(addRenaming((newVariableMap([]), newVariableMap([])), type))
 
-showTypeWithLabels(type, labels) := (
-    isBottomType(type) ? "Bottom"
-    isIntegerType(type) ? "Integer"
-    isBooleanType(type) ? "Boolean"
-    isTypeVariable(type) ? getVariableName(labels.get(type, undefined))
-    isFunctionType(type) ?
-        "(" ++ getComponentTypes(type).map(
-            `showTypeWithLabels(labels)).joinWith(" --> ") ++ ")"
-    isTupleType(type) ?
-        "(" ++ getComponentTypes(type).map(
-            `showTypeWithLabels(labels)).joinWith("; ") ++ ")"
-    isListType(type) ?
-        showTypeWithLabels(getComponentTypes(type)[0], labels) ++ "[]"
-    isMaybeType(type) ?
-        "Maybe(" ++ showTypeWithLabels(
-            getComponentTypes(type)[0], labels) ++ ")"
-    undefined
-)
-
-showPrettyType(type) := showTypeWithLabels(type, makeLabels(type))
+showTypeWithRenaming(type, renaming) := showType(type.rename(renaming))
 
 newDefinition(definition) :=
     (getDefinitionName(definition), getDefinitionValue(definition))
@@ -290,13 +285,19 @@ getDefinitions(node) := (
 showDefinition((name, value)) := getLexeme(name) ++ " := " ++ showAST(value)
 showDefinitions(definitions) := definitions.map(showDefinition).joinWith("\n")
 
-showTypings(typings) :=
-    typings.map((name, scheme) -> (
-        (universals, type) := scheme
-        labels := makeLabels(type)
-        getLexeme(name) ++ " : forall(" ++
-            universals.map(`showTypeWithLabels(labels)).joinWith(", ") ++
-            ") " ++ showTypeWithLabels(type, labels))).joinWith("\n\n")
+showUniversals(universals, renaming) := (
+    forallUTF8 := [226, 136, 128]
+    universals.map(universal ->
+        forallUTF8 ++ showTypeWithRenaming(universal, renaming) ++ " ").join
+)
+
+showScheme((universals, type)) := (
+    renaming := makeRenaming(type)
+    showUniversals(universals, renaming) ++ showTypeWithRenaming(type, renaming)
+)
+
+showTyping((name, scheme)) := getLexeme(name) ++ " : " ++ showScheme(scheme)
+showTypings(typings) := typings.map(showTyping).joinWith("\n")
 
 main(input) := (
     node := parse(input, "")
