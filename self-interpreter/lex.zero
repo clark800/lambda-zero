@@ -152,7 +152,7 @@ createInteger(tag) := (
         error("Syntax error: magnitude of integer is too large " ++
             showLexemeAndLocationLine(tag, "'"))
     integer.length = maxInteger.length /\
-        zipWith(integer, (>), maxInteger).any() ?
+        zipWith(integer, (>), maxInteger).any(id) ?
         error("Syntax error: magnitude of integer is too large " ++
             showLexemeAndLocationLine(tag, "'"))
     newInteger(tag, parseInteger(lexeme, 10))
@@ -180,7 +180,7 @@ runtimeError(message, token) := tokenError("\nRuntime error: ", message, token)
 
 getFirstCharacter(node) := (
     characterNode := getRight(getLeft(getBody(node)))
-    isInteger(characterNode) ? getData(characterNode)
+    isInteger(characterNode) ? getInteger(characterNode)
     runtimeError("expected byte value in string at", characterNode)
 )
 

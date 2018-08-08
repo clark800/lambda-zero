@@ -23,7 +23,7 @@ splitQuote(ns) := (
 )
 
 splitLexeme(ns) := (
-    ns.isEmpty? []
+    ns.isEmpty? ([], [])
     ns.isLineComment? ns.splitOn("\n")
     ns.isBlockComment? ns.splitOn("*/").shiftSplit.shiftSplit
     ns[0].isBlank? ns.splitWhen((!) <> isBlank)
