@@ -34,7 +34,7 @@ createScope(name, explicitScope, input) := (
         !isEOF(explicitScope) ?
             syntaxError("main must be the last function defined", name)
         newApplication(getTag(name), name,
-            buildStringLiteral(inputTag, input.map(newInteger(blank))))
+            buildStringLiteral(inputTag, input.map(newInteger(getTag(blank)))))
     )
     isEOF(explicitScope) ? name || explicitScope
 )

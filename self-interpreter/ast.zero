@@ -34,3 +34,4 @@ isSymbol(node) := isName(node) \/ isOperator(node)
 newClosure(term, environment) := newNode(term, environment)
 getTerm := getData
 getEnvironment := getChildren
+unpackClosure(closure) := (getTerm(closure), getEnvironment(closure))

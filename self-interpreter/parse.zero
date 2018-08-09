@@ -45,11 +45,11 @@ parse(code, input) := (
                 syntaxError("missing right argument to", left)
         rightRules.fixity = infix /\ !isOpenParen(left) ?
             syntaxError("missing left argument to", right)
-        ()
+        id
     )
 
     validateOperator(stack, operator) :=
-        isOperator(stack[0]) ? validateOperators(stack[0], operator) || ()
+        isOperator(stack[0]) ? validateOperators(stack[0], operator) || id
 
     collapseLeftOperand(stack, collapser) := (
         validateOperator(stack, collapser)
