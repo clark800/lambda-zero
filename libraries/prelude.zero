@@ -100,6 +100,13 @@ takeSafe(xs, n) := (
     takeSafe(--xs, n - 1) >>= just <> (xs[0] ::)
 )
 
+// newBranch : a -> List(Tree(a)) -> Tree(a)
+newNode(data, children) := (data, children)
+// getData : Tree(a) -> a
+getData := first
+// getChildren : Tree(a) -> List(Tree(a))
+getChildren := second
+
 // list folds
 foldr(xs, f, z) := if(isEmpty(xs), z, f(head(xs), foldr(--xs, f, z)))
 foldl(xs, f, z) := if(isEmpty(xs), z, foldl(--xs, f, f(z, head(xs))))
@@ -128,8 +135,7 @@ join(xss) := xss.foldr((++), [])            // concatenate list of lists
 reverse(xs) := xs.foldl(`(::), [])
 interleave(xs, y) := (
     isEmpty(xs) ? []
-    (x, xs') := xs
-    isEmpty(xs') ? xs || x :: y :: interleave(xs', y)
+    isEmpty(--xs) ? xs || head(xs) :: y :: interleave(--xs, y)
 )
 joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs | p, xs | (!) <> p)
@@ -164,18 +170,16 @@ n .. m := n > m ? [] || n :: (n + 1 .. m)
 // integer list transformations
 sort(ns) := (
     isEmpty(ns) ? []
-    (n, ns') := ns
-    sort(ns' | (<= n)) ++ [n] ++ sort(ns' | (> n))
+    n := head(ns)
+    sort(--ns | (<= n)) ++ [n] ++ sort(--ns | (> n))
 )
 deduplicate(ns) := (
     isEmpty(ns) ? []
-    (n, ns') := ns
-    n :: deduplicate(ns' | (!= n))
+    head(ns) :: deduplicate(--ns | (!= head(ns)))
 )
 deduplicateBy(xs, (=?=)) := (
     isEmpty(xs) ? []
-    (x, xs') := xs
-    x :: deduplicateBy(xs' | (!) <> (=?= x), (=?=))
+    head(xs) :: deduplicateBy(--xs | (!) <> (=?= head(xs)), (=?=))
 )
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 

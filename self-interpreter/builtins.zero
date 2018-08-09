@@ -1,16 +1,19 @@
 getBuiltin(builtin) := (
     maxInteger := 9223372036854775807
 
-    getInteger(term) := (
-        isInteger(term) ? getData(term)
+    getIntegerValue(term) := (
+        isInteger(term) ? getInteger(term)
         runtimeError("expected integer argument to", builtin)
     )
 
     compute(f, left, right) :=
-        f(getInteger(getTerm(left)), getInteger(getTerm(right)))
+        f(getIntegerValue(getTerm(left)), getIntegerValue(getTerm(right)))
 
-    makeIntegerBuiltin(f, newType, left, right) :=
-        newClosure(newType(getTag(builtin), f.compute(left, right)), [])
+    makeIntegerBuiltin(f, left, right) :=
+        newClosure(newInteger(getTag(builtin), f.compute(left, right)), [])
+
+    makeComparisonBuiltin(f, left, right) :=
+        newClosure(newBoolean(getTag(builtin), f.compute(left, right)), [])
 
     addBuiltin(left, right) := (
         left > 0 /\ right > 0 /\ left > maxInteger - right ?
@@ -45,17 +48,17 @@ getBuiltin(builtin) := (
     )
 
     builtins := newDictionary([
-        ("+", (2, makeIntegerBuiltin(addBuiltin, newInteger))),
-        ("-", (2, makeIntegerBuiltin(subtractBuiltin, newInteger))),
-        ("*", (2, makeIntegerBuiltin(multiplyBuiltin, newInteger))),
-        ("/", (2, makeIntegerBuiltin(divideBuiltin, newInteger))),
-        ("%", (2, makeIntegerBuiltin(moduloBuiltin, newInteger))),
-        ("=", (2, makeIntegerBuiltin((=), newBoolean))),
-        ("!=", (2, makeIntegerBuiltin((!=), newBoolean))),
-        ("<", (2, makeIntegerBuiltin((<), newBoolean))),
-        (">", (2, makeIntegerBuiltin((>), newBoolean))),
-        ("<=", (2, makeIntegerBuiltin((<=), newBoolean))),
-        (">=", (2, makeIntegerBuiltin((>=), newBoolean))),
+        ("+", (2, makeIntegerBuiltin(addBuiltin))),
+        ("-", (2, makeIntegerBuiltin(subtractBuiltin))),
+        ("*", (2, makeIntegerBuiltin(multiplyBuiltin))),
+        ("/", (2, makeIntegerBuiltin(divideBuiltin))),
+        ("%", (2, makeIntegerBuiltin(moduloBuiltin))),
+        ("=", (2, makeComparisonBuiltin((=)))),
+        ("!=", (2, makeComparisonBuiltin((!=)))),
+        ("<", (2, makeComparisonBuiltin((<)))),
+        (">", (2, makeComparisonBuiltin((>)))),
+        ("<=", (2, makeComparisonBuiltin((<=)))),
+        (">=", (2, makeComparisonBuiltin((>=)))),
         ("error", (1, closure -> error(extractString(getTerm(closure)))))
     ])
     builtins.lookup(getLexeme(builtin))

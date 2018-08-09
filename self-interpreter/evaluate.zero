@@ -19,7 +19,7 @@ evaluate(closure, stack) := (
         runtimeError("extra argument", getTerm(stack[0]))
     )
     isBuiltin(term) ? (
-        (arity, builtin) := getData(term)
+        (arity, builtin) := fromJust(getBuiltin(term))
         arguments := stack.takeSafe(arity) ?||
             runtimeError("missing argument to", term)
         evaluate(builtin.apply(arguments.map(`evaluate([]))), stack.drop(arity))

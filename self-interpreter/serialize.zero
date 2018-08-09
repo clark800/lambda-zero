@@ -1,6 +1,6 @@
 showAST(node) := (
     node.isReference?
-        showToken(node) ++ "{" ++ showInteger(getData(node)) ++ "}"
+        showToken(node) ++ "{" ++ showInteger(getDebruijnIndex(node)) ++ "}"
     node.isLambda?
         "(" ++ showToken(getParameter(node)) ++ " -> " ++
                showAST(getBody(node)) ++ ")"
@@ -8,7 +8,7 @@ showAST(node) := (
         "(" ++ showAST(getLeft(node)) ++ " " ++
                showAST(getRight(node)) ++ ")"
     node.isInteger?
-        "#" ++ showInteger(getData(node))
+        "#" ++ showInteger(getInteger(node))
     node.isBuiltin?
         "$" ++ showToken(node)
     showToken(node)
@@ -16,19 +16,21 @@ showAST(node) := (
 
 serialize(closure) := (
     serialize'(closure', depth) := (
-        (term, environment) := closure'
+        term := getTerm(closure')
+        environment := getEnvironment(closure')
         term.isApplication ?
-            "(" ++ serialize'((getLeft(term), environment), depth) ++
-            " " ++ serialize'((getRight(term), environment), depth) ++ ")"
+            "(" ++ serialize'(newClosure(getLeft(term), environment), depth) ++
+            " " ++ serialize'(newClosure(getRight(term), environment), depth) ++
+            ")"
         term.isLambda ?
             "(" ++ showToken(getParameter(term)) ++ " -> " ++
-            serialize'((getBody(term), environment), depth + 1) ++ ")"
+            serialize'(newClosure(getBody(term), environment), depth + 1) ++ ")"
         term.isReference ? (
-            debruijn := getData(term)
+            debruijn := getDebruijnIndex(term)
             debruijn >= depth ? serialize'(environment[debruijn - depth], 0)
             showToken(term)
         )
-        term.isInteger ? showInteger(getData(term))
+        term.isInteger ? showInteger(getInteger(term))
         showToken(term)
     )
     result := serialize'(closure, 0)

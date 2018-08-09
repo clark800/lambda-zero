@@ -21,7 +21,7 @@ isIO(node) := (
 )*/
 
 getCharacter(node) := (
-    isInteger(node) ? getData(node)
+    isInteger(node) ? getInteger(node)
     runtimeError("expected integer", node)
 )
 
