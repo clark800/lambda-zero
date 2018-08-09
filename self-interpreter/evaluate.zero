@@ -1,10 +1,6 @@
-apply(f, arguments) := (
-    arguments.isEmpty ? f
-    apply(f(arguments[0]), --arguments)
-)
 
 evaluate(closure, stack) := (
-    (term, environment) := closure
+    (term, environment) := unpackClosure(closure)
     isReference(term) ?
         evaluate(environment[getDebruijnIndex(term)], stack)
     isApplication(term) ?
@@ -20,9 +16,10 @@ evaluate(closure, stack) := (
     )
     isBuiltin(term) ? (
         (arity, builtin) := fromJust(getBuiltin(term))
-        arguments := stack.takeSafe(arity) ?||
-            runtimeError("missing argument to", term)
-        evaluate(builtin.apply(arguments.map(`evaluate([]))), stack.drop(arity))
+        arguments := (stack.takeSafe(arity) ?||
+            runtimeError("missing argument to", term)).map(`evaluate([]))
+        right := arity > 1 ? arguments[1] || newClosure(blank, [])
+        evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
     )
     undefined
 )

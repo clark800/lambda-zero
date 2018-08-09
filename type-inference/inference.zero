@@ -4,7 +4,11 @@ getDefinitionValue(definition) := getRight(definition)
 getDefinitionScope(definition) := getBody(getLeft(definition))
 
 newType(node, code, components) := newNode((node, code), components)
-getNode(type) := first(getData(type))
+getNode := first <> getData
+getTypeCode := second <> getData
+getComponentTypes := getChildren
+setNode(type, node) := newType(node, getTypeCode(type), getComponentTypes(type))
+
 newFreeType(node) := newType(node, -1, [])
 newBooleanType(node) := newType(node, -2, [])
 newIntegerType(node) := newType(node, -3, [])
@@ -16,16 +20,13 @@ newMaybeType(node, type) := newType(node, -8, [type])
 newBottomType(node) := newType(node, -9, [])
 newTypeVariable(variables, node) := (
     type := newType(node, #variables, [])
-    (type, variables.insert(type, newFreeType(node)))
+    (type, variables.insert(type, newFreeType(blank)))
 )
 newProjectionType(node, elementTypes, returnType) :=
     newFunctionType(node, newTupleType(node, elementTypes), returnType)
 newScheme(universals, type) := (universals, type)
 
-getTypeCode := second <> first
 isNewVariable(variable, variables) := getTypeCode(variable) >= #variables
-getComponentTypes := second
-isCompositeType(type) := length(getComponentTypes(type)) > 0
 isTypeVariable(type) := getTypeCode(type) >= 0
 isFreeType(type) := getTypeCode(type) = -1
 isBooleanType(type) := getTypeCode(type) = -2
@@ -40,10 +41,14 @@ isFree(type, variables) := !variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
 isSameType(a, b) := getTypeCode(a) = getTypeCode(b) /\
     zip(getComponentTypes(a), getComponentTypes(b)).all(uncurry(isSameType))
+isBlankNode(node) :=
+    getLexeme(node) =*= "_" /\ getLine(node) = 0 /\ getColumn(node) = 0
+
 mapComponents(type, f) := newType(getNode(type), getTypeCode(type),
     getComponentTypes(type).map(f))
 
 newVariableMap(mappings) := newTable((<=).on(getTypeCode), mappings)
+empty := newVariableMap([])
 
 getVariableName(index) := (
     characters := ['a', 'b', 'c', 'd']
@@ -78,64 +83,63 @@ showVariableMap(variables) :=
     variables.getElements.map((key, value) ->
         showType(key) ++ " := " ++ showType(value)).joinWith("\n")
 
-newBinaryOperatorType(node) := newFunctionType(node, newIntegerType(node),
-    newFunctionType(node, newIntegerType(node), newIntegerType(node)))
+builtinTypes := (
+    (-->) := newFunctionType(blank)
+    bottom := newBottomType(blank)
+    boolean := newBooleanType(blank)
+    integer := newIntegerType(blank)
+    string := newListType(blank, integer)
+    arithmetic := integer --> (integer --> integer)
+    comparison := integer --> (integer --> boolean)
+    newDictionary([
+        ("+", arithmetic),
+        ("-", arithmetic),
+        ("*", arithmetic),
+        ("/", arithmetic),
+        ("%", arithmetic),
+        ("=", comparison),
+        ("!=", comparison),
+        ("<", comparison),
+        (">", comparison),
+        ("<=", comparison),
+        (">=", comparison),
+        ("error", string --> bottom)
+    ])
+)
 
-newComparisonOperatorType(node) := newFunctionType(node, newIntegerType(node),
-    newFunctionType(node, newIntegerType(node), newBooleanType(node)))
+getBuiltinType(node) :=
+    builtinTypes.get(getLexeme(node), undefined).setNode(node)
 
-newErrorBuiltinType(node) := newFunctionType(node,
-    newListType(node, newIntegerType(node)), newBottomType(node))
-
-builtinTypeConstructors := newDictionary([
-    ("+", newBinaryOperatorType),
-    ("-", newBinaryOperatorType),
-    ("*", newBinaryOperatorType),
-    ("/", newBinaryOperatorType),
-    ("%", newBinaryOperatorType),
-    ("=", newComparisonOperatorType),
-    ("!=", newComparisonOperatorType),
-    ("<", newComparisonOperatorType),
-    (">", newComparisonOperatorType),
-    ("<=", newComparisonOperatorType),
-    (">=", newComparisonOperatorType),
-    ("error", newErrorBuiltinType)
-])
-
-getBuiltinType(node) := (
-    constructor := builtinTypeConstructors.get(getLexeme(node), undefined)
-    constructor(node)
+knownTypeSchemes := (
+    (-->) := newFunctionType(blank)
+    boolean := newBooleanType(blank)
+    (a, variables') := empty.newTypeVariable(blank)
+    (b, variables'') := variables'.newTypeVariable(blank)
+    aList := newListType(blank, a)
+    aMaybe := newMaybeType(blank, a)
+    aTree := newTreeType(blank, a)
+    aTreeList := newListType(blank, aTree)
+    newDictionary([
+        ("true", newScheme([], boolean)),
+        ("false", newScheme([], boolean)),
+        ("if", newScheme([a], boolean --> (a --> (a --> a)))),
+        ("::", newScheme([a], a --> (aList --> aList))),
+        ("head", newScheme([a], aList --> a)),
+        ("--", newScheme([a], aList --> aList)),
+        ("isEmpty", newScheme([a], aList --> boolean)),
+        ("nothing", newScheme([a], aMaybe)),
+        ("just", newScheme([a], a --> aMaybe)),
+        ("maybe", newScheme([a, b], aMaybe --> ((a --> b) --> (b --> b)))),
+        ("newNode", newScheme([a], a --> (aTreeList --> aTree))),
+        ("getData", newScheme([a], aTree --> a)),
+        ("getChildren", newScheme([a], aTree --> aTreeList))
+    ])
 )
 
 getKnownTypeScheme(name) := (
-    lexeme := getLexeme(name)
-    (-->) := newFunctionType(name)
-    boolean := newBooleanType(name)
-    variables := newVariableMap([])
-    (a, variables') := variables.newTypeVariable(name)
-    (b, variables'') := variables'.newTypeVariable(name)
-    aList := newListType(name, a)
-    lexeme =*= "true" ? (newScheme([], boolean), variables)
-    lexeme =*= "false" ? (newScheme([], boolean), variables)
-    lexeme =*= "if" ?
-        (newScheme([a], boolean --> (a --> (a --> a))), variables')
-    lexeme =*= "::" ? (newScheme([a], a --> (aList --> aList)), variables')
-    lexeme =*= "head" ? (newScheme([a], aList --> a), variables')
-    lexeme =*= "--" ? (newScheme([a], aList --> aList), variables')
-    lexeme =*= "isEmpty" ? (newScheme([a], aList --> boolean), variables')
-    lexeme =*= "nothing" ? (newScheme([a], newMaybeType(name, a)), variables')
-    lexeme =*= "just" ? (newScheme([a],
-        a --> newMaybeType(name, a)), variables')
-    lexeme =*= "maybe" ? (newScheme([a, b],
-        newMaybeType(name, a) --> ((a --> b) --> (b --> b))), variables'')
-    lexeme =*= "newNode" ? (newScheme([a], a --> (
-        newListType(name, newTreeType(name, a)) -->
-            newTreeType(name, a))), variables')
-    lexeme =*= "getData" ? (newScheme([a],
-        newTreeType(name, a) --> a), variables')
-    lexeme =*= "getChildren" ? (newScheme([a], newTreeType(name, a) -->
-        newListType(name, newTreeType(name, a))), variables')
-    (newScheme([], newFreeType(name)), variables)
+    defaultScheme := newScheme([], newFreeType(name))
+    (universals, type) := knownTypeSchemes.get(getLexeme(name), defaultScheme)
+    (universals, type.setNode(name))
 )
 
 getFreeVariables(type, variables) := (
@@ -152,8 +156,8 @@ rename(type, variables) := (
 
 substitute(type, variables) := (
     isTypeVariable(type) /\ !type.isFree(variables) ? (
-        type' := variables.get(type, undefined)
-        type'.getFreeVariables(newVariableMap([])).any(isSameType(type)) ?
+        type' := variables.get(type, undefined).setNode(getNode(type))
+        type'.getFreeVariables(empty).any(isSameType(type)) ?
             error("occurs check failed at " ++
                 showLocation(getTag(getNode(type))) ++
                 " and " ++ showLocation(getTag(getNode(type'))) ++
@@ -164,22 +168,31 @@ substitute(type, variables) := (
     type.mapComponents(`substitute(variables))
 )
 
-showTypeAndLocation(type) := showType(type) ++ " at " ++
-    showLocation(getTag(getNode(type)))
+showTypeAndLocation(type) := showType(type) ++ (isBlankNode(getNode(type)) ? ""
+    " at " ++ showLocation(getTag(getNode(type))))
 
-unificationError(left, right) := (
-    error("type unification error:\n" ++ showTypeAndLocation(left) ++
-        "\nvs\n" ++ showTypeAndLocation(right))
+unificationError(originals, variables, left, right) := (
+    originalLeft := first(originals).substitute(variables)
+    originalRight := second(originals).substitute(variables)
+    left' := left.substitute(variables)
+    right' := right.substitute(variables)
+    error("Type error: Can't unify\n" ++
+        showType(left') ++ "\nwith\n" ++ showType(right') ++
+        "\nwhile trying to unify\n" ++
+        showTypeAndLocation(originalLeft) ++
+        "\nwith\n" ++
+        showTypeAndLocation(originalRight)
+    )
 )
 
 // Robinson's Unification Algorithm
 // see Comparing Unification Algorithms in First-Order Theorem Proving
 // by Krystof Hoder and Andrei Voronkov
-unify(variables, (left, right)) := (
+unify'(originals, variables, (left, right)) := (
     isTypeVariable(left) /\ !left.isFree(variables) ?
-        variables.unify((left.substitute(variables), right))
+        unify'(originals, variables, (left.substitute(variables), right))
     isTypeVariable(right) /\ !right.isFree(variables) ?
-        variables.unify((left, right.substitute(variables)))
+        unify'(originals, variables, (left, right.substitute(variables)))
     isBottomType(left) \/ isBottomType(right) ? variables
     isSameType(left, right) ? variables
     isTypeVariable(left) ? variables.insert(left, right)
@@ -187,9 +200,11 @@ unify(variables, (left, right)) := (
     (getTypeCode(left) = getTypeCode(right) /\
         length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
         zip(getComponentTypes(left), getComponentTypes(right)).
-            foldl(unify, variables)
-    unificationError(left, right)
+            foldl(unify'(originals), variables)
+    unificationError(originals, variables, left, right)
 )
+
+unify(variables, types) := unify'(types, variables, types)
 
 unifyAll(variables, types) := (
     isEmpty(types) ? variables
@@ -206,35 +221,36 @@ generalize(type, variables, oldVariables) := (
 newTypeVariables(originals, variables) := originals.map(getNode).
     foldMap(`newTypeVariable, variables)
 
-instantiate(scheme, variables) := (
+instantiate(scheme, variables, node) := (
     (universals, type) := scheme
     (freshVariables, variables') := newTypeVariables(universals, variables)
     renaming := newVariableMap(zip(universals, freshVariables))
-    (type.rename(renaming), variables')
+    (type.rename(renaming).setNode(node), variables')
 )
 
-inferProjection'(node, variables, stack) := (
+inferProjection'(root, node, variables, stack) := (
     isReference(node) ?
-        (newProjectionType(node, reverse(stack), stack[getDebruijnIndex(node)]),
+        (newProjectionType(root, reverse(stack), stack[getDebruijnIndex(node)]),
         variables)
     isLambda(node) ? (
-        (variable, variables') := variables.newTypeVariable(node)
-        inferProjection'(getBody(node), variables', variable :: stack)
+        (variable, variables') := variables.newTypeVariable(blank)
+        inferProjection'(root, getBody(node), variables', variable :: stack)
     )
     undefined
 )
 
 inferProjection(node, variables) :=
-    inferProjection'(getRight(getBody(node)), variables, [])
+    inferProjection'(node, getRight(getBody(node)), variables, [])
 
 infer(node, stack, variables) := (
     isInteger(node) ? (newIntegerType(node), variables)
     isBuiltin(node) ? (getBuiltinType(node), variables)
-    isStringLiteral(node) ? (newListType(node, newIntegerType(node)), variables)
+    isStringLiteral(node) ?
+        (newListType(node, newIntegerType(blank)), variables)
     isList(node) ? (
         elements := getListElements(node)
         isEmpty(elements) ?
-            variables.newTypeVariable(node).mapFirst(newListType(node))
+            variables.newTypeVariable(blank).mapFirst(newListType(node))
         (elementTypes, variables') := elements.foldl(
             (types, variables'') -> element -> (
                 stack' := repeat(undefined).take(length(types) + 1) ++ stack
@@ -250,11 +266,13 @@ infer(node, stack, variables) := (
         body := getBody(getRight(node))
         stack' := newScheme([], functionType) :: stack
         (functionType', variables'') := body.infer(stack', variables')
-        (functionType, variables''.unify((functionType, functionType')))
+        (functionType, variables''.unify((functionType', functionType)))
     )
-    isReference(node) ? stack[getDebruijnIndex(node)].instantiate(variables)
+    isReference(node) ?
+        stack[getDebruijnIndex(node)].instantiate(variables, node)
     isLambda(node) ? (
-        (parameterType, variables') := variables.newTypeVariable(node)
+        parameter := getParameter(node)
+        (parameterType, variables') := variables.newTypeVariable(parameter)
         stack' := newScheme([], parameterType) :: stack
         (bodyType, variables'') := getBody(node).infer(stack', variables')
         (newFunctionType(node, parameterType, bodyType), variables'')
@@ -262,7 +280,8 @@ infer(node, stack, variables) := (
     isDefinition(node) ? (
         (valueType, variables') := getRight(node).infer(stack, variables)
         stack' := valueType.generalize(variables', variables) :: stack
-        getDefinitionScope(node).infer(stack', variables')
+        getDefinitionScope(node).infer(stack', variables').
+            mapFirst(`setNode(node))
     )
     isApplication(node) ? (
         (rightType, variables') := getRight(node).infer(stack, variables)
@@ -276,10 +295,10 @@ infer(node, stack, variables) := (
 
 inferType(stack, definition) := (
     (name, value) := definition
-    (knownTypeScheme, variables) := getKnownTypeScheme(name)
+    knownTypeScheme := getKnownTypeScheme(name)
     !isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
-    (type, variables') := infer(value, stack, variables)
-    type.generalize(variables', newVariableMap([])) :: stack
+    (type, variables') := infer(value, stack, empty)
+    type.generalize(variables', empty) :: stack
 )
 
 addRenaming((renaming, variables), type) := (
@@ -292,7 +311,7 @@ addRenaming((renaming, variables), type) := (
 )
 
 makeRenaming(type) :=
-    first(addRenaming((newVariableMap([]), newVariableMap([])), type))
+    first(addRenaming((empty, empty), type))
 
 showTypeWithRenaming(type, renaming) := showType(type.rename(renaming))
 

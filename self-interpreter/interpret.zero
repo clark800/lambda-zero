@@ -1,5 +1,5 @@
 
-execute(ast) := evaluate((ast, []), [])
+execute(ast) := evaluate(newClosure(ast, []), [])
 //main(input) := showList(scan(input).map(showTag))
 //main(input) := showList(lex(input).map(showAST))
 splitCodeAndInput(input) := (
@@ -31,7 +31,7 @@ extractOutputString(closure) := (
     //isNil(term) ? []    // TODO: define isNil
     //!isPair(term) ? runtimeError("expected a string", term)
     // add dummy item to environment corresponding to pair lambda
-    environment' := eof :: getEnvironment(closure)
+    environment' := newClosure(eof, []) :: getEnvironment(closure)
     characterTerm := getRight(getLeft(getBody(term)))
     characterClosure := newClosure(characterTerm, environment')
     character := getCharacter(getTerm(evaluate(characterClosure, [])))
