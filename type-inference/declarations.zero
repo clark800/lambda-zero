@@ -1,0 +1,59 @@
+
+builtinTypes := (
+    (-->) := newFunctionType(blank)
+    bottom := newBottomType(blank)
+    boolean := newBooleanType(blank)
+    integer := newIntegerType(blank)
+    string := newListType(blank, integer)
+    arithmetic := integer --> (integer --> integer)
+    comparison := integer --> (integer --> boolean)
+    newDictionary([
+        ("+", arithmetic),
+        ("-", arithmetic),
+        ("*", arithmetic),
+        ("/", arithmetic),
+        ("%", arithmetic),
+        ("=", comparison),
+        ("!=", comparison),
+        ("<", comparison),
+        (">", comparison),
+        ("<=", comparison),
+        (">=", comparison),
+        ("error", string --> bottom)
+    ])
+)
+
+getBuiltinType(node) :=
+    builtinTypes.get(getLexeme(node), undefined).setNode(node)
+
+knownTypeSchemes := (
+    (-->) := newFunctionType(blank)
+    boolean := newBooleanType(blank)
+    (a, variables') := empty.newTypeVariable(blank)
+    (b, variables'') := variables'.newTypeVariable(blank)
+    aList := newListType(blank, a)
+    aMaybe := newMaybeType(blank, a)
+    aTree := newTreeType(blank, a)
+    aTreeList := newListType(blank, aTree)
+    newDictionary([
+        ("true", newScheme([], boolean)),
+        ("false", newScheme([], boolean)),
+        ("if", newScheme([a], boolean --> (a --> (a --> a)))),
+        ("::", newScheme([a], a --> (aList --> aList))),
+        ("head", newScheme([a], aList --> a)),
+        ("--", newScheme([a], aList --> aList)),
+        ("isEmpty", newScheme([a], aList --> boolean)),
+        ("nothing", newScheme([a], aMaybe)),
+        ("just", newScheme([a], a --> aMaybe)),
+        ("maybe", newScheme([a, b], aMaybe --> ((a --> b) --> (b --> b)))),
+        ("newNode", newScheme([a], a --> (aTreeList --> aTree))),
+        ("getData", newScheme([a], aTree --> a)),
+        ("getChildren", newScheme([a], aTree --> aTreeList))
+    ])
+)
+
+getKnownTypeScheme(name) := (
+    defaultScheme := newScheme([], newFreeType(name))
+    (universals, type) := knownTypeSchemes.get(getLexeme(name), defaultScheme)
+    (universals, type.setNode(name))
+)

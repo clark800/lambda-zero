@@ -1,0 +1,346 @@
+. : ∀a ∀b a → (a → b) → b
+|| : ∀a ∀b (a → b) → a → b
+<> : ∀a ∀b ∀c (a → b) → (c → a) → c → b
+` : ∀a ∀b ∀c (a → b → c) → b → a → c
+id : ∀a a → a
+constant : ∀a ∀b a → b → a
+on : ∀a ∀b ∀c (a → a → b) → (c → a) → c → c → b
+mirror : ∀a ∀b (a → a → b) → a → b
+undefined : ∀a a
+true : 𝔹
+false : 𝔹
+if : ∀a 𝔹 → a → a → a
+? : ∀a 𝔹 → a → a → a
+! : 𝔹 → 𝔹
+/\ : 𝔹 → 𝔹 → 𝔹
+\/ : 𝔹 → 𝔹 → 𝔹
+=> : 𝔹 → 𝔹 → 𝔹
+<=> : 𝔹 → 𝔹 → 𝔹
+, : ∀a ∀b a → b → (a; b)
+first : ∀a ∀b (a; b) → a
+second : ∀a ∀b (a; b) → b
+swap : ∀a ∀b (a; b) → (b; a)
+^^ : ∀a (a → a) → ℤ → a → a
+until : ∀a (a → a) → (a → 𝔹) → a → a
+while : ∀a (a → a) → (a → 𝔹) → a → a
+curry : ∀a ∀b ∀c ((a; b) → c) → a → b → c
+uncurry : ∀a ∀b ∀c (a → b → c) → (a; b) → c
+mapFirst : ∀a ∀b ∀c (a; b) → (a → c) → (c; b)
+mapSecond : ∀a ∀b ∀c (a; b) → (b → c) → (a; c)
+mapPair : ∀a ∀b (a; a) → (a → b) → (b; b)
+nothing : ∀a Maybe(a)
+just : ∀a a → Maybe(a)
+maybe : ∀a ∀b Maybe(a) → (a → b) → b → b
+isNothing : ∀a Maybe(a) → 𝔹
+isJust : ∀a Maybe(a) → 𝔹
+fromJust : ∀a Maybe(a) → a
+>>= : ∀a ∀b Maybe(a) → (a → Maybe(b)) → Maybe(b)
+?|| : ∀a Maybe(a) → a → a
+abs : ℤ → ℤ
+sign : ℤ → ℤ
+min : ℤ → ℤ → ℤ
+max : ℤ → ℤ → ℤ
+mod : ℤ → ℤ → ℤ
+even : ℤ → 𝔹
+odd : ℤ → 𝔹
+divides : ℤ → ℤ → 𝔹
+factorial : ℤ → ℤ
+gcd : ℤ → ℤ → ℤ
+^ : ℤ → ℤ → ℤ
+:: : ∀a a → a[] → a[]
+prepend : ∀a a[] → a → a[]
+isEmpty : ∀a a[] → 𝔹
+head : ∀a a[] → a
+-- : ∀a a[] → a[]
+drop : ∀a a[] → ℤ → a[]
+take : ∀a a[] → ℤ → a[]
+[ : ∀a a[] → ℤ → a
+slice : ∀a a[] → ℤ → ℤ → a[]
+=*= : ℤ[] → ℤ[] → 𝔹
+last : ∀a a[] → a
+dropLast : ∀a a[] → a[]
+dropWhile : ∀a a[] → (a → 𝔹) → a[]
+takeWhile : ∀a a[] → (a → 𝔹) → a[]
+takeSafe : ∀a a[] → ℤ → Maybe(a[])
+dropSafe : ∀a a[] → ℤ → a[]
+newNode : ∀a a → Tree(a)[] → Tree(a)
+getData : ∀a Tree(a) → a
+getChildren : ∀a Tree(a) → Tree(a)[]
+foldr : ∀a ∀b a[] → (a → b → b) → b → b
+foldl : ∀a ∀b a[] → (b → a → b) → b → b
+reducer : ∀a a[] → (a → a → a) → a
+reducel : ∀a a[] → (a → a → a) → a
+++ : ∀a a[] → a[] → a[]
+length : ∀a a[] → ℤ
+iterate : ∀a (a → a) → a → a[]
+repeat : ∀a a → a[]
+replicate : ∀a a → ℤ → a[]
+cycle : ∀a a[] → a[]
+filter : ∀a a[] → (a → 𝔹) → a[]
+| : ∀a a[] → (a → 𝔹) → a[]
+map : ∀a ∀b a[] → (a → b) → b[]
+zipWith : ∀a ∀b ∀c a[] → (a → b → c) → b[] → c[]
+zip : ∀a ∀b a[] → b[] → (a; b)[]
+unzip : ∀a ∀b (a; b)[] → (a[]; b[])
+join : ∀a a[][] → a[]
+reverse : ∀a a[] → a[]
+interleave : ∀a a[] → a → a[]
+joinWith : ∀a a[][] → a[] → a[]
+bisect : ∀a a[] → (a → 𝔹) → (a[]; a[])
+any : ∀a a[] → (a → 𝔹) → 𝔹
+all : ∀a a[] → (a → 𝔹) → 𝔹
+find : ∀a a[] → (a → 𝔹) → Maybe(a)
+foldMap : ∀a ∀b ∀c a[] → (a → b → (c; b)) → b → (c[]; b)
+indexOf : ℤ[][] → ℤ[] → Maybe(ℤ)
+contains : ℤ[][] → ℤ[] → 𝔹
+<*= : ℤ[] → ℤ[] → 𝔹
+.. : ℤ → ℤ → ℤ[]
+sort : ℤ[] → ℤ[]
+deduplicate : ℤ[] → ℤ[]
+deduplicateBy : ∀a a[] → (a → a → 𝔹) → a[]
+** : ∀a ∀b a[] → b[] → (a; b)[]
+startsWith : ℤ[] → ℤ[] → 𝔹
+split : ∀a a[] → (a[] → 𝔹) → (a[]; a[])
+splitAt : ∀a a[] → ℤ → (a[]; a[])
+splitWhen : ∀a a[] → (a → 𝔹) → (a[]; a[])
+splitOn : ℤ[] → ℤ[] → (ℤ[]; ℤ[])
+splitWith : ∀a ∀b a → (a → (b[]; a)) → (b[]; a)
+partition : ∀a ∀b a[] → (a[] → (b; a[])) → b[]
+dropIf : ∀a a[] → (a → 𝔹) → a[]
+dropPrefix : ℤ[] → ℤ[] → ℤ[]
+partitionBy : ∀a a[] → (a → 𝔹) → a[][]
+partitionOn : ℤ[] → ℤ[] → ℤ[][]
+words : ℤ[] → ℤ[][]
+lines : ℤ[] → ℤ[][]
+repl : ℤ[] → ℤ[] → (ℤ[] → ℤ[]) → ℤ[]
+sum : ℤ[] → ℤ
+product : ℤ[] → ℤ
+minimum : ℤ[] → ℤ
+maximum : ℤ[] → ℤ
+countFrom : ℤ → ℤ[]
+naturals : ℤ[]
+primes : ℤ[]
+isUppercase : ℤ → 𝔹
+isLowercase : ℤ → 𝔹
+isDigit : ℤ → 𝔹
+isQuote : ℤ → 𝔹
+isWhitespace : ℤ → 𝔹
+isBlank : ℤ → 𝔹
+isControl : ℤ → 𝔹
+isAlphabetic : ℤ → 𝔹
+isAlphanumeric : ℤ → 𝔹
+isPrintable : ℤ → 𝔹
+isGraphical : ℤ → 𝔹
+isPunctuation : ℤ → 𝔹
+showBoolean : 𝔹 → ℤ[]
+showNatural : ℤ → ℤ[]
+showString : ℤ[] → ℤ[]
+showPair : (ℤ[]; ℤ[]) → ℤ[]
+showList : ℤ[][] → ℤ[]
+showInteger : ℤ → ℤ[]
+showStringPair : (ℤ[]; ℤ[]) → ℤ[]
+showIntegerPair : (ℤ; ℤ) → ℤ[]
+showStringIntegerPair : (ℤ[]; ℤ) → ℤ[]
+showStringList : ℤ[][] → ℤ[]
+showIntegerList : ℤ[] → ℤ[]
+showIntegerPairList : (ℤ; ℤ)[] → ℤ[]
+showIntegerListPair : (ℤ[]; ℤ[]) → ℤ[]
+showIntegerListList : ℤ[][] → ℤ[]
+showStringIntegerPairList : (ℤ[]; ℤ)[] → ℤ[]
+parseDigit : ℤ → ℤ → ℤ
+parseNatural : ℤ[] → ℤ → ℤ
+parseInteger : ℤ[] → ℤ → ℤ
+newProtoset : ∀a ∀b a → b → (a; b)
+getElements : ∀a ∀b (a; b) → b
+# : ∀a ∀b (a; b[]) → ℤ
+elicit : ∀a (a → a → 𝔹; a[]) → a → Maybe(a)
+: : ∀a a → (a → a → 𝔹; a[]) → 𝔹
+!: : ∀a a → (a → a → 𝔹; a[]) → 𝔹
+mapElements : ∀a ∀b ∀c (a; b[]) → (b → c) → (a; c[])
+filterElements : ∀a ∀b (a; b[]) → (b → 𝔹) → (a; b[])
+add : ∀a (a → a → 𝔹; a[]) → a → (a → a → 𝔹; a[])
+remove : ∀a (a → a → 𝔹; a[]) → a → (a → a → 𝔹; a[])
+\./ : ∀a ∀b (a → a → 𝔹; a[]) → (b; a[]) → (a → a → 𝔹; a[])
+\ : ∀a ∀b (a; b[]) → (b → b → 𝔹; b[]) → (a; b[])
+newTable : ∀a ∀b ∀c ∀d (a → a → b) → c → ((a; d) → (a; d) → b; c)
+lookup : ∀a ∀b ((a; b) → (a; b) → 𝔹; (a; b)[]) → a → Maybe(b)
+hasKey : ∀a ∀b ((a; b) → (a; b) → 𝔹; (a; b)[]) → a → 𝔹
+get : ∀a ∀b ((a; b) → (a; b) → 𝔹; (a; b)[]) → a → b → b
+delete : ∀a ∀b ((a; b) → (a; b) → 𝔹; (a; b)[]) → a → ((a; b) → (a; b) → 𝔹; (a; b)[])
+insert : ∀a ∀b ((a; b) → (a; b) → 𝔹; (a; b)[]) → a → b → ((a; b) → (a; b) → 𝔹; (a; b)[])
+getKeys : ∀a ∀b ∀c (a; (b; c)[]) → b[]
+getValues : ∀a ∀b ∀c (a; (b; c)[]) → c[]
+mapKeys : ∀a ∀b ∀c ∀d (a; (b; c)[]) → (b → d) → (a; (d; c)[])
+mapValues : ∀a ∀b ∀c ∀d (a; (b; c)[]) → (c → d) → (a; (b; d)[])
+newDictionary : ∀a ∀b a → ((ℤ[]; b) → (ℤ[]; b) → 𝔹; a)
+newRegistry : ∀a ∀b a[] → ((ℤ; b) → (ℤ; b) → 𝔹; (ℤ; a)[])
+register : ∀a ((ℤ; a) → (ℤ; a) → 𝔹; (ℤ; a)[]) → a → (ℤ; ((ℤ; a) → (ℤ; a) → 𝔹; (ℤ; a)[]))
+isDelimiterCharacter : ℤ → 𝔹
+isReservedCharacter : ℤ → 𝔹
+isOperandCharacter : ℤ → 𝔹
+isOperatorCharacter : ℤ → 𝔹
+isLineComment : ℤ[] → 𝔹
+isBlockComment : ℤ[] → 𝔹
+isComment : ℤ[] → 𝔹
+splitQuoteCharacter : ℤ → ℤ[] → (ℤ[]; ℤ[])
+shiftSplit : ∀a (a[]; a[]) → (a[]; a[])
+splitQuote : ℤ[] → (ℤ[]; ℤ[])
+splitLexeme : ℤ[] → (ℤ[]; ℤ[])
+advanceLocation : (ℤ; ℤ) → ℤ[] → (ℤ; ℤ)
+splitLexemes : ∀a a[] → (a[] → (ℤ[]; a[])) → (ℤ; ℤ) → (ℤ[]; (ℤ; ℤ))[]
+scan : ℤ[] → (ℤ[]; (ℤ; ℤ))[]
+showTag : (ℤ[]; (ℤ; ℤ)) → ℤ[]
+getTagLexeme : ∀a ∀b (a; b) → a
+getTagLine : ∀a ∀b ∀c (a; (b; c)) → b
+getTagColumn : ∀a ∀b ∀c (a; (b; c)) → c
+showPrettyTag : (ℤ[]; (ℤ; ℤ)) → ℤ[]
+cNAME : ℤ
+cOPERATOR : ℤ
+cLAMBDA : ℤ
+cAPPLICATION : ℤ
+cINTEGER : ℤ
+cBUILTIN : ℤ
+newName : ∀a a → Tree((a; ℤ))
+newOperator : ∀a a → Tree((a; ℤ))
+newReference : ∀a ∀b a → b → Tree((a; b))
+newLambda : ∀a a → Tree((a; ℤ)) → Tree((a; ℤ)) → Tree((a; ℤ))
+newApplication : ∀a a → Tree((a; ℤ)) → Tree((a; ℤ)) → Tree((a; ℤ))
+newBuiltin : ∀a a → Tree((a; ℤ))
+newInteger : ∀a a → ℤ → Tree((a; ℤ))
+getTag : ∀a ∀b Tree((a; b)) → a
+getType : ∀a ∀b Tree((a; b)) → b
+getDebruijnIndex : ∀a ∀b Tree((a; b)) → b
+getLeft : ∀a Tree(a) → Tree(a)
+getRight : ∀a Tree(a) → Tree(a)
+getParameter : ∀a Tree(a) → Tree(a)
+getBody : ∀a Tree(a) → Tree(a)
+getInteger : ∀a ∀b Tree((a; b)) → b
+isReference : ∀a Tree((a; ℤ)) → 𝔹
+isName : ∀a Tree((a; ℤ)) → 𝔹
+isOperator : ∀a Tree((a; ℤ)) → 𝔹
+isLambda : ∀a Tree((a; ℤ)) → 𝔹
+isApplication : ∀a Tree((a; ℤ)) → 𝔹
+isInteger : ∀a Tree((a; ℤ)) → 𝔹
+isBuiltin : ∀a Tree((a; ℤ)) → 𝔹
+isSymbol : ∀a Tree((a; ℤ)) → 𝔹
+newClosure : ∀a a → Tree(a)[] → Tree(a)
+getTerm : ∀a Tree(a) → a
+getEnvironment : ∀a Tree(a) → Tree(a)[]
+unpackClosure : ∀a Tree(a) → (a; Tree(a)[])
+getLexeme : ∀a ∀b ∀c Tree(((a; b); c)) → a
+getLine : ∀a ∀b ∀c ∀d Tree(((a; (b; c)); d)) → b
+getColumn : ∀a ∀b ∀c ∀d Tree(((a; (b; c)); d)) → c
+isOpenParen : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isCloseParen : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isSpace : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isNewline : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isEOF : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isComma : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isCommaList : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isTuple : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isUnit : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isList : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isInternal : ∀a ∀b Tree(((a; (ℤ; ℤ)); b)) → 𝔹
+isInput : ∀a Tree(((ℤ[]; (ℤ; ℤ)); a)) → 𝔹
+isNameLexeme : ℤ[] → 𝔹
+isOperatorLexeme : ℤ[] → 𝔹
+isIntegerLexeme : ℤ[] → 𝔹
+showLexeme : ℤ[] → ℤ[]
+showToken : ∀a ∀b Tree(((ℤ[]; a); b)) → ℤ[]
+showLocation : ∀a (a; (ℤ; ℤ)) → ℤ[]
+showLexemeAndLocationLine : (ℤ[]; (ℤ; ℤ)) → ℤ[] → ℤ[]
+inputTag : (ℤ[]; (ℤ; ℤ))
+blank : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+projectionBlank : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+comma : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+cT : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+cF : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+cX : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+cY : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+cZ : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+eof : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+cXY : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+yCombinator : Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+isYCombinator : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isRecursiveFunction : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isNil : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isStringLiteral : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+newTrue : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+newFalse : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+newBoolean : (ℤ[]; (ℤ; ℤ)) → 𝔹 → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+newNil : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+applyToCommaList : ∀a Tree(((ℤ[]; a); ℤ)) → Tree(((ℤ[]; a); ℤ)) → Tree(((ℤ[]; a); ℤ))
+newTuple : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+getCommaListSize : ∀a Tree(((ℤ[]; a); ℤ)) → ℤ
+getTupleSize : ∀a Tree(((ℤ[]; a); ℤ)) → ℤ
+prependList : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+getListElements : ∀a Tree(((ℤ[]; a); ℤ)) → Tree(((ℤ[]; a); ℤ))[]
+getListLength : ∀a Tree(((ℤ[]; a); ℤ)) → ℤ
+parseEscapeCode : ℤ → (ℤ[]; (ℤ; ℤ)) → ℤ
+parseQuotedCharacter : (ℤ[]; (ℤ; ℤ)) → ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+splitStringLiteral : ℤ[] → ℤ[][]
+buildStringLiteral : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+getQuoteContents : (ℤ[]; (ℤ; ℤ)) → ℤ[]
+getQuotedCharacters : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))[]
+parseStringLiteral : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+parseCharacterLiteral : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+createInteger : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+createToken : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+tokenError : ∀a ∀b ℤ[] → ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); a)) → b
+syntaxError : ∀a ∀b ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); a)) → b
+runtimeError : ∀a ∀b ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); a)) → b
+getFirstCharacter : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → ℤ
+extractString : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → ℤ[]
+lex : ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))[]
+showAST : ∀a Tree(((ℤ[]; a); ℤ)) → ℤ[]
+serialize : ∀a Tree(Tree(((ℤ[]; a); ℤ))) → ℤ[]
+leftAssociative : ℤ
+rightAssociative : ℤ
+nonAssociative : ℤ
+infix : ℤ
+prefix : ℤ
+openfix : ℤ
+closefix : ℤ
+isSpecialOperator : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+isProjection : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+newProjection : (ℤ[]; (ℤ; ℤ)) → ℤ → ℤ → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+getTupleElements : ∀a Tree((a; ℤ)) → Tree((a; ℤ))[]
+newPatternLambda : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+reduceApply : ∀a ∀b Tree((a; b)) → Tree((a; ℤ)) → Tree((a; ℤ)) → Tree((a; ℤ))
+reduceInfix : ∀a Tree((a; ℤ)) → Tree((a; ℤ)) → Tree((a; ℤ)) → Tree((a; ℤ))
+reducePrefix : ∀a ∀b Tree((a; ℤ)) → b → Tree((a; ℤ)) → Tree((a; ℤ))
+reduceNegate : ∀a ∀b Tree((a; ℤ)) → b → Tree((a; ℤ)) → Tree((a; ℤ))
+reduceLambda : ∀a Tree(((ℤ[]; (ℤ; ℤ)); a)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+reduceUnmatched : ∀a ∀b ∀c ∀d Tree(((ℤ[]; (ℤ; ℤ)); a)) → b → c → d
+reduceParentheses : ∀a Tree(((ℤ[]; (ℤ; ℤ)); a)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+createList : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+reduceBrackets : ∀a ∀b Tree(((ℤ[]; (ℤ; ℤ)); a)) → Tree(((ℤ[]; (ℤ; ℤ)); b)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+reduceIllegal : ∀a ∀b ∀c ∀d a → b → c → d
+syntax : ∀a ∀b (a; b) → a
+collapse : ∀a ∀b (a; b) → b
+ordering : ∀a ∀b ∀c ((a; b); c) → a
+fixity : ∀a ∀b ∀c ((a; b); c) → b
+precedence : ∀a ∀b ∀c ∀d (((a; b); c); d) → a
+associativity : ∀a ∀b ∀c ∀d (((a; b); c); d) → b
+leftPrecedence : ∀a ∀b ∀c ∀d ∀aa ((((a; b); c); d); aa) → a
+rightPrecedence : ∀a ∀b ∀c ∀d ∀aa ((((a; b); c); d); aa) → b
+getRules : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹 → ((((ℤ; ℤ); ℤ); ℤ); Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)))
+isHigherPrecedence : ∀a ∀b ∀c ∀d ∀aa ∀ab ∀ac ∀ad (Tree(((ℤ[]; (ℤ; ℤ)); a)); ((((b; ℤ); ℤ); c); d)) → (aa; ((((ℤ; ab); ℤ); ac); ad)) → 𝔹
+getBuiltin : ∀a ∀b Tree(((ℤ[]; (ℤ; ℤ)); a)) → Maybe((ℤ; Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ))) → Tree(Tree((b; ℤ))) → Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ)))))
+isDefinition : ∀a Tree(((ℤ[]; a); ℤ)) → 𝔹
+hasRecursiveCalls : ∀a ∀b Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; a); b)) → 𝔹
+transformRecursion : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+getNameAndValue : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → (Tree(((ℤ[]; (ℤ; ℤ)); ℤ)); Tree(((ℤ[]; (ℤ; ℤ)); ℤ)))
+createScope : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+transformDefinition : (ℤ[]; (ℤ; ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+desugar : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+bind : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+parse : ℤ[] → ℤ[] → Tree(((ℤ[]; (ℤ; ℤ)); ℤ))
+evaluate : Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ))) → Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ)))[] → Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ)))
+execute : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ)))
+splitCodeAndInput : ℤ[] → (ℤ[]; ℤ[])
+isIONode : ∀a Tree(((ℤ[]; (ℤ; ℤ)); a)) → 𝔹
+isIO : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → 𝔹
+getCharacter : Tree(((ℤ[]; (ℤ; ℤ)); ℤ)) → ℤ
+extractOutputString : Tree(Tree(((ℤ[]; (ℤ; ℤ)); ℤ))) → ℤ[]
+main : ℤ[] → ℤ[]
