@@ -1,16 +1,16 @@
 showAST(node) := (
-    node.isReference?
-        showToken(node) ++ "{" ++ showInteger(getDebruijnIndex(node)) ++ "}"
-    node.isLambda?
+    node.isReference ?
+        showToken(node)
+    node.isLambda ?
         "(" ++ showToken(getParameter(node)) ++ " -> " ++
                showAST(getBody(node)) ++ ")"
-    node.isApplication?
+    node.isApplication ?
         "(" ++ showAST(getLeft(node)) ++ " " ++
                showAST(getRight(node)) ++ ")"
-    node.isInteger?
-        "#" ++ showInteger(getInteger(node))
-    node.isBuiltin?
-        "$" ++ showToken(node)
+    node.isInteger ?
+        showInteger(getInteger(node))
+    node.isBuiltin ?
+        showToken(node)
     showToken(node)
 )
 

@@ -1,0 +1,65 @@
+
+getVariableName(index) := (
+    characters := ['a', 'b', 'c', 'd']
+    index < 4 ? [characters[index]]
+    getVariableName((index / 4) - 1) ++ [characters[index % 4]]
+)
+
+showType(type) := (
+    showType'(type') :=
+        isFunctionType(type') ? "(" ++ showType(type') ++ ")" || showType(type')
+    arrowUTF8 := [226, 134, 146]
+    isFreeType(type) ? "_"
+    isBottomType(type) ? "Bottom"
+    isIntegerType(type) ? [226, 132, 164]
+    isBooleanType(type) ? [240, 157, 148, 185]
+    isTypeVariable(type) ? getVariableName(getTypeCode(type))
+    isTupleType(type) ?
+        "(" ++ getComponentTypes(type).map(showType).joinWith("; ") ++ ")"
+    isMaybeType(type) ?
+        "Maybe(" ++ showType(getComponentTypes(type)[0]) ++ ")"
+    isListType(type) ? showType'(getComponentTypes(type)[0]) ++ "[]"
+    isTreeType(type) ? "Tree(" ++ showType(getComponentTypes(type)[0]) ++ ")"
+    isFunctionType(type) ? (
+        components := getComponentTypes(type)
+        showType'(components[0]) ++ " " ++ arrowUTF8 ++ " " ++
+            showType(components[1])
+    )
+    undefined
+)
+
+showTypeAndLocation(type) := showType(type) ++ (isBlankNode(getNode(type)) ? ""
+    " at " ++ showLocation(getTag(getNode(type))))
+
+showVariableMap(variables) :=
+    variables.getElements.map((key, value) ->
+        showAST(getNode(key)) ++ " = " ++ showAST(getNode(value)) ++
+        "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
+
+addRenaming((renaming, variables), type) := (
+    isTypeVariable(type) ? (
+        renaming.hasKey(type) ? (renaming, variables)
+        (type', variables') := variables.newTypeVariable(getNode(type))
+        (renaming.insert(type, type'), variables')
+    )
+    getComponentTypes(type).foldl(addRenaming, (renaming, variables))
+)
+
+makeRenaming(type) :=
+    first(addRenaming((empty, empty), type))
+
+showTypeWithRenaming(type, renaming) := showType(type.rename(renaming))
+
+showUniversals(universals, renaming) := (
+    forallUTF8 := [226, 136, 128]
+    universals.map(universal ->
+        forallUTF8 ++ showTypeWithRenaming(universal, renaming) ++ " ").join
+)
+
+showScheme((universals, type)) := (
+    renaming := makeRenaming(type)
+    showUniversals(universals, renaming) ++ showTypeWithRenaming(type, renaming)
+)
+
+showTyping((name, scheme)) := getLexeme(name) ++ " : " ++ showScheme(scheme)
+showTypings(typings) := typings.map(showTyping).joinWith("\n")

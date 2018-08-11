@@ -33,10 +33,10 @@ newPatternLambda(tag, pattern, body) := (
     isSymbol(pattern) ? newLambda(tag, pattern, body)
     !isTuple(pattern) \/ getTupleSize(pattern) = 0 ?
         syntaxError("invalid parameter", pattern)
+    tag' := getTag(pattern)
     size := getTupleSize(pattern)
     function := getTupleElements(pattern).foldr(element -> x ->
-        newPatternLambda(tag, element, x), body)
-    tag' := getTag(pattern)
+        newPatternLambda(getTag(element), element, x), body)
     projections := (0 .. size - 1).map(n ->
         newApplication(tag', newProjection(tag', size, n), blank))
     application := projections.foldl(x -> projection ->

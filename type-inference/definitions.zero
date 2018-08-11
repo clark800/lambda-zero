@@ -1,0 +1,12 @@
+
+getDefinitionName(definition) := getParameter(getLeft(definition))
+getDefinitionValue(definition) := getRight(definition)
+getDefinitionScope(definition) := getBody(getLeft(definition))
+
+newDefinition(definition) :=
+    (getDefinitionName(definition), getDefinitionValue(definition))
+
+getDefinitions(node) := (
+    !isDefinition(node) ? []
+    newDefinition(node) :: getDefinitions(getDefinitionScope(node))
+)
