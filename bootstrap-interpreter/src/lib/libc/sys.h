@@ -27,6 +27,7 @@ int open(const char *path, int oflag);
 int kill(pid_t pid, int sig);
 
 // sys/mman.h
+#define MAP_FAILED    ((void*)-1)
 #define PAGE_SIZE     4096
 #define PROT_READ     0x1         /* page can be read */
 #define PROT_WRITE    0x2         /* page can be written */

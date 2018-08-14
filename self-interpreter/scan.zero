@@ -52,6 +52,7 @@ scan(string) := string.splitLexemes(splitLexeme, (1, 1)) |
 showTag(tag) := showPair((showString(tag.first), showIntegerPair(tag.second)))
 
 getTagLexeme(tag) := tag.first
+getTagLocation(tag) := tag.second
 getTagLine(tag) := tag.second.first
 getTagColumn(tag) := tag.second.second
 

@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
-#include "lib/rstring.h"
+#include "lib/tag.h"
 #include "scan.h"
 
 bool isSpaceCharacter(char c) {
@@ -82,8 +82,7 @@ static inline const char* skipLexeme(const char* s) {
 }
 
 static inline String newLexeme(const char* start) {
-    const char* next = skipLexeme(start);
-    return newString(start, (unsigned int)(next - start));
+    return newString(start, (unsigned int)(skipLexeme(start) - start));
 }
 
 String getFirstLexeme(const char* input) {

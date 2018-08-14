@@ -2,8 +2,8 @@
 #include "tree.h"
 #include "stack.h"
 
-Stack* newStack(Node* head) {
-    return (Stack*)hold(newBranch(EMPTY, VOID, head));
+Stack* newStack() {
+    return (Stack*)hold(newPair(VOID, VOID));
 }
 
 void deleteStack(Stack* stack) {
@@ -23,7 +23,7 @@ bool isEmpty(Stack* stack) {
 }
 
 void push(Stack* stack, Node* node) {
-    setHead(stack, newBranch(EMPTY, node, getHead(stack)));
+    setHead(stack, newPair(node, getHead(stack)));
 }
 
 Hold* pop(Stack* stack) {
@@ -36,7 +36,7 @@ Hold* pop(Stack* stack) {
 
 Node* peek(Stack* stack, size_t i) {
     assert(!isEmpty(stack));
-    return getListElement(getHead(stack), i);
+    return getListElement(getHead(stack), (long long)i);
 }
 
 Iterator* iterate(Stack* stack) {

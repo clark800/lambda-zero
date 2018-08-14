@@ -8,9 +8,10 @@
 #include "errors.h"
 #include "lex.h"
 
+Location location;
+
 bool isNameLexeme(char head) {
-    // note: the quote case is only for internal code
-    return islower(head) || head == '_' || head == '\'';
+    return islower(head) || head == '_' || head == '\'' || head == '\"';
 }
 
 bool isOperatorLexeme(char head) {
@@ -22,82 +23,40 @@ bool isIntegerLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; i++)
         if (!isdigit(lexeme.start[i]))
             return false;
-    return true;
+    return lexeme.length > 0;
 }
 
-const char* skipQuoteCharacter(const char* start) {
-    return start[0] == '\\' ? start + 2 : start + 1;
-}
-
-char decodeCharacter(const char* start, String lexeme) {
-    lexerErrorIf(start[0] <= 0, lexeme, "illegal character in");
-    if (start[0] != '\\')
-        return start[0];
-    switch (start[1]) {
-        case '0': return '\0';
-        case 't': return '\t';
-        case 'r': return '\r';
-        case 'n': return '\n';
-        case '\n': return '\n';
-        case '\\': return '\\';
-        case '\"': return '\"';
-        case '\'': return '\'';
-        default: lexerErrorIf(true, lexeme, "invalid escape sequence in");
-    }
-    return 0;
-}
-
-Node* newCharacterLiteral(String lexeme) {
-    char quote = lexeme.start[0];
-    const char* end = lexeme.start + lexeme.length - 1;
-    lexerErrorIf(end[0] != quote, lexeme, "missing end quote for");
-    const char* skip = skipQuoteCharacter(lexeme.start + 1);
-    lexerErrorIf(skip != end, lexeme, "invalid character literal");
-    return newInteger(lexeme, decodeCharacter(lexeme.start + 1, lexeme));
-}
-
-Node* buildStringLiteral(String lexeme, const char* start) {
-    char c = start[0];
-    lexerErrorIf(c == '\n' || c == 0, lexeme, "missing end quote for");
-    if (c == lexeme.start[0])
-        return newNil(lexeme);
-    return prepend(lexeme, newInteger(lexeme, decodeCharacter(start,
-        lexeme)), buildStringLiteral(lexeme, skipQuoteCharacter(start)));
-}
-
-Node* newStringLiteral(String lexeme) {
-    return buildStringLiteral(lexeme, lexeme.start + 1);
-}
-
-long long parseInteger(String lexeme) {
+long long parseInteger(Tag tag) {
     errno = 0;
-    long long result = strtoll(lexeme.start, NULL, 10);
+    long long result = strtoll(tag.lexeme.start, NULL, 10);
     lexerErrorIf((result == LLONG_MIN || result == LLONG_MAX) &&
-        errno == ERANGE, lexeme, "magnitude of integer is too large");
+        errno == ERANGE, tag, "magnitude of integer is too large");
     return result;
 }
 
 Node* createToken(String lexeme) {
-    char head = lexeme.start[0];
-    lexerErrorIf(isupper(head), lexeme, "names can't start with uppercase");
-    if (head == '"')
-        return newStringLiteral(lexeme);
-    // single quoted operands are internal names while parsing internal code
-    if (head == '\'')
-        return newCharacterLiteral(lexeme);
+    Tag tag = newTag(lexeme, location);
+    char head = lexeme.length > 0 ? lexeme.start[0] : '\0';
+    if (head == '\n')
+        location = newLocation(location.line + 1, 1);
+    else
+        location = newLocation(location.line, location.column + lexeme.length);
+
+    lexerErrorIf(isupper(head), tag, "names can't start with uppercase");
 
     if (isIntegerLexeme(lexeme))
-        return newInteger(lexeme, parseInteger(lexeme));
+        return newInteger(tag, parseInteger(tag));
     if (isNameLexeme(head))
-        return newName(lexeme);
+        return newName(tag);
     if (isOperatorLexeme(head))
-        return newOperator(lexeme);
+        return newOperator(tag);
 
-    lexerErrorIf(true, lexeme, "invalid token");
+    lexerErrorIf(true, tag, "invalid token");
     return NULL;
 }
 
 Hold* getFirstToken(const char* sourceCode) {
+    location = newLocation(1, 1);
     return hold(createToken(getFirstLexeme(sourceCode)));
 }
 

@@ -16,22 +16,18 @@ void printBacktrace(Closure* closure) {
     fputs("\n\nBacktrace:\n", stderr);
     Stack* backtrace = (Stack*)getBacktrace(closure);
     for (Iterator* it = iterate(backtrace); !end(it); it = next(it))
-        printTokenAndLocationLine(cursor(it), "");
+        printTagLine(getTag(cursor(it)), "");
 }
 
 void printRuntimeError(const char* message, Closure* closure) {
     if (!TEST && !isEmpty((Stack*)getBacktrace(closure)))
         printBacktrace(closure);
-    printTokenError("\nRuntime", message, getTerm(closure));
+    printError("\nRuntime", message, getTag(getTerm(closure)));
 }
 
 void runtimeError(const char* message, Closure* closure) {
     printRuntimeError(message, closure);
     exit(1);
-}
-
-static inline Node* toBoolean(int value) {
-    return value == 0 ? FALSE : TRUE;
 }
 
 // note: it is important to check for overflow before it occurs because
@@ -72,7 +68,7 @@ long long modulo(long long left, long long right, Closure* builtin) {
 }
 
 unsigned int getBuiltinArity(Node* builtin) {
-    switch (getBuiltinCode(builtin)) {
+    switch (getValue(builtin)) {
         case ERROR: return 1;
         case EXIT: return 1;
         case GET: return 1;
@@ -82,7 +78,7 @@ unsigned int getBuiltinArity(Node* builtin) {
 }
 
 bool isStrictArgument(Node* builtin, unsigned int i) {
-    return !(getBuiltinCode(builtin) == ERROR && i == 0);
+    return !(getValue(builtin) == ERROR && i == 0);
 }
 
 Hold* evaluateError(Closure* builtin, Closure* message) {
@@ -91,10 +87,10 @@ Hold* evaluateError(Closure* builtin, Closure* message) {
         printRuntimeError("hit", builtin);
         fputc((int)'\n', stderr);
     }
-    String lexeme = getLexeme(getTerm(builtin));
-    Node* exit = newBuiltin(lexeme, EXIT);
-    Node* print = newApplication(lexeme, getTerm(message), PRINT);
-    setTerm(builtin, newApplication(lexeme, exit, print));
+    Tag tag = getTag(getTerm(builtin));
+    Node* exit = newBuiltin(tag, EXIT);
+    Node* print = newApplication(tag, getTerm(message), newPrinter(tag));
+    setTerm(builtin, newApplication(tag, exit, print));
     return hold(builtin);
 }
 
@@ -102,7 +98,8 @@ Node* evaluatePut(Closure* builtin, long long c) {
     if (c < 0 || c >= 256)
         runtimeError("expected byte value in list returned from main", builtin);
     fputc((int)c, STDERR ? stderr : stdout);
-    return IDENTITY;
+    Tag tag = getTag(getTerm(builtin));
+    return newLambda(tag, newBlank(tag), newBlankReference(tag, 1));
 }
 
 Node* evaluateGet(Closure* builtin, long long index) {
@@ -112,27 +109,27 @@ Node* evaluateGet(Closure* builtin, long long index) {
         return peek(INPUT_STACK, (size_t)(inputIndex - index - 1));
     inputIndex += 1;
     int c = fgetc(stdin);
-    String lexeme = getLexeme(getTerm(builtin));
-    push(INPUT_STACK, c == EOF ? newNil(lexeme) : prepend(lexeme,
-        newInteger(lexeme, c), newApplication(lexeme, getLeft(INPUT),
-            newInteger(lexeme, index + 1))));
+    Tag tag = getTag(getTerm(builtin));
+    push(INPUT_STACK, c == EOF ? newRuntimeNil(tag) : runtimePrepend(tag,
+        newInteger(tag, c), newApplication(tag, newBuiltin(tag, GET),
+            newInteger(tag, index + 1))));
     return peek(INPUT_STACK, 0);
 }
 
 Node* computeBuiltin(Closure* builtin, long long left, long long right) {
-    String lexeme = getLexeme(getTerm(builtin));
-    switch (getBuiltinCode(getTerm(builtin))) {
-        case PLUS: return newInteger(lexeme, add(left, right, builtin));
-        case MINUS: return newInteger(lexeme, subtract(left, right, builtin));
-        case TIMES: return newInteger(lexeme, multiply(left, right, builtin));
-        case DIVIDE: return newInteger(lexeme, divide(left, right, builtin));
-        case MODULUS: return newInteger(lexeme, modulo(left, right, builtin));
-        case EQUAL: return toBoolean(left == right);
-        case NOTEQUAL: return toBoolean(left != right);
-        case LESSTHAN: return toBoolean(left < right);
-        case GREATERTHAN: return toBoolean(left > right);
-        case LESSTHANOREQUAL: return toBoolean(left <= right);
-        case GREATERTHANOREQUAL: return toBoolean(left >= right);
+    Tag tag = getTag(getTerm(builtin));
+    switch (getValue(getTerm(builtin))) {
+        case PLUS: return newInteger(tag, add(left, right, builtin));
+        case MINUS: return newInteger(tag, subtract(left, right, builtin));
+        case TIMES: return newInteger(tag, multiply(left, right, builtin));
+        case DIVIDE: return newInteger(tag, divide(left, right, builtin));
+        case MODULUS: return newInteger(tag, modulo(left, right, builtin));
+        case EQUAL: return newBoolean(tag, left == right);
+        case NOTEQUAL: return newBoolean(tag, left != right);
+        case LESSTHAN: return newBoolean(tag, left < right);
+        case GREATERTHAN: return newBoolean(tag, left > right);
+        case LESSTHANOREQUAL: return newBoolean(tag, left <= right);
+        case GREATERTHANOREQUAL: return newBoolean(tag, left >= right);
         case PUT: return evaluatePut(builtin, left);
         case GET: return evaluateGet(builtin, left);
         default: assert(false); return NULL;
@@ -141,11 +138,11 @@ Node* computeBuiltin(Closure* builtin, long long left, long long right) {
 
 long long getIntegerArgument(Node* builtin, Closure* closure) {
     if (closure == NULL)
-        return 0;
+        return 0;       // this happens for single argument builtins like GET
     Node* integer = getTerm(closure);
     if (!isInteger(integer))
        runtimeError("expected integer argument to", builtin);
-    return getInteger(integer);
+    return getValue(integer);
 }
 
 Hold* evaluateIntegerBuiltin(Closure* builtin, Closure* left, Closure* right) {
@@ -156,7 +153,7 @@ Hold* evaluateIntegerBuiltin(Closure* builtin, Closure* left, Closure* right) {
 }
 
 Hold* evaluateBuiltin(Closure* builtin, Closure* left, Closure* right) {
-    switch (getBuiltinCode(getTerm(builtin))) {
+    switch (getValue(getTerm(builtin))) {
         case ERROR: return evaluateError(builtin, left);
         case EXIT: return error("\n");
         default: return evaluateIntegerBuiltin(builtin, left, right);

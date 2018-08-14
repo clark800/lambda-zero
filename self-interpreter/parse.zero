@@ -5,14 +5,13 @@ parse(code, input) := (
     pushOperand(stack, operand) := (
         stack.isEmpty \/ isOperator(stack[0]) ? operand :: stack
         isList(operand) ? (
-            size := getListLength(operand)
-            size < 1 ? syntaxError("missing argument to", operand)
-            size > 1 ? syntaxError("too many arguments to", operand)
+            getListLength(operand) > 1 ?
+                syntaxError("too many arguments to", newName(getTag(operand)))
             index := getRight(getLeft(getBody(operand)))
             reduceInfix(newName(getTag(operand)), stack[0], index) :: (--stack)
         )
         isTuple(operand) /\ !isUnit(operand) ?
-            applyToCommaList(stack[0], getBody(operand)) :: (--stack)
+            applyToTuple(stack[0], operand) :: (--stack)
         newApplication(getTag(operand), stack[0], operand) :: (--stack)
     )
 
@@ -122,5 +121,7 @@ parse(code, input) := (
     shiftToken((stack, tokens)) := (pushToken(stack, tokens[0]), --tokens)
     tokens := lex(code ++ [0])
     ast := head(first(shiftToken.until(isEmpty <> second, ([eof], tokens))))
+    isCommaList(ast) ?
+        syntaxError("comma not inside brackets", ast)
     bind(desugar(ast, input))
 )

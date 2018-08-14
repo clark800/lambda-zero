@@ -5,25 +5,7 @@
 #include "print.h"
 #include "errors.h"
 
-typedef struct {
-    unsigned int line, column;
-} Location;
-
 bool TEST = false;
-const char* SOURCE_CODE = NULL;
-
-Location getLocation(String lexeme) {
-    unsigned int index = (unsigned int)(lexeme.start - SOURCE_CODE + 1);
-    Location location = {1, 1};  // use 1-based indexing
-    for (unsigned int i = 0; i < index - 1; i++) {
-        location.column += 1;
-        if (SOURCE_CODE[i] == '\n') {
-            location.line += 1;
-            location.column = 1;
-        }
-    }
-    return location;
-}
 
 void printFour(const char* a, const char* b, const char* c, const char* d) {
     fputs(a, stderr);
@@ -32,49 +14,43 @@ void printFour(const char* a, const char* b, const char* c, const char* d) {
     fputs(d, stderr);
 }
 
-void printLocationString(String lexeme) {
-    if (isInternal(lexeme)) {
-        fputs("[INTERNAL]", stderr);
+void printLocationString(Location location) {
+    if (location.line == 0) {
+        fputs("[EOF]", stderr);
         return;
     }
-    Location location = getLocation(lexeme);
     fputs("line ", stderr);
     fputll(location.line, stderr);
     fputs(" column ", stderr);
     fputll(location.column, stderr);
 }
 
-void printLexemeAndLocationLine(String lexeme, const char* quote) {
-    fputs(quote, stderr);
-    printLexeme(lexeme, stderr);
-    fputs(quote, stderr);
-    fputs(" at ", stderr);
-    printLocationString(lexeme);
+void printTagLine(Tag tag, const char* quote) {
+    if (tag.lexeme.length > 0) {
+        fputs(quote, stderr);
+        printLexeme(tag.lexeme, stderr);
+        fputs(quote, stderr);
+        fputs(" ", stderr);
+    }
+    fputs("at ", stderr);
+    printLocationString(tag.location);
     fputs("\n", stderr);
 }
 
-void printTokenAndLocationLine(Node* token, const char* quote) {
-    printLexemeAndLocationLine(getLexeme(token), quote);
-}
-
-void printError(const char* type, const char* message, String lexeme) {
+void printError(const char* type, const char* message, Tag tag) {
     printFour(type, " error: ", message, " ");
-    printLexemeAndLocationLine(lexeme, "\'");
+    printTagLine(tag, "\'");
 }
 
-void printTokenError(const char* type, const char* message, Node* token) {
-    printError(type, message, getLexeme(token));
-}
-
-void lexerErrorIf(bool condition, String lexeme, const char* message) {
+void lexerErrorIf(bool condition, Tag tag, const char* message) {
     if (condition) {
-        printError("Syntax", message, lexeme);
+        printError("Syntax", message, tag);
         exit(1);
     }
 }
 
 void syntaxError(const char* message, Node* token) {
-    printTokenError("Syntax", message, token);
+    printError("Syntax", message, getTag(token));
     exit(1);
 }
 

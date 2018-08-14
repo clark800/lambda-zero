@@ -7,17 +7,18 @@
 typedef union {
     Node* child;
     long long value;
+    const char* lexeme;
 } Branch;
 
 struct Node {
-    unsigned int referenceCount;
-    unsigned int labelLength;
-    const char* labelStart;
-    Branch left;
-    Branch right;
+    unsigned int referenceCount, length;
+    char isLeaf, type;
+    Location location;
+    Branch left, right;
 };
 
-Node VOID_NODE = {1, 4, "VOID", {NULL}, {NULL}};    // same as integer "0"
+Node VOID_NODE = {.referenceCount=1, .length=4, .isLeaf=1, .type=-1,
+    .location={0, 0}, .left={.lexeme="VOID"}, .right={.value=0}};
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
@@ -28,12 +29,23 @@ void destroyNodeAllocator() {
     destroyPool();
 }
 
-Node* newBranch(String label, Node* left, Node* right) {
+Location getLocation(Node* node) {
+    return node->location;
+}
+
+Node* setLocation(Node* node, Location location) {
+    node->location = location;
+    return node;
+}
+
+Node* newBranch(Tag tag, char type, Node* left, Node* right) {
     assert(left != NULL && right != NULL);
     Node* node = (Node*)allocate();
-    node->labelLength = label.length;
-    node->labelStart = label.start;
     node->referenceCount = 0;
+    node->isLeaf = 0;
+    node->type = type;
+    node->length = 0;
+    node->location = tag.location;
     node->left.child = left;
     node->right.child = right;
     node->left.child->referenceCount += 1;
@@ -41,22 +53,24 @@ Node* newBranch(String label, Node* left, Node* right) {
     return node;
 }
 
-Node* newLeaf(String label, long long type) {
+Node* newPair(Node* left, Node* right) {
+    return newBranch(newTag(EMPTY, newLocation(0, 0)), -1, left, right);
+}
+
+Node* newLeaf(Tag tag, char type, long long value) {
     Node* node = (Node*)allocate();
-    node->labelLength = label.length;
-    node->labelStart = label.start;
     node->referenceCount = 0;
-    node->left.child = (Node*)type;
-    node->right.child = NULL;
+    node->isLeaf = 1;
+    node->type = type;
+    node->length = tag.lexeme.length;
+    node->location = tag.location;
+    node->left.lexeme = tag.lexeme.start;
+    node->right.value = value;
     return node;
 }
 
 bool isLeaf(Node* node) {
-    return node->left.child == NULL || node->right.child == NULL;
-}
-
-bool isBranch(Node* node) {
-    return node->left.child != NULL && node->right.child != NULL;
+    return node->isLeaf != 0;
 }
 
 void releaseNode(Node* node) {
@@ -67,27 +81,27 @@ void releaseNode(Node* node) {
             releaseNode(node->left.child);
             releaseNode(node->right.child);
         }
-        assert(node != VOID);
         reclaim(node);
     }
 }
 
 Node* getLeft(Node* node) {
-    assert(isBranch(node));
+    assert(!isLeaf(node));
     return node->left.child;
 }
 
 Node* getRight(Node* node) {
-    assert(isBranch(node));
+    assert(!isLeaf(node));
     return node->right.child;
 }
 
-String getLabel(Node* node) {
-    return newString(node->labelStart, node->labelLength);
+Tag getTag(Node* node) {
+    return newTag(isLeaf(node) ?
+        newString(node->left.lexeme, node->length) : EMPTY, node->location);
 }
 
 void setLeft(Node* node, Node* left) {
-    assert(isBranch(node) && left != NULL);
+    assert(!isLeaf(node) && left != NULL);
     Node* oldLeft = node->left.child;
     node->left.child = left;
     node->left.child->referenceCount += 1;
@@ -95,31 +109,30 @@ void setLeft(Node* node, Node* left) {
 }
 
 void setRight(Node* node, Node* right) {
-    assert(isBranch(node) && right != NULL);
+    assert(!isLeaf(node) && right != NULL);
     Node* oldRight = node->right.child;
     node->right.child = right;
     node->right.child->referenceCount += 1;
     releaseNode(oldRight);
 }
 
-long long getType(Node* node) {
-    assert(isLeaf(node) && node != VOID);
-    return node->left.value;
+char getType(Node* node) {
+    return node->type;
 }
 
-void setType(Node* node, long long type) {
-    assert(isLeaf(node) && node != VOID && node->right.child == NULL);
-    node->left.value = type;
+void setType(Node* node, char type) {
+    node->type = type;
 }
 
 long long getValue(Node* node) {
-    assert(isLeaf(node) && node != VOID && node->left.child == NULL);
+    assert(isLeaf(node));
     return node->right.value;
 }
 
-void setValue(Node* node, long long value) {
-    assert(isLeaf(node) && node != VOID && node->left.child == NULL);
+Node* setValue(Node* node, long long value) {
+    assert(isLeaf(node));
     node->right.value = value;
+    return node;
 }
 
 Hold* hold(Node* node) {
@@ -140,11 +153,12 @@ Node* getNode(Hold* nodeHold) {
     return (Node*)nodeHold;
 }
 
-Node* getListElement(Node* node, unsigned long long n) {
-    assert(isBranch(node));
-    for (unsigned long long i = 0; i < n; i++) {
+Node* getListElement(Node* node, long long n) {
+    assert(!isLeaf(node));
+    assert(n >= 0);
+    for (long long i = 0; i < n; i++) {
         node = node->right.child;
-        assert(isBranch(node));
+        assert(!isLeaf(node));
     }
     return node->left.child;
 }

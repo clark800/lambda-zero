@@ -3,5 +3,5 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # read input first to check for errors accessing files
 INPUT=$(cat "$DIR/../libraries/prelude.zero" "${1-"-"}")
-stty -icanon
+#stty -icanon
 "$DIR/main" <(echo "$INPUT")

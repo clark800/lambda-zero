@@ -1,7 +1,7 @@
 typedef struct Stack Stack;
 typedef struct Iterator Iterator;
 
-Stack* newStack(Node* head);
+Stack* newStack(void);
 void deleteStack(Stack* stack);
 bool isEmpty(Stack* stack);
 void push(Stack* stack, Node* node);

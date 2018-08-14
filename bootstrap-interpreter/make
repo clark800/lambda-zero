@@ -2,7 +2,7 @@
 # http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Shell
 
 OUT="main"
-CC="gcc"
+CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 
 # stack-protector should be off by default, but some linux distributions
 # patch gcc to turn it on by default, so we explicitly disable it here; it
@@ -78,7 +78,9 @@ config_custom() {
 
 config_small() {
     config_custom
-    CC_FLAGS="-s -Os -flto $CC_FLAGS"
+    # would like to use -Os optimization level, but there is an issue with
+    # -ftree-slp-vectorize and possibly other optimizations
+    CC_FLAGS="-s -O1 -flto $CC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 

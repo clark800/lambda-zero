@@ -18,16 +18,16 @@ void checkForMemoryLeak(const char* label, size_t expectedUsage) {
 
 void interpret(const char* sourceCode) {
     initNodeAllocator();
-    Program internal = parse(NULL);
     Program program = parse(sourceCode);
+    size_t memoryUsageAfterParsing = getMemoryUsage();
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     if (!isIO(program))
         serialize(getNode(valueClosure), program.globals);
     release(valueClosure);
+    checkForMemoryLeak("evaluate and serialize", memoryUsageAfterParsing);
     deleteProgram(program);
-    deleteProgram(internal);
-    destroyNodeAllocator();
     checkForMemoryLeak("interpret", 0);
+    destroyNodeAllocator();
 }
 
 char* readSourceCode(const char* filename) {

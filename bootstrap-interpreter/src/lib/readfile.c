@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "util.h"
 
-const unsigned long READ_CHUNK_SIZE = 16384;
+const size_t READ_CHUNK_SIZE = 16384;
 
 char* readfile(FILE* stream) {
     size_t length = 0;

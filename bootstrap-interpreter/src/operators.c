@@ -6,16 +6,20 @@
 
 typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
-struct Rules {
+typedef struct {
     const char* symbol;
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
     Associativity associativity;
     Node* (*apply)(Node* operator, Node* left, Node* right);
-};
+} Rules;
 
 Node* apply(Node* operator, Node* left, Node* right) {
-    return newApplication(getLexeme(operator), left, right);
+    return newApplication(getTag(operator), left, right);
+}
+
+Node* definition(Node* operator, Node* left, Node* right) {
+    return newDefinition(getTag(operator), left, right);
 }
 
 Node* infix(Node* operator, Node* left, Node* right) {
@@ -23,7 +27,9 @@ Node* infix(Node* operator, Node* left, Node* right) {
 }
 
 Node* comma(Node* operator, Node* left, Node* right) {
-    return (isCommaList(left) ? apply : infix)(operator, left, right);
+    Tag tag = getTag(operator);
+    return isCommaList(left) ? newCommaList(tag, left, right) :
+        newCommaList(tag, newCommaList(tag, operator, left), right);
 }
 
 int getTupleSize(Node* tuple) {
@@ -33,18 +39,18 @@ int getTupleSize(Node* tuple) {
     return i;
 }
 
-Node* newProjection(String lexeme, int size, int index) {
-    Node* projection = newReference(lexeme,
+Node* newProjection(Tag tag, int size, int index) {
+    Node* projection = newReference(tag,
         (unsigned long long)(size - index));
     for (int i = 0; i < size; i++)
-        projection = newLambda(lexeme, getParameter(IDENTITY), projection);
+        projection = newLambda(tag, newBlank(tag), projection);
     return projection;
 }
 
 Node* newPatternLambda(Node* operator, Node* left, Node* right) {
-    String lexeme = getLexeme(operator);
+    Tag tag = getTag(operator);
     if (isSymbol(left))
-        return newLambda(lexeme, newParameter(getLexeme(left)), right);
+        return newLambda(tag, left, right);
     if (!isTuple(left) || getTupleSize(left) == 0)
         syntaxError("invalid parameter", left);
     // (x, y) -> body ---> p -> (x -> y -> body) left(p) right(p)
@@ -53,10 +59,10 @@ Node* newPatternLambda(Node* operator, Node* left, Node* right) {
             items = getLeft(items))
         body = newPatternLambda(operator, getRight(items), body);
     for (int i = 0, size = getTupleSize(left); i < size; i++)
-        body = newApplication(lexeme, body,
-            newApplication(lexeme, getBody(IDENTITY),
-                newProjection(lexeme, size, i)));
-    return newLambda(lexeme, getParameter(IDENTITY), body);
+        body = newApplication(tag, body,
+            newApplication(tag, newBlankReference(tag, 1),
+                newProjection(tag, size, i)));
+    return newLambda(tag, newBlank(tag), body);
 }
 
 Node* prefix(Node* operator, Node* left, Node* right) {
@@ -66,38 +72,63 @@ Node* prefix(Node* operator, Node* left, Node* right) {
 
 Node* negate(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    return infix(operator, newInteger(getLexeme(operator), 0), right);
+    return infix(operator, newInteger(getTag(operator), 0), right);
 }
 
 Node* unmatched(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(true, "missing close for", operator);
+    syntaxError("missing close for", operator);
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
 Node* brackets(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
+    Tag tag = getTag(open);
+    if (getFixity(open) == OPENCALL) {
+        syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
+        syntaxErrorIf(!isComma(getLeft(getLeft(contents))),
+            "too many arguments to", open);
+        return newApplication(tag, newApplication(tag, open,
+            getRight(getLeft(contents))), getRight(contents));
+    }
+    Node* list = newNil(getTag(open));
     if (contents == NULL)
-        return newNil(getLexeme(open));
-    String lexeme = getLexeme(open);
+        return list;
     if (!isCommaList(contents))
-        return prepend(lexeme, contents, newNil(getLexeme(open)));
-    Node* list = newNil(getLexeme(open));
+        return prepend(tag, contents, list);
     for(; isCommaList(getLeft(contents)); contents = getLeft(contents))
-        list = prepend(lexeme, getRight(contents), list);
-    return prepend(lexeme, getRight(contents), list);
+        list = prepend(tag, getRight(contents), list);
+    return prepend(tag, getRight(contents), list);
+}
+
+Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
+    if (!isCommaList(getLeft(arguments)))
+        return base == NULL ? getRight(arguments) :
+            newApplication(tag, base, getRight(arguments));
+    return newApplication(tag, applyToCommaList(tag, base,
+        getLeft(arguments)), getRight(arguments));
 }
 
 Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
+    Tag tag = getTag(open);
+    if (getFixity(open) == OPENCALL)
+        return isCommaList(contents) ? applyToCommaList(tag, NULL, contents) :
+            newApplication(tag, contents, newUnit(tag)); // desugar f() to f(())
+
     if (contents == NULL)
-        return newUnit(getLexeme(open));
+        return newUnit(tag);
     if (isOperator(contents)) {
-        if (isSpecialOperator(getOperator(contents, false)))
+        // update rules to favor infix over prefix inside parenthesis
+        setRules(contents, false);
+        if (isSpecialOperator(contents) && !isComma(contents))
             syntaxError("operator cannot be parenthesized", contents);
-        return newName(getLexeme(contents));
+        return newName(getTag(contents));
     }
     if (isCommaList(contents))
-        return newTuple(getLexeme(open), contents);
+        return newLambda(tag, newTupleName(tag, 1),
+            applyToCommaList(tag, newTupleName(tag, 1), contents));
+    if (isApplication(contents))
+        return setLocation(contents, getLocation(open));
     return contents;
 }
 
@@ -110,14 +141,16 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
 Rules RULES[] = {
     // syntactic operators
     {"\0", 0, 0, CLOSE, L, NULL},
+    {"(", 22, 0, OPENCALL, L, unmatched},
     {"(", 22, 0, OPEN, L, unmatched},
     {")", 0, 22, CLOSE, R, parentheses},
+    {"[", 22, 0, OPENCALL, L, unmatched},
     {"[", 22, 0, OPEN, L, unmatched},
     {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
     //{";", 1, 1, IN, N, semicolon},
     {"\n", 2, 2, IN, R, apply},
-    {":=", 3, 3, IN, N, apply},
+    {":=", 3, 3, IN, N, definition},
     {"|", 4, 4, IN, L, infix},
     {"->", 5, 5, IN, R, newPatternLambda},
 
@@ -193,38 +226,47 @@ bool isSpace(Node* token) {
     return isLeaf(token) && isSpaceCharacter(getLexeme(token).start[0]);
 }
 
-Operator getOperator(Node* token, bool isAfterOperator) {
+Rules* lookupRules(Node* token, bool isAfterOperator) {
     if (isSpace(token))
-        return (Operator){token, &SPACE};
+        return &SPACE;
+    Rules* result = &DEFAULT;
     for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
-        if (isThisToken(token, RULES[i].symbol))
+        if (isThisToken(token, RULES[i].symbol)) {
+            result = &(RULES[i]);
             if (!isAfterOperator || allowsOperatorBefore(RULES[i]))
-                return (Operator){token, &(RULES[i])};
-    return (Operator){token, &DEFAULT};
+                return result;
+        }
+    return result;
 }
 
-Fixity getFixity(Operator operator) {
-    return operator.rules->fixity;
+Node* setRules(Node* token, bool isAfterOperator) {
+    return setValue(token, (long long)lookupRules(token, isAfterOperator));
 }
 
-Node* applyOperator(Operator operator, Node* left, Node* right) {
-    return operator.rules->apply(operator.token, left, right);
+Fixity getFixity(Node* operator) {
+    return ((Rules*)getValue(operator))->fixity;
 }
 
-bool isSpecialOperator(Operator operator) {
-    return operator.rules->apply != infix && operator.rules->apply != prefix
-        && operator.rules->apply != comma;
+Node* applyOperator(Node* operator, Node* left, Node* right) {
+    return ((Rules*)getValue(operator))->apply(operator, left, right);
 }
 
-bool isHigherPrecedence(Operator left, Operator right) {
-    if (left.rules->rightPrecedence == right.rules->leftPrecedence) {
+bool isSpecialOperator(Node* operator) {
+    Rules* rules = (Rules*)getValue(operator);
+    return rules->apply != infix && rules->apply != prefix;
+}
+
+bool isHigherPrecedence(Node* left, Node* right) {
+    Rules* leftRules = (Rules*)getValue(left);
+    Rules* rightRules = (Rules*)getValue(right);
+    if (leftRules->rightPrecedence == rightRules->leftPrecedence) {
         const char* message = "operator is non-associative";
-        syntaxErrorIf(left.rules->associativity == N, message, left.token);
-        syntaxErrorIf(right.rules->associativity == N, message, right.token);
+        syntaxErrorIf(leftRules->associativity == N, message, left);
+        syntaxErrorIf(rightRules->associativity == N, message, right);
     }
 
-    if (right.rules->associativity == R)
-        return left.rules->rightPrecedence > right.rules->leftPrecedence;
+    if (rightRules->associativity == R)
+        return leftRules->rightPrecedence > rightRules->leftPrecedence;
     else
-        return left.rules->rightPrecedence >= right.rules->leftPrecedence;
+        return leftRules->rightPrecedence >= rightRules->leftPrecedence;
 }

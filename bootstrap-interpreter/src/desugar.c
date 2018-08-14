@@ -22,9 +22,9 @@ Node* transformRecursion(Node* name, Node* value) {
     if (isComma(name) || !isSymbol(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
-    String lexeme = getLexeme(name);
-    return newApplication(lexeme, YCOMBINATOR,
-        newLambda(lexeme, newParameter(lexeme), value));
+    Tag tag = getTag(name);
+    Node* yCombinator = newYCombinator(tag);
+    return newApplication(tag, yCombinator, newLambda(tag, name, value));
 }
 
 Node* getScope(Node* explicitScope, Node* name) {
@@ -32,8 +32,10 @@ Node* getScope(Node* explicitScope, Node* name) {
         return explicitScope;
     if (!isName(name) || !isThisToken(name, "main"))
         return name;
-    String lexeme = getLexeme(name);
-    return newApplication(lexeme, newApplication(lexeme, name, INPUT), PRINT);
+    Tag tag = getTag(name);
+    Node* input = newApplication(tag, newBuiltin(tag, GET), newInteger(tag, 0));
+    Node* printer = newPrinter(tag);
+    return newApplication(tag, newApplication(tag, name, input), printer);
 }
 
 Node* transformDefine(Node* definition, Node* explicitScope) {
@@ -44,7 +46,7 @@ Node* transformDefine(Node* definition, Node* explicitScope) {
         right = newPatternLambda(definition, getRight(left), right);
     Node* value = transformRecursion(left, right);
     Node* scope = getScope(explicitScope, left);
-    return newApplication(getLexeme(left),
+    return newApplication(getTag(left),
         newPatternLambda(definition, left, scope), value);
 }
 
@@ -55,7 +57,7 @@ Node* constructDefine(Node* node, Node* left, Node* right) {
         syntaxErrorIf(isDefinition(node), "cannot define a definition", node);
         return transformDefine(left, right);
     }
-    return newApplication(getLexeme(node), left, right);
+    return newBranch(getTag(node), getType(node), left, right);
 }
 
 Hold* desugarDefine(Node* node) {

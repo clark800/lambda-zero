@@ -57,7 +57,7 @@ f(x) := (g(y) := y)
 (x -> ((g -> g) (y -> y)))
 ===============================================================================
 (f(x) := x) := 1
-Syntax error: cannot define a definition ':=' at line 1 column 13
+Syntax error: cannot define a definition at line 1 column 13
 ===============================================================================
 x % y := x * y
 Syntax error: symbol already defined '%' at line 1 column 3
@@ -65,7 +65,7 @@ Syntax error: symbol already defined '%' at line 1 column 3
 f(x) := 1 \n f(x) := 2 \n f(0)
 Syntax error: symbol already defined 'f' at line 2 column 2
 ===============================================================================
-f(x) := x(1, 2) \n f(+)
+f(x) := x(1, 2) \n f((+))
 3
 ===============================================================================
 f(x, y) := x + y \n f(1, 2)

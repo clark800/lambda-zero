@@ -19,22 +19,20 @@ void serializeAST(Node* node, FILE* stream) {
         fputs("NULL", stream);     // for debugging
     } else if (node == VOID) {
         fputs("VOID", stream);
-    } else if (isBranch(node)) {
+    } else if (!isLeaf(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
-        fputs(isDefinition(node) ? " = " : " ", stream);
+        fputs(isLambda(node) ? " -> " :
+            isDefinition(node) ? " = " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
-    } else if (isParameter(node)) {
-        printToken(node, stream);
-        fputs(" ->", stream);
     } else if (isInteger(node)) {
         // builtins create integers, so not all integers will exist in input
-        fputll(getInteger(node), stream);
+        fputll(getValue(node), stream);
     } else if (isReference(node)) {
         printToken(node, stream);
         fputs("#", stream);
-        fputll((long long)getDebruijnIndex(node), stream);
+        fputll(getValue(node), stream);
     } else {
         printToken(node, stream);
     }

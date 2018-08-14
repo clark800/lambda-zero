@@ -39,6 +39,7 @@ knownTypeSchemes := (
         ("true", newScheme([], boolean)),
         ("false", newScheme([], boolean)),
         ("if", newScheme([a], boolean --> (a --> (a --> a)))),
+        ("[]", newScheme([a], aList)),
         ("::", newScheme([a], a --> (aList --> aList))),
         ("head", newScheme([a], aList --> a)),
         ("--", newScheme([a], aList --> aList)),

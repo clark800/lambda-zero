@@ -1,11 +1,23 @@
 #include <stdbool.h>
 #include <string.h>
-#include "rstring.h"
+#include "tag.h"
 
 String EMPTY = {"\0", 0};
 
 String newString(const char* start, unsigned int length) {
     return (String){start, length};
+}
+
+Location newLocation(unsigned int line, unsigned int column) {
+    return (Location){line, column};
+}
+
+Tag newTag(String lexeme, Location location) {
+    return (Tag){lexeme, location};
+}
+
+Tag renameTag(Tag tag, const char* name) {
+    return newTag(newString(name, (unsigned int)strlen(name)), tag.location);
 }
 
 bool isThisString(String a, const char* b) {
