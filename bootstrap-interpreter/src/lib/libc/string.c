@@ -43,10 +43,6 @@ size_t strcspn(const char* s, const char* accept) {
             return i;
 }
 
-int strcmp(const char* s1, const char* s2) {
-    return strncmp(s1, s2, 0);
-}
-
 const char* strpbrk(const char* s, const char* accept) {
     for (; s[0] != '\0'; s++)
         if (strchr(accept, s[0]) != NULL)

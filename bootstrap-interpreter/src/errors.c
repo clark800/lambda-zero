@@ -42,13 +42,6 @@ void printError(const char* type, const char* message, Tag tag) {
     printTagLine(tag, "\'");
 }
 
-void lexerErrorIf(bool condition, Tag tag, const char* message) {
-    if (condition) {
-        printError("Syntax", message, tag);
-        exit(1);
-    }
-}
-
 void syntaxError(const char* message, Node* token) {
     printError("Syntax", message, getTag(token));
     exit(1);

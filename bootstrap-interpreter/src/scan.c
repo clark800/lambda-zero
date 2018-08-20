@@ -13,7 +13,7 @@ bool isQuoteCharacter(char c) {
 }
 
 bool isDelimiterCharacter(char c) {
-    return c == '\0' || strchr(" \n,;`()[]{}", c) != NULL;
+    return c == '\0' || strchr(" \t\r\n,;`()[]{}", c) != NULL;
 }
 
 bool isOperandCharacter(char c) {

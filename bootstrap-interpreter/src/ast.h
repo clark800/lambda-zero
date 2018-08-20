@@ -1,6 +1,7 @@
-// NAME, OPERATOR, DEFINTION, COMMALIST exist during parsing only
-typedef enum {NAME, OPERATOR, DEFINITION, COMMALIST,
+// OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
+typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST,
     APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN, GLOBAL} NodeType;
+typedef enum {NAME, NUMERIC, CHARACTER, STRING} OperandType;
 
 // names in BUILTINS must line up with codes in BuiltinCode, except
 // EXIT, PUT, GET which don't have accessible names
@@ -32,7 +33,6 @@ static inline bool isThisToken(Node* token, const char* lexeme) {
     return isLeaf(token) && isThisString(getLexeme(token), lexeme);
 }
 
-static inline bool isName(Node* node) {return getType(node) == NAME;}
 static inline bool isOperator(Node* node) {return getType(node) == OPERATOR;}
 static inline bool isCommaList(Node* node) {return getType(node) == COMMALIST;}
 static inline bool isLambda(Node* node) {return getType(node) == LAMBDA;}
@@ -41,8 +41,8 @@ static inline bool isInteger(Node* node) {return getType(node) == INTEGER;}
 static inline bool isBuiltin(Node* node) {return getType(node) == BUILTIN;}
 static inline bool isGlobal(Node* node) {return getType(node) == GLOBAL;}
 
-static inline bool isSymbol(Node* node) {
-    return isName(node) || isOperator(node);
+static inline bool isName(Node* node) {
+    return getType(node) == OPERAND && getValue(node) == NAME;
 }
 
 static inline bool isApplication(Node* node) {
@@ -67,7 +67,11 @@ static inline bool isTuple(Node* node) {
 // Functions to construct new nodes
 // ================================
 
-static inline Node* newName(Tag tag) {return newLeaf(tag, NAME, 0);}
+static inline Node* newOperand(Tag tag, OperandType type) {
+    return newLeaf(tag, OPERAND, type);
+}
+
+static inline Node* newName(Tag tag) {return newOperand(tag, NAME);}
 static inline Node* newOperator(Tag tag) {return newLeaf(tag, OPERATOR, 0);}
 
 static inline Node* newInteger(Tag tag, long long n) {
@@ -92,7 +96,7 @@ static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
     // which is useful in cases like string literals where we need to point
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
-    assert(isSymbol(parameter));
+    assert(isName(parameter));
     return newBranch(tag, LAMBDA, parameter, body);
 }
 
@@ -169,7 +173,7 @@ static inline Node* newPrinter(Tag tag) {
 // =======================================
 
 static inline void convertSymbol(Node* node, char type, long long value) {
-    assert(isSymbol(node));
+    assert(isName(node));
     setType(node, type);
     setValue(node, value);
 }
