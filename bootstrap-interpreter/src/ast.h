@@ -141,15 +141,6 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
     return newApplication(tag, newApplication(tag, operator, item), list);
 }
 
-static inline Node* newRuntimeNil(Tag tag) {
-    return newLambda(tag, newBlank(tag), newBoolean(tag, true));
-}
-
-static inline Node* runtimePrepend(Tag tag, Node* item, Node* list) {
-    return newLambda(tag, newBlank(tag), newApplication(tag,
-            newApplication(tag, newBlankReference(tag, 1), item), list));
-}
-
 static inline Node* newYCombinator(Tag tag) {
     Node* x = newBlankReference(tag, 1);
     Node* y = newBlankReference(tag, 2);
