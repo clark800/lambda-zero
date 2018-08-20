@@ -45,7 +45,7 @@ bool isDefined(Node* symbol, Array* parameters) {
 }
 
 void bindWith(Node* node, Array* parameters, const Array* globals) {
-    if (isSymbol(node)) {
+    if (isName(node)) {
         bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
         if (!isTuple(node) && isDefined(getParameter(node), parameters))

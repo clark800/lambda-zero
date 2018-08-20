@@ -13,13 +13,13 @@ bool hasRecursiveCalls(Node* node, Node* name) {
     if (isApplication(node))
         return hasRecursiveCalls(getLeft(node), name)
             || hasRecursiveCalls(getRight(node), name);
-    if (isSymbol(node) || isReference(node))
+    if (isName(node) || isReference(node))
         return isSameToken(node, name);
     return false;
 }
 
 Node* transformRecursion(Node* name, Node* value) {
-    if (isComma(name) || !isSymbol(name) || !hasRecursiveCalls(value, name))
+    if (isComma(name) || !isName(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
     Tag tag = getTag(name);
@@ -30,7 +30,7 @@ Node* transformRecursion(Node* name, Node* value) {
 Node* getScope(Node* explicitScope, Node* name) {
     if (explicitScope != NULL)
         return explicitScope;
-    if (!isName(name) || !isThisToken(name, "main"))
+    if (!isThisToken(name, "main"))
         return name;
     Tag tag = getTag(name);
     Node* input = newApplication(tag, newBuiltin(tag, GET), newInteger(tag, 0));

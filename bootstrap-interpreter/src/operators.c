@@ -23,7 +23,8 @@ Node* definition(Node* operator, Node* left, Node* right) {
 }
 
 Node* infix(Node* operator, Node* left, Node* right) {
-    return apply(operator, apply(operator, operator, left), right);
+    return apply(operator, apply(operator,
+        newName(getTag(operator)), left), right);
 }
 
 Node* comma(Node* operator, Node* left, Node* right) {
@@ -49,7 +50,7 @@ Node* newProjection(Tag tag, int size, int index) {
 
 Node* newPatternLambda(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
-    if (isSymbol(left))
+    if (isName(left))
         return newLambda(tag, left, right);
     if (!isTuple(left) || getTupleSize(left) == 0)
         syntaxError("invalid parameter", left);
@@ -67,7 +68,7 @@ Node* newPatternLambda(Node* operator, Node* left, Node* right) {
 
 Node* prefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    return apply(operator, operator, right);
+    return apply(operator, newName(getTag(operator)), right);
 }
 
 Node* negate(Node* operator, Node* left, Node* right) {
@@ -87,7 +88,7 @@ Node* brackets(Node* close, Node* open, Node* contents) {
         syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
         syntaxErrorIf(!isComma(getLeft(getLeft(contents))),
             "too many arguments to", open);
-        return newApplication(tag, newApplication(tag, open,
+        return newApplication(tag, newApplication(tag, newName(getTag(open)),
             getRight(getLeft(contents))), getRight(contents));
     }
     Node* list = newNil(getTag(open));

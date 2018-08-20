@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "errors.h"
 #include "lex.h"
-#include "quotes.h"
+#include "operands.h"
 #include "operators.h"
 #include "desugar.h"
 #include "bind.h"
@@ -184,14 +184,6 @@ void debugParseState(Node* token, Stack* stack, bool trace) {
         debug("'  Stack: ");
         debugStack(stack, NULL);
         debug("\n");
-    }
-}
-
-Node* parseOperand(Node* token) {
-    switch (getTag(token).lexeme.start[0]) {
-        case '"': return newStringLiteral(getTag(token));
-        case '\'': return newCharacterLiteral(getTag(token));
-        default: return token;
     }
 }
 
