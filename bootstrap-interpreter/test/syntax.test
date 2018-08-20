@@ -95,7 +95,7 @@ Syntax error: too many arguments to '[' at line 1 column 8
 x.f := f(x) \n `f(x, y) := f(y, x) \n mod(x, y) := x % y \n 15 - 3.`mod(5) * 7
 1
 ===============================================================================
-() := 1
+() := 1 \n 0
 Syntax error: invalid parameter at line 1 column 1
 ===============================================================================
 ((a, b), (c, d)) := ((1, 2), (3, 4)) \n a + b + c + d

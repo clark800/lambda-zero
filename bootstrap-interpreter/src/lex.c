@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "lex.h"
 
-static Location location;
+static Location location = {1, 1};
 
 static Node* createToken(String lexeme) {
     Tag tag = newTag(lexeme, location);
