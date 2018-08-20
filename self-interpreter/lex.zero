@@ -7,7 +7,7 @@ isCloseParen(node) := isOperator(node) /\ getLexeme(node) =*= ")"
 isSpace(node) := isOperator(node) /\ isBlank(getLexeme(node)[0])
 isNewline(node) := isOperator(node) /\ getLexeme(node) =*= "\n"
 isEOF(node) := isOperator(node) /\ getLexeme(node) =*= "\0"
-isComma(node) := isSymbol(node) /\ getLexeme(node) =*= ","
+isComma(node) := isSymbol(node) /\ getLexeme(node) =*= "(,)"
 isCommaList(node) := isApplication(node) /\ getLexeme(node) =*= ","
 isTuple(node) := isLambda(node) /\ isComma(getParameter(node))
 isUnit(node) := isTuple(node) /\ isComma(getBody(node))
@@ -36,10 +36,16 @@ showLexemeAndLocationLine(tag, quote) :=
     quote ++ showLexeme(getTagLexeme(tag)) ++ quote ++
         " at " ++ showLocation(tag) ++ "\n"
 
+showErrorLocation(node) := (
+    isApplication(node) \/ isLambda(node) ?
+        "at " ++ showLocation(getTag(node)) ++ "\n"
+    showLexemeAndLocationLine(getTag(node), "'")
+)
+
 inputTag := ("input", (0, 0))
 blank := newName(("_", (0, 0)))
 projectionBlank := newName(("(_)", (0, 0)))
-comma := newName((",", (0, 0)))
+comma := newName(("(,)", (0, 0)))
 cT := newName(("t", (0, 0)))
 cF := newName(("f", (0, 0)))
 cX := newName(("(x)", (0, 0)))
@@ -66,19 +72,35 @@ newNil(tag) := newLambda(tag, cZ, newTrue(tag))
 applyToCommaList(f, commaList) := (
     isCommaList(commaList) ? newApplication(getTag(f),
         applyToCommaList(f, getLeft(commaList)), getRight(commaList))
-    isComma(commaList) ? f          // allow applying to tuple body
     newApplication(getTag(f), f, commaList)
+)
+
+getTupleSize(tuple) := (
+    getTupleSize'(body) := (
+        isComma(body) ? 0
+        getTupleSize'(getLeft(body)) + 1
+    )
+    getTupleSize'(getBody(tuple))
+)
+
+applyToTuple(f, tuple) := (
+    applyToTuple'(body) := (
+        !isApplication(body) ? f
+        left := applyToTuple'(getLeft(body))
+        newApplication(getTag(f), left, getRight(body))
+    )
+    applyToTuple'(getBody(tuple))
 )
 
 newTuple(tag, commaList) :=
    newLambda(tag, comma, applyToCommaList(comma, commaList))
 
-getCommaListSize(commaList) := (
-    isCommaList(commaList) ? getCommaListSize(getLeft(commaList)) + 1
-    isComma(commaList) ? 0 || 1
-)
+newUnit(tag) := newLambda(tag, comma, comma)
 
-getTupleSize(tuple) := getCommaListSize(getBody(tuple))
+getCommaListSize(commaList) := (
+    !isCommaList(commaList) ? 1
+    getCommaListSize(getLeft(commaList)) + 1
+)
 
 prependList(tag, item, list) :=
     newLambda(tag, comma, newApplication(tag,
@@ -172,8 +194,7 @@ createToken(tag) := (
 )
 
 tokenError(title, message, token) :=
-    error(title ++ message ++ " " ++
-        showLexemeAndLocationLine(getTag(token), "'"))
+    error(title ++ message ++ " " ++ showErrorLocation(token))
 
 syntaxError(message, token) := tokenError("Syntax error: ", message, token)
 runtimeError(message, token) := tokenError("\nRuntime error: ", message, token)

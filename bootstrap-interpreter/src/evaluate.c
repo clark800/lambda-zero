@@ -10,7 +10,7 @@
 
 bool TRACE_EVALUATION = false;
 
-static inline void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
+void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
         Hold* update = pop(stack);
         Closure* closureToUpdate = getUpdateClosure(getNode(update));
@@ -19,27 +19,27 @@ static inline void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     }
 }
 
-static inline Closure* getReferencedClosure(Node* reference, Node* locals) {
-    return getListElement(locals, getDebruijnIndex(reference) - 1);
+Closure* getReferencedClosure(Node* reference, Node* locals) {
+    return getListElement(locals, getValue(reference) - 1);
 }
 
-static inline Node* getGlobalValue(Node* global, const Array* globals) {
-    return elementAt(globals, getGlobalIndex(global));
+Node* getGlobalValue(Node* global, const Array* globals) {
+    return elementAt(globals, (size_t)getValue(global));
 }
 
-static inline Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
+Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
     // the default case works for all node types;
     // the other cases are short-circuit optmizations
     // don't short-circuit globals so that backtraces work
     switch (getNodeType(node)) {
-        case N_BUILTIN:
-        case N_INTEGER: return newClosure(node, VOID, trace);
-        case N_REFERENCE: return getReferencedClosure(node, locals);
+        case BUILTIN:
+        case INTEGER: return newClosure(node, VOID, trace);
+        case REFERENCE: return getReferencedClosure(node, locals);
         default: return newClosure(node, locals, trace);
     }
 }
 
-static inline void evaluateApplicationNode(Closure* closure, Stack* stack) {
+void evaluateApplicationNode(Closure* closure, Stack* stack) {
     // push right side of application onto stack and step into left side
     Node* application = getTerm(closure);
     Node* lambda = getLeft(application);
@@ -49,7 +49,7 @@ static inline void evaluateApplicationNode(Closure* closure, Stack* stack) {
     setTerm(closure, lambda);
 }
 
-static inline void evaluateLambdaNode(Closure* closure, Stack* stack) {
+void evaluateLambdaNode(Closure* closure, Stack* stack) {
     // move argument from stack to local environment and step into body
     Hold* argument = pop(stack);
     push((Stack*)closure, getNode(argument));
@@ -57,12 +57,12 @@ static inline void evaluateLambdaNode(Closure* closure, Stack* stack) {
     setTerm(closure, getBody(getTerm(closure)));
 }
 
-static inline bool isValue(Node* node) {
+bool isValue(Node* node) {
     return (isLambda(node) || isInteger(node) ||
             isBuiltin(node) || isGlobal(node));
 }
 
-static inline void evaluateReferenceNode(Closure* closure, Stack* stack) {
+void evaluateReferenceNode(Closure* closure, Stack* stack) {
     // lookup referenced closure in the local environment and switch to it
     Closure* referencedClosure = getReferencedClosure(
             getTerm(closure), getLocals(closure));
@@ -71,7 +71,7 @@ static inline void evaluateReferenceNode(Closure* closure, Stack* stack) {
     setClosure(closure, referencedClosure);
 }
 
-static inline void evaluateGlobalNode(Closure* closure, const Array* globals) {
+void evaluateGlobalNode(Closure* closure, const Array* globals) {
     Node* global = getTerm(closure);
     setTerm(closure, getGlobalValue(global, globals));
     if (!TEST)     // backtraces are not shown in test mode
@@ -79,7 +79,7 @@ static inline void evaluateGlobalNode(Closure* closure, const Array* globals) {
     setLocals(closure, VOID);
 }
 
-static inline Hold* popBuiltinArgument(Closure* closure, Stack* stack,
+Hold* popBuiltinArgument(Closure* closure, Stack* stack,
         const Array* globals, unsigned int position) {
     applyUpdates(closure, stack);
     if (isEmpty(stack))
@@ -92,8 +92,7 @@ static inline Hold* popBuiltinArgument(Closure* closure, Stack* stack,
     return result;
 }
 
-static inline void evaluateBuiltinNode(
-        Closure* closure, Stack* stack, const Array* globals) {
+void evaluateBuiltinNode(Closure* closure, Stack* stack, const Array* globals) {
     Node* builtin = getTerm(closure);
     unsigned int arity = getBuiltinArity(builtin);
     Hold* left = arity > 0 ?
@@ -109,7 +108,7 @@ static inline void evaluateBuiltinNode(
         release(right);
 }
 
-static inline void debugState(Closure* closure, Stack* stack) {
+void debugState(Closure* closure, Stack* stack) {
     if (TRACE_EVALUATION) {
         debugLine();
         debug("term: ");
@@ -126,33 +125,34 @@ Hold* evaluateNode(Closure* closure, Stack* stack, const Array* globals) {
     while (true) {
         debugState(closure, stack);
         switch (getNodeType(getTerm(closure))) {
-            case N_APPLICATION: evaluateApplicationNode(closure, stack); break;
-            case N_REFERENCE: evaluateReferenceNode(closure, stack); break;
-            case N_BUILTIN: evaluateBuiltinNode(closure, stack, globals); break;
-            case N_GLOBAL: evaluateGlobalNode(closure, globals); break;
-            case N_INTEGER:
+            case APPLICATION: evaluateApplicationNode(closure, stack); break;
+            case REFERENCE: evaluateReferenceNode(closure, stack); break;
+            case BUILTIN: evaluateBuiltinNode(closure, stack, globals); break;
+            case GLOBAL: evaluateGlobalNode(closure, globals); break;
+            case INTEGER:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return hold(closure);
                 runtimeError("extra argument", peek(stack, 0)); break;
-            case N_LAMBDA:
+            case LAMBDA:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return hold(closure);
-                evaluateLambdaNode(closure, stack);
+                evaluateLambdaNode(closure, stack); break;
+            default: assert(false);
         }
     }
 }
 
 Hold* evaluateClosure(Closure* closure, const Array* globals) {
-    Stack* stack = newStack(VOID);
+    Stack* stack = newStack();
     Hold* result = evaluateNode(closure, stack, globals);
     deleteStack(stack);
     return result;
 }
 
 Hold* evaluateTerm(Node* term, const Array* globals) {
-    INPUT_STACK = newStack(VOID);
+    INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, VOID, VOID));
     Hold* result = evaluateClosure(getNode(closure), globals);
     release(closure);

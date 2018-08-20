@@ -26,9 +26,6 @@ Syntax error: missing end quote for '"' at line 1 column 9
 '\x'
 Syntax error: invalid escape sequence in ''\x'' at line 1 column 1
 ===============================================================================
-(x -> "123"x) 0
-\nRuntime error: extra argument '"123"' at line 1 column 7
-===============================================================================
 x -> 'a'x
 (x -> (97 x))
 ===============================================================================

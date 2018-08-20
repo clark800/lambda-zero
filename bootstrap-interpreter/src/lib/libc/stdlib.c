@@ -62,26 +62,24 @@ static size_t usableSize(void* ptr) {
 }
 
 void* malloc(size_t size) {
-    void* result;
     if (size <= 0)
         return NULL;
-    result = mmap(NULL, mmapSize(size), PROT_READ | PROT_WRITE,
-                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if ((unsigned long)result >= (unsigned long)(-125))
+    void* result = mmap(NULL, mmapSize(size), PROT_READ | PROT_WRITE,
+        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (result == MAP_FAILED)
         return NULL;    /* out of memory */
     ((Header*)result)->size = size;
     return BLOCK(result);
 }
 
 void* realloc(void *ptr, size_t size) {
-    void* result;
     if (ptr == NULL)
         return malloc(size);
     if (size <= usableSize(ptr)) {
         HEADER(ptr)->size = size;
         return ptr;
     }
-    result = malloc(size);
+    void* result = malloc(size);
     if (result != NULL) {
         memcpy(result, ptr, HEADER(ptr)->size);
         free(ptr);

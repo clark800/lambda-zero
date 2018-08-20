@@ -3,9 +3,7 @@
 #include "closure.h"
 
 Closure* newClosure(Node* term, Node* locals, Node* trace) {
-    if (TEST)
-        return newBranch(EMPTY, term, locals);
-    return newBranch(EMPTY, newBranch(EMPTY, term, trace), locals);
+    return TEST ? newPair(term, locals) : newPair(newPair(term, trace), locals);
 }
 
 Node* getTerm(Closure* closure) {

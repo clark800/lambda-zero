@@ -8,6 +8,14 @@
 // *s      list of *
 // **      pair of * and *
 
+// boolean logic
+true(t, f) := t
+false(t, f) := f
+if(c, x, y) := c(x, y)
+(?) := if
+[] := _ -> true
+x :: xs := (x, xs)                     // prepend element to list (cons)
+
 // universal
 x.f := f(x)                     // uniform function call syntax
 f || x := f(x)                  // low precedence application
@@ -18,12 +26,6 @@ constant(x) := _ -> x           // return value does not depend on parameter
 on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 mirror(f)(x) := f(x, x)         // convert binary function to unary function
 undefined := error("undefined")
-
-// boolean logic
-true(t, f) := t
-false(t, f) := f
-if(c, x, y) := c(x, y)
-(?) := if
 
 !b := b ? false || true
 b /\ c := b ? c || false
@@ -78,7 +80,6 @@ n ^ m := (
 )
 
 // list basics
-x :: xs := (x, xs)                     // prepend element to list (cons)
 prepend := `(::)
 isEmpty(xs) := xs(_ -> _ -> false)
 head(xs) := isEmpty(xs) ? error("head: empty list") || first(xs)

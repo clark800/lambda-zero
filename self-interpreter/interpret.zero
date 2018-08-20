@@ -1,7 +1,6 @@
 
 execute(ast) := evaluate(newClosure(ast, []), [])
-//main(input) := showList(scan(input).map(showTag))
-//main(input) := showList(lex(input).map(showAST))
+
 splitCodeAndInput(input) := (
     (code, afterCode) := input.splitOn("\0")
     input' := afterCode.isEmpty ? [] || --afterCode
@@ -45,3 +44,7 @@ main(input) := (
     result := execute(parsed)
     isIO(parsed) ? extractOutputString(result) || serialize(result)
 )
+
+
+//main(input) := showList(scan(input).map(showTag))
+//main(input) := showList(lex(input).map(showAST))

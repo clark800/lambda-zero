@@ -8,7 +8,7 @@ openfix := 2
 closefix := 3
 
 isSpecialOperator(operator) := isOperator(operator) /\
-    ["(", ")", "[", "]", " ", "\n", "->", ":=", "\0"].
+    ["(", ")", "[", "]", ",", " ", "\n", "->", ":=", "\0"].
     contains(getLexeme(operator))
 
 isProjection(node) := isLambda(node) /\
@@ -56,8 +56,8 @@ reduceLambda(operator, left, right) :=
 reduceUnmatched(operator, _, _) := syntaxError("missing close for", operator)
 reduceParentheses(close, open, contents) := (
     !isOpenParen(open) ? syntaxError("missing open for", close)
-    isEOF(contents) ? newLambda(getTag(open), comma, comma)
-    isSpecialOperator(contents) ?
+    isEOF(contents) ? newUnit(getTag(open))
+    isSpecialOperator(contents) /\ !(getLexeme(contents) =*= ",") ?
         syntaxError("operator cannot be parenthesized", contents)
     isOperator(contents) ? newName(getTag(contents))
     isCommaList(contents) ? newTuple(getTag(open), contents)
@@ -73,6 +73,7 @@ createList(tag, commaList, list) := (
 
 reduceBrackets(close, open, contents) := (
     !(getLexeme(open) =*= "[") ? syntaxError("missing open for", close)
+    isEOF(contents) ? newName(("[]", getTagLocation(getTag(open))))
     createList(getTag(open), contents, newNil(getTag(open)))
 )
 reduceIllegal(_, _, _) := error("Internal error")

@@ -1,1 +1,1 @@
-Array* bind(Hold* root, bool optimize);
+Array* bind(Hold* root);

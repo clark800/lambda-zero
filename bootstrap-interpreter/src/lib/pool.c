@@ -4,9 +4,7 @@
 #include "pool.h"
 
 struct Pool {
-    size_t itemSize;
-    size_t pageCapacity;
-    size_t pageUsage;
+    size_t itemSize, pageCapacity, pageUsage;
     void* currentPage;
     Array* pages;
 };

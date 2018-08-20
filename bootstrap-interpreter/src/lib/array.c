@@ -4,8 +4,7 @@
 #include "array.h"
 
 struct Array {
-    size_t capacity;
-    size_t length;
+    size_t capacity, length;
     void** elements;
 };
 
