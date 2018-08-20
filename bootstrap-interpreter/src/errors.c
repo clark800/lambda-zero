@@ -62,8 +62,9 @@ void readError(const char* filename) {
     exit(2);
 }
 
-void printMemoryError(const char* label, long long bytes) {
+void memoryError(const char* label, long long bytes) {
     printFour("MEMORY LEAK IN \"", label, "\":", " ");
     fputll(bytes, stderr);
     fputs(" bytes\n", stderr);
+    exit(3);
 }
