@@ -10,11 +10,11 @@ void deleteStack(Stack* stack) {
     release((Hold*)stack);
 }
 
-Node* getHead(Stack* stack) {
+static Node* getHead(Stack* stack) {
     return getRight((Node*)stack);
 }
 
-void setHead(Stack* stack, Node* head) {
+static void setHead(Stack* stack, Node* head) {
     setRight((Node*)stack, head);
 }
 

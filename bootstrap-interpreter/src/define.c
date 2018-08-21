@@ -4,7 +4,7 @@
 #include "operators.h"
 #include "define.h"
 
-bool hasRecursiveCalls(Node* node, Node* name) {
+static bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
         if (isSameToken(getParameter(node), name))
             syntaxError("symbol already defined", getParameter(node));
@@ -18,7 +18,7 @@ bool hasRecursiveCalls(Node* node, Node* name) {
     return false;
 }
 
-Node* transformRecursion(Node* name, Node* value) {
+static Node* transformRecursion(Node* name, Node* value) {
     if (isComma(name) || !isName(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
@@ -34,7 +34,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     return newDefinition(tag, left, transformRecursion(left, right));
 }
 
-Node* applyDefinition(Node* definition, Node* scope) {
+static Node* applyDefinition(Node* definition, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
     Node* name = getLeft(definition);
     Node* value = getRight(definition);
@@ -42,12 +42,12 @@ Node* applyDefinition(Node* definition, Node* scope) {
         newPatternLambda(definition, name, scope), value);
 }
 
-Node* newChurchPair(Tag tag, Node* left, Node* right) {
+static Node* newChurchPair(Tag tag, Node* left, Node* right) {
     return newLambda(tag, newBlank(tag), newApplication(tag,
         newApplication(tag, newBlankReference(tag, 1), left), right));
 }
 
-Node* newMainCall(Node* main) {
+static Node* newMainCall(Node* main) {
     Tag tag = getTag(main);
     Node* printer = newPrinter(tag);
     Node* get = newBuiltin(renameTag(tag, "get"), GET);

@@ -35,11 +35,11 @@ newPatternLambda(tag, pattern, body) := (
         syntaxError("invalid parameter", pattern)
     tag' := getTag(pattern)
     size := getTupleSize(pattern)
-    function := getTupleElements(pattern).foldr(element -> x ->
+    function := getTupleElements(pattern).fold(element -> x ->
         newPatternLambda(getTag(element), element, x), body)
     projections := (0 .. size - 1).map(n ->
         newApplication(tag', newProjection(tag', size, n), blank))
-    application := projections.foldl(x -> projection ->
+    application := projections.cascade(x -> projection ->
         newApplication(tag', x, projection), function)
     newLambda(tag, blank, application)
 )

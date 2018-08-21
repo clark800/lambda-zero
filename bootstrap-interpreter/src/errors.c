@@ -5,16 +5,17 @@
 #include "print.h"
 #include "errors.h"
 
-bool TEST = false;
+extern bool TEST;
 
-void printFour(const char* a, const char* b, const char* c, const char* d) {
+static void printFour(
+        const char* a, const char* b, const char* c, const char* d) {
     fputs(a, stderr);
     fputs(b, stderr);
     fputs(c, stderr);
     fputs(d, stderr);
 }
 
-void printLocationString(Location location) {
+static void printLocationString(Location location) {
     if (location.line == 0) {
         fputs("[EOF]", stderr);
         return;

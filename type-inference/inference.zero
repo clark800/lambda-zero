@@ -38,7 +38,7 @@ unify'(originals, variables, (left, right)) := (
     (getTypeCode(left) = getTypeCode(right) /\
         length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
         zip(getComponentTypes(left), getComponentTypes(right)).
-            foldl(unify'(originals), variables)
+            cascade(unify'(originals), variables)
     unificationError(originals.mapPair(`substitute(variables)),
         left.substitute(variables), right.substitute(variables))
 )
@@ -47,7 +47,7 @@ unify(variables, types) := unify'(types, variables, types)
 
 unifyAll(variables, types) := (
     isEmpty(types) ? variables
-    zip(repeat(types[0]), --types).foldl(unify, variables)
+    zip(repeat(types[0]), --types).cascade(unify, variables)
 )
 
 generalize(type, variables, oldVariables) := (
@@ -144,7 +144,7 @@ inferType(stack, definition) := (
 main(input) := (
     node := parse(input, "")
     definitions := getDefinitions(node)
-    schemes := reverse(definitions.foldl(inferType, []))
+    schemes := reverse(definitions.cascade(inferType, []))
     (names, _) := unzip(definitions)
     showTypings(zip(names, schemes))
 )

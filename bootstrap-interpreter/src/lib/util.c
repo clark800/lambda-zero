@@ -13,19 +13,17 @@ void* smalloc(size_t size) {
     return p == NULL && size > 0 ? error("\nError: out of memory\n") : p;
 }
 
-char getDigitCharacter(long long n) {
+static char getDigitCharacter(long long n) {
     return n < 0 || n >= 16 ? '#' : (char)(n < 10 ? '0' + n : 'a' + (n - 10));
 }
 
-void swap(char* a, char* b) {
-    if (a != b) {
-        *a = *a ^ *b;
-        *b = *a ^ *b;
-        *a = *a ^ *b;
-    }
+static void swap(char* a, char* b) {
+    char c = *a;
+    *a = *b;
+    *b = c;
 }
 
-char* reverse(char* string, unsigned int length) {
+static char* reverse(char* string, unsigned int length) {
     for (unsigned int i = 0; i < length / 2; i++)
        swap(&string[i], &string[length - i - 1]);
     return string;

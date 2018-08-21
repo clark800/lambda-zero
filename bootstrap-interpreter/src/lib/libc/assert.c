@@ -1,6 +1,6 @@
 #include "libc.h"
 
-void printErrors(const char* strings[]) {
+static void printErrors(const char* strings[]) {
     for (int i = 0; strings[i] != NULL; i++)
         fputs(strings[i], stderr);
 }

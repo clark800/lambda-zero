@@ -14,9 +14,13 @@ CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 
 # no-ident removes a small unneeded comment from the executable
 
+# use this command to find all warnings not enabled by -Wall -Wextra
+# gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
+# note: -Wswitch-enum looks helpful, but doesn't allow default case
+# to catch multiple cases, which we are using
 CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors \
 -Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
--Wconversion -Wcast-qual -Wstrict-prototypes \
+-Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
 -fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"
 
 # gcc sets --hash-style to a non-default setting when calling ld, which

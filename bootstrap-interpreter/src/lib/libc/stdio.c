@@ -1,10 +1,10 @@
 #include "libc.h"
 
-static inline size_t toBytes(ssize_t result) {
+static size_t toBytes(ssize_t result) {
     return result >= 0 ? (size_t)result : 0;
 }
 
-static inline int fileno(FILE* stream) {
+static int fileno(FILE* stream) {
     return (int)(intptr_t)stream;
 }
 
