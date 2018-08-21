@@ -150,7 +150,7 @@ static inline Node* newYCombinator(Tag tag) {
 }
 
 static inline Node* newPrinter(Tag tag) {
-    Node* put = newBuiltin(tag, PUT);
+    Node* put = newBuiltin(renameTag(tag, "put"), PUT);
     Node* c = newBlankReference(tag, 1);
     Node* print = newBlankReference(tag, 3);
     Node* ccp = newLambda(tag, newBlank(tag), newApplication(tag, c, print));

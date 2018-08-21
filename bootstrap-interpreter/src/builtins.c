@@ -12,15 +12,6 @@
 bool STDERR = false;
 Stack* INPUT_STACK;
 
-static inline Node* newRuntimeNil(Tag tag) {
-    return newLambda(tag, newBlank(tag), newBoolean(tag, true));
-}
-
-static inline Node* runtimePrepend(Tag tag, Node* item, Node* list) {
-    return newLambda(tag, newBlank(tag), newApplication(tag,
-            newApplication(tag, newBlankReference(tag, 1), item), list));
-}
-
 void printBacktrace(Closure* closure) {
     fputs("\n\nBacktrace:\n", stderr);
     Stack* backtrace = (Stack*)getBacktrace(closure);
@@ -80,7 +71,6 @@ unsigned int getBuiltinArity(Node* builtin) {
     switch (getValue(builtin)) {
         case ERROR: return 1;
         case EXIT: return 1;
-        case GET: return 1;
         case PUT: return 1;
         default: return 2;
     }
@@ -111,17 +101,39 @@ Node* evaluatePut(Closure* builtin, long long c) {
     return newLambda(tag, newBlank(tag), newBlankReference(tag, 1));
 }
 
-Node* evaluateGet(Closure* builtin, long long index) {
+long long getIntegerArgument(Node* builtin, Closure* closure) {
+    if (closure == NULL)
+        return 0;       // this happens for single argument builtins like GET
+    Node* integer = getTerm(closure);
+    if (!isInteger(integer))
+       runtimeError("expected integer argument to", builtin);
+    return getValue(integer);
+}
+
+Hold* makeResult(Closure* builtin, Node* node) {
+    return hold(newClosure(node, VOID, getTrace(builtin)));
+}
+
+Node* evaluateGet(Closure* builtin, Closure* left, Closure* right) {
     static long long inputIndex = 0;
+    long long index = getIntegerArgument(builtin, left);
     assert(index <= inputIndex);
     if (index < inputIndex)
         return peek(INPUT_STACK, (size_t)(inputIndex - index - 1));
     inputIndex += 1;
     int c = fgetc(stdin);
-    Tag tag = getTag(getTerm(builtin));
-    push(INPUT_STACK, c == EOF ? newRuntimeNil(tag) : runtimePrepend(tag,
-        newInteger(tag, c), newApplication(tag, newBuiltin(tag, GET),
-            newInteger(tag, index + 1))));
+    if (c == EOF) {
+        Node* nilGlobal = getRight(getLeft(getBody(getTerm(right))));
+        push(INPUT_STACK, nilGlobal);
+    } else {
+        Tag tag = getTag(getTerm(builtin));
+        Node* prependGlobal = getRight(getBody(getTerm(right)));
+        Node* nextIndex = newInteger(tag, index + 1);
+        Node* getIndex = newApplication(tag, newBuiltin(tag, GET), nextIndex);
+        Node* tail = newApplication(tag, getIndex, getTerm(right));
+        Node* prependC = newApplication(tag, prependGlobal, newInteger(tag, c));
+        push(INPUT_STACK, newApplication(tag, prependC, tail));
+    }
     return peek(INPUT_STACK, 0);
 }
 
@@ -140,29 +152,20 @@ Node* computeBuiltin(Closure* builtin, long long left, long long right) {
         case LESSTHANOREQUAL: return newBoolean(tag, left <= right);
         case GREATERTHANOREQUAL: return newBoolean(tag, left >= right);
         case PUT: return evaluatePut(builtin, left);
-        case GET: return evaluateGet(builtin, left);
         default: assert(false); return NULL;
     }
-}
-
-long long getIntegerArgument(Node* builtin, Closure* closure) {
-    if (closure == NULL)
-        return 0;       // this happens for single argument builtins like GET
-    Node* integer = getTerm(closure);
-    if (!isInteger(integer))
-       runtimeError("expected integer argument to", builtin);
-    return getValue(integer);
 }
 
 Hold* evaluateIntegerBuiltin(Closure* builtin, Closure* left, Closure* right) {
     long long leftInteger = getIntegerArgument(builtin, left);
     long long rightInteger = getIntegerArgument(builtin, right);
     Node* term = computeBuiltin(builtin, leftInteger, rightInteger);
-    return hold(newClosure(term, VOID, getTrace(builtin)));
+    return makeResult(builtin, term);
 }
 
 Hold* evaluateBuiltin(Closure* builtin, Closure* left, Closure* right) {
     switch (getValue(getTerm(builtin))) {
+        case GET: return makeResult(builtin, evaluateGet(builtin, left, right));
         case ERROR: return evaluateError(builtin, left);
         case EXIT: return error("\n");
         default: return evaluateIntegerBuiltin(builtin, left, right);
