@@ -173,7 +173,7 @@ isHigherPrecedence(leftOperatorWithRules, rightOperatorWithRules) := (
 
     leftRules.rightPrecedence = rightRules.leftPrecedence /\
         rightRules.associativity = nonAssociative ?
-            syntaxError("operator is non-associative", leftOperator)
+            syntaxError("operator is non-associative", rightOperator)
 
     rightRules.associativity = rightAssociative ?
         leftRules.rightPrecedence > rightRules.leftPrecedence

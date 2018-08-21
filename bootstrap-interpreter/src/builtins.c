@@ -12,6 +12,15 @@
 bool STDERR = false;
 Stack* INPUT_STACK;
 
+static inline Node* newRuntimeNil(Tag tag) {
+    return newLambda(tag, newBlank(tag), newBoolean(tag, true));
+}
+
+static inline Node* runtimePrepend(Tag tag, Node* item, Node* list) {
+    return newLambda(tag, newBlank(tag), newApplication(tag,
+            newApplication(tag, newBlankReference(tag, 1), item), list));
+}
+
 void printBacktrace(Closure* closure) {
     fputs("\n\nBacktrace:\n", stderr);
     Stack* backtrace = (Stack*)getBacktrace(closure);

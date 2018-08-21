@@ -13,20 +13,22 @@
 void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
     if (usage != expectedUsage)
-        printMemoryError(label, (long long)(usage - expectedUsage));
+        memoryError(label, (long long)(usage - expectedUsage));
 }
 
 void interpret(const char* sourceCode) {
     initNodeAllocator();
     Program program = parse(sourceCode);
-    size_t memoryUsageAfterParsing = getMemoryUsage();
+    size_t memoryUsageBeforeEvaluate = getMemoryUsage();
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
+    size_t memoryUsageBeforeSerialize = getMemoryUsage();
     if (!isIO(program))
         serialize(getNode(valueClosure), program.globals);
+    checkForMemoryLeak("serialize", memoryUsageBeforeSerialize);
     release(valueClosure);
-    checkForMemoryLeak("evaluate and serialize", memoryUsageAfterParsing);
+    checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
     deleteProgram(program);
-    checkForMemoryLeak("interpret", 0);
+    checkForMemoryLeak("parse", 0);
     destroyNodeAllocator();
 }
 

@@ -2,6 +2,7 @@
 #include "ast.h"
 #include "scan.h"
 #include "errors.h"
+#include "define.h"
 #include "operators.h"
 
 typedef enum {L, R, N} Associativity;
@@ -18,10 +19,6 @@ Node* apply(Node* operator, Node* left, Node* right) {
     return newApplication(getTag(operator), left, right);
 }
 
-Node* definition(Node* operator, Node* left, Node* right) {
-    return newDefinition(getTag(operator), left, right);
-}
-
 Node* infix(Node* operator, Node* left, Node* right) {
     return apply(operator, apply(operator,
         newName(getTag(operator)), left), right);
@@ -29,6 +26,8 @@ Node* infix(Node* operator, Node* left, Node* right) {
 
 Node* comma(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
+    syntaxErrorIf(isDefinition(left), "missing scope", left);
+    syntaxErrorIf(isDefinition(right), "missing scope", right);
     return isCommaList(left) ? newCommaList(tag, left, right) :
         newCommaList(tag, newCommaList(tag, operator, left), right);
 }
@@ -133,6 +132,15 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
     return contents;
 }
 
+Node* eof(Node* operator, Node* open, Node* contents) {
+    (void)operator;
+    syntaxErrorIf(isEOF(contents), "no input", open);
+    syntaxErrorIf(!isEOF(open), "missing close for", open);
+    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
+    syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
+    return contents;
+}
+
 // comma must be the lowest precedence operator above parentheses/brackets
 // or else a commaList, which is an invalid operand, could get buried in the
 // AST without being detected, then a surrounding parentheses could apply
@@ -141,7 +149,7 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
 // very top level and thus won't be defined, so bind will catch this case.
 Rules RULES[] = {
     // syntactic operators
-    {"\0", 0, 0, CLOSE, L, NULL},
+    {"\0", 0, 0, CLOSE, L, eof},
     {"(", 22, 0, OPENCALL, L, unmatched},
     {"(", 22, 0, OPEN, L, unmatched},
     {")", 0, 22, CLOSE, R, parentheses},
@@ -150,8 +158,8 @@ Rules RULES[] = {
     {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
     //{";", 1, 1, IN, N, semicolon},
-    {"\n", 2, 2, IN, R, apply},
-    {":=", 3, 3, IN, N, definition},
+    {"\n", 2, 2, IN, R, reduceNewline},
+    {":=", 3, 3, IN, N, reduceDefine},
     {"|", 4, 4, IN, L, infix},
     {"->", 5, 5, IN, R, newPatternLambda},
 

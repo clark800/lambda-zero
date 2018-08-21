@@ -6,7 +6,6 @@
 #include "lex.h"
 #include "operands.h"
 #include "operators.h"
-#include "desugar.h"
 #include "bind.h"
 #include "debug.h"
 #include "parse.h"
@@ -14,7 +13,7 @@
 bool TRACE_PARSING = false;
 
 bool isOperatorTop(Stack* stack) {
-    return isOperator(peek(stack, 0));
+    return isEmpty(stack) || isOperator(peek(stack, 0));
 }
 
 bool isOpenOperator(Node* token) {
@@ -118,11 +117,14 @@ void collapseBracket(Stack* stack, Node* close) {
     if (isOpenOperator(getNode(contents))) {
         pushOperand(stack, applyOperator(close, getNode(contents), NULL));
     } else {
-        syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
+        if (!isEOF(close) && isEOF(peek(stack, 0)))
+            syntaxError("missing open for", close);
         Node* right = getNode(contents);
         if (isCloseParen(close) && !isOpenParen(peek(stack, 0)))
             contents = replaceHold(contents, collapseSection(stack, right));
         Hold* open = pop(stack);
+        if (isDefinition(getNode(contents)))
+            syntaxError("missing scope", getNode(contents));
         pushOperand(stack,
             applyOperator(close, getNode(open), getNode(contents)));
         release(open);
@@ -145,7 +147,7 @@ void pushOperator(Stack* stack, Node* operator) {
 
     if (getFixity(operator) == CLOSE) {
         eraseNewlines(stack);       // ignore newlines before close operators
-        if (isComma(peek(stack, 0)) && !isOpenOperator(peek(stack, 1)))
+        if (isComma(peek(stack, 0)) && !isOpenParen(peek(stack, 1)))
             release(pop(stack));        // ignore commas before close operators
     }
 
@@ -161,20 +163,6 @@ void pushOperator(Stack* stack, Node* operator) {
         collapseBracket(stack, operator);
     else
         push(stack, operator);
-}
-
-Hold* collapseEOF(Stack* stack, Hold* token) {
-    eraseNewlines(stack);
-    syntaxErrorIf(isEOF(peek(stack, 0)), "no input", getNode(token));
-    collapseLeftOperand(stack, getNode(token));
-    Hold* result = pop(stack);
-    if (isCommaList(getNode(result)))
-        syntaxError("comma not inside brackets", getNode(result));
-    Node* end = peek(stack, 0);
-    syntaxErrorIf(!isEOF(end), "unexpected syntax error near", end);
-    deleteStack(stack);
-    release(token);
-    return result;
 }
 
 void debugParseState(Node* token, Stack* stack, bool trace) {
@@ -195,9 +183,13 @@ Hold* parseString(const char* input, bool trace) {
         debugParseState(getNode(token), stack, trace);
         if (isOperator(getNode(token))) {
             setRules(getNode(token), isOperatorTop(stack));
-            if (isEOF(getNode(token)))
-                return collapseEOF(stack, token);
             pushOperator(stack, getNode(token));
+            if (isEOF(getNode(token))) {
+                Hold* result = pop(stack);
+                deleteStack(stack);
+                release(token);
+                return result;
+            }
         } else {
             pushOperand(stack, parseOperand(getNode(token)));
         }
@@ -229,8 +221,6 @@ void deleteProgram(Program program) {
 Program parse(const char* input) {
     Hold* result = parseString(input, TRACE_PARSING);
     debugStage("Parsed", getNode(result), TRACE_PARSING);
-    result = replaceHold(result, desugar(getNode(result)));
-    debugStage("Desugared", getNode(result), TRACE_PARSING);
     Array* globals = bind(result);
     Node* entry = elementAt(globals, length(globals) - 1);
     return (Program){result, entry, globals};
