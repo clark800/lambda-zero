@@ -28,8 +28,7 @@ Node* comma(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     syntaxErrorIf(isDefinition(left), "missing scope", left);
     syntaxErrorIf(isDefinition(right), "missing scope", right);
-    return isCommaList(left) ? newCommaList(tag, left, right) :
-        newCommaList(tag, newCommaList(tag, operator, left), right);
+    return newCommaList(tag, left, right);
 }
 
 int getTupleSize(Node* tuple) {
@@ -85,25 +84,24 @@ Node* brackets(Node* close, Node* open, Node* contents) {
     Tag tag = getTag(open);
     if (getFixity(open) == OPENCALL) {
         syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
-        syntaxErrorIf(!isComma(getLeft(getLeft(contents))),
+        syntaxErrorIf(isCommaList(getLeft(contents)),
             "too many arguments to", open);
         return newApplication(tag, newApplication(tag, newName(getTag(open)),
-            getRight(getLeft(contents))), getRight(contents));
+            getLeft(contents)), getRight(contents));
     }
     Node* list = newNil(getTag(open));
     if (contents == NULL)
         return list;
     if (!isCommaList(contents))
         return prepend(tag, contents, list);
-    for(; isCommaList(getLeft(contents)); contents = getLeft(contents))
+    for(; isCommaList(contents); contents = getLeft(contents))
         list = prepend(tag, getRight(contents), list);
-    return prepend(tag, getRight(contents), list);
+    return prepend(tag, contents, list);
 }
 
 Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
-    if (!isCommaList(getLeft(arguments)))
-        return base == NULL ? getRight(arguments) :
-            newApplication(tag, base, getRight(arguments));
+    if (!isCommaList(arguments))
+        return base == NULL ? arguments : newApplication(tag, base, arguments);
     return newApplication(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments));
 }
