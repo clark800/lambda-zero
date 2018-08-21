@@ -58,11 +58,6 @@ void validateConsecutiveOperators(Node* left, Node* right) {
         syntaxError("missing left argument to", right);   // e.g. "5 - * 2"
 }
 
-void validateOperator(Stack* stack, Node* operator) {
-    if (isOperatorTop(stack))
-        validateConsecutiveOperators(peek(stack, 0), operator);
-}
-
 bool shouldCollapseOperator(Stack* stack, Node* collapser) {
     // the operator that we are checking to collapse is at stack index 1
     if (isOperator(peek(stack, 0)))
@@ -76,17 +71,6 @@ bool shouldCollapseOperator(Stack* stack, Node* collapser) {
         return false;                   // don't collapse section operators
 
     return isHigherPrecedence(operator, collapser);
-}
-
-void collapseLeftOperand(Stack* stack, Node* collapser) {
-    // ( a op1 b op2 c op3 d ...
-    // opN is guaranteed to be in non-decreasing order of precedence
-    // we collapse right-associatively up to the first operator encountered
-    // that has lower precedence than token or equal precedence if token
-    // is right associative
-    validateOperator(stack, collapser);
-    while (shouldCollapseOperator(stack, collapser))
-        collapseOperator(stack);
 }
 
 Node* newSection(Node* operator, Node* left, Node* right) {
@@ -151,7 +135,16 @@ void pushOperator(Stack* stack, Node* operator) {
             release(pop(stack));        // ignore commas before close operators
     }
 
-    collapseLeftOperand(stack, operator);
+    if (isOperatorTop(stack))
+        validateConsecutiveOperators(peek(stack, 0), operator);
+
+    // ( a op1 b op2 c op3 d ...
+    // opN is guaranteed to be in non-decreasing order of precedence
+    // we collapse right-associatively up to the first operator encountered
+    // that has lower precedence than token or equal precedence if token
+    // is right associative
+    while (shouldCollapseOperator(stack, operator))
+        collapseOperator(stack);
 
     if (getFixity(operator) == OPENCALL) {
         Hold* top = pop(stack);
