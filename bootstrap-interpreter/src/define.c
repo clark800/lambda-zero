@@ -42,10 +42,19 @@ Node* applyDefinition(Node* definition, Node* scope) {
         newPatternLambda(definition, name, scope), value);
 }
 
+Node* newChurchPair(Tag tag, Node* left, Node* right) {
+    return newLambda(tag, newBlank(tag), newApplication(tag,
+        newApplication(tag, newBlankReference(tag, 1), left), right));
+}
+
 Node* newMainCall(Node* main) {
     Tag tag = getTag(main);
     Node* printer = newPrinter(tag);
-    Node* input = newApplication(tag, newBuiltin(tag, GET), newInteger(tag, 0));
+    Node* get = newBuiltin(renameTag(tag, "get"), GET);
+    Node* get0 = newApplication(tag, get, newInteger(tag, 0));
+    Node* operators = newChurchPair(tag,
+        newName(renameTag(tag, "[]")), newName(renameTag(tag, "::")));
+    Node* input = newApplication(tag, get0, operators);
     return newApplication(tag, newApplication(tag, main, input), printer);
 }
 
