@@ -13,7 +13,7 @@ typedef struct {
     Location location;
 } Tag;
 
-extern String EMPTY;
+extern const String EMPTY;
 String newString(const char* start, unsigned int length);
 Location newLocation(unsigned int line, unsigned int column);
 Tag newTag(String lexeme, Location location);

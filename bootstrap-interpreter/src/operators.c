@@ -15,30 +15,30 @@ typedef struct {
     Node* (*apply)(Node* operator, Node* left, Node* right);
 } Rules;
 
-Node* apply(Node* operator, Node* left, Node* right) {
+static Node* apply(Node* operator, Node* left, Node* right) {
     return newApplication(getTag(operator), left, right);
 }
 
-Node* infix(Node* operator, Node* left, Node* right) {
+static Node* infix(Node* operator, Node* left, Node* right) {
     return apply(operator, apply(operator,
         newName(getTag(operator)), left), right);
 }
 
-Node* comma(Node* operator, Node* left, Node* right) {
+static Node* comma(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     syntaxErrorIf(isDefinition(left), "missing scope", left);
     syntaxErrorIf(isDefinition(right), "missing scope", right);
     return newCommaList(tag, left, right);
 }
 
-int getTupleSize(Node* tuple) {
+static int getTupleSize(Node* tuple) {
     int i = 0;
     for (Node* n = getBody(tuple); isApplication(n); i++)
         n = getLeft(n);
     return i;
 }
 
-Node* newProjection(Tag tag, int size, int index) {
+static Node* newProjection(Tag tag, int size, int index) {
     Node* projection = newReference(tag,
         (unsigned long long)(size - index));
     for (int i = 0; i < size; i++)
@@ -64,24 +64,27 @@ Node* newPatternLambda(Node* operator, Node* left, Node* right) {
     return newLambda(tag, newBlank(tag), body);
 }
 
-Node* prefix(Node* operator, Node* left, Node* right) {
+static Node* prefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
     return apply(operator, newName(getTag(operator)), right);
 }
 
-Node* negate(Node* operator, Node* left, Node* right) {
+static Node* negate(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
     return infix(operator, newInteger(getTag(operator), 0), right);
 }
 
-Node* unmatched(Node* operator, Node* left, Node* right) {
+static Node* unmatched(Node* operator, Node* left, Node* right) {
     syntaxError("missing close for", operator);
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-Node* brackets(Node* close, Node* open, Node* contents) {
+static Node* brackets(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
     Tag tag = getTag(open);
+    if (contents == NULL)
+        return newNil(tag);
+    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     if (getFixity(open) == OPENCALL) {
         syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
         syntaxErrorIf(isCommaList(getLeft(contents)),
@@ -89,9 +92,7 @@ Node* brackets(Node* close, Node* open, Node* contents) {
         return newApplication(tag, newApplication(tag, newName(getTag(open)),
             getLeft(contents)), getRight(contents));
     }
-    Node* list = newNil(getTag(open));
-    if (contents == NULL)
-        return list;
+    Node* list = newNil(tag);
     if (!isCommaList(contents))
         return prepend(tag, contents, list);
     for(; isCommaList(contents); contents = getLeft(contents))
@@ -99,22 +100,23 @@ Node* brackets(Node* close, Node* open, Node* contents) {
     return prepend(tag, contents, list);
 }
 
-Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
+static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
     if (!isCommaList(arguments))
         return base == NULL ? arguments : newApplication(tag, base, arguments);
     return newApplication(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments));
 }
 
-Node* parentheses(Node* close, Node* open, Node* contents) {
+static Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
     Tag tag = getTag(open);
+    if (contents == NULL)
+        return newUnit(tag);
+    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     if (getFixity(open) == OPENCALL)
         return isCommaList(contents) ? applyToCommaList(tag, NULL, contents) :
             newApplication(tag, contents, newUnit(tag)); // desugar f() to f(())
 
-    if (contents == NULL)
-        return newUnit(tag);
     if (isOperator(contents)) {
         // update rules to favor infix over prefix inside parenthesis
         setRules(contents, false);
@@ -130,13 +132,12 @@ Node* parentheses(Node* close, Node* open, Node* contents) {
     return contents;
 }
 
-Node* eof(Node* operator, Node* open, Node* contents) {
+static Node* eof(Node* operator, Node* open, Node* contents) {
     (void)operator;
     syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(!isEOF(open), "missing close for", open);
-    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
-    return contents;
+    return isDefinition(contents) ? transformDefinition(contents) : contents;
 }
 
 // comma must be the lowest precedence operator above parentheses/brackets
@@ -145,7 +146,7 @@ Node* eof(Node* operator, Node* open, Node* contents) {
 // a tuple abstraction, which would bind across a bracket boundary.
 // if a comma is not wrapped in parentheses or brackets, it will be at the
 // very top level and thus won't be defined, so bind will catch this case.
-Rules RULES[] = {
+static Rules RULES[] = {
     // syntactic operators
     {"\0", 0, 0, CLOSE, L, eof},
     {"(", 22, 0, OPENCALL, L, unmatched},
@@ -222,10 +223,10 @@ Rules RULES[] = {
     {"`", 25, 25, PRE, L, prefix}
 };
 
-Rules DEFAULT = {"", 14, 14, IN, L, infix};
-Rules SPACE = {" ", 20, 20, IN, L, apply};
+static Rules DEFAULT = {"", 14, 14, IN, L, infix};
+static Rules SPACE = {" ", 20, 20, IN, L, apply};
 
-bool allowsOperatorBefore(Rules rules) {
+static bool allowsOperatorBefore(Rules rules) {
     return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
 }
 
@@ -233,7 +234,7 @@ bool isSpace(Node* token) {
     return isLeaf(token) && isSpaceCharacter(getLexeme(token).start[0]);
 }
 
-Rules* lookupRules(Node* token, bool isAfterOperator) {
+static Rules* lookupRules(Node* token, bool isAfterOperator) {
     if (isSpace(token))
         return &SPACE;
     Rules* result = &DEFAULT;

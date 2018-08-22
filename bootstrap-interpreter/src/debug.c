@@ -14,7 +14,7 @@ void debugLine(void) {
     debug("======================================\n");
 }
 
-void serializeAST(Node* node, FILE* stream) {
+static void serializeAST(Node* node, FILE* stream) {
     if (node == NULL) {
         fputs("NULL", stream);     // for debugging
     } else if (node == VOID) {

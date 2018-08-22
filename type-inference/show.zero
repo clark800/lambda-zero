@@ -42,7 +42,7 @@ addRenaming((renaming, variables), type) := (
         (type', variables') := variables.newTypeVariable(getNode(type))
         (renaming.insert(type, type'), variables')
     )
-    getComponentTypes(type).foldl(addRenaming, (renaming, variables))
+    getComponentTypes(type).cascade(addRenaming, (renaming, variables))
 )
 
 makeRenaming(type) :=

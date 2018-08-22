@@ -6,7 +6,7 @@
 #include "closure.h"
 #include "serialize.h"
 
-void serializeNode(Node* node, Node* locals, const Array* globals,
+static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     if (isApplication(node)) {
         fputs("(", stream);

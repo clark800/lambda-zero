@@ -1,5 +1,3 @@
-extern bool TEST;
-
 void printError(const char* type, const char* message, Tag tag);
 void printTagLine(Tag tag, const char* quote);
 

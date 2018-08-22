@@ -11,7 +11,7 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     return 0;
 }
 
-int lookupBuiltinCode(Node* token) {
+static int lookupBuiltinCode(Node* token) {
     for (unsigned int i = 0; i < sizeof(BUILTINS)/sizeof(char*); i++)
         if (isThisToken(token, BUILTINS[i]))
             return (int)i;
@@ -39,12 +39,12 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
         convertSymbol(symbol, REFERENCE, (long long)index);
 }
 
-bool isDefined(Node* symbol, Array* parameters) {
+static bool isDefined(Node* symbol, Array* parameters) {
     return !isThisToken(symbol, "_") && (lookupBuiltinCode(symbol) >= 0 ||
             findDebruijnIndex(symbol, parameters) != 0);
 }
 
-void bindWith(Node* node, Array* parameters, const Array* globals) {
+static void bindWith(Node* node, Array* parameters, const Array* globals) {
     if (isName(node)) {
         bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
@@ -59,7 +59,7 @@ void bindWith(Node* node, Array* parameters, const Array* globals) {
     }
 }
 
-bool isLetExpression(Node* node) {
+static bool isLetExpression(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
         !isTuple(getLeft(node)) &&
         !isThisToken(getParameter(getLeft(node)), "_");

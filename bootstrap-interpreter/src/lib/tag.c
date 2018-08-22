@@ -2,7 +2,7 @@
 #include <string.h>
 #include "tag.h"
 
-String EMPTY = {"\0", 0};
+const String EMPTY = {"\0", 0};
 
 String newString(const char* start, unsigned int length) {
     return (String){start, length};

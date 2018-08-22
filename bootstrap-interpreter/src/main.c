@@ -10,13 +10,15 @@
 #include "evaluate.h"
 #include "serialize.h"
 
-void checkForMemoryLeak(const char* label, size_t expectedUsage) {
+bool TEST = false;
+
+static void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
     if (usage != expectedUsage)
         memoryError(label, (long long)(usage - expectedUsage));
 }
 
-void interpret(const char* sourceCode) {
+static void interpret(const char* sourceCode) {
     initNodeAllocator();
     Program program = parse(sourceCode);
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
@@ -32,7 +34,7 @@ void interpret(const char* sourceCode) {
     destroyNodeAllocator();
 }
 
-char* readSourceCode(const char* filename) {
+static char* readSourceCode(const char* filename) {
     FILE* stream = fopen(filename, "r");
     if (stream == NULL || stream == (FILE*)(-1))
         readError(filename);

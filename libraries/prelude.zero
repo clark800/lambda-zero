@@ -11,7 +11,7 @@
 // boolean logic
 true(t, f) := t
 false(t, f) := f
-if(c, x, y) := c(x, y)
+if(b) := b
 (?) := if
 [] := _ -> true
 x :: xs := (x, xs)                     // prepend element to list (cons)
@@ -110,14 +110,13 @@ getData := first
 getChildren := second
 
 // list folds
-foldr(xs, f, z) := if(isEmpty(xs), z, f(head(xs), foldr(--xs, f, z)))
-foldl(xs, f, z) := if(isEmpty(xs), z, foldl(--xs, f, f(z, head(xs))))
-reducer(xs, f) := (--xs).foldr(f, xs[0])
-reducel(xs, f) := (--xs).foldl(f, xs[0])
+fold(xs, f, z) := if(isEmpty(xs), z, f(head(xs), fold(--xs, f, z)))
+cascade(xs, f, z) := if(isEmpty(xs), z, cascade(--xs, f, f(z, head(xs))))
+reduce(xs, f) := (--xs).cascade(f, xs[0])
 
 // list fold operations
-xs ++ ys := xs.foldr((::), ys)                   // concatenate two lists
-length(xs) := xs.foldr(constant((+ 1)), 0)         // get length of list
+xs ++ ys := xs.fold((::), ys)                   // concatenate two lists
+length(xs) := xs.fold(constant((+ 1)), 0)         // get length of list
 
 // generic list constructors
 iterate(f, x) := x :: iterate(f, f(x))       // iteratively apply f
@@ -126,15 +125,15 @@ replicate(x, n) := (x ::)^^(n)([])         // replicate one element n times
 cycle(xs) := xs ++ cycle(xs)                 // infinitely cycle list
 
 // generic list transformations
-filter(xs, p) := foldr(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
+filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
 (|) := filter
-map(xs, f) := foldr(xs, (::) <> f, [])          // map function over list
+map(xs, f) := fold(xs, (::) <> f, [])          // map function over list
 zipWith(xs, f, ys) := isEmpty(xs) \/ isEmpty(ys) ? [] ||
     f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
 zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(first), xs.map(second))
-join(xss) := xss.foldr((++), [])            // concatenate list of lists
-reverse(xs) := xs.foldl(`(::), [])
+join(xss) := xss.fold((++), [])            // concatenate list of lists
+reverse(xs) := xs.cascade(`(::), [])
 interleave(xs, y) := (
     isEmpty(xs) ? []
     isEmpty(--xs) ? xs || head(xs) :: y :: interleave(--xs, y)
@@ -143,13 +142,13 @@ joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs | p, xs | (!) <> p)
 
 // generic list reducers
-any(xs, p) := xs.map(p).foldr((\/), false)     // test if any element satisfies p
-all(xs, p) := xs.map(p).foldr((/\), true)      // test if all elements satisfy p
+any(xs, p) := xs.map(p).fold((\/), false)     // test if any element satisfies p
+all(xs, p) := xs.map(p).fold((/\), true)      // test if all elements satisfy p
 // find first element satisfying p, or return nothing
 find(xs, p) := isEmpty(xs) ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
 
 // foldMap : a[] --> (a --> s --> (b; s)) --> s --> (b[], s)
-foldMap(xs, f, z) := xs.foldl((ys, s) -> x ->
+foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
     f(x, s).mapFirst((:: ys)), ([], z)).mapFirst(reverse)
 
 indexOf(nss, key) := (
@@ -225,10 +224,10 @@ lines(ns) := ns.partitionOn("\n")
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)
 
 // integer list reducers
-sum(ns) := ns.foldl((+), 0)
-product(ns) := ns.foldl((*), 1)
-minimum(ns) := ns.reducel(min)
-maximum(ns) := ns.reducel(max)
+sum(ns) := ns.cascade((+), 0)
+product(ns) := ns.cascade((*), 1)
+minimum(ns) := ns.reduce(min)
+maximum(ns) := ns.reduce(max)
 
 // infinite lists
 countFrom := iterate((+ 1))
@@ -282,6 +281,6 @@ parseDigit(digit, base) :=
     isDigit(digit) /\ digit - '0' < base ? digit - '0' ||
     error("Invalid digit in base " ++ showInteger(base) ++ ": " ++ [digit])
 parseNatural(string, base) :=
-    string.foldl(x -> d -> base * x + parseDigit(d, base), 0)
+    string.cascade(x -> d -> base * x + parseDigit(d, base), 0)
 parseInteger(string, base) := string.head = '-' ?
     -parseNatural(--string, base) || parseNatural(string, base)
