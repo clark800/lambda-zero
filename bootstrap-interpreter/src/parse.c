@@ -211,8 +211,9 @@ void deleteProgram(Program program) {
 
 Program parse(const char* input) {
     Hold* result = parseString(input, TRACE_PARSING);
-    debugStage("Parsed", getNode(result), TRACE_PARSING);
+    debugStage("parse", getNode(result), TRACE_PARSING);
     Array* globals = bind(result);
+    debugStage("bind", getNode(result), TRACE_PARSING);
     Node* entry = elementAt(globals, length(globals) - 1);
     return (Program){result, entry, globals};
 }

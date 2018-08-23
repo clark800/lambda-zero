@@ -9,7 +9,7 @@ bool isSpaceCharacter(char c) {
 }
 
 bool isDelimiterCharacter(char c) {
-    return c == '\0' || strchr(" \t\r\n,;`()[]{}", c) != NULL;
+    return c == '\0' || strchr(" \t\r\n()[]{}", c) != NULL;
 }
 
 static bool isQuoteCharacter(char c) {

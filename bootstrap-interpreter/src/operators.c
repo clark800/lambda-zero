@@ -20,8 +20,8 @@ static Node* apply(Node* operator, Node* left, Node* right) {
 }
 
 static Node* infix(Node* operator, Node* left, Node* right) {
-    return apply(operator, apply(operator,
-        newName(getTag(operator)), left), right);
+    Node* symbol = setValue(newName(getTag(operator)), CONVERSION);
+    return apply(operator, apply(operator, symbol, left), right);
 }
 
 static Node* comma(Node* operator, Node* left, Node* right) {
@@ -31,42 +31,22 @@ static Node* comma(Node* operator, Node* left, Node* right) {
     return newCommaList(tag, left, right);
 }
 
-static int getTupleSize(Node* tuple) {
-    int i = 0;
-    for (Node* n = getBody(tuple); isApplication(n); i++)
-        n = getLeft(n);
-    return i;
-}
-
-static Node* newProjection(Tag tag, int size, int index) {
-    Node* projection = newReference(tag,
-        (unsigned long long)(size - index));
-    for (int i = 0; i < size; i++)
-        projection = newLambda(tag, newBlank(tag), projection);
-    return projection;
-}
-
 Node* newPatternLambda(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     if (isName(left))
         return newLambda(tag, left, right);
-    if (!isTuple(left) || getTupleSize(left) == 0)
-        syntaxError("invalid parameter", left);
-    // (x, y) -> body ---> p -> (x -> y -> body) left(p) right(p)
-    Node* body = right;
-    for (Node* items = getBody(left); isApplication(items);
-            items = getLeft(items))
-        body = newPatternLambda(operator, getRight(items), body);
-    for (int i = 0, size = getTupleSize(left); i < size; i++)
-        body = newApplication(tag, body,
-            newApplication(tag, newBlankReference(tag, 1),
-                newProjection(tag, size, i)));
-    return newLambda(tag, newBlank(tag), body);
+    syntaxErrorIf(!isApplication(left), "invalid parameter", left);
+    for (; isApplication(left); left = getLeft(left))
+        right = newPatternLambda(operator, getRight(left), right);
+    // discard left, which is the value constructor
+    return newLambda(tag, newBlank(tag),
+        newApplication(tag, newBlankReference(tag, 1), right));
 }
 
 static Node* prefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    return apply(operator, newName(getTag(operator)), right);
+    Node* symbol = setValue(newName(getTag(operator)), CONVERSION);
+    return apply(operator, symbol, right);
 }
 
 static Node* negate(Node* operator, Node* left, Node* right) {
@@ -107,15 +87,29 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
         getLeft(arguments)), getRight(arguments));
 }
 
+static unsigned int getCommaListLength(Node* node) {
+    return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
+}
+
+static inline Node* newTuple(Tag tag, Node* commaList) {
+    static const char commas[] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
+    unsigned int length = getCommaListLength(commaList) - 1;
+    syntaxErrorIf(length > sizeof(commas), "tuple too big", commaList);
+    Node* constructor = setValue(
+        newName(newTag(newString(commas, length), tag.location)), CONVERSION);
+    return applyToCommaList(tag, constructor, commaList);
+}
+
 static Node* parentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
     Tag tag = getTag(open);
     if (contents == NULL)
-        return newUnit(tag);
+        return newName(renameTag(tag, "()"));
     syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     if (getFixity(open) == OPENCALL)
         return isCommaList(contents) ? applyToCommaList(tag, NULL, contents) :
-            newApplication(tag, contents, newUnit(tag)); // desugar f() to f(())
+            // desugar f() to f(())
+            newApplication(tag, contents, newName(renameTag(tag, "()")));
 
     if (isOperator(contents)) {
         // update rules to favor infix over prefix inside parenthesis
@@ -125,8 +119,7 @@ static Node* parentheses(Node* close, Node* open, Node* contents) {
         return newName(getTag(contents));
     }
     if (isCommaList(contents))
-        return newLambda(tag, newTupleName(tag, 1),
-            applyToCommaList(tag, newTupleName(tag, 1), contents));
+        return newTuple(tag, contents);
     if (isApplication(contents))
         return setLocation(contents, getLocation(open));
     return contents;

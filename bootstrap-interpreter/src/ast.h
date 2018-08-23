@@ -1,7 +1,7 @@
 // OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
 typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST,
     APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN, GLOBAL} NodeType;
-typedef enum {NAME, NUMERIC, CHARACTER, STRING} OperandType;
+typedef enum {NAME, NUMERIC, CHARACTER, STRING, CONVERSION} OperandType;
 
 // names in BUILTINS must line up with codes in BuiltinCode, except
 // EXIT, PUT, GET which don't have accessible names
@@ -42,7 +42,8 @@ static inline bool isBuiltin(Node* node) {return getType(node) == BUILTIN;}
 static inline bool isGlobal(Node* node) {return getType(node) == GLOBAL;}
 
 static inline bool isName(Node* node) {
-    return getType(node) == OPERAND && getValue(node) == NAME;
+    return getType(node) == OPERAND &&
+        (getValue(node) == NAME || getValue(node) == CONVERSION);
 }
 
 static inline bool isApplication(Node* node) {
@@ -58,10 +59,6 @@ static inline bool isOpenParen(Node* node) {return isThisToken(node, "(");}
 static inline bool isCloseParen(Node* node) {return isThisToken(node, ")");}
 static inline bool isEOF(Node* node) {return isThisToken(node, "\0");}
 static inline bool isComma(Node* node) {return isThisToken(node, ",");}
-
-static inline bool isTuple(Node* node) {
-    return isLambda(node) && isThisToken(getParameter(node), "(,)");
-}
 
 // ================================
 // Functions to construct new nodes
@@ -124,16 +121,6 @@ static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
 
 static inline Node* newCommaList(Tag tag, Node* left, Node* right) {
     return newBranch(tag, COMMALIST, left, right);
-}
-
-static inline Node* newTupleName(Tag tag, int length) {
-    (void)length;
-    assert(length == 1);
-    return newName(renameTag(tag, "(,)"));
-}
-
-static inline Node* newUnit(Tag tag) {
-    return newLambda(tag, newTupleName(tag, 1), newTupleName(tag, 1));
 }
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
