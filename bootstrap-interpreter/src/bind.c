@@ -27,11 +27,7 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
         return;
     }
     unsigned long long index = findDebruijnIndex(symbol, parameters);
-    if (index == 0) {
-        if (isThisToken(symbol, ","))
-            syntaxError("missing parentheses around", symbol);
-        syntaxError("undefined symbol", symbol);
-    }
+    syntaxErrorIf(index == 0, "undefined symbol", symbol);
     unsigned long long localDepth = length(parameters) - globalDepth;
     if (index > localDepth)
         convertSymbol(symbol, GLOBAL, (long long)(length(parameters) - index));
@@ -48,7 +44,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
     if (isName(node)) {
         bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
-        if (!isTuple(node) && isDefined(getParameter(node), parameters))
+        if (isDefined(getParameter(node), parameters))
             syntaxError("symbol already defined", getParameter(node));
         append(parameters, getParameter(node));
         bindWith(getBody(node), parameters, globals);
@@ -61,7 +57,6 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
 
 static bool isLetExpression(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
-        !isTuple(getLeft(node)) &&
         !isThisToken(getParameter(getLeft(node)), "_");
 }
 

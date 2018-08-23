@@ -13,7 +13,11 @@ true(t, f) := t
 false(t, f) := f
 if(b) := b
 (?) := if
+() := o -> o
 [] := _ -> true
+(,)(x, y) := o -> o(x, y)
+(,,)(x, y, z) := o -> o(x, y, z)
+(,,,)(w, x, y, z) := o -> o(w, x, y, z)
 x :: xs := (x, xs)                     // prepend element to list (cons)
 
 // universal
@@ -34,7 +38,6 @@ b => c := b ? c || true
 b <=> c := b ? c || !c
 
 // pairs
-(,)(x, y) := (x, y)     // this definition is for (,) and sections
 first((x, y)) := x
 second((x, y)) := y
 swap((x, y)) := (y, x)

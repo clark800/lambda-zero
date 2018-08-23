@@ -27,8 +27,19 @@ static Node* transformRecursion(Node* name, Node* value) {
     return newApplication(tag, yCombinator, newLambda(tag, name, value));
 }
 
+bool isTupleConstructor(Node* token) {
+    return isLeaf(token) && getLexeme(token).start[0] == ',';
+}
+
+bool isTuple(Node* node) {
+    return isApplication(node) ? isTuple(getLeft(node)) :
+        isTupleConstructor(node) && getValue(node) == CONVERSION;
+}
+
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
+    if (isTuple(left))
+        return newDefinition(tag, left, right);
     for (; isApplication(left); left = getLeft(left))
         right = newPatternLambda(operator, getRight(left), right);
     return newDefinition(tag, left, transformRecursion(left, right));
@@ -36,10 +47,17 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
 
 static Node* applyDefinition(Node* definition, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    Node* name = getLeft(definition);
-    Node* value = getRight(definition);
+    Node* left = getLeft(definition);
+    Node* right = getRight(definition);
+    if (isApplication(left)) {
+        assert(isTuple(left));
+        for (; isApplication(left); left = getLeft(left))
+            scope = newPatternLambda(definition, getRight(left), scope);
+        return newApplication(getTag(definition), right, scope);
+    }
+    syntaxErrorIf(!isName(left), "invalid parameter", left);
     return newApplication(getTag(definition),
-        newPatternLambda(definition, name, scope), value);
+        newLambda(getTag(definition), left, scope), right);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
