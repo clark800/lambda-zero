@@ -81,14 +81,7 @@ static const char* skipLexeme(const char* s) {
     return s[0] == '\0' ? s : s + 1;    // delimiter or illegal character
 }
 
-static String newLexeme(const char* start) {
+String getNextLexeme(const char* start) {
+    start = skipComments(start);
     return newString(start, (unsigned int)(skipLexeme(start) - start));
-}
-
-String getFirstLexeme(const char* input) {
-    return newLexeme(skipComments(input));
-}
-
-String getNextLexeme(String lastLexeme) {
-    return newLexeme(skipComments(&(lastLexeme.start[lastLexeme.length])));
 }

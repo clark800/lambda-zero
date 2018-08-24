@@ -27,9 +27,10 @@ static Node* createToken(String lexeme) {
 
 Hold* getFirstToken(const char* sourceCode) {
     location = newLocation(1, 1);
-    return hold(createToken(getFirstLexeme(sourceCode)));
+    return hold(createToken(getNextLexeme(sourceCode)));
 }
 
 Hold* getNextToken(Hold* token) {
-    return hold(createToken(getNextLexeme(getLexeme(getNode(token)))));
+    String lexeme = getLexeme(getNode(token));
+    return hold(createToken(getNextLexeme(lexeme.start + lexeme.length)));
 }
