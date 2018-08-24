@@ -30,33 +30,88 @@ static Node* comma(Node* operator, Node* left, Node* right) {
     return newCommaList(getTag(operator), left, right);
 }
 
-static bool isPatternLambda(Node* lambda) {
+static Node* getHead(Node* node) {
+    while (isApplication(node))
+        node = getLeft(node);
+    return node;
+}
+
+static bool isStrictPatternLambda(Node* lambda) {
+    return isBlank(getParameter(lambda)) && isBlank(getHead(getBody(lambda)));
+}
+
+static bool isLazyPatternLambda(Node* lambda) {
     return isBlank(getParameter(lambda)) && isApplication(getBody(lambda)) &&
-        isReference(getLeft(getBody(lambda))) &&
-        isBlank(getLeft(getBody(lambda)));
+        isApplication(getRight(getBody(lambda))) &&
+        isBlank(getLeft(getRight(getBody(lambda))));
+}
+
+static Node* getPatternExtension(Node* lambda) {
+    if (isStrictPatternLambda(lambda))
+        return getRight(getBody(lambda));
+    if (isLazyPatternLambda(lambda))
+        return getHead(getBody(lambda));
+    return getBody(lambda);
 }
 
 static Node* semicolon(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isLambda(left), "expected lambda to left of", operator);
     syntaxErrorIf(!isLambda(right), "expected lambda to right of", operator);
     Tag tag = getTag(operator);
-    Node* body = isPatternLambda(left) ? getBody(left) :
-        newApplication(tag, newBlankReference(tag, 1), getBody(left));
-    Node* newCase = isPatternLambda(right) ?
-        getRight(getBody(right)) : getBody(right);
-    return newLambda(tag, newBlank(tag), newApplication(tag, body, newCase));
+    Node* base = isStrictPatternLambda(left) ? getBody(left) : newApplication(
+        tag, newBlankReference(tag, 1), getPatternExtension(left));
+    return newLambda(tag, newBlank(tag),
+        newApplication(tag, base, getPatternExtension(right)));
 }
 
-Node* newPatternLambda(Node* operator, Node* left, Node* right) {
+static int getArgumentCount(Node* tuple) {
+    int i = 0;
+    for (Node* n = tuple; isApplication(n); i++)
+        n = getLeft(n);
+    return i;
+}
+
+static Node* newProjection(Tag tag, int size, int index) {
+    Node* projection = newBlankReference(tag,
+        (unsigned long long)(size - index));
+    for (int i = 0; i < size; i++)
+        projection = newLambda(tag, newBlank(tag), projection);
+    return projection;
+}
+
+Node* newLazyPatternLambda(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     if (isName(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
+    // example: (x, y) -> body ---> _ -> (x -> y -> body) first(_) second(_)
+    Node* body = right;
+    for (Node* items = left; isApplication(items); items = getLeft(items))
+        body = newPatternLambda(operator, getRight(items), body);
+    for (int i = 0, size = getArgumentCount(left); i < size; i++)
+        body = newApplication(tag, body,
+            newApplication(tag, newBlankReference(tag, 1),
+                newProjection(tag, size, i)));
+    return newLambda(tag, newBlank(tag), body);
+}
+
+/*
+Node* newStrictPatternLambda(Node* operator, Node* left, Node* right) {
+    Tag tag = getTag(operator);
+    if (isName(left))
+        return newLambda(tag, left, right);
+    syntaxErrorIf(!isApplication(left), "invalid parameter", left);
+    // example: (x, y) -> body ---> _ -> _ (x -> y -> body)
     for (; isApplication(left); left = getLeft(left))
         right = newPatternLambda(operator, getRight(left), right);
     // discard left, which is the value constructor
     return newLambda(tag, newBlank(tag),
         newApplication(tag, newBlankReference(tag, 1), right));
+}
+*/
+
+Node* newPatternLambda(Node* operator, Node* left, Node* right) {
+    return newLazyPatternLambda(operator, left, right);
 }
 
 static Node* prefix(Node* operator, Node* left, Node* right) {
