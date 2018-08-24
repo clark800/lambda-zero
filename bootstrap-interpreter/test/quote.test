@@ -33,7 +33,7 @@ x -> 'a'x
 Syntax error: missing end quote for '"x\"' at line 1 column 1
 ===============================================================================
 "∈"
-Syntax error: illegal character in '"∈"' at line 1 column 1
+Syntax error: invalid character in '"∈"' at line 1 column 1
 ===============================================================================
 '∈'
 Syntax error: invalid character literal ''∈'' at line 1 column 1

@@ -59,6 +59,7 @@ static inline bool isOpenParen(Node* node) {return isThisToken(node, "(");}
 static inline bool isCloseParen(Node* node) {return isThisToken(node, ")");}
 static inline bool isEOF(Node* node) {return isThisToken(node, "\0");}
 static inline bool isComma(Node* node) {return isThisToken(node, ",");}
+static inline bool isBlank(Node* node) {return isThisToken(node, "_");}
 
 // ================================
 // Functions to construct new nodes

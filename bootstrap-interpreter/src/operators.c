@@ -25,10 +25,26 @@ static Node* infix(Node* operator, Node* left, Node* right) {
 }
 
 static Node* comma(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(operator);
     syntaxErrorIf(isDefinition(left), "missing scope", left);
     syntaxErrorIf(isDefinition(right), "missing scope", right);
-    return newCommaList(tag, left, right);
+    return newCommaList(getTag(operator), left, right);
+}
+
+static bool isPatternLambda(Node* lambda) {
+    return isBlank(getParameter(lambda)) && isApplication(getBody(lambda)) &&
+        isReference(getLeft(getBody(lambda))) &&
+        isBlank(getLeft(getBody(lambda)));
+}
+
+static Node* semicolon(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isLambda(left), "expected lambda to left of", operator);
+    syntaxErrorIf(!isLambda(right), "expected lambda to right of", operator);
+    Tag tag = getTag(operator);
+    Node* body = isPatternLambda(left) ? getBody(left) :
+        newApplication(tag, newBlankReference(tag, 1), getBody(left));
+    Node* newCase = isPatternLambda(right) ?
+        getRight(getBody(right)) : getBody(right);
+    return newLambda(tag, newBlank(tag), newApplication(tag, body, newCase));
 }
 
 Node* newPatternLambda(Node* operator, Node* left, Node* right) {
@@ -149,10 +165,11 @@ static Rules RULES[] = {
     {"[", 22, 0, OPEN, L, unmatched},
     {"]", 0, 22, CLOSE, R, brackets},
     {",", 1, 1, IN, L, comma},
-    //{";", 1, 1, IN, N, semicolon},
     {"\n", 2, 2, IN, R, reduceNewline},
     {":=", 3, 3, IN, N, reduceDefine},
-    {"|", 4, 4, IN, L, infix},
+    {"|", 4, 4, IN, N, infix},  // should be lower precedence than comma
+    // todo: comma here: should be lower than semicolon
+    {";", 4, 4, IN, L, semicolon},
     {"->", 5, 5, IN, R, newPatternLambda},
 
     // conditional operators

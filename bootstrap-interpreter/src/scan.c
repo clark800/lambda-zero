@@ -24,7 +24,7 @@ static bool isOperandCharacter(char c) {
 bool isOperatorCharacter(char c) {
     // check c > 0 to ensure it is ASCII
     return c > 0 && !isDelimiterCharacter(c) && !isOperandCharacter(c)
-        && !isQuoteCharacter(c) && strchr("{};@$", c) == NULL;
+        && !isQuoteCharacter(c);
 }
 
 static bool isLineComment(const char* s) {
@@ -78,7 +78,7 @@ static const char* skipLexeme(const char* s) {
         return skipWhile(s, isOperandCharacter);
     if (isOperatorCharacter(s[0]))
         return skipWhile(s, isOperatorCharacter);
-    return s[0] == '\0' ? s : s + 1;    // delimiter or illegal character
+    return s[0] == '\0' ? s : s + 1;    // delimiter or invalid character
 }
 
 String getNextLexeme(const char* start) {

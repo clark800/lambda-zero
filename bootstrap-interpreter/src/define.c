@@ -42,6 +42,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
         return newDefinition(tag, left, right);
     for (; isApplication(left); left = getLeft(left))
         right = newPatternLambda(operator, getRight(left), right);
+    syntaxErrorIf(!isName(left), "invalid left hand side", operator);
     return newDefinition(tag, left, transformRecursion(left, right));
 }
 
@@ -49,13 +50,11 @@ static Node* applyDefinition(Node* definition, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
     Node* left = getLeft(definition);
     Node* right = getRight(definition);
-    if (isApplication(left)) {
-        assert(isTuple(left));
+    if (isApplication(left)) {  // must be a tuple
         for (; isApplication(left); left = getLeft(left))
             scope = newPatternLambda(definition, getRight(left), scope);
         return newApplication(getTag(definition), right, scope);
     }
-    syntaxErrorIf(!isName(left), "invalid parameter", left);
     return newApplication(getTag(definition),
         newLambda(getTag(definition), left, scope), right);
 }
