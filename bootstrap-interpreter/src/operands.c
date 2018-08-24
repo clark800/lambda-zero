@@ -28,7 +28,7 @@ static const char* skipQuoteCharacter(const char* start) {
 }
 
 static char decodeCharacter(const char* start, Node* token) {
-    syntaxErrorIf(start[0] <= 0, "illegal character in", token);
+    syntaxErrorIf(start[0] <= 0, "invalid character in", token);
     if (start[0] != '\\')
         return start[0];
     switch (start[1]) {
