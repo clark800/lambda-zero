@@ -108,8 +108,8 @@ static inline Node* newDefinition(Tag tag, Node* left, Node* right) {
 
 static inline Node* newBoolean(Tag tag, bool value) {
     Tag t = renameTag(tag, "t"), f = renameTag(tag, "f");
-    return newLambda(tag, newName(t), newLambda(tag, newName(f),
-        value ? newReference(t, 2) : newReference(f, 1)));
+    return newLambda(tag, newName(f), newLambda(tag, newName(t),
+        value ? newReference(t, 1) : newReference(f, 2)));
 }
 
 static inline Node* newBlank(Tag tag) {return newName(renameTag(tag, "_"));}
