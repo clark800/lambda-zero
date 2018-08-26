@@ -9,6 +9,7 @@
 #include "evaluate.h"
 
 bool TRACE_EVALUATION = false;
+static Hold* evaluateClosure(Closure* closure, const Array* globals);
 
 static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
@@ -145,7 +146,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, const Array* globals) {
     }
 }
 
-Hold* evaluateClosure(Closure* closure, const Array* globals) {
+static Hold* evaluateClosure(Closure* closure, const Array* globals) {
     Stack* stack = newStack();
     Hold* result = evaluate(closure, stack, globals);
     deleteStack(stack);

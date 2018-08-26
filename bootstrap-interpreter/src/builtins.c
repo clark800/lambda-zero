@@ -81,16 +81,12 @@ bool isStrictArgument(Node* builtin, unsigned int i) {
 }
 
 static Hold* evaluateError(Closure* builtin, Closure* message) {
-    STDERR = true;
     if (!TEST) {
         printRuntimeError("hit", builtin);
         fputc((int)'\n', stderr);
     }
-    Tag tag = getTag(getTerm(builtin));
-    Node* exit = newBuiltin(tag, EXIT);
-    Node* print = newApplication(tag, getTerm(message), newPrinter(tag));
-    setTerm(builtin, newApplication(tag, exit, print));
-    return hold(builtin);
+    STDERR = true;
+    return hold(message);
 }
 
 static Node* evaluatePut(Closure* builtin, long long c) {
@@ -126,6 +122,7 @@ static Node* evaluateGet(Closure* builtin, Closure* left, Closure* right) {
         Node* nilGlobal = getRight(getLeft(getBody(getTerm(right))));
         push(INPUT_STACK, nilGlobal);
     } else {
+        // push ((::) c get(n + 1, globals))
         Tag tag = getTag(getTerm(builtin));
         Node* prependGlobal = getRight(getBody(getTerm(right)));
         Node* nextIndex = newInteger(tag, index + 1);

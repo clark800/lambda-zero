@@ -13,15 +13,26 @@ true(t, f) := t
 false(t, f) := f
 if(b) := b
 (?) := if
+
 () := o -> o
-[] := _ -> true
 (,)(x, y) := o -> o(x, y)
 (,,)(x, y, z) := o -> o(x, y, z)
 (,,,)(w, x, y, z) := o -> o(w, x, y, z)
-x :: xs := (x, xs)                     // prepend element to list (cons)
+
+[] := n -> p -> n
+x :: xs := n -> p -> p(x, xs)
+zero := z -> p -> n -> z
+positive(m) := z -> p -> n -> p(m)
+negative(m) := z -> p -> n -> n(m)
+isEmpty := ([] -> true; _ :: _ -> false)
+fold(xs, f, z) := ([] -> z; x :: xs' -> f(x, fold(xs', f, z)))(xs)
+cascade(xs, f, z) := ([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))(xs)
+head := ([] -> error("head: empty list"); x :: _ -> x)
+tail := ([] -> error("tail: empty list"); _ :: xs -> xs)
 
 // universal
 x.f := f(x)                     // uniform function call syntax
+match := (.)
 f || x := f(x)                  // low precedence application
 f <> g := x -> f(g(x))          // function composition
 `f(x, y) := f(y, x)             // flip order of first two arguments of function
@@ -84,9 +95,7 @@ n ^ m := (
 
 // list basics
 prepend := `(::)
-isEmpty(xs) := xs(_ -> _ -> false)
-head(xs) := isEmpty(xs) ? error("head: empty list") || first(xs)
---xs := isEmpty(xs) ? error("dropHead: empty list") || second(xs)
+(--) := tail
 drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
 xs[n] := head(xs.drop(n))          // get element of list at index
@@ -104,6 +113,7 @@ takeSafe(xs, n) := (
     takeSafe(--xs, n - 1) >>= just <> (xs[0] ::)
 )
 dropSafe(xs, n) := n = 0 \/ isEmpty(xs) ? xs || dropSafe(--xs, n - 1)
+reduce(xs, f) := (--xs).cascade(f, xs[0])
 
 // newBranch : a -> List(Tree(a)) -> Tree(a)
 newNode(data, children) := (data, children)
@@ -111,11 +121,6 @@ newNode(data, children) := (data, children)
 getData := first
 // getChildren : Tree(a) -> List(Tree(a))
 getChildren := second
-
-// list folds
-fold(xs, f, z) := if(isEmpty(xs), z, f(head(xs), fold(--xs, f, z)))
-cascade(xs, f, z) := if(isEmpty(xs), z, cascade(--xs, f, f(z, head(xs))))
-reduce(xs, f) := (--xs).cascade(f, xs[0])
 
 // list fold operations
 xs ++ ys := xs.fold((::), ys)                   // concatenate two lists
@@ -137,9 +142,10 @@ zip(xs, ys) := zipWith(xs, (,), ys)
 unzip(xs) := (xs.map(first), xs.map(second))
 join(xss) := xss.fold((++), [])            // concatenate list of lists
 reverse(xs) := xs.cascade(`(::), [])
+
 interleave(xs, y) := (
-    isEmpty(xs) ? []
-    isEmpty(--xs) ? xs || head(xs) :: y :: interleave(--xs, y)
+    interleave' := [] -> [] ; x :: xs' -> y :: x :: interleave'(xs')
+    xs.match([] -> [] ; x :: xs' -> x :: interleave'(xs'))
 )
 joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs | p, xs | (!) <> p)
@@ -188,13 +194,13 @@ deduplicateBy(xs, (=?=)) := (
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 
 startsWith(ns, ks) := ks.isEmpty ? true ||
-    ns.isEmpty \/ ns[0] != ks[0] ? false || startsWith(--ns, --ks)
+    ns.isEmpty \/ head(ns) != head(ks) ? false || startsWith(--ns, --ks)
 
 split(ns, p) := (
     ns.isEmpty ? ([], [])
     p(ns) ? ([], ns)
     (before, after) := (--ns).split(p)
-    (ns[0] :: before, after)
+    (head(ns) :: before, after)
 )
 
 splitAt(xs, n) := (xs.take(n), xs.drop(n))

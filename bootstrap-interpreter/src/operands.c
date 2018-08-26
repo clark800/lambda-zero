@@ -71,6 +71,17 @@ static Node* parseStringLiteral(Node* token) {
 
 static Node* parseSymbol(Node* token) {
     char head = getTag(token).lexeme.start[0];
+    if (isThisToken(token, "error")) {
+        Tag tag = getTag(token);
+        Node* print = newPrinter(tag);
+        Node* exit = newBuiltin(renameTag(tag, "exit"), EXIT);
+        Node* error = newBuiltin(renameTag(tag, "error"), ERROR);
+        Node* blank = newBlankReference(tag, 1);
+        // error(message) ~> (_ -> exit(print(error(_))))(message)
+        return newLambda(tag, newBlank(tag),
+            newApplication(tag, exit, newApplication(tag, print,
+            newApplication(tag, error, blank))));
+    }
     syntaxErrorIf(isupper(head), "names can't start with uppercase", token);
     return token;
 }

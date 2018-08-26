@@ -139,12 +139,13 @@ static inline Node* newYCombinator(Tag tag) {
 
 static inline Node* newPrinter(Tag tag) {
     Node* put = newBuiltin(renameTag(tag, "put"), PUT);
-    Node* c = newBlankReference(tag, 1);
-    Node* print = newBlankReference(tag, 3);
-    Node* ccp = newLambda(tag, newBlank(tag), newApplication(tag, c, print));
-    Node* body = newApplication(tag, newApplication(tag, put, c), ccp);
-    return newApplication(tag, newYCombinator(tag),
-        newLambda(tag, newBlank(tag), newLambda(tag, newBlank(tag), body)));
+    Node* fold = newName(renameTag(tag, "fold"));
+    Node* unit = newName(renameTag(tag, "()"));
+    Node* blank = newBlankReference(tag, 1);
+
+    Node* body = newApplication(tag, newApplication(tag, newApplication(tag,
+        fold, blank), put), unit);
+    return newLambda(tag, newBlank(tag), body);
 }
 
 // =======================================

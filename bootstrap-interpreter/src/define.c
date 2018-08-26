@@ -27,11 +27,11 @@ static Node* transformRecursion(Node* name, Node* value) {
     return newApplication(tag, yCombinator, newLambda(tag, name, value));
 }
 
-bool isTupleConstructor(Node* token) {
+static bool isTupleConstructor(Node* token) {
     return isLeaf(token) && getLexeme(token).start[0] == ',';
 }
 
-bool isTuple(Node* node) {
+static bool isTuple(Node* node) {
     return isApplication(node) ? isTuple(getLeft(node)) :
         isTupleConstructor(node) && getValue(node) == CONVERSION;
 }
@@ -51,9 +51,8 @@ static Node* applyDefinition(Node* definition, Node* scope) {
     Node* left = getLeft(definition);
     Node* right = getRight(definition);
     if (isApplication(left)) {  // must be a tuple
-        for (; isApplication(left); left = getLeft(left))
-            scope = newPatternLambda(definition, getRight(left), scope);
-        return newApplication(getTag(definition), right, scope);
+        Node* lambda = newPatternLambda(definition, left, scope);
+        return newApplication(getTag(definition), lambda, right);
     }
     return newApplication(getTag(definition),
         newLambda(getTag(definition), left, scope), right);
@@ -66,13 +65,13 @@ static Node* newChurchPair(Tag tag, Node* left, Node* right) {
 
 static Node* newMainCall(Node* main) {
     Tag tag = getTag(main);
-    Node* printer = newPrinter(tag);
+    Node* print = newPrinter(tag);
     Node* get = newBuiltin(renameTag(tag, "get"), GET);
     Node* get0 = newApplication(tag, get, newInteger(tag, 0));
     Node* operators = newChurchPair(tag,
         newName(renameTag(tag, "[]")), newName(renameTag(tag, "::")));
     Node* input = newApplication(tag, get0, operators);
-    return newApplication(tag, newApplication(tag, main, input), printer);
+    return newApplication(tag, print, newApplication(tag, main, input));
 }
 
 Node* transformDefinition(Node* definition) {
