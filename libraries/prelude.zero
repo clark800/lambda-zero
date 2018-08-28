@@ -8,29 +8,7 @@
 // *s      list of *
 // **      pair of * and *
 
-// boolean logic
-true(t, f) := t
-false(t, f) := f
-if(b) := b
-(?) := if
-
-() := o -> o
-(,)(x, y) := o -> o(x, y)
-(,,)(x, y, z) := o -> o(x, y, z)
-(,,,)(w, x, y, z) := o -> o(w, x, y, z)
-
-[] := n -> p -> n
-x :: xs := n -> p -> p(x, xs)
-zero := z -> p -> n -> z
-positive(m) := z -> p -> n -> p(m)
-negative(m) := z -> p -> n -> n(m)
-isEmpty := ([] -> true; _ :: _ -> false)
-fold(xs, f, z) := ([] -> z; x :: xs' -> f(x, fold(xs', f, z)))(xs)
-cascade(xs, f, z) := ([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))(xs)
-head := ([] -> error("head: empty list"); x :: _ -> x)
-tail := ([] -> error("tail: empty list"); _ :: xs -> xs)
-
-// universal
+// function
 x.f := f(x)                     // uniform function call syntax
 match := (.)
 f || x := f(x)                  // low precedence application
@@ -40,91 +18,130 @@ id(x) := x                      // identity function
 constant(x) := _ -> x           // return value does not depend on parameter
 on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 mirror(f)(x) := f(x, x)         // convert binary function to unary function
-undefined := error("undefined")
 
+// boolean
+true(f, t) := t
+false(f, t) := f
+if(b, x, y) := b.match(false -> y; true -> x)
+(?) := if
 !b := b ? false || true
 b /\ c := b ? c || false
 b \/ c := b ? true || c
 b => c := b ? c || true
 b <=> c := b ? c || !c
-
-// pairs
-first((x, y)) := x
-second((x, y)) := y
-swap((x, y)) := (y, x)
-
-// function methods
-f^^(n)(z) := n < 0 ? error("(^^): negative") || n = 0 ? z || f^^(n - 1)(f(z))
 until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
-curry(f) := x -> y -> f((x, y))
-uncurry(f) := xx -> f(first(xx), second(xx))
-
-// more pairs
-mapFirst(xy, f) := (f(first(xy)), second(xy))
-mapSecond(xy, f) := (first(xy), f(second(xy)))
-mapPair(xx, f) := (,).on(f).uncurry(xx)
-
-// maybe
-nothing := z -> f -> z
-just(x) := z -> f -> f(x)
-maybe(mx, f, x) := mx(x, f)
-isNothing(mx) := mx.maybe(constant(false), true)
-isJust(mx) := mx.maybe(constant(true), false)
-fromJust(mx) := mx.maybe(id, error("fromJust: not a just"))
-mx >>= f := mx.maybe(f, nothing)         // maybe chaining (bind)
-mx ?|| x := mx.maybe(id, x)              // just value or default
 
 // math
+zero := z -> p -> n -> z
+positive(m) := z -> p -> n -> p(m)
+negative(m) := z -> p -> n -> n(m)
 abs(n) := n >= 0 ? n || -n
 sign(n) := n = 0 ? 0 || n > 0 ? 1 || -1
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
 mod(n, m) := n % m
-even(n) := n.mod(2) = 0
-odd(n) := n.mod(2) != 0
+isEven(n) := n.mod(2) = 0
+isOdd(n) := n.mod(2) != 0
 divides(n, m) := m.mod(n) = 0
 factorial(n) := (n = 0) ? 1 || n * factorial(n - 1)
 gcd(n, m) := (m = 0) ? n || gcd(m, n.mod(m))
 n ^ m := (
     m = 0 ? 1
     m < 0 ? 1 / n ^ -m
-    even(m) ? (*).mirror(n ^ (m / 2))
+    isEven(m) ? (*).mirror(n ^ (m / 2))
     n * n ^ (m - 1)
 )
 
-// list basics
+// tuple
+() := o -> o
+(,)(x, y) := o -> o(x, y)
+(,,)(x, y, z) := o -> o(x, y, z)
+(,,,)(w, x, y, z) := o -> o(w, x, y, z)
+first((x, y)) := x
+second((x, y)) := y
+swap((x, y)) := (y, x)
+mapFirst(xy, f) := (f(first(xy)), second(xy))
+mapSecond(xy, f) := (first(xy), f(second(xy)))
+mapPair(xx, f) := (f(first(xx)), f(second(xx)))
+curry(f) := x -> y -> f((x, y))
+uncurry(f) := xx -> f(first(xx), second(xx))
+
+// maybe
+nothing := z -> f -> z
+just(x) := z -> f -> f(x)
+isNothing := nothing -> true; just(_) -> false
+isJust := nothing -> false; just(_) -> true
+mx >>= f := mx.match(nothing -> nothing; just(x) -> f(x))   // maybe bind
+mx ?|| d := mx.match(nothing -> d; just(x) -> x)    // just value or default
+
+// list
+[] := n -> p -> n
+x :: xs := n -> p -> p(x, xs)
 prepend := `(::)
+isEmpty := [] -> true; _ :: _ -> false
+fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
+cascade(xs, f, z) := xs.match([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))
+xs ++ ys := xs.fold((::), ys)                   // concatenate two lists
+join(xss) := xss.fold((++), [])            // concatenate list of lists
+length(xs) := xs.fold(constant((+ 1)), 0)         // get length of list
+reverse(xs) := xs.cascade(`(::), [])
+dropIf(ns, p) := ns.match([] -> []; n :: ns' -> p(n) ? ns' || ns)
+takeWhile(xs, p) := xs.match(
+    [] -> [];
+    x :: xs' -> p(x) ? x :: takeWhile(xs', p) || []
+)
+dropWhile(xs, p) := xs.match(
+    [] -> [];
+    x :: xs' -> p(x) ? dropWhile(xs', p) || xs
+)
+takeSafe(xs, n) := n = 0 ? just([]) ||
+    xs.match([] -> nothing; x :: xs' -> takeSafe(xs', n - 1) >>= just <> (x ::))
+dropSafe(xs, n) := n = 0 ? xs ||
+    xs.match([] -> []; _ :: xs' -> dropSafe(xs', n - 1))
+filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
+(|) := filter
+map(xs, f) := fold(xs, (::) <> f, [])          // map function over list
+zipWith(xs, f, ys) := xs.match(
+    [] -> [];
+    x :: xs' -> ys.match(
+        [] -> [];
+        y :: ys' -> f(x, y) :: zipWith(xs', f, ys')
+    )
+)
+zip(xs, ys) := zipWith(xs, (,), ys)
+unzip(xs) := (xs.map(first), xs.map(second))
+ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
+interleave(xs, y) := (
+    interleave' := [] -> []; x :: xs' -> y :: x :: interleave'(xs')
+    xs.match([] -> []; x :: xs' -> x :: interleave'(xs'))
+)
+joinWith(xss, ys) := join(interleave(xss, ys))
+bisect(xs, p) := (xs | p, xs | (!) <> p)
+any(xs, p) := xs.map(p).fold((\/), false)     // test if any element satisfies p
+all(xs, p) := xs.map(p).fold((/\), true)      // test if all elements satisfy p
+find(xs, p) := xs.match(
+    [] -> nothing;
+    x :: xs' -> p(x) ? just(x) || xs'.find(p)
+)
+// foldMap : a[] --> (a --> s --> b ** s) --> s --> (b[], s)
+foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
+    f(x, s).mapFirst((:: ys)), ([], z)).mapFirst(reverse)
+
+// fallible function
+f^^(n)(z) := n < 0 ? error("(^^): negative") || n = 0 ? z || f^^(n - 1)(f(z))
+
+// fallible list
+head := [] -> error("head: empty list"); x :: _ -> x
+tail := [] -> error("tail: empty list"); _ :: xs -> xs
 (--) := tail
 drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
-take(xs, n) := n = 0 ? [] || xs.head :: (--xs).take(n - 1)
+take(xs, n) := n = 0 ? [] || head(xs) :: (--xs).take(n - 1)
 xs[n] := head(xs.drop(n))          // get element of list at index
 slice(xs, start, end) := xs.drop(start).take(end - start)
-xs =*= ys := xs.isEmpty \/ ys.isEmpty ? xs.isEmpty <=> ys.isEmpty ||
-    xs[0] = ys[0] /\ --xs =*= --ys       // integer list equality
-last(xs) := (--).until(isEmpty <> (--), xs)[0] // get last element of list
-dropLast(xs) := isEmpty(xs) \/ isEmpty(--xs) ? [] || xs[0] :: dropLast(--xs)
-dropWhile(ns, p) := (--).while(p <> head, ns)
-takeWhile(ns, p) := ns.isEmpty \/ !p(ns[0]) ? [] || ns[0] :: takeWhile(--ns, p)
-
-takeSafe(xs, n) := (
-    n = 0 ? just([])
-    xs.isEmpty ? nothing
-    takeSafe(--xs, n - 1) >>= just <> (xs[0] ::)
-)
-dropSafe(xs, n) := n = 0 \/ isEmpty(xs) ? xs || dropSafe(--xs, n - 1)
+last(xs) := (--).until(isEmpty <> (--), xs).head    // get last element of list
+dropLast(xs) := isEmpty(xs) \/ isEmpty(--xs) ? [] || head(xs) :: dropLast(--xs)
 reduce(xs, f) := (--xs).cascade(f, xs[0])
-
-// newBranch : a -> List(Tree(a)) -> Tree(a)
-newNode(data, children) := (data, children)
-// getData : Tree(a) -> a
-getData := first
-// getChildren : Tree(a) -> List(Tree(a))
-getChildren := second
-
-// list fold operations
-xs ++ ys := xs.fold((::), ys)                   // concatenate two lists
-length(xs) := xs.fold(constant((+ 1)), 0)         // get length of list
 
 // generic list constructors
 iterate(f, x) := x :: iterate(f, f(x))       // iteratively apply f
@@ -132,33 +149,41 @@ repeat(x) := x :: repeat(x)                  // infinitely repeat one element
 replicate(x, n) := (x ::)^^(n)([])         // replicate one element n times
 cycle(xs) := xs ++ cycle(xs)                 // infinitely cycle list
 
-// generic list transformations
-filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
-(|) := filter
-map(xs, f) := fold(xs, (::) <> f, [])          // map function over list
-zipWith(xs, f, ys) := isEmpty(xs) \/ isEmpty(ys) ? [] ||
-    f(xs[0], ys[0]) :: zipWith(--xs, f, --ys)
-zip(xs, ys) := zipWith(xs, (,), ys)
-unzip(xs) := (xs.map(first), xs.map(second))
-join(xss) := xss.fold((++), [])            // concatenate list of lists
-reverse(xs) := xs.cascade(`(::), [])
-
-interleave(xs, y) := (
-    interleave' := [] -> [] ; x :: xs' -> y :: x :: interleave'(xs')
-    xs.match([] -> [] ; x :: xs' -> x :: interleave'(xs'))
+// integer list
+n .. m := n > m ? [] || n :: (n + 1 .. m)
+sort := [] -> []; n :: ns -> sort(ns | (<= n)) ++ [n] ++ sort(ns | (> n))
+deduplicate := [] -> []; n :: ns -> n :: deduplicate(ns | (!= n))
+deduplicateBy(xs, (=?=)) := xs.match(
+    [] -> [];
+    x :: xs' -> x :: deduplicateBy(xs' | (!) <> (=?= x), (=?=))
 )
-joinWith(xss, ys) := join(interleave(xss, ys))
-bisect(xs, p) := (xs | p, xs | (!) <> p)
+sum(ns) := ns.cascade((+), 0)
+product(ns) := ns.cascade((*), 1)
+minimum(ns) := ns.reduce(min)
+maximum(ns) := ns.reduce(max)
+countFrom := iterate((+ 1))
+naturals := countFrom(0)
+primes := (
+    filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns | n' -> n' % n != 0)
+    filterPrime(countFrom(2))
+)
 
-// generic list reducers
-any(xs, p) := xs.map(p).fold((\/), false)     // test if any element satisfies p
-all(xs, p) := xs.map(p).fold((/\), true)      // test if all elements satisfy p
-// find first element satisfying p, or return nothing
-find(xs, p) := isEmpty(xs) ? nothing || p(xs[0]) ? just(xs[0]) || (--xs).find(p)
+// string
+xs =*= ys := xs.match(        // string equality
+    [] -> isEmpty(ys);
+    x :: xs' -> ys.match(
+        [] -> false;
+        y :: ys' -> x = y /\ xs' =*= ys'
+    )
+)
 
-// foldMap : a[] --> (a --> s --> (b; s)) --> s --> (b[], s)
-foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
-    f(x, s).mapFirst((:: ys)), ([], z)).mapFirst(reverse)
+ns <*= ms := ns.match(      // string comparison
+    [] -> true;
+    n :: ns' -> ms.match(
+        [] -> false;
+        m :: ms' -> n < m \/ n = m /\ ns' <*= ms'
+    )
+)
 
 indexOf(nss, key) := (
     indexOf'(list, depth) := (
@@ -168,39 +193,24 @@ indexOf(nss, key) := (
     )
     indexOf'(nss, 0)
 )
+
 contains(nss, key) := isJust(nss.indexOf(key))
 
-// integer list basics
-ns <*= ms := ns.isEmpty \/ !ms.isEmpty /\
-    (head(ns) < head(ms) \/ head(ns) = head(ms) /\ --ns <*= --ms)
-
-// integer list constructors
-n .. m := n > m ? [] || n :: (n + 1 .. m)
-
-// integer list transformations
-sort(ns) := (
-    isEmpty(ns) ? []
-    n := head(ns)
-    sort(--ns | (<= n)) ++ [n] ++ sort(--ns | (> n))
+startsWith(ns, ks) := ks.match(
+    [] -> true;
+    k :: ks' -> ns.match(
+        [] -> false;
+        n :: ns' -> n = k /\ startsWith(ns', ks')
+    )
 )
-deduplicate(ns) := (
-    isEmpty(ns) ? []
-    head(ns) :: deduplicate(--ns | (!= head(ns)))
-)
-deduplicateBy(xs, (=?=)) := (
-    isEmpty(xs) ? []
-    head(xs) :: deduplicateBy(--xs | (!) <> (=?= head(xs)), (=?=))
-)
-ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 
-startsWith(ns, ks) := ks.isEmpty ? true ||
-    ns.isEmpty \/ head(ns) != head(ks) ? false || startsWith(--ns, --ks)
-
-split(ns, p) := (
-    ns.isEmpty ? ([], [])
-    p(ns) ? ([], ns)
-    (before, after) := (--ns).split(p)
-    (head(ns) :: before, after)
+split(ns, p) := ns.match(
+    [] -> ([], []);
+    n :: ns' -> (
+        p(ns) ? ([], ns)
+        (before, after) := ns'.split(p)
+        (n :: before, after)
+    )
 )
 
 splitAt(xs, n) := (xs.take(n), xs.drop(n))
@@ -220,7 +230,6 @@ partition(ns, splitter) := (
     before :: partition(after, splitter)
 )
 
-dropIf(ns, p) := isEmpty(ns) ? [] || p(ns[0]) ? --ns || ns
 dropPrefix(ns, prefix) := ns.startsWith(prefix) ? ns.drop(length(prefix)) || ns
 
 partitionBy(ns, p) := ns.partition(`splitWhen(p) <> `dropIf(p))
@@ -229,22 +238,6 @@ partitionOn(ns, delimiter) := ns.partition(
 
 words(ns) := ns.partitionOn(" ") | (!) <> isEmpty
 lines(ns) := ns.partitionOn("\n")
-
-repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)
-
-// integer list reducers
-sum(ns) := ns.cascade((+), 0)
-product(ns) := ns.cascade((*), 1)
-minimum(ns) := ns.reduce(min)
-maximum(ns) := ns.reduce(max)
-
-// infinite lists
-countFrom := iterate((+ 1))
-naturals := countFrom(0)
-primes := (
-    filterPrime(ns) := head(ns) :: filterPrime(--ns | n' -> n' % head(ns) != 0)
-    filterPrime(countFrom(2))
-)
 
 // ASCII character classes
 isUppercase(n) := n >= 'A' /\ n <= 'Z'
@@ -293,3 +286,14 @@ parseNatural(string, base) :=
     string.cascade(x -> d -> base * x + parseDigit(d, base), 0)
 parseInteger(string, base) := string.head = '-' ?
     -parseNatural(--string, base) || parseNatural(string, base)
+
+// trees
+newNode(data, children) := (data, children)
+getData := first
+getChildren := second
+
+// undefined
+undefined := error("undefined")
+
+// repl
+repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)

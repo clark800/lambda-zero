@@ -7,10 +7,10 @@
 - Every Lambda Zero program is a single expression; there are no statements
   or variables in the language.
 - The interpreter is less than 2000 lines of strict ANSI C99 and the binary is
-  just ~60KB dynamically linked and stripped.
+  just ~64KB dynamically linked and stripped.
 - The interpreter can also be built for Linux x86-64 without the C standard
   library in which case it is less than 2500 lines of strict ANSI C99 and
-  generates a ~30KB statically linked stripped binary.
+  generates a ~50KB statically linked stripped binary.
 - The interpreter includes reference-counting garbage collection on a free list
   memory allocator, error messaging, and rudimental built-in debugging features.
 
@@ -26,11 +26,7 @@
 
 ### Quicksort
 
-    sort(ns) := (
-        isEmpty(ns) ? []
-        (n, ns') := ns
-        sort(ns' | (<= n)) ++ [n] ++ sort(ns' | (> n))
-    )
+    sort := [] -> []; n :: ns -> sort(ns | (<= n)) ++ [n] ++ sort(ns | (> n))
 
 ### Infinite list of natural numbers
 
@@ -41,7 +37,7 @@
 ### Infinite list of prime numbers
 
     primes := (
-        filterPrime((n, ns)) := n ∷ filterPrime(ns | n' -> n' % n != 0)
+        filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns | n' -> n' % n != 0)
         filterPrime(countFrom(2))
     )
 
