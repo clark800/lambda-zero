@@ -80,14 +80,11 @@ static void evaluateGlobal(Closure* closure, const Array* globals) {
     setLocals(closure, VOID);
 }
 
-static Hold* popBuiltinArgument(Closure* closure, Stack* stack,
-        const Array* globals, unsigned int position) {
+static Hold* popArgument(Closure* closure, Stack* stack, const Array* globals) {
     applyUpdates(closure, stack);
     if (isEmpty(stack))
         runtimeError("missing argument to", closure);
     Hold* expression = pop(stack);
-    if (!isStrictArgument(getTerm(closure), position))
-        return expression;
     Hold* result = evaluateClosure(getNode(expression), globals);
     release(expression);
     return result;
@@ -97,10 +94,8 @@ static void evaluateBuiltin(Closure* closure, Stack* stack,
         const Array* globals) {
     Node* builtin = getTerm(closure);
     unsigned int arity = getBuiltinArity(builtin);
-    Hold* left = arity > 0 ?
-        popBuiltinArgument(closure, stack, globals, 0) : NULL;
-    Hold* right = arity > 1 ?
-        popBuiltinArgument(closure, stack, globals, 1) : NULL;
+    Hold* left = arity > 0 ? popArgument(closure, stack, globals) : NULL;
+    Hold* right = arity > 1 ? popArgument(closure, stack, globals) : NULL;
     Hold* result = evaluateBuiltinNode(closure, getNode(left), getNode(right));
     setClosure(closure, getNode(result));
     release(result);
