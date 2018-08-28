@@ -100,7 +100,6 @@ takeSafe(xs, n) := n = 0 ? just([]) ||
 dropSafe(xs, n) := n = 0 ? xs ||
     xs.match([] -> []; _ :: xs' -> dropSafe(xs', n - 1))
 filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
-(|) := filter
 map(xs, f) := fold(xs, (::) <> f, [])          // map function over list
 zipWith(xs, f, ys) := xs.match(
     [] -> [];
@@ -117,7 +116,7 @@ interleave(xs, y) := (
     xs.match([] -> []; x :: xs' -> x :: interleave'(xs'))
 )
 joinWith(xss, ys) := join(interleave(xss, ys))
-bisect(xs, p) := (xs | p, xs | (!) <> p)
+bisect(xs, p) := ((xs | p), (xs | (!) <> p))
 any(xs, p) := xs.map(p).fold((\/), false)     // test if any element satisfies p
 all(xs, p) := xs.map(p).fold((/\), true)      // test if all elements satisfy p
 find(xs, p) := xs.match(
@@ -155,7 +154,7 @@ sort := [] -> []; n :: ns -> sort(ns | (<= n)) ++ [n] ++ sort(ns | (> n))
 deduplicate := [] -> []; n :: ns -> n :: deduplicate(ns | (!= n))
 deduplicateBy(xs, (=?=)) := xs.match(
     [] -> [];
-    x :: xs' -> x :: deduplicateBy(xs' | (!) <> (=?= x), (=?=))
+    x :: xs' -> x :: deduplicateBy((xs' | (!) <> (=?= x)), (=?=))
 )
 sum(ns) := ns.cascade((+), 0)
 product(ns) := ns.cascade((*), 1)
@@ -236,7 +235,7 @@ partitionBy(ns, p) := ns.partition(`splitWhen(p) <> `dropIf(p))
 partitionOn(ns, delimiter) := ns.partition(
     `splitOn(delimiter) <> `dropPrefix(delimiter))
 
-words(ns) := ns.partitionOn(" ") | (!) <> isEmpty
+words(ns) := (ns.partitionOn(" ") | (!) <> isEmpty)
 lines(ns) := ns.partitionOn("\n")
 
 // ASCII character classes

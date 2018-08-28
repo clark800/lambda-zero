@@ -1,5 +1,5 @@
 // OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
-typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST,
+typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST, PIPE,
     APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN, GLOBAL} NodeType;
 typedef enum {NAME, NUMERIC, CHARACTER, STRING, CONVERSION} OperandType;
 
@@ -35,6 +35,7 @@ static inline bool isThisToken(Node* token, const char* lexeme) {
 
 static inline bool isOperator(Node* node) {return getType(node) == OPERATOR;}
 static inline bool isCommaList(Node* node) {return getType(node) == COMMALIST;}
+static inline bool isPipePair(Node* node) {return getType(node) == PIPE;}
 static inline bool isLambda(Node* node) {return getType(node) == LAMBDA;}
 static inline bool isReference(Node* node) {return getType(node) == REFERENCE;}
 static inline bool isInteger(Node* node) {return getType(node) == INTEGER;}
@@ -122,6 +123,10 @@ static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
 
 static inline Node* newCommaList(Tag tag, Node* left, Node* right) {
     return newBranch(tag, COMMALIST, left, right);
+}
+
+static inline Node* newPipePair(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, PIPE, left, right);
 }
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {

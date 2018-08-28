@@ -104,3 +104,9 @@ Syntax error: missing scope at line 1 column 7
 1 + 2 +  + 4
 Syntax error: invalid character '' at line 1 column 9
 ===============================================================================
+f(x, y | z)
+Syntax error: pipe not inside brackets at line 1 column 8
+===============================================================================
+f(x | y, z)
+Syntax error: comma invalid on right of pipe at line 1 column 8
+===============================================================================
