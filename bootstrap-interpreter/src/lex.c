@@ -2,6 +2,7 @@
 #include "lib/tree.h"
 #include "scan.h"
 #include "ast.h"
+#include "errors.h"
 #include "lex.h"
 
 static Location location = {1, 1};
@@ -14,6 +15,8 @@ static Node* createToken(String lexeme) {
     else
         location = newLocation(location.line, location.column + lexeme.length);
 
+    if (head != '\0' && iscntrl(head) && !isspace(head))
+        syntaxError("invalid character", newOperator(tag));
     if (isDelimiterCharacter(head) || isOperatorCharacter(head))
         return newOperator(tag);
     if (isdigit(head))

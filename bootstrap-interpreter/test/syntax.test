@@ -101,3 +101,6 @@ Syntax error: missing scope at line 1 column 4
 (1, b := 2)
 Syntax error: missing scope at line 1 column 7
 ===============================================================================
+1 + 2 +  + 4
+Syntax error: invalid character '' at line 1 column 9
+===============================================================================
