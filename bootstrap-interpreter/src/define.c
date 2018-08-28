@@ -18,6 +18,14 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
     return false;
 }
 
+static inline Node* newYCombinator(Tag tag) {
+    Node* x = newBlankReference(tag, 1);
+    Node* y = newBlankReference(tag, 2);
+    Node* yxx = newApplication(tag, y, newApplication(tag, x, x));
+    Node* xyxx = newLambda(tag, newBlank(tag), yxx);
+    return newLambda(tag, newBlank(tag), newApplication(tag, xyxx, xyxx));
+}
+
 static Node* transformRecursion(Node* name, Node* value) {
     if (isComma(name) || !isName(name) || !hasRecursiveCalls(value, name))
         return value;

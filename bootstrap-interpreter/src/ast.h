@@ -129,14 +129,6 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
     return newApplication(tag, newApplication(tag, operator, item), list);
 }
 
-static inline Node* newYCombinator(Tag tag) {
-    Node* x = newBlankReference(tag, 1);
-    Node* y = newBlankReference(tag, 2);
-    Node* yxx = newApplication(tag, y, newApplication(tag, x, x));
-    Node* xyxx = newLambda(tag, newBlank(tag), yxx);
-    return newLambda(tag, newBlank(tag), newApplication(tag, xyxx, xyxx));
-}
-
 static inline Node* newPrinter(Tag tag) {
     Node* put = newBuiltin(renameTag(tag, "put"), PUT);
     Node* fold = newName(renameTag(tag, "fold"));

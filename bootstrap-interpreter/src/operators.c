@@ -64,9 +64,9 @@ static Node* semicolon(Node* operator, Node* left, Node* right) {
         newApplication(tag, base, getPatternExtension(right)));
 }
 
-static int getArgumentCount(Node* tuple) {
+static int getArgumentCount(Node* application) {
     int i = 0;
-    for (Node* n = tuple; isApplication(n); i++)
+    for (Node* n = application; isApplication(n); i++)
         n = getLeft(n);
     return i;
 }
@@ -79,7 +79,8 @@ static Node* newProjection(Tag tag, int size, int index) {
     return projection;
 }
 
-Node* newLazyPatternLambda(Node* operator, Node* left, Node* right) {
+Node* newPatternLambda(Node* operator, Node* left, Node* right) {
+    // lazy pattern matching
     Tag tag = getTag(operator);
     if (isName(left))
         return newLambda(tag, left, right);
@@ -109,10 +110,6 @@ Node* newStrictPatternLambda(Node* operator, Node* left, Node* right) {
         newApplication(tag, newBlankReference(tag, 1), right));
 }
 */
-
-Node* newPatternLambda(Node* operator, Node* left, Node* right) {
-    return newLazyPatternLambda(operator, left, right);
-}
 
 static Node* prefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
