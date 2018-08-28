@@ -76,10 +76,6 @@ unsigned int getBuiltinArity(Node* builtin) {
     }
 }
 
-bool isStrictArgument(Node* builtin, unsigned int i) {
-    return !(getValue(builtin) == ERROR && i == 0);
-}
-
 static Hold* evaluateError(Closure* builtin, Closure* message) {
     if (!TEST) {
         printRuntimeError("hit", builtin);

@@ -80,9 +80,6 @@ Syntax error: invalid operator in section '!' at line 2 column 5
 [1,2,3][]
 Syntax error: missing argument to '[' at line 1 column 8
 ===============================================================================
-[1,2,3][1, 2]
-Syntax error: too many arguments to '[' at line 1 column 8
-===============================================================================
 `f(x, y) := f(y, x) \n mod(x, y) := x % y \n `mod(2, 5)
 1
 ===============================================================================
@@ -100,4 +97,13 @@ Syntax error: missing scope at line 1 column 4
 ===============================================================================
 (1, b := 2)
 Syntax error: missing scope at line 1 column 7
+===============================================================================
+1 + 2 +  + 4
+Syntax error: invalid character '' at line 1 column 9
+===============================================================================
+f(x, y | z)
+Syntax error: pipe not inside brackets at line 1 column 8
+===============================================================================
+f(x | y, z)
+Syntax error: comma invalid on right of pipe at line 1 column 8
 ===============================================================================

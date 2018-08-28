@@ -24,6 +24,12 @@ static Node* infix(Node* operator, Node* left, Node* right) {
     return apply(operator, apply(operator, symbol, left), right);
 }
 
+static Node* pipe(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(isDefinition(left), "missing scope", left);
+    syntaxErrorIf(isDefinition(right), "missing scope", right);
+    return newPipePair(getTag(operator), left, right);
+}
+
 static Node* comma(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(isDefinition(left), "missing scope", left);
     syntaxErrorIf(isDefinition(right), "missing scope", right);
@@ -64,9 +70,9 @@ static Node* semicolon(Node* operator, Node* left, Node* right) {
         newApplication(tag, base, getPatternExtension(right)));
 }
 
-static int getArgumentCount(Node* tuple) {
+static int getArgumentCount(Node* application) {
     int i = 0;
-    for (Node* n = tuple; isApplication(n); i++)
+    for (Node* n = application; isApplication(n); i++)
         n = getLeft(n);
     return i;
 }
@@ -79,7 +85,8 @@ static Node* newProjection(Tag tag, int size, int index) {
     return projection;
 }
 
-Node* newLazyPatternLambda(Node* operator, Node* left, Node* right) {
+Node* newPatternLambda(Node* operator, Node* left, Node* right) {
+    // lazy pattern matching
     Tag tag = getTag(operator);
     if (isName(left))
         return newLambda(tag, left, right);
@@ -110,10 +117,6 @@ Node* newStrictPatternLambda(Node* operator, Node* left, Node* right) {
 }
 */
 
-Node* newPatternLambda(Node* operator, Node* left, Node* right) {
-    return newLazyPatternLambda(operator, left, right);
-}
-
 static Node* prefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
     Node* symbol = setValue(newName(getTag(operator)), CONVERSION);
@@ -130,27 +133,6 @@ static Node* unmatched(Node* operator, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-static Node* brackets(Node* close, Node* open, Node* contents) {
-    syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
-    Tag tag = getTag(open);
-    if (contents == NULL)
-        return newNil(tag);
-    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
-    if (getFixity(open) == OPENCALL) {
-        syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
-        syntaxErrorIf(isCommaList(getLeft(contents)),
-            "too many arguments to", open);
-        return newApplication(tag, newApplication(tag, newName(getTag(open)),
-            getLeft(contents)), getRight(contents));
-    }
-    Node* list = newNil(tag);
-    if (!isCommaList(contents))
-        return prepend(tag, contents, list);
-    for(; isCommaList(contents); contents = getLeft(contents))
-        list = prepend(tag, getRight(contents), list);
-    return prepend(tag, contents, list);
-}
-
 static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
     if (!isCommaList(arguments))
         return base == NULL ? arguments : newApplication(tag, base, arguments);
@@ -162,13 +144,41 @@ static unsigned int getCommaListLength(Node* node) {
     return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
 }
 
-static inline Node* newTuple(Tag tag, Node* commaList) {
-    static const char commas[] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
+static inline Node* newTuple(Node* open, Node* commaList, const char name[32]){
     unsigned int length = getCommaListLength(commaList) - 1;
-    syntaxErrorIf(length > sizeof(commas), "tuple too big", commaList);
-    Node* constructor = setValue(
-        newName(newTag(newString(commas, length), tag.location)), CONVERSION);
-    return applyToCommaList(tag, constructor, commaList);
+    syntaxErrorIf(length > 32, "too many arguments", open);
+    Node* constructor = setValue(newName(newTag(newString(name, length),
+        getTag(open).location)), CONVERSION);
+    return applyToCommaList(getTag(open), constructor, commaList);
+}
+
+static Node* square(Node* close, Node* open, Node* contents) {
+    syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
+    Tag tag = getTag(open);
+    if (contents == NULL)
+        return newNil(tag);
+    if (isPipePair(contents))
+        syntaxError("list comprehensions not implemented", contents);
+    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
+    if (getFixity(open) == OPENCALL) {
+        static const char opens[32] = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
+        syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
+        // not really a tuple, but it is the same structure
+        return newTuple(open, contents, opens);
+    }
+    Node* list = newNil(tag);
+    if (!isCommaList(contents))
+        return prepend(tag, contents, list);
+    for(; isCommaList(contents); contents = getLeft(contents))
+        list = prepend(tag, getRight(contents), list);
+    return prepend(tag, contents, list);
+}
+
+static Node* newFilter(Tag tag, Node* left, Node* right) {
+    syntaxErrorIf(isCommaList(left), "comma invalid on left of pipe", left);
+    syntaxErrorIf(isCommaList(right), "comma invalid on right of pipe", right);
+    Node* filter = newName(renameTag(tag, "filter"));
+    return newApplication(tag, newApplication(tag, filter, left), right);
 }
 
 static Node* parentheses(Node* close, Node* open, Node* contents) {
@@ -177,10 +187,20 @@ static Node* parentheses(Node* close, Node* open, Node* contents) {
     if (contents == NULL)
         return newName(renameTag(tag, "()"));
     syntaxErrorIf(isDefinition(contents), "missing scope", contents);
-    if (getFixity(open) == OPENCALL)
+    if (getFixity(open) == OPENCALL) {
+        if (isPipePair(contents)) {
+            // getLeft(contents) must be a comma list because function
+            // is moved inside of parenthesis with a comma afterwards
+            Node* function = getLeft(getLeft(contents));
+            if (isCommaList(function))
+                syntaxError("pipe not inside brackets", contents);
+            return newApplication(tag, function, newFilter(tag,
+                getRight(getLeft(contents)), getRight(contents)));
+        }
         return isCommaList(contents) ? applyToCommaList(tag, NULL, contents) :
             // desugar f() to f(())
             newApplication(tag, contents, newName(renameTag(tag, "()")));
+    }
 
     if (isOperator(contents)) {
         // update rules to favor infix over prefix inside parenthesis
@@ -189,8 +209,11 @@ static Node* parentheses(Node* close, Node* open, Node* contents) {
             syntaxError("operator cannot be parenthesized", contents);
         return newName(getTag(contents));
     }
+    static const char commas[32] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
     if (isCommaList(contents))
-        return newTuple(tag, contents);
+        return newTuple(open, contents, commas);
+    if (isPipePair(contents))
+        return newFilter(tag, getLeft(contents), getRight(contents));
     if (isApplication(contents))
         return setLocation(contents, getLocation(open));
     return contents;
@@ -198,18 +221,16 @@ static Node* parentheses(Node* close, Node* open, Node* contents) {
 
 static Node* eof(Node* operator, Node* open, Node* contents) {
     (void)operator;
-    syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(!isEOF(open), "missing close for", open);
+    syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
+    syntaxErrorIf(isPipePair(contents), "pipe not inside brackets", contents);
     return isDefinition(contents) ? transformDefinition(contents) : contents;
 }
 
-// comma must be the lowest precedence operator above parentheses/brackets
-// or else a commaList, which is an invalid operand, could get buried in the
-// AST without being detected, then a surrounding parentheses could apply
-// a tuple abstraction, which would bind across a bracket boundary.
-// if a comma is not wrapped in parentheses or brackets, it will be at the
-// very top level and thus won't be defined, so bind will catch this case.
+// note: must check for pipe pairs, comma lists, and definitions in every
+// reducer for operators of lower precedence to ensure that parser-specific
+// node types don't reach the evaluator.
 static Rules RULES[] = {
     // syntactic operators
     {"\0", 0, 0, CLOSE, L, eof},
@@ -218,43 +239,44 @@ static Rules RULES[] = {
     {")", 0, 22, CLOSE, R, parentheses},
     {"[", 22, 0, OPENCALL, L, unmatched},
     {"[", 22, 0, OPEN, L, unmatched},
-    {"]", 0, 22, CLOSE, R, brackets},
-    {",", 1, 1, IN, L, comma},
-    {"\n", 2, 2, IN, R, reduceNewline},
-    {":=", 3, 3, IN, N, reduceDefine},
-    {"|", 4, 4, IN, N, infix},  // should be lower precedence than comma
-    // todo: comma here: should be lower than semicolon
-    {";", 4, 4, IN, L, semicolon},
-    {"->", 5, 5, IN, R, newPatternLambda},
+    {"]", 0, 22, CLOSE, R, square},
+    {"|", 1, 1, IN, N, pipe},
+    {",", 2, 2, IN, L, comma},
+    {"\n", 3, 3, IN, R, reduceNewline},
+    {":=", 4, 4, IN, N, reduceDefine},
+    {";", 5, 5, IN, L, semicolon},
+    {"->", 6, 6, IN, R, newPatternLambda},
 
     // conditional operators
-    {"||", 5, 5, IN, R, infix},
-    {"?", 6, 6, IN, R, infix},
-    {"?||", 6, 6, IN, R, infix},
+    {"||", 6, 6, IN, R, infix},
+    {"?", 7, 7, IN, R, infix},
+    {"?||", 7, 7, IN, R, infix},
 
     // monadic operators
-    {">>=", 7, 7, IN, L, infix},
+    {">>=", 8, 8, IN, L, infix},
 
     // logical operators
-    {"<=>", 8, 8, IN, N, infix},
-    {"=>", 9, 9, IN, N, infix},
-    {"\\/", 10, 10, IN, R, infix},
-    {"/\\", 11, 11, IN, R, infix},
+    {"<=>", 9, 9, IN, N, infix},
+    {"=>", 10, 10, IN, N, infix},
+    {"\\/", 11, 11, IN, R, infix},
+    {"/\\", 12, 12, IN, R, infix},
 
     // comparison/test operators
-    {"=", 12, 12, IN, N, infix},
-    {"!=", 12, 12, IN, N, infix},
-    {"=*=", 12, 12, IN, N, infix},
-    {"<", 12, 12, IN, N, infix},
-    {">", 12, 12, IN, N, infix},
-    {"<=", 12, 12, IN, N, infix},
-    {">=", 12, 12, IN, N, infix},
-    {"=<", 12, 12, IN, N, infix},
-    {"~<", 12, 12, IN, N, infix},
-    {"<:", 12, 12, IN, N, infix},
-    {":", 12, 12, IN, N, infix},
-    {"!:", 12, 12, IN, N, infix},
-    {"~", 12, 12, IN, N, infix},
+    {"=", 13, 13, IN, N, infix},
+    {"!=", 13, 13, IN, N, infix},
+    {"=*=", 13, 13, IN, N, infix},
+    {"=?=", 13, 13, IN, N, infix},
+    {"<", 13, 13, IN, N, infix},
+    {">", 13, 13, IN, N, infix},
+    {"<=", 13, 13, IN, N, infix},
+    {">=", 13, 13, IN, N, infix},
+    {"=<", 13, 13, IN, N, infix},
+    {"~<", 13, 13, IN, N, infix},
+    {"<:", 13, 13, IN, N, infix},
+    {"<*=", 13, 13, IN, N, infix},
+    {":", 13, 13, IN, N, infix},
+    {"!:", 13, 13, IN, N, infix},
+    {"~", 13, 13, IN, N, infix},
 
     // precedence 14: default
     // arithmetic/list operators
