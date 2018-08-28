@@ -4,16 +4,15 @@
 #include "lib/tag.h"
 #include "scan.h"
 
-bool isSpaceCharacter(char c) {
-    return c == ' ' || c == '\t' || c == '\r';
-}
+bool isSpaceCharacter(char c) {return c == ' ' || c == '\t' || c == '\r';}
+static bool isCommaCharacter(char c) {return c == ',';}
+static bool isQuoteCharacter(char c) {return c == '"' || c == '\'';}
+static bool isLineComment(const char* s) {return s[0] == '/' && s[1] == '/';}
+static bool isBlockComment(const char* s) {return s[0] == '/' && s[1] == '*';}
+static bool isNotNewline(char c) {return c != '\n';}
 
 bool isDelimiterCharacter(char c) {
-    return c == '\0' || strchr(" \t\r\n()[]{}", c) != NULL;
-}
-
-static bool isQuoteCharacter(char c) {
-    return c == '"' || c == '\'';
+    return c == '\0' || strchr(" \t\r\n;()[]{}", c) != NULL;
 }
 
 static bool isOperandCharacter(char c) {
@@ -25,18 +24,6 @@ bool isOperatorCharacter(char c) {
     // check c > 0 to ensure it is ASCII
     return c > 0 && !isDelimiterCharacter(c) && !isOperandCharacter(c)
         && !isQuoteCharacter(c);
-}
-
-static bool isLineComment(const char* s) {
-    return s[0] == '/' && s[1] == '/';
-}
-
-static bool isBlockComment(const char* s) {
-    return s[0] == '/' && s[1] == '*';
-}
-
-static bool isNotNewline(char c) {
-    return c != '\n';
 }
 
 static const char* skipWhile(const char* s, bool (*predicate)(char)) {
@@ -74,6 +61,8 @@ static const char* skipLexeme(const char* s) {
         return skipWhile(s, isSpaceCharacter);
     if (isQuoteCharacter(s[0]))
         return skipQuote(s);
+    if (isCommaCharacter(s[0]))
+        return skipWhile(s, isCommaCharacter);
     if (isOperandCharacter(s[0]))
         return skipWhile(s, isOperandCharacter);
     if (isOperatorCharacter(s[0]))
