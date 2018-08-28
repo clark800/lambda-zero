@@ -133,29 +133,6 @@ static Node* unmatched(Node* operator, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-static Node* square(Node* close, Node* open, Node* contents) {
-    syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
-    Tag tag = getTag(open);
-    if (contents == NULL)
-        return newNil(tag);
-    if (isPipePair(contents))
-        syntaxError("list comprehensions not implemented", contents);
-    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
-    if (getFixity(open) == OPENCALL) {
-        syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
-        syntaxErrorIf(isCommaList(getLeft(contents)),
-            "too many arguments to", open);
-        return newApplication(tag, newApplication(tag, newName(getTag(open)),
-            getLeft(contents)), getRight(contents));
-    }
-    Node* list = newNil(tag);
-    if (!isCommaList(contents))
-        return prepend(tag, contents, list);
-    for(; isCommaList(contents); contents = getLeft(contents))
-        list = prepend(tag, getRight(contents), list);
-    return prepend(tag, contents, list);
-}
-
 static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
     if (!isCommaList(arguments))
         return base == NULL ? arguments : newApplication(tag, base, arguments);
@@ -167,13 +144,34 @@ static unsigned int getCommaListLength(Node* node) {
     return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
 }
 
-static inline Node* newTuple(Tag tag, Node* commaList) {
-    static const char commas[] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
+static inline Node* newTuple(Node* open, Node* commaList, const char name[32]){
     unsigned int length = getCommaListLength(commaList) - 1;
-    syntaxErrorIf(length > sizeof(commas), "tuple too big", commaList);
-    Node* constructor = setValue(
-        newName(newTag(newString(commas, length), tag.location)), CONVERSION);
-    return applyToCommaList(tag, constructor, commaList);
+    syntaxErrorIf(length > 32, "too many arguments", open);
+    Node* constructor = setValue(newName(newTag(newString(name, length),
+        getTag(open).location)), CONVERSION);
+    return applyToCommaList(getTag(open), constructor, commaList);
+}
+
+static Node* square(Node* close, Node* open, Node* contents) {
+    syntaxErrorIf(!isThisToken(open, "["), "missing open for", close);
+    Tag tag = getTag(open);
+    if (contents == NULL)
+        return newNil(tag);
+    if (isPipePair(contents))
+        syntaxError("list comprehensions not implemented", contents);
+    syntaxErrorIf(isDefinition(contents), "missing scope", contents);
+    if (getFixity(open) == OPENCALL) {
+        static const char opens[32] = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
+        syntaxErrorIf(!isCommaList(contents), "missing argument to", open);
+        // not really a tuple, but it is the same structure
+        return newTuple(open, contents, opens);
+    }
+    Node* list = newNil(tag);
+    if (!isCommaList(contents))
+        return prepend(tag, contents, list);
+    for(; isCommaList(contents); contents = getLeft(contents))
+        list = prepend(tag, getRight(contents), list);
+    return prepend(tag, contents, list);
 }
 
 static Node* newFilter(Tag tag, Node* left, Node* right) {
@@ -211,8 +209,9 @@ static Node* parentheses(Node* close, Node* open, Node* contents) {
             syntaxError("operator cannot be parenthesized", contents);
         return newName(getTag(contents));
     }
+    static const char commas[32] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
     if (isCommaList(contents))
-        return newTuple(tag, contents);
+        return newTuple(open, contents, commas);
     if (isPipePair(contents))
         return newFilter(tag, getLeft(contents), getRight(contents));
     if (isApplication(contents))

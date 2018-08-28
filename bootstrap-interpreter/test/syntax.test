@@ -80,9 +80,6 @@ Syntax error: invalid operator in section '!' at line 2 column 5
 [1,2,3][]
 Syntax error: missing argument to '[' at line 1 column 8
 ===============================================================================
-[1,2,3][1, 2]
-Syntax error: too many arguments to '[' at line 1 column 8
-===============================================================================
 `f(x, y) := f(y, x) \n mod(x, y) := x % y \n `mod(2, 5)
 1
 ===============================================================================

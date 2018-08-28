@@ -137,7 +137,7 @@ tail := [] -> error("tail: empty list"); _ :: xs -> xs
 drop(xs, n) := (--)^^(n)(xs)            // drop n elements from front of list
 take(xs, n) := n = 0 ? [] || head(xs) :: (--xs).take(n - 1)
 xs[n] := head(xs.drop(n))          // get element of list at index
-slice(xs, start, end) := xs.drop(start).take(end - start)
+xs[start, end] := xs.drop(start).take(end - start)
 last(xs) := (--).until(isEmpty <> (--), xs).head    // get last element of list
 dropLast(xs) := isEmpty(xs) \/ isEmpty(--xs) ? [] || head(xs) :: dropLast(--xs)
 reduce(xs, f) := (--xs).cascade(f, xs[0])
