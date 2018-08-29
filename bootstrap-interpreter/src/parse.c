@@ -26,6 +26,16 @@ static void eraseNewlines(Stack* stack) {
         release(pop(stack));
 }
 
+static void pushADT(Stack* stack, Node* node) {
+    if (isCommaList(node)) {
+        push(stack, getRight(node));
+        push(stack, setRules(newOperator(newTag(newString("\n", 1),
+            getLocation(node))), false));
+        pushADT(stack, getLeft(node));
+    } else
+        push(stack, node);
+}
+
 static void pushOperand(Stack* stack, Node* node) {
     if (isOperatorTop(stack)) {
         push(stack, node);
@@ -41,7 +51,12 @@ static void collapseOperator(Stack* stack) {
     Hold* op = pop(stack);
     Node* operator = getNode(op);
     Hold* left = getFixity(operator) == IN ? pop(stack) : NULL;
-    pushOperand(stack, applyOperator(operator, getNode(left), getNode(right)));
+    Node* node = applyOperator(operator, getNode(left), getNode(right));
+    if (isADT(node))
+        // not a memory leak because node = left in this case
+        pushADT(stack, getLeft(node));
+    else
+        pushOperand(stack, node);
     release(right);
     release(op);
     if (left != NULL)
@@ -132,6 +147,9 @@ static void pushOperator(Stack* stack, Node* operator) {
         if (isComma(peek(stack, 0)) && !isOpenParen(peek(stack, 1)))
             release(pop(stack));        // ignore commas before close operators
     }
+
+    if (isThisToken(operator, "{") && !isThisToken(peek(stack, 0), "::="))
+        syntaxError("must appear on the right side of '::='", operator);
 
     if (isOperatorTop(stack))
         validateConsecutiveOperators(peek(stack, 0), operator);

@@ -53,7 +53,6 @@ int main(int argc, char* argv[]) {
         for (char* flag = argv[0] + 1; *flag != '\0'; flag++)
             switch (*flag) {
                 case 'p': TRACE_PARSING = true; break;
-                case 'e': TRACE_EVALUATION = true; break;
                 case 't': TEST = true; break;      // hide line #s in errors
                 default: usageError(programName); break;
             }

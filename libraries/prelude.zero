@@ -20,8 +20,7 @@ on(f, g) := x -> y -> f(g(x), g(y)) // apply binary f with unary g applied first
 mirror(f)(x) := f(x, x)         // convert binary function to unary function
 
 // boolean
-true(f, t) := t
-false(f, t) := f
+Boolean ::= {false, true}
 if(b, x, y) := b.match(false -> y; true -> x)
 (?) := if
 !b := b ? false || true
@@ -33,9 +32,9 @@ until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
 
 // math
-zero := z -> p -> n -> z
-positive(m) := z -> p -> n -> p(m)
-negative(m) := z -> p -> n -> n(m)
+N ::= {one, increment(*N)}
+Z ::= {zero, positive(*N), negative(*N)}
+Q ::= {fraction(*Z, *N)}
 abs(n) := n >= 0 ? n || -n
 sign(n) := n = 0 ? 0 || n > 0 ? 1 || -1
 min(n, m) := n <= m ? n || m
@@ -54,10 +53,10 @@ n ^ m := (
 )
 
 // tuple
-() := o -> o
-(,)(x, y) := o -> o(x, y)
-(,,)(x, y, z) := o -> o(x, y, z)
-(,,,)(w, x, y, z) := o -> o(w, x, y, z)
+Unit ::= {()}
+Pair(a, b) ::= {(*a, *b)}
+Triple(a, b, c) ::= {(*a, *b, *c)}
+Quadruple(w, x, y, z) ::= {(*w, *x, *y, *z)}
 first((x, y)) := x
 second((x, y)) := y
 swap((x, y)) := (y, x)
@@ -68,16 +67,14 @@ curry(f) := x -> y -> f((x, y))
 uncurry(f) := xx -> f(first(xx), second(xx))
 
 // maybe
-nothing := z -> f -> z
-just(x) := z -> f -> f(x)
+Maybe(a) ::= {nothing, just(*a)}
 isNothing := nothing -> true; just(_) -> false
 isJust := nothing -> false; just(_) -> true
 mx >>= f := mx.match(nothing -> nothing; just(x) -> f(x))   // maybe bind
 mx ?|| d := mx.match(nothing -> d; just(x) -> x)    // just value or default
 
 // list
-[] := n -> p -> n
-x :: xs := n -> p -> p(x, xs)
+List(a) ::= {[], *a :: *List(a)}
 prepend := `(::)
 isEmpty := [] -> true; _ :: _ -> false
 fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
@@ -287,9 +284,7 @@ parseInteger(string, base) := string.head = '-' ?
     -parseNatural(--string, base) || parseNatural(string, base)
 
 // trees
-newNode(data, children) := (data, children)
-getData := first
-getChildren := second
+Tree(a) ::= {node(*a, *List(Tree(a)))}
 
 // undefined
 undefined := error("undefined")

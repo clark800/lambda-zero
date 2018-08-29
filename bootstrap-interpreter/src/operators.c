@@ -24,6 +24,70 @@ static Node* infix(Node* operator, Node* left, Node* right) {
     return apply(operator, apply(operator, symbol, left), right);
 }
 
+static Node* asterisk(Node* operator, Node* left, Node* right) {
+    (void)left, (void)right;
+    // rename operator so it will generate an error for being undefined if
+    // a prefix asterisk appears outside an ADT definition
+    return newName(renameTag(getTag(operator), "(*)"));
+}
+
+static unsigned int getCommaListLength(Node* node) {
+    return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
+}
+
+static Node* newConstructorDefinition(Node* pattern, int i, int n) {
+    // pattern is an application of a constructor name to a number of asterisks
+    // i is the index of this constructor in this algebraic data type
+    // n is the total number of constructors for this algebraic data type
+
+    // verify that all arguments in pattern are asterisks and count to get k
+    int k = 0;
+    for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
+        syntaxErrorIf(!isThisToken(getRight(pattern), "(*)"),
+            "constructor parameters must be asterisks", getRight(pattern));
+
+    Tag tag = getTag(pattern);
+    // let p_* be constructor parameters (k total)
+    // let c_* be constructor names (n total)
+    // build: p_1 -> ... -> p_k -> c_1 -> ... -> c_n -> c_i p_1 ... p_k
+    Node* constructor = newBlankReference(tag, (unsigned long long)(n - i));
+    for (int j = 0; j < k; ++j)
+        constructor = newApplication(tag, constructor,
+            newBlankReference(tag, (unsigned long long)(n + k - j)));
+    for (int j = 0; j < n + k; ++j)
+        constructor = newLambda(tag, newBlank(tag), constructor);
+    syntaxErrorIf(!isName(pattern), "invalid constructor name", pattern);
+    return newDefinition(tag, pattern, constructor);
+}
+
+static Node* extend(Node* list, Node* item) {
+    return list == NULL ? item : newCommaList(getTag(item), list, item);
+}
+
+static Node* curly(Node* close, Node* open, Node* patterns) {
+    syntaxErrorIf(patterns == NULL, "missing patterns", open);
+    syntaxErrorIf(!isThisToken(open, "{"), "missing open for", close);
+    syntaxErrorIf(isDefinition(patterns), "missing scope", patterns);
+    syntaxErrorIf(isPipePair(patterns), "invalid '|' in", open);
+    // for each item in the patterns comma list, define a constructor function,
+    // then return all of these definitions as a comma list, which the parser
+    // converts to a sequence of lines
+    int n = (int)getCommaListLength(patterns);
+    Node* definitions = NULL;
+    for (int i = 0; isCommaList(patterns); ++i, patterns = getLeft(patterns))
+        definitions = extend(definitions,
+            newConstructorDefinition(getRight(patterns), n - i - 1, n));
+    definitions = extend(definitions, newConstructorDefinition(patterns, 0, n));
+    return newADT(getTag(open), definitions);
+}
+
+static Node* reduceADT(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isName(left) && !isApplication(left),
+        "invalid left hand side", operator);
+    syntaxErrorIf(!isADT(right), "right side must be an ADT", operator);
+    return right;
+}
+
 static Node* pipe(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(isDefinition(left), "missing scope", left);
     syntaxErrorIf(isDefinition(right), "missing scope", right);
@@ -140,10 +204,6 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
         getLeft(arguments)), getRight(arguments));
 }
 
-static unsigned int getCommaListLength(Node* node) {
-    return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
-}
-
 static inline Node* newTuple(Node* open, Node* commaList, const char name[32]){
     unsigned int length = getCommaListLength(commaList) - 1;
     syntaxErrorIf(length > 32, "too many arguments", open);
@@ -157,8 +217,7 @@ static Node* square(Node* close, Node* open, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL)
         return newNil(tag);
-    if (isPipePair(contents))
-        syntaxError("list comprehensions not implemented", contents);
+    syntaxErrorIf(isPipePair(contents), "invalid '|' in", contents);
     syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     if (getFixity(open) == OPENCALL) {
         static const char opens[32] = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
@@ -240,10 +299,13 @@ static Rules RULES[] = {
     {"[", 22, 0, OPENCALL, L, unmatched},
     {"[", 22, 0, OPEN, L, unmatched},
     {"]", 0, 22, CLOSE, R, square},
+    {"{", 22, 0, OPEN, L, unmatched},
+    {"}", 0, 22, CLOSE, R, curly},
     {"|", 1, 1, IN, N, pipe},
     {",", 2, 2, IN, L, comma},
     {"\n", 3, 3, IN, R, reduceNewline},
     {":=", 4, 4, IN, N, reduceDefine},
+    {"::=", 4, 4, IN, N, reduceADT},
     {";", 5, 5, IN, L, semicolon},
     {"->", 6, 6, IN, R, newPatternLambda},
 
@@ -303,6 +365,7 @@ static Rules RULES[] = {
     {"--", 21, 21, PRE, L, prefix},
     {"!", 21, 21, PRE, L, prefix},
     {"#", 21, 21, PRE, L, prefix},
+    {"*", 21, 21, PRE, L, asterisk},
 
     // precedence 22: parentheses/brackets
     {"^^", 23, 23, IN, L, infix},

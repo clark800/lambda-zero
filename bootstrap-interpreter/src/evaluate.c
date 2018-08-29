@@ -3,12 +3,10 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
-#include "debug.h"
 #include "closure.h"
 #include "builtins.h"
 #include "evaluate.h"
 
-bool TRACE_EVALUATION = false;
 static Hold* evaluateClosure(Closure* closure, const Array* globals);
 
 static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
@@ -43,11 +41,9 @@ static Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
 static void evaluateApplication(Closure* closure, Stack* stack) {
     // push right side of application onto stack and step into left side
     Node* application = getTerm(closure);
-    Node* lambda = getLeft(application);
-    Node* argument = getRight(application);
-    push(stack, optimizeClosure(argument, getLocals(closure),
-        getTrace(closure)));
-    setTerm(closure, lambda);
+    push(stack, optimizeClosure(
+        getRight(application), getLocals(closure), getTrace(closure)));
+    setTerm(closure, getLeft(application));
 }
 
 static void evaluateLambda(Closure* closure, Stack* stack) {
@@ -92,8 +88,7 @@ static Hold* popArgument(Closure* closure, Stack* stack, const Array* globals) {
 
 static void evaluateBuiltin(Closure* closure, Stack* stack,
         const Array* globals) {
-    Node* builtin = getTerm(closure);
-    unsigned int arity = getBuiltinArity(builtin);
+    unsigned int arity = getBuiltinArity(getTerm(closure));
     Hold* left = arity > 0 ? popArgument(closure, stack, globals) : NULL;
     Hold* right = arity > 1 ? popArgument(closure, stack, globals) : NULL;
     Hold* result = evaluateBuiltinNode(closure, getNode(left), getNode(right));
@@ -105,22 +100,11 @@ static void evaluateBuiltin(Closure* closure, Stack* stack,
         release(right);
 }
 
-static void debugState(Closure* closure, Stack* stack) {
-    if (TRACE_EVALUATION) {
-        debugLine();
-        debug("term: ");
-        debugAST(getTerm(closure));
-        debug("\nstack: ");
-        debugStack(stack, (Node* (*)(Node*))getTerm);
-        debug("\nlocals: ");
-        debugStack((Stack*)closure, (Node* (*)(Node*))getTerm);
-        debug("\n");
-    }
-}
-
 static Hold* evaluate(Closure* closure, Stack* stack, const Array* globals) {
     while (true) {
-        debugState(closure, stack);
+        //#include "debug.h"
+        //extern void debugState(Closure* closure, Stack* stack);
+        //debugState(closure, stack);
         switch (getNodeType(getTerm(closure))) {
             case APPLICATION: evaluateApplication(closure, stack); break;
             case REFERENCE: evaluateReference(closure, stack); break;
