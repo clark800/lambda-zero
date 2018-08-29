@@ -24,11 +24,11 @@ int isspace(int c) {
     return c == ' ' || (c >= '\t' && c <= '\r');
 }
 
-/*
 int iscntrl(int c) {
     return (c >= 0 && c < 32) || c == 127;
 }
 
+/*
 int isprint(int c) {
     return c >= ' ' && c <= '~';
 }

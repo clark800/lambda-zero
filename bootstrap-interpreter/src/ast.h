@@ -1,5 +1,5 @@
 // OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
-typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST, PIPE,
+typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST, PIPE, ADT,
     APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN, GLOBAL} NodeType;
 typedef enum {NAME, NUMERIC, CHARACTER, STRING, CONVERSION} OperandType;
 
@@ -41,6 +41,7 @@ static inline bool isReference(Node* node) {return getType(node) == REFERENCE;}
 static inline bool isInteger(Node* node) {return getType(node) == INTEGER;}
 static inline bool isBuiltin(Node* node) {return getType(node) == BUILTIN;}
 static inline bool isGlobal(Node* node) {return getType(node) == GLOBAL;}
+static inline bool isADT(Node* node) {return getType(node) == ADT;}
 
 static inline bool isName(Node* node) {
     return getType(node) == OPERAND &&
@@ -105,6 +106,10 @@ static inline Node* newApplication(Tag tag, Node* left, Node* right) {
 
 static inline Node* newDefinition(Tag tag, Node* left, Node* right) {
     return newBranch(tag, DEFINITION, left, right);
+}
+
+static inline Node* newADT(Tag tag, Node* definitions) {
+    return newBranch(tag, ADT, definitions, VOID);
 }
 
 static inline Node* newBoolean(Tag tag, bool value) {

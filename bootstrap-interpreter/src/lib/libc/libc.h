@@ -63,9 +63,9 @@ int isalpha(int c);
 int isspace(int c);
 int isdigit(int c);
 int isalnum(int c);
+int iscntrl(int c);
 //int isprint(int c);
 //int ispunct(int c);
-//int iscntrl(int c);
 //int isblank(int c);
 
 // string.h

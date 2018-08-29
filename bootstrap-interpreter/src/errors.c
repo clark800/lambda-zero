@@ -54,7 +54,7 @@ void syntaxErrorIf(bool condition, const char* message, Node* token) {
 }
 
 void usageError(const char* name) {
-    printFour("Usage error: ", name, " [-p] [-e] [-t]", " [FILE]\n");
+    printFour("Usage error: ", name, " [-p] [-t]", " [FILE]\n");
     exit(2);
 }
 

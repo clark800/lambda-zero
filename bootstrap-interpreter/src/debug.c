@@ -51,3 +51,17 @@ void debugStack(Stack* stack, Node* (*select)(Node*)) {
     }
     debug("]");
 }
+
+/*
+#include "closure.h"
+void debugState(Closure* closure, Stack* stack) {
+    debugLine();
+    debug("term: ");
+    debugAST(getTerm(closure));
+    debug("\nstack: ");
+    debugStack(stack, (Node* (*)(Node*))getTerm);
+    debug("\nlocals: ");
+    debugStack((Stack*)closure, (Node* (*)(Node*))getTerm);
+    debug("\n");
+}
+*/
