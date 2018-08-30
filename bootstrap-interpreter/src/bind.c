@@ -29,10 +29,9 @@ static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
     unsigned long long index = findDebruijnIndex(symbol, parameters);
     syntaxErrorIf(index == 0, "undefined symbol", symbol);
     unsigned long long localDepth = length(parameters) - globalDepth;
-    if (index > localDepth)
-        convertSymbol(symbol, GLOBAL, (long long)(length(parameters) - index));
-    else
-        convertSymbol(symbol, REFERENCE, (long long)index);
+    long long value = index <= localDepth ? (long long)index :
+        (long long)(index - length(parameters) - 1);
+    convertSymbol(symbol, REFERENCE, value);
 }
 
 static bool isDefined(Node* symbol, Array* parameters) {
@@ -64,7 +63,7 @@ Array* bind(Hold* root) {
     Node* node = getNode(root);
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
-    while (isLetExpression(node)) {
+    for (; isLetExpression(node); node = getBody(getLeft(node))) {
         Node* definedSymbol = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
         if (isDefined(definedSymbol, parameters))
@@ -73,7 +72,6 @@ Array* bind(Hold* root) {
         bindWith(definedValue, parameters, globals);
         append(parameters, definedSymbol);
         append(globals, definedValue);
-        node = getBody(getLeft(node));
     }
     bindWith(node, parameters, globals);
     deleteArray(parameters);

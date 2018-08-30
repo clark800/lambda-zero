@@ -27,14 +27,12 @@ bool isOperatorCharacter(char c) {
 }
 
 static const char* skipWhile(const char* s, bool (*predicate)(char)) {
-    while (s[0] != '\0' && predicate(s[0]))
-        s++;
+    for (; s[0] != '\0' && predicate(s[0]); ++s);
     return s;
 }
 
 static const char* skipBlockComment(const char* s) {
-    while (s[0] != '\0' && (s[0] != '*' || s[1] != '/'))
-        s++;
+    for (; s[0] != '\0' && (s[0] != '*' || s[1] != '/'); ++s);
     return s[0] == '\0' ? s : s + 2;
 }
 

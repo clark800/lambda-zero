@@ -35,4 +35,4 @@ void release(Hold* node);
 Hold* replaceHold(Hold* oldHold, Hold* newHold);
 Node* getNode(Hold* hold);
 
-Node* getListElement(Node* node, long long n);
+Node* getListElement(Node* node, unsigned long long n);

@@ -1,6 +1,6 @@
 // OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
 typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST, PIPE, ADT,
-    APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN, GLOBAL} NodeType;
+    APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN} NodeType;
 typedef enum {NAME, NUMERIC, CHARACTER, STRING, CONVERSION} OperandType;
 
 // names in BUILTINS must line up with codes in BuiltinCode, except
@@ -21,6 +21,16 @@ static inline NodeType getNodeType(Node* node) {return (NodeType)getType(node);}
 static inline Node* getParameter(Node* lambda) {return getLeft(lambda);}
 static inline Node* getBody(Node* lambda) {return getRight(lambda);}
 
+static inline unsigned long long getDebruijnIndex(Node* reference) {
+    assert(getValue(reference) > 0);
+    return (unsigned long long)(getValue(reference) - 1);
+}
+
+static inline unsigned long long getGlobalIndex(Node* reference) {
+    assert(getValue(reference) < 0);
+    return (unsigned long long)(-getValue(reference) - 1);
+}
+
 // =============================================
 // Functions to test if a node is a certain type
 // =============================================
@@ -40,7 +50,6 @@ static inline bool isLambda(Node* node) {return getType(node) == LAMBDA;}
 static inline bool isReference(Node* node) {return getType(node) == REFERENCE;}
 static inline bool isInteger(Node* node) {return getType(node) == INTEGER;}
 static inline bool isBuiltin(Node* node) {return getType(node) == BUILTIN;}
-static inline bool isGlobal(Node* node) {return getType(node) == GLOBAL;}
 static inline bool isADT(Node* node) {return getType(node) == ADT;}
 
 static inline bool isName(Node* node) {
@@ -54,6 +63,10 @@ static inline bool isApplication(Node* node) {
 
 static inline bool isDefinition(Node* node) {
     return getType(node) == DEFINITION;
+}
+
+static inline bool isGlobalReference(Node* node) {
+    return getType(node) == REFERENCE && getValue(node) < 0;
 }
 
 static inline bool isNewline(Node* node) {return isThisToken(node, "\n");}
@@ -86,8 +99,8 @@ static inline Node* newEOF(void) {
     return newOperator(newTag(EMPTY, newLocation(0, 0)));
 }
 
-static inline Node* newReference(Tag tag, unsigned long long debruijn) {
-    return newLeaf(tag, REFERENCE, (long long)debruijn);
+static inline Node* newReference(Tag tag, long long value) {
+    return newLeaf(tag, REFERENCE, value);
 }
 
 static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
@@ -123,7 +136,7 @@ static inline Node* newComma(Tag tag) {return newOperator(renameTag(tag, ","));}
 static inline Node* newNil(Tag tag) {return newName(renameTag(tag, "[]"));}
 
 static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
-    return newReference(renameTag(tag, "_"), debruijn);
+    return newReference(renameTag(tag, "_"), (long long)debruijn);
 }
 
 static inline Node* newCommaList(Tag tag, Node* left, Node* right) {

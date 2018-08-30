@@ -21,9 +21,14 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
         serializeNode(getBody(node), locals, globals, depth + 1, stream);
         fputs(")", stream);
     } else if (isReference(node)) {
-        long long debruijn = getValue(node);
-        if (debruijn > depth) {
-            Closure* next = getListElement(locals, debruijn - depth - 1);
+        if (isGlobalReference(node)) {
+            Node* value = elementAt(globals, getGlobalIndex(node));
+            serializeNode(value, locals, globals, 0, stream);
+            return;
+        }
+        unsigned long long debruijn = getDebruijnIndex(node);
+        if (debruijn >= depth) {
+            Closure* next = getListElement(locals, debruijn - depth);
             serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
         } else {
             printToken(node, stream);
@@ -32,9 +37,6 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
         fputll(getValue(node), stream);
     } else if (isBuiltin(node)) {
         printToken(node, stream);
-    } else if (isGlobal(node)) {
-        Node* value = elementAt(globals, (size_t)getValue(node));
-        serializeNode(value, locals, globals, 0, stream);
     } else {
         assert(false);
     }
