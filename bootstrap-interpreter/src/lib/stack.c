@@ -36,7 +36,7 @@ Hold* pop(Stack* stack) {
 
 Node* peek(Stack* stack, size_t i) {
     assert(!isEmpty(stack));
-    return getListElement(getHead(stack), (long long)i);
+    return getListElement(getHead(stack), i);
 }
 
 Iterator* iterate(Stack* stack) {
