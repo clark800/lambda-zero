@@ -60,7 +60,7 @@ f(x) := (g(y) := y \n g) \n f
 Syntax error: invalid parameter at line 1 column 7
 ===============================================================================
 x % y := x * y \n 0
-Syntax error: symbol already defined '%' at line 1 column 3
+Syntax error: cannot define a builtin operator '%' at line 1 column 3
 ===============================================================================
 f(x) := 1 \n f(x) := 2 \n f(0)
 Syntax error: symbol already defined 'f' at line 2 column 2
@@ -71,10 +71,10 @@ f(x) := x(1, 2) \n f((+))
 f(x, y) := x + y \n f(1, 2)
 3
 ===============================================================================
-(,)(x, y) := o -> o x y \n (x, y) := (1, 2) \n (x, y) := (3, 4) \n 0
+P(a, b) ::= {(*a, *b)} \n (x, y) := (1, 2) \n (x, y) := (3, 4) \n 0
 Syntax error: symbol already defined 'x' at line 3 column 3
 ===============================================================================
-(,)(x, y) := o -> o x y \n (x, y) := (1, 2) \n f(z) := ((x, y) := (3, 4) \n 0) \n f(0)
+P(a, b) ::= {(*a, *b)} \n (x, y) := (1, 2) \n f(z) := ((x, y) := (3, 4) \n 0) \n f(0)
 Syntax error: symbol already defined 'x' at line 3 column 12
 ===============================================================================
 () := o -> o \n f(_) := 4 \n f()
