@@ -13,7 +13,7 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
     if (isApplication(node))
         return hasRecursiveCalls(getLeft(node), name)
             || hasRecursiveCalls(getRight(node), name);
-    if (isName(node) || isReference(node))
+    if (isReference(node))
         return isSameToken(node, name);
     return false;
 }
@@ -27,7 +27,7 @@ static inline Node* newYCombinator(Tag tag) {
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
-    if (isComma(name) || !isName(name) || !hasRecursiveCalls(value, name))
+    if (isComma(name) || !isReference(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
     Tag tag = getTag(name);
@@ -41,7 +41,7 @@ static bool isTupleConstructor(Node* token) {
 
 static bool isTuple(Node* node) {
     return isApplication(node) ? isTuple(getLeft(node)) :
-        isTupleConstructor(node) && getValue(node) == CONVERSION;
+        isTupleConstructor(node);
 }
 
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
@@ -50,20 +50,15 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
         return newDefinition(tag, left, right);
     for (; isApplication(left); left = getLeft(left))
         right = newPatternLambda(operator, getRight(left), right);
-    syntaxErrorIf(!isName(left), "invalid left hand side", operator);
+    syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
+    syntaxErrorIf(!isReference(left), "invalid left hand side", operator);
     return newDefinition(tag, left, transformRecursion(left, right));
 }
 
 static Node* applyDefinition(Node* definition, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    Node* left = getLeft(definition);
-    Node* right = getRight(definition);
-    if (isApplication(left)) {  // must be a tuple
-        Node* lambda = newPatternLambda(definition, left, scope);
-        return newApplication(getTag(definition), lambda, right);
-    }
-    return newApplication(getTag(definition),
-        newLambda(getTag(definition), left, scope), right);
+    Node* lambda = newPatternLambda(definition, getLeft(definition), scope);
+    return newApplication(getTag(definition), lambda, getRight(definition));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {

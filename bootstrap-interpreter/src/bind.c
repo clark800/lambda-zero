@@ -11,37 +11,23 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     return 0;
 }
 
-static int lookupBuiltinCode(Node* token) {
-    for (unsigned int i = 0; i < sizeof(BUILTINS)/sizeof(char*); i++)
-        if (isThisToken(token, BUILTINS[i]))
-            return (int)i;
-    return -1;
-}
-
-static void bindSymbol(Node* symbol, Array* parameters, size_t globalDepth) {
-    if (isThisToken(symbol, "_"))
-        syntaxError("cannot reference", symbol);
-    int code = lookupBuiltinCode(symbol);
-    if (code >= 0) {
-        convertSymbol(symbol, BUILTIN, code);
-        return;
-    }
-    unsigned long long index = findDebruijnIndex(symbol, parameters);
-    syntaxErrorIf(index == 0, "undefined symbol", symbol);
+static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
+    syntaxErrorIf(isThisToken(node, "_"), "cannot reference", node);
+    unsigned long long index = findDebruijnIndex(node, parameters);
+    syntaxErrorIf(index == 0, "undefined symbol", node);
     unsigned long long localDepth = length(parameters) - globalDepth;
-    long long value = index <= localDepth ? (long long)index :
-        (long long)(index - length(parameters) - 1);
-    convertSymbol(symbol, REFERENCE, value);
+    setValue(node, index <= localDepth ? (long long)index :
+        (long long)(index - length(parameters) - 1));
 }
 
-static bool isDefined(Node* symbol, Array* parameters) {
-    return !isThisToken(symbol, "_") && (lookupBuiltinCode(symbol) >= 0 ||
-            findDebruijnIndex(symbol, parameters) != 0);
+static bool isDefined(Node* reference, Array* parameters) {
+    return !isThisToken(reference, "_") &&
+        findDebruijnIndex(reference, parameters) != 0;
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
-    if (isName(node)) {
-        bindSymbol(node, parameters, length(globals));
+    if (isReference(node) && getValue(node) == 0) {
+        bindReference(node, parameters, length(globals));
     } else if (isLambda(node)) {
         if (isDefined(getParameter(node), parameters))
             syntaxError("symbol already defined", getParameter(node));

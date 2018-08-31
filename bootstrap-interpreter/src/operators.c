@@ -19,9 +19,22 @@ static Node* apply(Node* operator, Node* left, Node* right) {
     return newApplication(getTag(operator), left, right);
 }
 
+static int lookupBuiltinCode(Node* token) {
+    for (unsigned int i = 0; i < sizeof(BUILTINS)/sizeof(char*); i++)
+        if (isThisToken(token, BUILTINS[i]))
+            return (int)i;
+    return -1;
+}
+
+static Node* convertOperator(Node* operator) {
+    int code = lookupBuiltinCode(operator);
+    Tag tag = getTag(operator);
+    return code >= 0 ? newBuiltin(tag, code) : newName(tag);
+}
+
 static Node* infix(Node* operator, Node* left, Node* right) {
-    Node* symbol = setValue(newName(getTag(operator)), CONVERSION);
-    return apply(operator, apply(operator, symbol, left), right);
+    return apply(operator, apply(operator,
+        convertOperator(operator), left), right);
 }
 
 static Node* asterisk(Node* operator, Node* left, Node* right) {
@@ -56,7 +69,7 @@ static Node* newConstructorDefinition(Node* pattern, int i, int n) {
             newBlankReference(tag, (unsigned long long)(n + k - j)));
     for (int j = 0; j < n + k; ++j)
         constructor = newLambda(tag, newBlank(tag), constructor);
-    syntaxErrorIf(!isName(pattern), "invalid constructor name", pattern);
+    syntaxErrorIf(!isReference(pattern), "invalid constructor name", pattern);
     return newDefinition(tag, pattern, constructor);
 }
 
@@ -82,7 +95,7 @@ static Node* curly(Node* close, Node* open, Node* patterns) {
 }
 
 static Node* reduceADT(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isName(left) && !isApplication(left),
+    syntaxErrorIf(!isReference(left) && !isApplication(left),
         "invalid left hand side", operator);
     syntaxErrorIf(!isADT(right), "right side must be an ADT", operator);
     return right;
@@ -152,7 +165,7 @@ static Node* newProjection(Tag tag, int size, int index) {
 Node* newPatternLambda(Node* operator, Node* left, Node* right) {
     // lazy pattern matching
     Tag tag = getTag(operator);
-    if (isName(left))
+    if (isReference(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
     // example: (x, y) -> body ---> _ -> (x -> y -> body) first(_) second(_)
@@ -169,7 +182,7 @@ Node* newPatternLambda(Node* operator, Node* left, Node* right) {
 /*
 Node* newStrictPatternLambda(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
-    if (isName(left))
+    if (isReference(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
     // example: (x, y) -> body ---> _ -> _ (x -> y -> body)
@@ -183,8 +196,7 @@ Node* newStrictPatternLambda(Node* operator, Node* left, Node* right) {
 
 static Node* prefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    Node* symbol = setValue(newName(getTag(operator)), CONVERSION);
-    return apply(operator, symbol, right);
+    return apply(operator, convertOperator(operator), right);
 }
 
 static Node* negate(Node* operator, Node* left, Node* right) {
@@ -207,9 +219,8 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
 static inline Node* newTuple(Node* open, Node* commaList, const char name[32]){
     unsigned int length = getCommaListLength(commaList) - 1;
     syntaxErrorIf(length > 32, "too many arguments", open);
-    Node* constructor = setValue(newName(newTag(newString(name, length),
-        getTag(open).location)), CONVERSION);
-    return applyToCommaList(getTag(open), constructor, commaList);
+    Tag tag = newTag(newString(name, length), getTag(open).location);
+    return applyToCommaList(getTag(open), newName(tag), commaList);
 }
 
 static Node* square(Node* close, Node* open, Node* contents) {
@@ -266,7 +277,7 @@ static Node* parentheses(Node* close, Node* open, Node* contents) {
         setRules(contents, false);
         if (isSpecialOperator(contents) && !isComma(contents))
             syntaxError("operator cannot be parenthesized", contents);
-        return newName(getTag(contents));
+        return convertOperator(contents);
     }
     static const char commas[32] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
     if (isCommaList(contents))

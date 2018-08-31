@@ -81,7 +81,7 @@ static Node* parseSymbol(Node* token) {
             newApplication(tag, exit, newApplication(tag, print,
             newApplication(tag, error, blank))));
     }
-    return token;
+    return newName(getTag(token));
 }
 
 Node* parseOperand(Node* token) {

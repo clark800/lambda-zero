@@ -1,7 +1,7 @@
 // OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
 typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST, PIPE, ADT,
     APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN} NodeType;
-typedef enum {NAME, NUMERIC, CHARACTER, STRING, CONVERSION} OperandType;
+typedef enum {NAME, NUMERIC, CHARACTER, STRING} OperandType;
 
 // names in BUILTINS must line up with codes in BuiltinCode, except
 // EXIT, PUT, GET which don't have accessible names
@@ -52,11 +52,6 @@ static inline bool isInteger(Node* node) {return getType(node) == INTEGER;}
 static inline bool isBuiltin(Node* node) {return getType(node) == BUILTIN;}
 static inline bool isADT(Node* node) {return getType(node) == ADT;}
 
-static inline bool isName(Node* node) {
-    return getType(node) == OPERAND &&
-        (getValue(node) == NAME || getValue(node) == CONVERSION);
-}
-
 static inline bool isApplication(Node* node) {
     return getType(node) == APPLICATION;
 }
@@ -84,7 +79,7 @@ static inline Node* newOperand(Tag tag, OperandType type) {
     return newLeaf(tag, OPERAND, type);
 }
 
-static inline Node* newName(Tag tag) {return newOperand(tag, NAME);}
+static inline Node* newName(Tag tag) {return newLeaf(tag, REFERENCE, 0);}
 static inline Node* newOperator(Tag tag) {return newLeaf(tag, OPERATOR, 0);}
 
 static inline Node* newInteger(Tag tag, long long n) {
@@ -109,7 +104,7 @@ static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
     // which is useful in cases like string literals where we need to point
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
-    assert(isName(parameter));
+    assert(isReference(parameter) && getValue(parameter) == 0);
     return newBranch(tag, LAMBDA, parameter, body);
 }
 
@@ -161,14 +156,4 @@ static inline Node* newPrinter(Tag tag) {
     Node* body = newApplication(tag, newApplication(tag, newApplication(tag,
         fold, blank), put), unit);
     return newLambda(tag, newBlank(tag), body);
-}
-
-// =======================================
-// Functions to convert between node types
-// =======================================
-
-static inline void convertSymbol(Node* node, char type, long long value) {
-    assert(isName(node));
-    setType(node, type);
-    setValue(node, value);
 }
