@@ -190,15 +190,18 @@ static Hold* parseString(const char* input, bool trace) {
     Hold* token = getFirstToken(input);
     for (;; token = replaceHold(token, getNextToken(token))) {
         debugParseState(getNode(token), stack, trace);
-        if (isOperator(getNode(token))) {
-            setRules(getNode(token), isOperatorTop(stack));
-            pushOperator(stack, getNode(token));
-            if (isEOF(getNode(token))) {
+        if (getValue(getNode(token)) == PUNCTUATION) {
+            Node* operator = newOperator(getTag(getNode(token)));
+            setRules(operator, isOperatorTop(stack));
+            pushOperator(stack, operator);
+            if (isEOF(operator)) {
                 Hold* result = pop(stack);
                 deleteStack(stack);
+                release(hold(operator));
                 release(token);
                 return result;
             }
+            release(hold(operator));
         } else {
             pushOperand(stack, parseOperand(getNode(token)));
         }

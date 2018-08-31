@@ -12,12 +12,12 @@ typedef union {
 
 struct Node {
     unsigned int referenceCount, length;
-    char isLeaf, type;
+    unsigned char isLeaf, type;
     Location location;
     Branch left, right;
 };
 
-Node VOID_NODE = {.referenceCount=1, .length=4, .isLeaf=1, .type=-1,
+Node VOID_NODE = {.referenceCount=1, .length=4, .isLeaf=1, .type=0,
     .location={0, 0}, .left={.lexeme="VOID"}, .right={.value=0}};
 Node *const VOID = &VOID_NODE;
 
@@ -38,7 +38,7 @@ Node* setLocation(Node* node, Location location) {
     return node;
 }
 
-Node* newBranch(Tag tag, char type, Node* left, Node* right) {
+Node* newBranch(Tag tag, unsigned char type, Node* left, Node* right) {
     assert(left != NULL && right != NULL);
     Node* node = (Node*)allocate();
     node->referenceCount = 0;
@@ -54,10 +54,10 @@ Node* newBranch(Tag tag, char type, Node* left, Node* right) {
 }
 
 Node* newPair(Node* left, Node* right) {
-    return newBranch(newTag(EMPTY, newLocation(0, 0)), -1, left, right);
+    return newBranch(newTag(EMPTY, newLocation(0, 0)), 0, left, right);
 }
 
-Node* newLeaf(Tag tag, char type, long long value) {
+Node* newLeaf(Tag tag, unsigned char type, long long value) {
     Node* node = (Node*)allocate();
     node->referenceCount = 0;
     node->isLeaf = 1;
@@ -116,12 +116,8 @@ void setRight(Node* node, Node* right) {
     releaseNode(oldRight);
 }
 
-char getType(Node* node) {
+unsigned char getType(Node* node) {
     return node->type;
-}
-
-void setType(Node* node, char type) {
-    node->type = type;
 }
 
 long long getValue(Node* node) {

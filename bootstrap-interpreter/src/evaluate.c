@@ -117,7 +117,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
                 if (isEmpty(stack))
                     return hold(closure);
                 evaluateLambda(closure, stack); break;
-            default: assert(false);
+            case NONE: assert(false); break;
         }
     }
 }
