@@ -85,8 +85,8 @@ static Node* parseSymbol(Node* token) {
 }
 
 Node* parseOperand(Node* token) {
-    switch ((OperandType)getValue(token)) {
-        case NUMERIC: return parseInteger(token);
+    switch ((TokenType)getValue(token)) {
+        case NUMBER: return parseInteger(token);
         case STRING: return parseStringLiteral(token);
         case CHARACTER: return parseCharacterLiteral(token);
         default: return parseSymbol(token);

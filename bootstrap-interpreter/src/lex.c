@@ -18,14 +18,14 @@ static Node* createToken(String lexeme) {
     if (head != '\0' && iscntrl(head) && !isspace(head))
         syntaxError("invalid character", newOperator(tag));
     if (isDelimiterCharacter(head) || isOperatorCharacter(head))
-        return newOperator(tag);
+        return newToken(tag, PUNCTUATION);
     if (isdigit(head))
-        return newOperand(tag, NUMERIC);
+        return newToken(tag, NUMBER);
     if (head == '\'')
-        return newOperand(tag, CHARACTER);
+        return newToken(tag, CHARACTER);
     if (head == '\"')
-        return newOperand(tag, STRING);
-    return newOperand(tag, NAME);
+        return newToken(tag, STRING);
+    return newToken(tag, IDENTIFIER);
 }
 
 Hold* getFirstToken(const char* sourceCode) {

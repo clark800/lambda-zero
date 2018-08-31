@@ -1,7 +1,6 @@
-// OPERAND, OPERATOR, DEFINTION, COMMALIST exist during parsing only
-typedef enum {OPERAND, OPERATOR, DEFINITION, COMMALIST, PIPE, ADT,
-    APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN} NodeType;
-typedef enum {NAME, NUMERIC, CHARACTER, STRING} OperandType;
+typedef enum {IDENTIFIER, PUNCTUATION, NUMBER, CHARACTER, STRING} TokenType;
+typedef enum {TOKEN, OPERAND, OPERATOR, DEFINITION, COMMA, PIPE, ADT} ParseType;
+typedef enum {NONE, APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN} NodeType;
 
 // names in BUILTINS must line up with codes in BuiltinCode, except
 // EXIT, PUT, GET which don't have accessible names
@@ -16,8 +15,15 @@ enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULUS,
 // Functions to get a value from a node
 // ====================================
 
+static inline ParseType getParseType(Node* node) {
+    return (ParseType)(getType(node) >> 4 & 0x0F);
+}
+
+static inline NodeType getNodeType(Node* node) {
+    return (NodeType)(getType(node) & 0x0F);
+}
+
 static inline String getLexeme(Node* node) {return getTag(node).lexeme;}
-static inline NodeType getNodeType(Node* node) {return (NodeType)getType(node);}
 static inline Node* getParameter(Node* lambda) {return getLeft(lambda);}
 static inline Node* getBody(Node* lambda) {return getRight(lambda);}
 
@@ -43,25 +49,32 @@ static inline bool isThisToken(Node* token, const char* lexeme) {
     return isLeaf(token) && isThisString(getLexeme(token), lexeme);
 }
 
-static inline bool isOperator(Node* node) {return getType(node) == OPERATOR;}
-static inline bool isCommaList(Node* node) {return getType(node) == COMMALIST;}
-static inline bool isPipePair(Node* node) {return getType(node) == PIPE;}
-static inline bool isLambda(Node* node) {return getType(node) == LAMBDA;}
-static inline bool isReference(Node* node) {return getType(node) == REFERENCE;}
-static inline bool isInteger(Node* node) {return getType(node) == INTEGER;}
-static inline bool isBuiltin(Node* node) {return getType(node) == BUILTIN;}
-static inline bool isADT(Node* node) {return getType(node) == ADT;}
+static inline bool isCommaList(Node* node) {return getParseType(node) == COMMA;}
+static inline bool isPipePair(Node* node) {return getParseType(node) == PIPE;}
+static inline bool isADT(Node* node) {return getParseType(node) == ADT;}
+
+static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
+static inline bool isInteger(Node* node) {return getNodeType(node) == INTEGER;}
+static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
+
+static inline bool isOperator(Node* node) {
+    return getParseType(node) == OPERATOR;
+}
+
+static inline bool isReference(Node* node) {
+    return getNodeType(node) == REFERENCE;
+}
 
 static inline bool isApplication(Node* node) {
-    return getType(node) == APPLICATION;
+    return getNodeType(node) == APPLICATION;
 }
 
 static inline bool isDefinition(Node* node) {
-    return getType(node) == DEFINITION;
+    return getParseType(node) == DEFINITION;
 }
 
 static inline bool isGlobalReference(Node* node) {
-    return getType(node) == REFERENCE && getValue(node) < 0;
+    return getNodeType(node) == REFERENCE && getValue(node) < 0;
 }
 
 static inline bool isNewline(Node* node) {return isThisToken(node, "\n");}
@@ -75,27 +88,36 @@ static inline bool isBlank(Node* node) {return isThisToken(node, "_");}
 // Functions to construct new nodes
 // ================================
 
-static inline Node* newOperand(Tag tag, OperandType type) {
-    return newLeaf(tag, OPERAND, type);
+static inline unsigned char makeType(ParseType parseType, NodeType nodeType) {
+    return (unsigned char)(parseType << 4 | nodeType);
 }
 
-static inline Node* newName(Tag tag) {return newLeaf(tag, REFERENCE, 0);}
-static inline Node* newOperator(Tag tag) {return newLeaf(tag, OPERATOR, 0);}
+static inline Node* newToken(Tag tag, TokenType type) {
+    return newLeaf(tag, makeType(TOKEN, NONE), type);
+}
+
+static inline Node* newOperator(Tag tag) {
+    return newLeaf(tag, makeType(OPERATOR, NONE), 0);
+}
 
 static inline Node* newInteger(Tag tag, long long n) {
-    return newLeaf(tag, INTEGER, n);
+    return newLeaf(tag, makeType(OPERAND, INTEGER), n);
 }
 
 static inline Node* newBuiltin(Tag tag, long long n) {
-    return newLeaf(tag, BUILTIN, n);
+    return newLeaf(tag, makeType(OPERAND, BUILTIN), n);
+}
+
+static inline Node* newName(Tag tag) {
+    return newLeaf(tag, makeType(OPERAND, REFERENCE), 0);
+}
+
+static inline Node* newReference(Tag tag, long long value) {
+    return newLeaf(tag, makeType(OPERAND, REFERENCE), value);
 }
 
 static inline Node* newEOF(void) {
     return newOperator(newTag(EMPTY, newLocation(0, 0)));
-}
-
-static inline Node* newReference(Tag tag, long long value) {
-    return newLeaf(tag, REFERENCE, value);
 }
 
 static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
@@ -105,19 +127,19 @@ static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
     assert(isReference(parameter) && getValue(parameter) == 0);
-    return newBranch(tag, LAMBDA, parameter, body);
+    return newBranch(tag, makeType(OPERAND, LAMBDA), parameter, body);
 }
 
 static inline Node* newApplication(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, APPLICATION, left, right);
+    return newBranch(tag, makeType(OPERAND, APPLICATION), left, right);
 }
 
 static inline Node* newDefinition(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, DEFINITION, left, right);
+    return newBranch(tag, makeType(DEFINITION, NONE), left, right);
 }
 
 static inline Node* newADT(Tag tag, Node* definitions) {
-    return newBranch(tag, ADT, definitions, VOID);
+    return newBranch(tag, makeType(ADT, NONE), definitions, VOID);
 }
 
 static inline Node* newBoolean(Tag tag, bool value) {
@@ -135,11 +157,11 @@ static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
 }
 
 static inline Node* newCommaList(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, COMMALIST, left, right);
+    return newBranch(tag, makeType(COMMA, NONE), left, right);
 }
 
 static inline Node* newPipePair(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, PIPE, left, right);
+    return newBranch(tag, makeType(PIPE, NONE), left, right);
 }
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
