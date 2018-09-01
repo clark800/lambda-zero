@@ -2,15 +2,6 @@ typedef enum {IDENTIFIER, PUNCTUATION, NUMBER, CHARACTER, STRING} TokenType;
 typedef enum {TOKEN, OPERAND, OPERATOR, DEFINITION, COMMA, PIPE, ADT} ParseType;
 typedef enum {NONE, APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN} NodeType;
 
-// names in BUILTINS must line up with codes in BuiltinCode, except
-// EXIT, PUT, GET which don't have accessible names
-static const char* const BUILTINS[] =
-    {"+", "-", "*", "/", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
-
-enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULUS,
-      EQUAL, NOTEQUAL, LESSTHAN, GREATERTHAN, LESSTHANOREQUAL,
-      GREATERTHANOREQUAL, ERROR, EXIT, PUT, GET};
-
 // ====================================
 // Functions to get a value from a node
 // ====================================
@@ -56,6 +47,7 @@ static inline bool isADT(Node* node) {return getParseType(node) == ADT;}
 static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
 static inline bool isInteger(Node* node) {return getNodeType(node) == INTEGER;}
 static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
+static inline bool isOperand(Node* node) {return getParseType(node) == OPERAND;}
 
 static inline bool isOperator(Node* node) {
     return getParseType(node) == OPERATOR;
@@ -84,6 +76,11 @@ static inline bool isEOF(Node* node) {return isThisToken(node, "\0");}
 static inline bool isComma(Node* node) {return isThisToken(node, ",");}
 static inline bool isBlank(Node* node) {return isThisToken(node, "_");}
 
+static inline bool isValidPattern(Node* node) {
+    return isReference(node) || (isApplication(node) &&
+        isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
+}
+
 // ================================
 // Functions to construct new nodes
 // ================================
@@ -108,13 +105,11 @@ static inline Node* newBuiltin(Tag tag, long long n) {
     return newLeaf(tag, makeType(OPERAND, BUILTIN), n);
 }
 
-static inline Node* newName(Tag tag) {
-    return newLeaf(tag, makeType(OPERAND, REFERENCE), 0);
-}
-
 static inline Node* newReference(Tag tag, long long value) {
     return newLeaf(tag, makeType(OPERAND, REFERENCE), value);
 }
+
+static inline Node* newName(Tag tag) {return newReference(tag, 0);}
 
 static inline Node* newEOF(void) {
     return newOperator(newTag(EMPTY, newLocation(0, 0)));
@@ -167,6 +162,33 @@ static inline Node* newPipePair(Tag tag, Node* left, Node* right) {
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
     Node* operator = newName(renameTag(tag, "::"));
     return newApplication(tag, newApplication(tag, operator, item), list);
+}
+
+// ====================================
+// Helper functions
+// ====================================
+
+static inline unsigned int getCommaListLength(Node* node) {
+    return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
+}
+
+// ====================================
+// Builtins
+// ====================================
+
+enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULUS,
+      EQUAL, NOTEQUAL, LESSTHAN, GREATERTHAN, LESSTHANOREQUAL,
+      GREATERTHANOREQUAL, ERROR, EXIT, PUT, GET};
+
+static inline Node* convertOperator(Node* operator) {
+    // names in builtins must line up with codes in BuiltinCode, except
+    // EXIT, PUT, GET which don't have accessible names
+    static const char* const builtins[] =
+        {"+", "-", "*", "/", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
+    for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); i++)
+        if (isThisToken(operator, builtins[i]))
+            return newBuiltin(getTag(operator), i);
+    return newName(getTag(operator));
 }
 
 static inline Node* newPrinter(Tag tag) {

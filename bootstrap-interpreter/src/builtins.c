@@ -7,7 +7,6 @@
 #include "ast.h"
 #include "errors.h"
 #include "closure.h"
-#include "builtins.h"
 
 bool STDERR = false;
 Stack* INPUT_STACK;

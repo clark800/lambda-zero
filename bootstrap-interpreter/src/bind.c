@@ -2,7 +2,6 @@
 #include "lib/array.h"
 #include "ast.h"
 #include "errors.h"
-#include "bind.h"
 
 static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     for (unsigned long long i = 1; i <= length(parameters); i++)
@@ -26,6 +25,9 @@ static bool isDefined(Node* reference, Array* parameters) {
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
+    // this error should never happen, but if something invalid gets through
+    // we can at least point to the location of the problem
+    syntaxErrorIf(getParseType(node) != OPERAND, "invalid syntax", node);
     if (isReference(node) && getValue(node) == 0) {
         bindReference(node, parameters, length(globals));
     } else if (isLambda(node)) {
@@ -40,7 +42,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
     }
 }
 
-static bool isLetExpression(Node* node) {
+static bool isDesugaredDefinition(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
         !isThisToken(getParameter(getLeft(node)), "_");
 }
@@ -49,7 +51,7 @@ Array* bind(Hold* root) {
     Node* node = getNode(root);
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
-    for (; isLetExpression(node); node = getBody(getLeft(node))) {
+    for (; isDesugaredDefinition(node); node = getBody(getLeft(node))) {
         Node* definedSymbol = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
         if (isDefined(definedSymbol, parameters))

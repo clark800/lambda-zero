@@ -5,7 +5,6 @@
 #include "errors.h"
 #include "closure.h"
 #include "builtins.h"
-#include "evaluate.h"
 
 typedef const Array Globals;
 static Hold* evaluateClosure(Closure* closure, Globals* globals);

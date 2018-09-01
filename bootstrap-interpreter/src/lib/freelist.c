@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include "pool.h"
-#include "freelist.h"
 
 // NEXT is a pointer to a linked list of unallocated slots, where the elements
 // of the linked list are stored in the slots themselves and contain no data
@@ -24,11 +23,11 @@ void initPool(size_t itemSize, size_t initialCapacity) {
     NEXT = POOL;
 }
 
-void destroyPool() {
+void destroyPool(void) {
     deletePool(POOL);
 }
 
-size_t getMemoryUsage() {
+size_t getMemoryUsage(void) {
     return COUNT * SIZE;
 }
 
@@ -37,7 +36,7 @@ size_t getMemoryUsage() {
     return &(((void**)slot)[1]);
 }*/
 
-void* allocate() {
+void* allocate(void) {
     COUNT += 1;
     if (NEXT == POOL)
         return acquire(POOL);  //mark(acquire(POOL));

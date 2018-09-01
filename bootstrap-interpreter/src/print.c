@@ -2,7 +2,6 @@
 #include "lib/tree.h"
 #include "lib/util.h"
 #include "ast.h"
-#include "print.h"
 
 void printLexeme(String lexeme, FILE* stream) {
     if (lexeme.start[0] < 0)

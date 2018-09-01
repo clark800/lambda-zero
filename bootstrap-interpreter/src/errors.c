@@ -3,7 +3,6 @@
 #include "lib/tree.h"
 #include "ast.h"
 #include "print.h"
-#include "errors.h"
 
 extern bool TEST;
 

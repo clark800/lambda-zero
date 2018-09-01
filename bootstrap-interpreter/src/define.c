@@ -1,8 +1,7 @@
 #include "lib/tree.h"
 #include "ast.h"
 #include "errors.h"
-#include "operators.h"
-#include "define.h"
+#include "patterns.h"
 
 static bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
@@ -18,7 +17,7 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
     return false;
 }
 
-static inline Node* newYCombinator(Tag tag) {
+static Node* newYCombinator(Tag tag) {
     Node* x = newBlankReference(tag, 1);
     Node* y = newBlankReference(tag, 2);
     Node* yxx = newApplication(tag, y, newApplication(tag, x, x));
@@ -49,7 +48,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     if (isTuple(left))
         return newDefinition(tag, left, right);
     for (; isApplication(left); left = getLeft(left))
-        right = newPatternLambda(operator, getRight(left), right);
+        right = newDestructuringLambda(operator, getRight(left), right);
     syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
     syntaxErrorIf(!isReference(left), "invalid left hand side", operator);
     return newDefinition(tag, left, transformRecursion(left, right));
@@ -57,8 +56,8 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
 
 static Node* applyDefinition(Node* definition, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    Node* lambda = newPatternLambda(definition, getLeft(definition), scope);
-    return newApplication(getTag(definition), lambda, getRight(definition));
+    Node* f = newDestructuringLambda(definition, getLeft(definition), scope);
+    return newApplication(getTag(definition), f, getRight(definition));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -89,4 +88,10 @@ Node* reduceNewline(Node* operator, Node* left, Node* right) {
     if (isDefinition(left))
         return applyDefinition(left, right);
     return newApplication(getTag(operator), left, right);
+}
+
+Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
+    syntaxErrorIf(!isADT(right), "right side must be an ADT", operator);
+    return right;
 }

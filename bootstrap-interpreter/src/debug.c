@@ -3,7 +3,6 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "print.h"
-#include "debug.h"
 
 void debug(const char* message) {
     fputs(message, stderr);
