@@ -102,7 +102,7 @@ f(x, y | z)
 Syntax error: pipe not inside brackets at line 1 column 8
 ===============================================================================
 f(x | y, z)
-Syntax error: comma invalid on right of pipe at line 1 column 8
+Syntax error: invalid right operand of '|' at line 1 column 5
 ===============================================================================
 1 + {2}
 Syntax error: must appear on the right side of '::=' '{' at line 1 column 5

@@ -2,7 +2,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "lib/tag.h"
-#include "scan.h"
 
 bool isSpaceCharacter(char c) {return c == ' ' || c == '\t' || c == '\r';}
 static bool isCommaCharacter(char c) {return c == ',';}

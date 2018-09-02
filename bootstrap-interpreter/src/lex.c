@@ -3,7 +3,6 @@
 #include "scan.h"
 #include "ast.h"
 #include "errors.h"
-#include "lex.h"
 
 static Location location = {1, 1};
 

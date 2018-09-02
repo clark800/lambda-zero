@@ -59,9 +59,8 @@ static Node* buildStringLiteral(Node* token, const char* start) {
     char c = start[0];
     Tag tag = getTag(token);
     syntaxErrorIf(c == '\n' || c == 0, "missing end quote for", token);
-    if (c == tag.lexeme.start[0])
-        return newNil(tag);
-    return prepend(tag, newInteger(tag, decodeCharacter(start, token)),
+    return c == tag.lexeme.start[0] ? newNil(tag) :
+        prepend(tag, newInteger(tag, decodeCharacter(start, token)),
         buildStringLiteral(token, skipQuoteCharacter(start)));
 }
 

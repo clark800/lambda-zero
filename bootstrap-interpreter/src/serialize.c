@@ -4,7 +4,6 @@
 #include "ast.h"
 #include "print.h"
 #include "closure.h"
-#include "serialize.h"
 
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
