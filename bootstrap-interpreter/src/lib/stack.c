@@ -3,11 +3,11 @@
 #include "stack.h"
 
 Stack* newStack() {
-    return (Stack*)hold(newPair(VOID, VOID));
+    return (Stack*)newPair(VOID, VOID);
 }
 
 void deleteStack(Stack* stack) {
-    release((Hold*)stack);
+    release(hold((Node*)stack));
 }
 
 static Node* getHead(Stack* stack) {

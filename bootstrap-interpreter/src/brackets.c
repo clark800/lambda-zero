@@ -1,4 +1,5 @@
 #include "lib/tree.h"
+#include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
 #include "operators.h"
@@ -109,10 +110,6 @@ static Node* newConstructorDefinition(Node* pattern, int i, int n) {
     return newDefinition(tag, pattern, constructor);
 }
 
-static Node* extend(Node* list, Node* item) {
-    return list == NULL ? item : newCommaList(getTag(item), list, item);
-}
-
 Node* reduceCurlyBrackets(Node* close, Node* open, Node* patterns) {
     syntaxErrorIf(patterns == NULL, "missing patterns", open);
     syntaxErrorIf(!isThisToken(open, "{"), "missing open for", close);
@@ -122,10 +119,10 @@ Node* reduceCurlyBrackets(Node* close, Node* open, Node* patterns) {
     // then return all of these definitions as a comma list, which the parser
     // converts to a sequence of lines
     int n = (int)getCommaListLength(patterns);
-    Node* definitions = NULL;
+    Stack* definitions = newStack();
     for (int i = 0; isCommaList(patterns); ++i, patterns = getLeft(patterns))
-        definitions = extend(definitions,
+        push(definitions,
             newConstructorDefinition(getRight(patterns), n - i - 1, n));
-    definitions = extend(definitions, newConstructorDefinition(patterns, 0, n));
-    return newADT(getTag(open), definitions);
+    push(definitions, newConstructorDefinition(patterns, 0, n));
+    return newADT(getTag(open), (Node*)definitions);
 }

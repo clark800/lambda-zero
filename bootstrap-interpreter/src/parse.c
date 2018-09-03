@@ -26,16 +26,6 @@ static void eraseNewlines(Stack* stack) {
         release(pop(stack));
 }
 
-static void pushADT(Stack* stack, Node* node) {
-    if (isCommaList(node)) {
-        push(stack, getRight(node));
-        push(stack, setRules(newOperator(newTag(newString("\n", 1),
-            getLocation(node))), false));
-        pushADT(stack, getLeft(node));
-    } else
-        push(stack, node);
-}
-
 static void pushOperand(Stack* stack, Node* node) {
     if (isOperatorTop(stack)) {
         push(stack, node);
@@ -51,12 +41,7 @@ static void collapseOperator(Stack* stack) {
     Hold* op = pop(stack);
     Node* operator = getNode(op);
     Hold* left = getFixity(operator) == IN ? pop(stack) : NULL;
-    Node* node = applyOperator(operator, getNode(left), getNode(right));
-    if (isADT(node))
-        // not a memory leak because node = left in this case
-        pushADT(stack, getLeft(node));
-    else
-        pushOperand(stack, node);
+    pushOperand(stack, applyOperator(operator, getNode(left), getNode(right)));
     release(right);
     release(op);
     if (left != NULL)

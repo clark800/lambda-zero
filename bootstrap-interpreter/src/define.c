@@ -1,4 +1,5 @@
 #include "lib/tree.h"
+#include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
 #include "patterns.h"
@@ -87,6 +88,12 @@ Node* reduceNewline(Node* operator, Node* left, Node* right) {
         right = transformDefinition(right);
     if (isDefinition(left))
         return applyDefinition(left, right);
+    if (isADT(left)) {
+        Stack* stack = (Stack*)getLeft(left);
+        for (Iterator* it = iterate(stack); !end(it); it = next(it))
+            right = applyDefinition(cursor(it), right);
+        return right;
+    }
     return newApplication(getTag(operator), left, right);
 }
 
