@@ -40,29 +40,29 @@ static inline bool isThisToken(Node* token, const char* lexeme) {
     return isLeaf(token) && isThisString(getLexeme(token), lexeme);
 }
 
+static inline bool isOperand(Node* node) {return getParseType(node) == OPERAND;}
 static inline bool isCommaList(Node* node) {return getParseType(node) == COMMA;}
 static inline bool isPipePair(Node* node) {return getParseType(node) == PIPE;}
 static inline bool isADT(Node* node) {return getParseType(node) == ADT;}
-
-static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
-static inline bool isInteger(Node* node) {return getNodeType(node) == INTEGER;}
-static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
-static inline bool isOperand(Node* node) {return getParseType(node) == OPERAND;}
 
 static inline bool isOperator(Node* node) {
     return getParseType(node) == OPERATOR;
 }
 
-static inline bool isReference(Node* node) {
-    return getNodeType(node) == REFERENCE;
+static inline bool isDefinition(Node* node) {
+    return getParseType(node) == DEFINITION;
 }
+
+static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
+static inline bool isInteger(Node* node) {return getNodeType(node) == INTEGER;}
+static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
 
 static inline bool isApplication(Node* node) {
     return getNodeType(node) == APPLICATION;
 }
 
-static inline bool isDefinition(Node* node) {
-    return getParseType(node) == DEFINITION;
+static inline bool isReference(Node* node) {
+    return getNodeType(node) == REFERENCE;
 }
 
 static inline bool isGlobalReference(Node* node) {
@@ -97,6 +97,12 @@ static inline Node* newOperator(Tag tag) {
     return newLeaf(tag, makeType(OPERATOR, NONE), 0);
 }
 
+static inline Node* newReference(Tag tag, long long value) {
+    return newLeaf(tag, makeType(OPERAND, REFERENCE), value);
+}
+
+static inline Node* newName(Tag tag) {return newReference(tag, 0);}
+
 static inline Node* newInteger(Tag tag, long long n) {
     return newLeaf(tag, makeType(OPERAND, INTEGER), n);
 }
@@ -104,12 +110,6 @@ static inline Node* newInteger(Tag tag, long long n) {
 static inline Node* newBuiltin(Tag tag, long long n) {
     return newLeaf(tag, makeType(OPERAND, BUILTIN), n);
 }
-
-static inline Node* newReference(Tag tag, long long value) {
-    return newLeaf(tag, makeType(OPERAND, REFERENCE), value);
-}
-
-static inline Node* newName(Tag tag) {return newReference(tag, 0);}
 
 static inline Node* newEOF(void) {
     return newOperator(newTag(EMPTY, newLocation(0, 0)));
@@ -137,12 +137,6 @@ static inline Node* newADT(Tag tag, Node* definitions) {
     return newBranch(tag, makeType(ADT, NONE), definitions, VOID);
 }
 
-static inline Node* newBoolean(Tag tag, bool value) {
-    Tag t = renameTag(tag, "t"), f = renameTag(tag, "f");
-    return newLambda(tag, newName(f), newLambda(tag, newName(t),
-        value ? newReference(t, 1) : newReference(f, 2)));
-}
-
 static inline Node* newBlank(Tag tag) {return newName(renameTag(tag, "_"));}
 static inline Node* newComma(Tag tag) {return newOperator(renameTag(tag, ","));}
 static inline Node* newNil(Tag tag) {return newName(renameTag(tag, "[]"));}
@@ -162,6 +156,11 @@ static inline Node* newPipePair(Tag tag, Node* left, Node* right) {
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
     Node* operator = newName(renameTag(tag, "::"));
     return newApplication(tag, newApplication(tag, operator, item), list);
+}
+
+static inline Node* newBoolean(Tag tag, bool value) {
+    return newLambda(tag, newBlank(tag), newLambda(tag, newBlank(tag),
+        value ? newBlankReference(tag, 1) : newBlankReference(tag, 2)));
 }
 
 // ====================================
@@ -185,7 +184,7 @@ static inline Node* convertOperator(Node* operator) {
     // EXIT, PUT, GET which don't have accessible names
     static const char* const builtins[] =
         {"+", "-", "*", "/", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
-    for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); i++)
+    for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
         if (isThisToken(operator, builtins[i]))
             return newBuiltin(getTag(operator), i);
     return newName(getTag(operator));

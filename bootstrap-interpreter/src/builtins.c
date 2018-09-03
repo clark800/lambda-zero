@@ -1,9 +1,9 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
+#include <stdlib.h>     // exit
+#include <stdio.h>      // fputs
+#include <limits.h>     // LLONG_MAX
+#include "lib/util.h"   // error
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "lib/util.h"
 #include "ast.h"
 #include "errors.h"
 #include "closure.h"
@@ -150,10 +150,9 @@ static Node* computeBuiltin(Closure* builtin, long long left, long long right) {
 
 static Hold* evaluateIntegerBuiltin(
         Closure* builtin, Closure* left, Closure* right) {
-    long long leftInteger = getIntegerArgument(builtin, left);
-    long long rightInteger = getIntegerArgument(builtin, right);
-    Node* term = computeBuiltin(builtin, leftInteger, rightInteger);
-    return makeResult(builtin, term);
+    long long leftValue = getIntegerArgument(builtin, left);
+    long long rightValue = getIntegerArgument(builtin, right);
+    return makeResult(builtin, computeBuiltin(builtin, leftValue, rightValue));
 }
 
 Hold* evaluateBuiltinNode(Closure* builtin, Closure* left, Closure* right) {

@@ -48,14 +48,16 @@ int main(int argc, char* argv[]) {
     // causing the shell to execute it, which is dangerous
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
-    char* programName = argv[0];
-    while (--argc > 0 && (*++argv)[0] == '-')
-        for (char* flag = argv[0] + 1; *flag != '\0'; flag++)
-            switch (*flag) {
+    const char* programName = argv[0];
+    while (--argc > 0 && (*++argv)[0] == '-') {
+        for (const char* flag = argv[0] + 1; flag[0] != '\0'; ++flag) {
+            switch (flag[0]) {
                 case 'p': TRACE_PARSING = true; break;
                 case 't': TEST = true; break;      // hide line #s in errors
                 default: usageError(programName); break;
             }
+        }
+    }
     if (argc > 1)
         usageError(programName);
     char* sourceCode = argc == 0 ? readfile(stdin) : readSourceCode(argv[0]);

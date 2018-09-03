@@ -7,7 +7,7 @@
 #include "errors.h"
 
 static bool isIntegerLexeme(String lexeme) {
-    for (unsigned int i = 0; i < lexeme.length; i++)
+    for (unsigned int i = 0; i < lexeme.length; ++i)
         if (!isdigit(lexeme.start[i]))
             return false;
     return lexeme.length > 0;
