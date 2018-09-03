@@ -21,29 +21,14 @@ static bool isOpenOperator(Node* token) {
         (getFixity(token) == OPEN || getFixity(token) == OPENCALL);
 }
 
-static void eraseNewlines(Stack* stack) {
-    while (isNewline(peek(stack, 0)))
-        release(pop(stack));
-}
-
-static void pushADT(Stack* stack, Node* node) {
-    if (isCommaList(node)) {
-        push(stack, getRight(node));
-        push(stack, setRules(newOperator(newTag(newString("\n", 1),
-            getLocation(node))), false));
-        pushADT(stack, getLeft(node));
-    } else
-        push(stack, node);
-}
-
 static void pushOperand(Stack* stack, Node* node) {
     if (isOperatorTop(stack)) {
         push(stack, node);
-        return;
+    } else {
+        Hold* left = pop(stack);
+        push(stack, newApplication(getTag(node), getNode(left), node));
+        release(left);
     }
-    Hold* left = pop(stack);
-    push(stack, newApplication(getTag(node), getNode(left), node));
-    release(left);
 }
 
 static void collapseOperator(Stack* stack) {
@@ -51,26 +36,23 @@ static void collapseOperator(Stack* stack) {
     Hold* op = pop(stack);
     Node* operator = getNode(op);
     Hold* left = getFixity(operator) == IN ? pop(stack) : NULL;
-    Node* node = applyOperator(operator, getNode(left), getNode(right));
-    if (isADT(node))
-        // not a memory leak because node = left in this case
-        pushADT(stack, getLeft(node));
-    else
-        pushOperand(stack, node);
+    pushOperand(stack, applyOperator(operator, getNode(left), getNode(right)));
     release(right);
     release(op);
     if (left != NULL)
         release(left);
 }
 
-static void validateConsecutiveOperators(Node* left, Node* right) {
-    if (isOpenOperator(left) && isEOF(right))
-        syntaxError("missing close for", left);
-    if (getFixity(right) == CLOSE &&
-            !isCloseParen(right) && !isOpenOperator(left))
-        syntaxError("missing right argument to", left);
-    if (getFixity(right) == IN && !isOpenParen(left))
-        syntaxError("missing left argument to", right);   // e.g. "5 - * 2"
+static void validateOperator(Node* top, Node* operator) {
+    if (isThisToken(operator, "{") && !isThisToken(top, "::="))
+        syntaxError("must appear on the right side of '::='", operator);
+    if (isOpenOperator(top) && isEOF(operator))
+        syntaxError("missing close for", top);
+    if (getFixity(operator) == CLOSE && !isCloseParen(operator) &&
+            isOperator(top) && !isOpenOperator(top))
+        syntaxError("missing right argument to", top);
+    if (getFixity(operator) == IN && isOperator(top) && !isOpenParen(top))
+        syntaxError("missing left argument to", operator);   // e.g. "5 - * 2"
 }
 
 static bool shouldCollapseOperator(Stack* stack, Node* collapser) {
@@ -130,7 +112,7 @@ static void collapseBracket(Stack* stack, Node* close) {
 }
 
 static void pushOperator(Stack* stack, Node* operator) {
-    // ignore spaces before operators except open operators
+    // ignore spaces before operators
     if (isSpace(peek(stack, 0))) {
         release(pop(stack));
         if (getFixity(operator) == PRE)
@@ -143,16 +125,13 @@ static void pushOperator(Stack* stack, Node* operator) {
         return;
 
     if (getFixity(operator) == CLOSE) {
-        eraseNewlines(stack);       // ignore newlines before close operators
+        if (isNewline(peek(stack, 0)))
+            release(pop(stack));
         if (isComma(peek(stack, 0)) && !isOpenParen(peek(stack, 1)))
             release(pop(stack));        // ignore commas before close operators
     }
 
-    if (isThisToken(operator, "{") && !isThisToken(peek(stack, 0), "::="))
-        syntaxError("must appear on the right side of '::='", operator);
-
-    if (isOperatorTop(stack))
-        validateConsecutiveOperators(peek(stack, 0), operator);
+    validateOperator(peek(stack, 0), operator);
 
     // ( a op1 b op2 c op3 d ...
     // opN is guaranteed to be in non-decreasing order of precedence

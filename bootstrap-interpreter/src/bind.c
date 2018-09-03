@@ -4,7 +4,7 @@
 #include "errors.h"
 
 static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
-    for (unsigned long long i = 1; i <= length(parameters); i++)
+    for (unsigned long long i = 1; i <= length(parameters); ++i)
         if (isSameToken(elementAt(parameters, length(parameters) - i), symbol))
             return i;
     return 0;

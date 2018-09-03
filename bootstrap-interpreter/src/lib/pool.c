@@ -25,7 +25,7 @@ Pool* newPool(size_t itemSize, size_t pageCapacity) {
 }
 
 void deletePool(Pool* pool) {
-    for (size_t i = 0; i < length(pool->pages); i++)
+    for (size_t i = 0; i < length(pool->pages); ++i)
         free(elementAt(pool->pages, i));
     deleteArray(pool->pages);
     free(pool);

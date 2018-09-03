@@ -151,7 +151,7 @@ Node* getNode(Hold* nodeHold) {
 
 Node* getListElement(Node* node, unsigned long long n) {
     assert(!isLeaf(node));
-    for (unsigned long long i = 0; i < n; i++) {
+    for (unsigned long long i = 0; i < n; ++i) {
         node = node->right.child;
         assert(!isLeaf(node));
     }

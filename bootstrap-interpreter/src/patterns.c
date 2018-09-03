@@ -4,7 +4,7 @@
 
 static int getArgumentCount(Node* application) {
     int i = 0;
-    for (Node* n = application; isApplication(n); i++)
+    for (Node* n = application; isApplication(n); ++i)
         n = getLeft(n);
     return i;
 }
@@ -12,7 +12,7 @@ static int getArgumentCount(Node* application) {
 static Node* newProjection(Tag tag, int size, int index) {
     Node* projection = newBlankReference(tag,
         (unsigned long long)(size - index));
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; ++i)
         projection = newLambda(tag, newBlank(tag), projection);
     return projection;
 }
@@ -27,7 +27,7 @@ Node* newDestructuringLambda(Node* operator, Node* left, Node* right) {
     Node* body = right;
     for (Node* items = left; isApplication(items); items = getLeft(items))
         body = newDestructuringLambda(operator, getRight(items), body);
-    for (int i = 0, size = getArgumentCount(left); i < size; i++)
+    for (int i = 0, size = getArgumentCount(left); i < size; ++i)
         body = newApplication(tag, body,
             newApplication(tag, newBlankReference(tag, 1),
                 newProjection(tag, size, i)));

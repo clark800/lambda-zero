@@ -35,6 +35,7 @@ while(f, p, z) := f.until((!) <> p, z)
 N ::= {one, increment(*N)}
 Z ::= {zero, positive(*N), negative(*N)}
 Q ::= {fraction(*Z, *N)}
+negate(n) := 0 - n
 abs(n) := n >= 0 ? n || -n
 sign(n) := n = 0 ? 0 || n > 0 ? 1 || -1
 min(n, m) := n <= m ? n || m

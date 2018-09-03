@@ -23,7 +23,7 @@ static void swap(char* a, char* b) {
 }
 
 static char* reverse(char* string, unsigned int length) {
-    for (unsigned int i = 0; i < length / 2; i++)
+    for (unsigned int i = 0; i < length / 2; ++i)
        swap(&string[i], &string[length - i - 1]);
     return string;
 }

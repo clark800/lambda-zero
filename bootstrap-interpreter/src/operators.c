@@ -1,6 +1,6 @@
 #include "lib/tree.h"
 #include "ast.h"
-#include "scan.h"
+#include "scan.h"       // isSpace
 #include "errors.h"
 #include "define.h"
 #include "patterns.h"
@@ -53,7 +53,8 @@ static Node* reducePrefix(Node* operator, Node* left, Node* right) {
 
 static Node* reduceNegate(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    return reduceInfix(operator, newInteger(getTag(operator), 0), right);
+    Tag tag = getTag(operator);
+    return newApplication(tag, newName(renameTag(tag, "negate")), right);
 }
 
 static Node* reduceEOF(Node* operator, Node* open, Node* contents) {
@@ -171,12 +172,13 @@ static Rules* lookupRules(Node* token, bool isAfterOperator) {
     if (isSpace(token))
         return &SPACE;
     Rules* result = &DEFAULT;
-    for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); i++)
+    for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); ++i) {
         if (isThisToken(token, RULES[i].symbol)) {
             result = &(RULES[i]);
             if (!isAfterOperator || allowsOperatorBefore(RULES[i]))
                 return result;
         }
+    }
     return result;
 }
 
