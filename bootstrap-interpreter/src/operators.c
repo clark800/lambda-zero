@@ -53,7 +53,8 @@ static Node* reducePrefix(Node* operator, Node* left, Node* right) {
 
 static Node* reduceNegate(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
-    return reduceInfix(operator, newInteger(getTag(operator), 0), right);
+    Tag tag = getTag(operator);
+    return newApplication(tag, newName(renameTag(tag, "negate")), right);
 }
 
 static Node* reduceEOF(Node* operator, Node* open, Node* contents) {
