@@ -11,12 +11,15 @@ digraph graphname {
         label="interpreter";
         subgraph cluster_parser {
             label="parser";
-            desugar;
-            bind;
-            operators;
             parse;
             lex;
             scan;
+            operands;
+            operators;
+            define;
+            brackets;
+            patterns;
+            bind;
         }
         ast;
         print;
@@ -39,6 +42,7 @@ digraph graphname {
 
     debug -> ast;
     debug -> print;
+    debug -> closure;
 
     serialize -> ast;
     serialize -> print;
@@ -53,19 +57,32 @@ digraph graphname {
     bind -> ast;
     bind -> errors;
 
-    desugar -> ast;
-    desugar -> errors;
-    desugar -> operators;
+    patterns -> ast;
+    patterns -> errors;
+
+    brackets -> ast;
+    brackets -> errors;
+    brackets -> operators;
+
+    define -> ast;
+    define -> errors;
+    define -> patterns;
+
+    operands -> ast;
+    operands -> errors;
 
     operators -> ast;
     operators -> scan;
     operators -> errors;
+    operators -> define;
+    operators -> patterns;
+    operators -> brackets;
 
     parse -> ast;
     parse -> errors;
     parse -> lex;
+    parse -> operands;
     parse -> operators;
-    parse -> desugar;
     parse -> bind;
     parse -> debug;
 
@@ -75,7 +92,6 @@ digraph graphname {
 
     evaluate -> ast;
     evaluate -> errors;
-    evaluate -> debug;
     evaluate -> closure;
     evaluate -> builtins;
 
