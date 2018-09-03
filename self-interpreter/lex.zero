@@ -1,213 +1,147 @@
-getLexeme(node) := getTagLexeme(getTag(node))
-getLine(node) := getTagLine(getTag(node))
-getColumn(node) := getTagColumn(getTag(node))
+--* lex.zero
 
-isOpenParen(node) := isOperator(node) /\ getLexeme(node) =*= "("
-isCloseParen(node) := isOperator(node) /\ getLexeme(node) =*= ")"
-isSpace(node) := isOperator(node) /\ isBlank(getLexeme(node)[0])
-isNewline(node) := isOperator(node) /\ getLexeme(node) =*= "\n"
-isEOF(node) := isOperator(node) /\ getLexeme(node) =*= "\0"
-isComma(node) := isSymbol(node) /\ getLexeme(node) =*= "(,)"
-isCommaList(node) := isApplication(node) /\ getLexeme(node) =*= ","
-isTuple(node) := isLambda(node) /\ isComma(getParameter(node))
-isUnit(node) := isTuple(node) /\ isComma(getBody(node))
-isList(node) := isLambda(node) /\ getLexeme(node) =*= "["
-isInternal(node) := getLine(node) = 0 /\ getColumn(node) = 0
-isInput(node) := isInternal(node) /\ getLexeme(node) =*= "input"
+LocationType ::= {Location(
+    getLocationFile : List(Integer),
+    getLocationLine : Integer,
+    getLocationColumn : Integer
+)}
 
-isNameLexeme(lexeme) := isOperandCharacter(lexeme[0]) /\ !isDigit(lexeme[0])
-isOperatorLexeme(lexeme) :=
-    isOperatorCharacter(lexeme[0]) \/ isDelimiterCharacter(lexeme[0])
-isIntegerLexeme(lexeme) := lexeme.all(isDigit)
+TagType ::= {Tag(getTagLexeme : List(Integer), getTagLocation : LocationType)}
 
-showLexeme(lexeme) := (
-    lexeme.isEmpty \/ lexeme[0] = 0 ? "\\0"
-    lexeme[0] = '\n' ? "\\n"
-    lexeme
+isDelimiter(n) := " \n\0,;.`()[]{}@$\"".any((= n))
+isLineComment(lexeme) := lexeme.startsWith("--")
+isBlockComment(lexeme) := lexeme.startsWith("{=")
+isNumeric(lexeme) := isDigit(head(lexeme)) \/
+    ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ ! isNil(tail(lexeme)) /\
+      isDigit(head(tail(lexeme))))
+isInvalid(c) := c < 0 \/ (isControl(c) /\ ! isWhitespace(c) /\ c != 0)
+isSpace(c) := c > 0 /\ isWhitespace(c) /\ c != '\n'
+
+splitQuoteCharacter(quote, ns) := (
+    ns.isNil \/ head(ns) = quote \/ head(ns) = '\n' ? ([], ns)
+    n := (head(ns) = '\\' /\ ! isNil(tail(ns))) ? 2 || 1
+    ns.splitAt(n)
 )
 
-showToken(token) := showLexeme(getLexeme(token))
+shiftSplit((a, b)) := isNil(b) ? (a, b) || (a ++ [head(b)], tail(b))
 
-showLocation(tag) :=
-    "line " ++ showNatural(getTagLine(tag)) ++
-    " column " ++ showNatural(getTagColumn(tag))
-
-showLexemeAndLocationLine(tag, quote) :=
-    quote ++ showLexeme(getTagLexeme(tag)) ++ quote ++
-        " at " ++ showLocation(tag) ++ "\n"
-
-showErrorLocation(node) := (
-    isApplication(node) \/ isLambda(node) ?
-        "at " ++ showLocation(getTag(node)) ++ "\n"
-    showLexemeAndLocationLine(getTag(node), "'")
+splitQuote(ns) := (
+    quote := head(ns)
+    (a, b) := tail(ns).splitWith(splitQuoteCharacter(quote))
+    ! b.isNil /\ head(b) = quote ?
+        shiftSplit((quote :: a, b))
+    (quote :: a, b)
 )
 
-inputTag := ("input", (0, 0))
-blank := newName(("_", (0, 0)))
-projectionBlank := newName(("(_)", (0, 0)))
-comma := newName(("(,)", (0, 0)))
-cT := newName(("t", (0, 0)))
-cF := newName(("f", (0, 0)))
-cX := newName(("(x)", (0, 0)))
-cY := newName(("(y)", (0, 0)))
-cZ := newName(("(z)", (0, 0)))
-eof := newOperator(("\0", (0, 0)))
-cXY := newLambda(getTag(cX), cX, newApplication(getTag(cX), cY,
-        newApplication(getTag(cX), cX, cX)))
-yCombinator := newLambda(getTag(cY), cY, newApplication(getTag(cY), cXY, cXY))
-isYCombinator(node) := isLambda(node) /\
-    getLexeme(getParameter(node)) =*= getLexeme(cY)
-isRecursiveFunction(node) := isApplication(node) /\ isYCombinator(getLeft(node))
-isNil(node) := isLambda(node) /\ getLexeme(getParameter(node)) =*= getLexeme(cZ)
-isStringLiteral(node) := (isTuple(node) \/ isNil(node)) /\
-    getLexeme(node)[0] = '"'
-
-newTrue(tag) := newLambda(tag, cT, newLambda(tag, cF,
-    newReference(getTag(cT), 1)))
-newFalse(tag) := newLambda(tag, cT, newLambda(tag, cF,
-    newReference(getTag(cF), 0)))
-newBoolean(tag, b) := b ? newTrue(tag) || newFalse(tag)
-newNil(tag) := newLambda(tag, cZ, newTrue(tag))
-
-applyToCommaList(f, commaList) := (
-    isCommaList(commaList) ? newApplication(getTag(f),
-        applyToCommaList(f, getLeft(commaList)), getRight(commaList))
-    newApplication(getTag(f), f, commaList)
+splitNumeric(ns) := (
+    (before, after) := ns.splitWhen(isDelimiter)
+    isNil(after) \/ isNil(tail(after)) \/ head(after) != '.' \/
+        ! isDigit(head(tail(after))) ? (before, after)
+    (before', after') := tail(after).splitWhen(isDelimiter)
+    (before ++ [head(after)] ++ before', after')
 )
 
-getTupleSize(tuple) := (
-    getTupleSize'(body) := (
-        isComma(body) ? 0
-        getTupleSize'(getLeft(body)) + 1
+splitLexeme(ns) := (
+    ns.isNil ? ([], [])
+    c := head(ns)
+    c.isBlank ? ns.splitWhen((!) <> isBlank)
+    c.isQuote ? splitQuote(ns)
+    ns.isLineComment ? ns.splitOn("\n")
+    ns.isBlockComment ? ns.splitOn("=}").shiftSplit.shiftSplit
+    ns.isNumeric ? splitNumeric(ns)
+    c = '.' ? ns.splitWhen(!= '.')
+    c.isDelimiter ? ([head(ns)], tail(ns))
+    ns.splitWhen(isDelimiter)
+)
+
+advanceLocation'(lexeme, line, column) := (
+    isNil(lexeme) ? (line, column)
+    head(lexeme) = '\n' ? tail(lexeme).advanceLocation'(line + 1, 1)
+    tail(lexeme).advanceLocation'(line, column + 1)
+)
+
+advanceLocation(location, lexeme) := (
+    isLineComment(lexeme) /\ lexeme[2] = '*' ? (
+        (_, after) := lexeme.drop(3).splitWhen((!) <> isSpace)
+        (file, _) := after.splitWhen(= '\n')
+        Location(file, isNil(file) ? 0 || 1, 0)
     )
-    getTupleSize'(getBody(tuple))
-)
-
-applyToTuple(f, tuple) := (
-    applyToTuple'(body) := (
-        !isApplication(body) ? f
-        left := applyToTuple'(getLeft(body))
-        newApplication(getTag(f), left, getRight(body))
+    isBlockComment(lexeme) ? (
+        (line, column) := lexeme.advanceLocation'(
+            location.getLocationLine, location.getLocationColumn)
+        Location(location.getLocationFile, line, column)
     )
-    applyToTuple'(getBody(tuple))
+    head(lexeme) = '\n' ?
+        Location(location.getLocationFile, location.getLocationLine + 1, 1)
+    Location(location.getLocationFile, location.getLocationLine,
+        location.getLocationColumn + length(lexeme))
 )
 
-newTuple(tag, commaList) :=
-   newLambda(tag, comma, applyToCommaList(comma, commaList))
-
-newUnit(tag) := newLambda(tag, comma, comma)
-
-getCommaListSize(commaList) := (
-    !isCommaList(commaList) ? 1
-    getCommaListSize(getLeft(commaList)) + 1
+splitLexemes(string, splitter, location) := (
+    string.isNil ? []
+    (lexeme, remaining) := splitter(string)
+    nextLocation := advanceLocation(location, lexeme)
+    Tag(lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
 )
 
-prependList(tag, item, list) :=
-    newLambda(tag, comma, newApplication(tag,
-        newApplication(tag, comma, item), list))
+scan(string) := string.splitLexemes(splitLexeme, Location("", 1, 1))
 
-getListElements(list) := (
-    !isTuple(list) ? []
-    getRight(getLeft(getBody(list))) :: getListElements(getRight(getBody(list)))
-)
+showLocation(location) :=
+    (location.getLocationFile.isNil ? "" || location.getLocationFile ++ " ") ++
+    "line " ++ showNatural(location.getLocationLine) ++
+    " column " ++ showNatural(location.getLocationColumn)
 
-getListLength(list) := (
-    !isTuple(list) ? 0
-    tail := getRight(getBody(list))
-    getListLength(tail) + 1
-)
+showTag(tag) :=
+    "'" ++ tag.getTagLexeme ++
+    "' at " ++ showLocation(tag.getTagLocation)
 
-parseEscapeCode(code, tag) := (
-    code = '0' ? '\0'
-    code = 'n' ? '\n'
-    code = 't' ? '\t'
-    code = 'r' ? '\r'
-    code = '\\' ? '\\'
-    code = '\"' ? '\"'
-    code = '\'' ? '\''
-    error("Syntax error: invalid escape sequence in " ++ showPrettyTag(tag))
-)
-
-parseQuotedCharacter(tag, string) := (
-    string[0] < 0 \/ string[0] > 127 ?
-        error("Syntax error: illegal character in " ++ showPrettyTag(tag))
-    string[0] != '\\' ?
-        newInteger(tag, string[0])
-    --string =*= [] ?
-        error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
-    newInteger(tag, parseEscapeCode((--string)[0], tag))
-)
-
-splitStringLiteral(string) := (
-    string =*= [] ? []
-    n := (string[0] = '\\' /\ !isEmpty(--string)) ? 2 || 1
-    string.take(n) :: splitStringLiteral(string.drop(n))
-)
-
-buildStringLiteral(tag, characters) := (
-    characters.isEmpty ? newNil(tag)
-    prependList(tag, characters[0], buildStringLiteral(tag, --characters))
-)
-
-getQuoteContents(tag) := (
-    lexeme := getTagLexeme(tag)
-    lexeme.length > 1 /\ lexeme.last = lexeme[0] ? dropLast(--lexeme)
-    error("Syntax error: missing end quote for " ++ showPrettyTag(tag))
-)
-
-getQuotedCharacters(tag) :=
-    splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
-
-parseStringLiteral(tag) := buildStringLiteral(tag, getQuotedCharacters(tag))
-
-parseCharacterLiteral(tag) := (
-    characters := getQuotedCharacters(tag)
-    (characters.length = 1)? characters[0]
-    error("Syntax error: invalid character literal " ++ showPrettyTag(tag))
-)
-
-createInteger(tag) := (
-    lexeme := getTagLexeme(tag)
-    maxInteger := "9223372036854775807"
-    integer := lexeme.dropIf((= '0'))
-    integer.length > maxInteger.length ?
-        error("Syntax error: magnitude of integer is too large " ++
-            showLexemeAndLocationLine(tag, "'"))
-    integer.length = maxInteger.length /\
-        zipWith(integer, (>), maxInteger).any(id) ?
-        error("Syntax error: magnitude of integer is too large " ++
-            showLexemeAndLocationLine(tag, "'"))
-    newInteger(tag, parseInteger(lexeme, 10))
-)
+TokenCode ::= {Space, Symbolic, Numeric, Character, String, Comment, Invalid}
+TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
 createToken(tag) := (
     lexeme := getTagLexeme(tag)
-    isUppercase(lexeme[0]) ?
-        error("Syntax error: names can't start with uppercase " ++
-            showLexemeAndLocationLine(tag, "'"))
-    (lexeme[0] = '"')? parseStringLiteral(tag)
-    (lexeme[0] = '\'')? parseCharacterLiteral(tag)
-    isIntegerLexeme(lexeme)? createInteger(tag)
-    isNameLexeme(lexeme)? newName(tag)
-    isOperatorLexeme(lexeme)? newOperator(tag)
-    error("Syntax error: invalid token " ++ showPrettyTag(tag))
+    isNil(lexeme) ? Token(tag, Symbolic)
+    c := head(lexeme)
+    isInvalid(c) ? Token(tag, Invalid)
+    isSpace(c) ? Token(tag, Space)
+    c = '"' ? Token(tag, String)
+    c = '\'' ? Token(tag, Character)
+    isNumeric(lexeme) ? Token(tag, Numeric)
+    isLineComment(lexeme) \/ isBlockComment(lexeme) ? Token(tag, Comment)
+    Token(tag, Symbolic)
 )
 
-tokenError(title, message, token) :=
-    error(title ++ message ++ " " ++ showErrorLocation(token))
-
-syntaxError(message, token) := tokenError("Syntax error: ", message, token)
-runtimeError(message, token) := tokenError("\nRuntime error: ", message, token)
-
-getFirstCharacter(node) := (
-    characterNode := getRight(getLeft(getBody(node)))
-    isInteger(characterNode) ? getInteger(characterNode)
-    runtimeError("expected byte value in string at", characterNode)
+getTokenCodeNumber(tokenCode) := tokenCode.match(
+    Space -> 0;
+    Symbolic -> 1;
+    Numeric -> 2;
+    Character -> 3;
+    String -> 4;
+    Comment -> 5;
+    Invalid -> 6;
 )
 
-extractString(astString) := (
-    !isTuple(astString) ? []
-    getFirstCharacter(astString) :: extractString(getRight(getBody(astString)))
-)
+isComment(token) := getTokenCodeNumber(getTokenCode(token)) =
+                   getTokenCodeNumber(Comment)
+
+showToken(token) := token.getTokenTag.getTagLexeme
 
 lex(string) := scan(string).map(createToken)
+
+START := Token(Tag("\0", Location("", 0, 0)), Symbolic)
+
+showToken'(token) := showTag(getTokenTag(token)) ++ " " ++
+    getTokenCode(token).match(
+        Space -> "Space";
+        Symbolic -> "Symbolic";
+        Numeric -> "Numeric";
+        Character -> "Character";
+        String -> "String";
+        Comment -> "Comment";
+        Invalid -> "Invalid";
+    )
+
+--main(input) := scan(input).map(showTag).joinWith("\n")
+--main(input) := lex(input).map(showToken').joinWith("\n")
+
+--*

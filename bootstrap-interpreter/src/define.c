@@ -125,11 +125,11 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
 
 Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
-    if (!isApplication(right) || getTag(right).lexeme.start[0] != '\n')
+    if (!isApplication(right) || !isThisLexeme(right, "\n"))
         syntaxError("missing scope", operator);
 
     Node* adt = getLeft(right);
-    if (getTag(adt).lexeme.start[0] != '{')
+    if (!isThisLexeme(adt, "{") && !isThisLexeme(adt, "{}"))
         syntaxError("ADT required to right of", operator);
 
     // define ADT name so that the symbol can't be defined twice

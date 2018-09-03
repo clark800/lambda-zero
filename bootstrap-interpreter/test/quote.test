@@ -20,7 +20,7 @@ Syntax error: missing end quote for '"123' at line 1 column 1
 123"
 Syntax error: missing end quote for '"' at line 1 column 4
 ===============================================================================
-"123"456"
+"123"456
 Syntax error: missing operator before '456' at line 1 column 6
 ===============================================================================
 '\x'
@@ -28,12 +28,6 @@ Syntax error: invalid escape sequence in ''\x'' at line 1 column 1
 ===============================================================================
 x -> 'a'x
 Syntax error: missing operator before 'x' at line 1 column 9
-===============================================================================
-"x\"
-Syntax error: missing end quote for '"x\"' at line 1 column 1
-===============================================================================
-"∈"
-Syntax error: invalid character in '"∈"' at line 1 column 1
 ===============================================================================
 '∈'
 Syntax error: invalid character literal ''∈'' at line 1 column 1

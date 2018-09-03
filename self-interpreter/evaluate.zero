@@ -1,25 +1,34 @@
+--* evaluate.zero
+
+expandNatural(natural) := (
+    n := getValue(natural)
+    tag := getTag(natural)
+    underscore := newUnderscore(tag, 0)
+    body := n = 0 ? newUnderscore(tag, 2) ||
+        newApplication(tag, newUnderscore(tag, 1), newNatural(tag, n - 1))
+    newLambda(tag, underscore, newLambda(tag, underscore, body))
+)
 
 evaluate(closure, stack) := (
-    (term, environment) := unpackClosure(closure)
-    isReference(term) ?
-        evaluate(environment[getDebruijnIndex(term)], stack)
-    isApplication(term) ?
-        evaluate(newClosure(getLeft(term), environment),
-                 newClosure(getRight(term), environment) :: stack)
-    isLambda(term) ? (
-        stack.isEmpty ? closure
-        evaluate(newClosure(getBody(term), stack[0] :: environment), --stack)
+    (term, environment) := (getTerm(closure), getEnvironment(closure))
+    getNodeType(term).match(
+        SYMBOL -> evaluate(environment[getDebruijnIndex(term) - 1], stack);
+        LAMBDA -> stack.isNil ? closure ||
+            evaluate(Closure(getBody(term), stack[0] :: environment),
+                tail(stack));
+        APPLICATION ->
+            evaluate(Closure(getLeft(term), environment),
+                     Closure(getRight(term), environment) :: stack);
+        NATURAL -> stack.isNil ? closure ||
+            evaluate(Closure(expandNatural(term), environment), stack);
+        BUILTIN -> (
+            (arity, builtin) := getBuiltin(term) ?! undefined
+            arguments := (stack.takeSafe(arity) ?!
+                runtimeError("missing argument to", term)).map(`evaluate([]))
+            right := arity > 1 ? arguments[1] || Closure(NULL, [])
+            evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
+        )
     )
-    isInteger(term) ? (
-        stack.isEmpty ? closure
-        runtimeError("extra argument", getTerm(stack[0]))
-    )
-    isBuiltin(term) ? (
-        (arity, builtin) := fromJust(getBuiltin(term))
-        arguments := (stack.takeSafe(arity) ?||
-            runtimeError("missing argument to", term)).map(`evaluate([]))
-        right := arity > 1 ? arguments[1] || newClosure(blank, [])
-        evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
-    )
-    undefined
 )
+
+--*

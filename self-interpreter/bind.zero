@@ -1,35 +1,38 @@
-bind(root) := (
-    isDefined(parameter, parameterNames) := (
-        parameterName := getLexeme(parameter)
-        !isInternal(parameter) /\ !(parameterName =*= "_") /\
-            parameterNames.contains(parameterName) \/
-            isJust(getBuiltin(parameter))
-    )
+--* bind.zero
 
-    bind'(node, parameterNames) := (
-        node.isLambda ? (
+isDefined(parameter, parameterNames) :=
+    isNatural(parameter) \/ (! isUnderscore(parameter) /\
+        parameterNames.contains(getLexeme(parameter)))
+
+bind(root) := (
+    bind'(node, parameterNames) := getNodeType(node).match(
+        SYMBOL -> (
+            getDebruijnIndex(node) != 0 ? node
+            isUnused(node) ? syntaxError(
+                "cannot reference a symbol starting with underscore", node)
+            tag := getTag(node)
+            lexeme := getLexeme(node)
+            newReference(getTag(node), 1 + (
+                parameterNames.indexOf(lexeme) ?!
+                syntaxError("undefined symbol", node)))
+        );
+        LAMBDA -> (
             parameter := getParameter(node)
-            !isTuple(node) /\ isDefined(parameter, parameterNames) ?
+            isDefined(parameter, parameterNames) ?
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(parameter)
             newBody := bind'(getBody(node), parameterName :: parameterNames)
             newLambda(getTag(node), parameter, newBody)
-        )
-        node.isApplication ? (
+        );
+        APPLICATION -> (
             newFunction := bind'(getLeft(node), parameterNames)
             newArgument := bind'(getRight(node), parameterNames)
             newApplication(getTag(node), newFunction, newArgument)
-        )
-        node.isSymbol ? (
-            tag := getTag(node)
-            lexeme := getLexeme(node)
-            lexeme =*= "_" /\ !isInternal(node) ?
-                syntaxError("cannot reference", node)
-            getBuiltin(node) >>= (x -> just(newBuiltin(getTag(node)))) ?||
-                newReference(getTag(node), parameterNames.indexOf(lexeme) ?||
-                syntaxError("undefined symbol", node))
-        )
-        node
+        );
+        NATURAL -> node;
+        BUILTIN -> node;
     )
     bind'(root, [])
 )
+
+--*

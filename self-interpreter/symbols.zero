@@ -1,0 +1,122 @@
+--* symbols.zero
+
+NOFIX := 0
+PREFIX := 1
+INFIX := 2
+POSTFIX := 3
+OPENFIX := 4
+CLOSEFIX := 5
+
+LEFT := 0
+RIGHT := 1
+NEITHER := 2
+
+SyntaxType ::= {Syntax(
+    getLeftPrecedence : Natural,
+    getRightPrecedence : Natural,
+    getFixity : Natural,
+    getAssociativity : Natural,
+    getSpecial : B,
+    getShift : _,
+    getReduce : _
+)}
+
+StateType ::= {State(
+    getStack : List(Node(ASTData)),
+    getOperators : List(Pair(List(N), SyntaxType))
+)}
+
+isOperator(node) := isJust(getMaybeData(node))
+
+reduceOperand(node, _left, _right) := node
+
+shiftOperand(State(stack, operators), node) := (
+    isNil(stack) \/ ! isOperator(head(stack)) ?
+        syntaxError("missing operator before", node)
+    State(node :: stack, operators)
+)
+
+getSyntax(node) := getMaybeData(node) ?!
+    Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand)
+
+isSpecial(node) := getSpecial(getSyntax(node))
+
+propagateSection(operator, node, lexeme) := (
+    isSpecial(operator) \/ ! isApplication(node) ?
+        syntaxError("operator does not support sections", operator)
+    newApplication(renameTag(getTag(node), lexeme),
+        getLeft(node), getRight(node))
+)
+
+reduceOperator(operator, left, right) := (
+    result := getReduce(getSyntax(operator))(operator, left, right)
+    ! isNull(left) /\ isSection(left) ?
+        propagateSection(operator, result,
+            ! isNull(right) /\ isSection(right) ? ".*." || ".*")
+    ! isNull(right) /\ isSection(right) ?
+        propagateSection(operator, result, "*.")
+    result
+)
+
+reduceBracket(open, close, left, right) :=
+    getReduce(getSyntax(close))(open, left, right)
+
+shift(state, node) := getShift(getSyntax(node))(state, node)
+
+erase(stack, lexeme) := stack.dropIf(`isThisSymbol(lexeme))
+
+eraseWhitespace(stack) := erase(erase(stack, " "), "\n")
+
+reduceTop(State(stack, operators)) := (
+    getFixity(getSyntax(stack[1])) = PREFIX ?
+        shift(State(stack.drop(2), operators),
+            reduceOperator(stack[1], NULL, stack[0]))
+    shift(State(stack.drop(3), operators),
+        reduceOperator(stack[1], stack[2], stack[0]))
+)
+
+isHigherPrecedence(left, right) := (
+    isEOF(left) ? false
+    leftSyntax := getSyntax(left)
+    rightSyntax := getSyntax(right)
+
+    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
+        leftSyntax.getAssociativity = NEITHER ?
+            syntaxError("operator is non-associative", left)
+
+    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
+        rightSyntax.getAssociativity = NEITHER ?
+            syntaxError("operator is non-associative", right)
+
+    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
+        leftSyntax.getAssociativity != rightSyntax.getAssociativity ?
+            syntaxError("incompatible associativity", right)
+
+    rightSyntax.getAssociativity = RIGHT ?
+        leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
+    leftSyntax.getRightPrecedence >= rightSyntax.getLeftPrecedence
+)
+
+shouldReduceTop(operator, State(stack, _operators)) :=
+    ! isOperator(stack[0]) /\ isHigherPrecedence(stack[1], operator)
+
+reduceLeft(state, operator) := reduceTop.while(shouldReduceTop(operator), state)
+
+MARKER := ("\0\0",
+    Syntax(0, 0, NOFIX, NEITHER, true, shiftOperand, reduceOperand))
+
+lookupSyntax(operators, lexeme) := (
+    isNil(operators) ? nothing
+    (lexeme', syntax') := head(operators)
+    lexeme =*= lexeme' ? just(syntax')
+    lookupSyntax(tail(operators), lexeme)
+)
+
+parseSymbol(operators, tag) := (
+    lexeme := getTagLexeme(tag)
+    operators.lookupSyntax(lexeme) ?? just <> newOperator(tag) ?!
+        (lexeme =*= " " ? (operators.lookupSyntax("( )") ??
+            just <> newOperator(tag) ?! newName(tag)) || newName(tag))
+)
+
+--*

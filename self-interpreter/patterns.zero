@@ -1,0 +1,69 @@
+--* patterns.zero
+
+getArguments(pattern) := (
+    ! isApplication(pattern) ? []
+    getArguments(getLeft(pattern)) ++ [getRight(pattern)]
+)
+
+newProjector(tag, size, index) := (
+    reference := newUnderscore(tag, size - index)
+    ((newLambda(tag, newUnderscore(tag, 0))) ^^ size)(reference)
+)
+
+reduceLambda(operator, pattern, body) := (
+    getNodeType(pattern).match(
+        SYMBOL -> newLambda(getTag(operator), pattern, body);
+        LAMBDA -> syntaxError("invalid parameter", pattern);
+        APPLICATION -> (
+            tag := getTag(operator)
+            isThisLexeme(pattern, "@") ?
+                reduceLambda(pattern, getLeft(pattern),
+                    newApplication(tag, reduceLambda(operator,
+                        getRight(pattern), body), getLeft(pattern)))
+            arguments := getArguments(pattern)
+            size := length(arguments)
+            blank := newUnderscore(tag, 1)
+            function := arguments.fold(reduceLambda(tag), body)
+            projectors := (0 .. size - 1).map(newProjector(tag, size))
+            projections := projectors.map(newApplication(tag, blank))
+            application := projections.cascade(newApplication(tag), function)
+            newLambda(getTag(operator), newUnderscore(tag, 0), application)
+        );
+        NATURAL -> newLambda(getTag(operator), pattern, body);
+        BUILTIN -> syntaxError("invalid parameter", pattern);
+    )
+)
+
+getHead(node) := isApplication(node) ? getHead(getLeft(node)) || node
+
+isStrictPatternLambda(function) := isUnderscore(getParameter(function)) /\
+    isUnderscore(getHead(getBody(function)))
+
+isLazyPatternLambda(function) :=
+    isUnderscore(getParameter(function)) /\ isApplication(getBody(function)) /\
+    isApplication(getRight(getBody(function))) /\
+    isUnderscore(getLeft(getRight(getBody(function))))
+
+getPatternExtension(function) := (
+    isThisLexeme(function, "@") ? (
+        tag := getTag(function)
+        extension := getPatternExtension(getLeft(getBody(function)))
+        newApplication(tag, newLambda(tag, getParameter(function), extension),
+            newUnderscore(tag, 1))
+    )
+    isStrictPatternLambda(function) ? getRight(getBody(function))
+    isLazyPatternLambda(function) ? getHead(getBody(function))
+    getBody(function)
+)
+
+reducePatternLambda(operator, left, right) := (
+    ! isLambda(left) ? syntaxError("expected lambda to left of", operator)
+    ! isLambda(right) ? syntaxError("expected lambda to right of", operator)
+    tag := getTag(operator)
+    base := isStrictPatternLambda(left) ? getBody(left) ||
+        newApplication(tag, newUnderscore(tag, 1), getPatternExtension(left))
+    newLambda(tag, newUnderscore(tag, 0),
+        newApplication(tag, base, getPatternExtension(right)))
+)
+
+--*

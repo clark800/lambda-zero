@@ -1,8 +1,9 @@
+--* table.zero
 
 newTable((=<), entries) := newProtoset((=<).on(first), entries)
-lookup(table, key) := table.elicit((key, undefined)) >>= just <> second
+lookup(table, key) := table.elicit((key, undefined)) ?? just <> second
 hasKey(table, key) := (key, undefined) : table
-get(table, key, default) := table.lookup(key) ?|| default
+get(table, key, default) := table.lookup(key) ?! default
 delete(table, key) := table.remove((key, undefined))
 insert(table, key, value) := table.delete(key).add((key, value))
 getKeys(table) := table.getElements.map(first)
@@ -12,4 +13,6 @@ mapValues(table, f) := table.mapElements((key, value) -> (key, f(value)))
 
 newDictionary := newTable((<*=))
 newRegistry(items) := newTable((<=), zip(naturals, items))
-register(registry, item) := (#registry, registry.insert(#registry, item))
+register(registry, item) := (# registry, registry.insert(# registry, item))
+
+--*

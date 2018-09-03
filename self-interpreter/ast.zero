@@ -1,37 +1,108 @@
-cNAME := -1
-cOPERATOR := -2
-cLAMBDA := -3
-cAPPLICATION := -4
-cINTEGER := -5
-cBUILTIN := -6
+--* ast.zero
 
-newName(tag) := newNode((tag, cNAME), [])
-newOperator(tag) := newNode((tag, cOPERATOR), [])
-newReference(tag, debruijn) := newNode((tag, debruijn), [])
-newLambda(tag, parameter, body) := newNode((tag, cLAMBDA), [parameter, body])
-newApplication(tag, left, right) := newNode((tag, cAPPLICATION), [left, right])
-newBuiltin(tag) := newNode((tag, cBUILTIN), [])
-newInteger(tag, value) := newNode((tag, cINTEGER), [newNode((tag, value), [])])
+NodeType ::= {SYMBOL, LAMBDA, APPLICATION, NATURAL, BUILTIN}
+ASTDataType ::= {ASTData(_ : Tag, _ : NodeType, _ : Maybe(_), _ : Integer)}
 
-getTag(node) := first(getData(node))
-getType(node) := second(getData(node))
-getDebruijnIndex(node) := getType(node)
-getLeft(node) := getChildren(node)[0]
-getRight(node) := getChildren(node)[1]
+newLeaf(tag, nodeType, maybeData, value) :=
+    Node(ASTData(tag, nodeType, maybeData, value), [])
+newBranch(tag, nodeType, children) :=
+    Node(ASTData(tag, nodeType, nothing, 0), children)
+
+isLeaf(node) := isNil(getChildren(node))
+
+newSymbol(tag, maybeData, debruijn) := newLeaf(tag, SYMBOL, maybeData, debruijn)
+newOperator(tag, syntax') := newSymbol(tag, just(syntax'), 0)
+newReference(tag, debruijn) := newSymbol(tag, nothing, debruijn)
+newName(tag) := newReference(tag, 0)
+newLambda(tag, parameter, body) := newBranch(tag, LAMBDA, [parameter, body])
+newApplication(tag, left, right) := newBranch(tag, APPLICATION, [left, right])
+newNatural(tag, value) := newLeaf(tag, NATURAL, nothing, value)
+newBuiltin(tag) := newLeaf(tag, BUILTIN, nothing, 0)
+
+getTag(Node(ASTData(tag, _, _, _), _)) := tag
+getNodeType(Node(ASTData(_, nodeType, _, _), _)) := nodeType
+getMaybeData(Node(ASTData(_, _, maybeData, _), _)) := maybeData
+getValue(Node(ASTData(_, _, _, value), _)) := value
+
+getDebruijnIndex(node) := getValue(node)
+getLeft(node) := head(getChildren(node))
+getRight(node) := head(tail(getChildren(node)))
 getParameter(node) := getLeft(node)
 getBody(node) := getRight(node)
-getInteger(node) := getType(getLeft(node))
 
-isReference(node) := getType(node) >= 0
-isName(node) := getType(node) = cNAME
-isOperator(node) := getType(node) = cOPERATOR
-isLambda(node) := getType(node) = cLAMBDA
-isApplication(node) := getType(node) = cAPPLICATION
-isInteger(node) := getType(node) = cINTEGER
-isBuiltin(node) := getType(node) = cBUILTIN
-isSymbol(node) := isName(node) \/ isOperator(node)
+getNodeTypeCode(nodeType) := nodeType.match(
+    SYMBOL -> 0;
+    LAMBDA -> 1;
+    APPLICATION -> 2;
+    NATURAL -> 3;
+    BUILTIN -> 4;
+)
 
-newClosure(term, environment) := newNode(term, environment)
+isNodeType(node, nodeType) :=
+    getNodeTypeCode(getNodeType(node)) = getNodeTypeCode(nodeType)
+isSymbol(node) := isNodeType(node, SYMBOL)
+isLambda(node) := isNodeType(node, LAMBDA)
+isApplication(node) := isNodeType(node, APPLICATION)
+isNatural(node) := isNodeType(node, NATURAL)
+isBuiltin(node) := isNodeType(node, BUILTIN)
+
+Closure(term, environment) := Node(term, environment)
 getTerm := getData
 getEnvironment := getChildren
-unpackClosure(closure) := (getTerm(closure), getEnvironment(closure))
+
+getLexeme(node) := getTagLexeme(getTag(node))
+getLocation(node) := getTagLocation(getTag(node))
+getLine(node) := getLocationLine(getLocation(node))
+getColumn(node) := getLocationColumn(getLocation(node))
+
+NULL := newName(Tag("\0\0", Location("", 0, 0)))
+isThisLexeme(node, lexeme) := getLexeme(node) =*= lexeme
+isThisSymbol(node, lexeme) := isSymbol(node) /\ isThisLexeme(node, lexeme)
+isNull(node) := isThisSymbol(node, "\0\0")
+isEOF(node) := isThisSymbol(node, "\0")
+isUnderscore(node) := isThisSymbol(node, "_")
+isUnused(node) := isSymbol(node) /\ head(getLexeme(node)) = '_'
+
+isIdentity(node) := isLambda(node) /\ isSymbol(getBody(node)) /\
+    getLexeme(getParameter(node)) =*= getLexeme(getBody(node))
+
+isSection(node) := isThisLexeme(node, ".*.") \/
+    isThisLexeme(node, ".*") \/ isThisLexeme(node, "*.")
+
+newUnderscore(tag, debruijn) :=
+    newReference(Tag("_", getTagLocation(tag)), debruijn)
+
+newYCombinator(tag) := (
+    x := newUnderscore(tag, 1)
+    y := newUnderscore(tag, 2)
+    yxx := newApplication(tag, y, newApplication(tag, x, x))
+    xyxx := newLambda(tag, newUnderscore(tag, 0), yxx)
+    newLambda(tag, newUnderscore(tag, 0), newApplication(tag, xyxx, xyxx))
+)
+
+newBoolean(tag, b) := newLambda(tag, newUnderscore(tag, 0),
+    newLambda(tag, newUnderscore(tag, 0), newUnderscore(tag, b ? 1 || 2)))
+
+newNil(tag) := newName(Tag("[]", getTagLocation(tag)))
+
+prependList(tag, item, list) := (
+    name := newName(Tag("::", getTagLocation(tag)))
+    newApplication(tag, newApplication(tag, name, item), list)
+)
+
+isValidPattern(node) := isSymbol(node) \/ (isApplication(node) /\
+    isValidPattern(getLeft(node)) /\ isValidPattern(getRight(node)))
+
+renameTag(tag, lexeme) := Tag(lexeme, getTagLocation(tag))
+
+renameNode(node, lexeme) := newName(renameTag(getTag(node), lexeme))
+
+convertOperator(tag) := (
+    builtins := ["+", "-", "*", "//", "%", "=", "!=", "<", ">",
+        "<=", ">=", "up", "error"]
+    isJust(builtins.find(=*= getTagLexeme(tag))) ?
+        newBuiltin(tag)
+    newName(tag)
+)
+
+--*

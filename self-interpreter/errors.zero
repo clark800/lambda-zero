@@ -1,0 +1,25 @@
+--* errors.zero
+
+showTagLexeme(tag) := (
+    lexeme := getTagLexeme(tag)
+    lexeme.isNil \/ lexeme[0] = 0 ? "\\0"
+    lexeme[0] = '\n' ? "\\n"
+    lexeme
+)
+
+showLexeme(node) := showTagLexeme(getTag(node))
+
+showLexemeAndLocationLine(tag, quote) :=
+    quote ++ showTagLexeme(tag) ++ quote ++
+        " at " ++ showLocation(getTagLocation(tag)) ++ "\n"
+
+showErrorLocation(node) := showLexemeAndLocationLine(getTag(node), "'")
+
+nodeError(title, message, node) :=
+    error(title ++ message ++ " " ++ showErrorLocation(node))
+
+syntaxError(message, node) := nodeError("Syntax error: ", message, node)
+
+runtimeError(message, node) := nodeError("\nRuntime error: ", message, node)
+
+--*
