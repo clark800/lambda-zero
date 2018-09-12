@@ -1,5 +1,5 @@
 typedef enum {IDENTIFIER, PUNCTUATION, NUMBER, CHARACTER, STRING} TokenType;
-typedef enum {TOKEN, OPERAND, OPERATOR, DEFINITION, COMMA, PIPE, ADT} ParseType;
+typedef enum {TOKEN, OPERAND, OPERATOR, DEFINITION, COMMA, ADT} ParseType;
 typedef enum {NONE, APPLICATION, LAMBDA, REFERENCE, INTEGER, BUILTIN} NodeType;
 
 // ====================================
@@ -42,7 +42,6 @@ static inline bool isThisToken(Node* token, const char* lexeme) {
 
 static inline bool isOperand(Node* node) {return getParseType(node) == OPERAND;}
 static inline bool isCommaList(Node* node) {return getParseType(node) == COMMA;}
-static inline bool isPipePair(Node* node) {return getParseType(node) == PIPE;}
 static inline bool isADT(Node* node) {return getParseType(node) == ADT;}
 
 static inline bool isOperator(Node* node) {
@@ -147,10 +146,6 @@ static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
 
 static inline Node* newCommaList(Tag tag, Node* left, Node* right) {
     return newBranch(tag, makeType(COMMA, NONE), left, right);
-}
-
-static inline Node* newPipePair(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, makeType(PIPE, NONE), left, right);
 }
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {

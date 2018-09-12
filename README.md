@@ -26,7 +26,7 @@
 
 ### Quicksort
 
-    sort := [] -> []; n :: ns -> sort(ns | (<= n)) ++ [n] ++ sort(ns | (> n))
+    sort := [] -> []; n :: ns -> sort(ns |: (<= n)) ++ [n] ++ sort(ns |: (> n))
 
 ### Infinite list of natural numbers
 
@@ -37,7 +37,7 @@
 ### Infinite list of prime numbers
 
     primes := (
-        filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns | n' -> n' % n != 0)
+        filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: m -> m % n != 0)
         filterPrime(countFrom(2))
     )
 
