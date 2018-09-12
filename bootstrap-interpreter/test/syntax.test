@@ -99,10 +99,7 @@ Syntax error: missing scope at line 1 column 7
 Syntax error: invalid character '' at line 1 column 9
 ===============================================================================
 f(x, y | z)
-Syntax error: pipe not inside brackets at line 1 column 8
-===============================================================================
-f(x | y, z)
-Syntax error: invalid right operand of '|' at line 1 column 5
+Syntax error: reserved operator '|' at line 1 column 8
 ===============================================================================
 1 + {2}
 Syntax error: must appear on the right side of '::=' '{' at line 1 column 5

@@ -34,12 +34,6 @@ Node* reduceAsterisk(Node* operator, Node* left, Node* right) {
     return newName(renameTag(getTag(operator), "(*)"));
 }
 
-static Node* reducePipe(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(isDefinition(left), "missing scope", left);
-    syntaxErrorIf(isDefinition(right), "missing scope", right);
-    return newPipePair(getTag(operator), left, right);
-}
-
 static Node* reduceComma(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(isDefinition(left), "missing scope", left);
     syntaxErrorIf(isDefinition(right), "missing scope", right);
@@ -62,7 +56,6 @@ static Node* reduceEOF(Node* operator, Node* open, Node* contents) {
     syntaxErrorIf(!isEOF(open), "missing close for", open);
     syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
-    syntaxErrorIf(isPipePair(contents), "pipe not inside brackets", contents);
     return isDefinition(contents) ? transformDefinition(contents) : contents;
 }
 
@@ -71,7 +64,12 @@ static Node* reduceUnmatched(Node* operator, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-// note: must check for pipe pairs, comma lists, and definitions in every
+static Node* reduceReserved(Node* operator, Node* left, Node* right) {
+    syntaxError("reserved operator", operator);
+    return left == NULL ? right : left; // suppress unused parameter warning
+}
+
+// note: must check for comma lists and definitions in every
 // reducer for operators of lower precedence to ensure that parser-specific
 // node types don't reach the evaluator.
 static Rules RULES[] = {
@@ -85,12 +83,13 @@ static Rules RULES[] = {
     {"]", 0, 22, CLOSE, R, reduceSquareBrackets},
     {"{", 22, 0, OPEN, L, reduceUnmatched},
     {"}", 0, 22, CLOSE, R, reduceCurlyBrackets},
-    {"|", 1, 1, IN, N, reducePipe},
+    {"|", 1, 1, IN, N, reduceReserved},
     {",", 2, 2, IN, L, reduceComma},
     {"\n", 3, 3, IN, R, reduceNewline},
     {":=", 4, 4, IN, N, reduceDefine},
     {"::=", 4, 4, IN, N, reduceADTDefinition},
     {";", 5, 5, IN, L, newPatternLambda},
+    {"|:", 5, 5, IN, N, reduceInfix},
     {"->", 6, 6, IN, R, newDestructuringLambda},
 
     // conditional operators

@@ -18,14 +18,6 @@ static Node* newTuple(Node* open, Node* commaList, const char name[32]){
     return applyToCommaList(getTag(open), newName(tag), commaList);
 }
 
-static Node* newFilter(Node* pipe, Node* left, Node* right) {
-    syntaxErrorIf(!isOperand(left), "invalid left operand of '|'", pipe);
-    syntaxErrorIf(!isOperand(right), "invalid right operand of '|'", pipe);
-    Tag tag = getTag(pipe);
-    Node* filter = newName(renameTag(tag, "filter"));
-    return newApplication(tag, newApplication(tag, filter, left), right);
-}
-
 Node* reduceParentheses(Node* close, Node* open, Node* contents) {
     syntaxErrorIf(!isThisToken(open, "("), "missing open for", close);
     Tag tag = getTag(open);
@@ -33,15 +25,6 @@ Node* reduceParentheses(Node* close, Node* open, Node* contents) {
         return newName(renameTag(tag, "()"));
     syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     if (getFixity(open) == OPENCALL) {
-        if (isPipePair(contents)) {
-            // getLeft(contents) must be a comma list because function
-            // is moved inside of parenthesis with a comma afterwards
-            Node* function = getLeft(getLeft(contents));
-            if (isCommaList(function))
-                syntaxError("pipe not inside brackets", contents);
-            return newApplication(tag, function, newFilter(contents,
-                getRight(getLeft(contents)), getRight(contents)));
-        }
         return isCommaList(contents) ? applyToCommaList(tag, NULL, contents) :
             // desugar f() to f(())
             newApplication(tag, contents, newName(renameTag(tag, "()")));
@@ -57,8 +40,6 @@ Node* reduceParentheses(Node* close, Node* open, Node* contents) {
     static const char commas[32] = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
     if (isCommaList(contents))
         return newTuple(open, contents, commas);
-    if (isPipePair(contents))
-        return newFilter(contents, getLeft(contents), getRight(contents));
     if (isApplication(contents))
         return setLocation(contents, getLocation(open));
     return contents;
@@ -69,7 +50,6 @@ Node* reduceSquareBrackets(Node* close, Node* open, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL)
         return newNil(tag);
-    syntaxErrorIf(isPipePair(contents), "invalid '|' in", contents);
     syntaxErrorIf(isDefinition(contents), "missing scope", contents);
     if (getFixity(open) == OPENCALL) {
         static const char opens[32] = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
@@ -114,7 +94,6 @@ Node* reduceCurlyBrackets(Node* close, Node* open, Node* patterns) {
     syntaxErrorIf(patterns == NULL, "missing patterns", open);
     syntaxErrorIf(!isThisToken(open, "{"), "missing open for", close);
     syntaxErrorIf(isDefinition(patterns), "missing scope", patterns);
-    syntaxErrorIf(isPipePair(patterns), "invalid '|' in", open);
     // for each item in the patterns comma list, define a constructor function,
     // then return all of these definitions as a comma list, which the parser
     // converts to a sequence of lines
