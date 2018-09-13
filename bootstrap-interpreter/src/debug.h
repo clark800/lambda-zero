@@ -1,4 +1,4 @@
 void debug(const char* message);
-void debugLine(void);
 void debugAST(Node* node);
-void debugStack(Stack* stack, Node* (*select)(Node*));
+void debugParseState(Tag tag, Stack* stack, bool trace);
+void debugParseStage(const char* label, Node* node, bool trace);

@@ -8,7 +8,7 @@
 #include "errors.h"
 #include "closure.h"
 
-bool STDERR = false;
+static bool STDERR = false;
 Stack* INPUT_STACK;
 
 static void printBacktrace(Closure* closure) {

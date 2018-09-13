@@ -8,7 +8,11 @@ void debug(const char* message) {
     fputs(message, stderr);
 }
 
-void debugLine(void) {
+static void debugLexeme(String lexeme) {
+    printLexeme(lexeme, stderr);
+}
+
+static void debugLine(void) {
     debug("======================================");
     debug("======================================\n");
 }
@@ -40,7 +44,7 @@ void debugAST(Node* node) {
     serializeAST(node, stderr);
 }
 
-void debugStack(Stack* stack, Node* (*select)(Node*)) {
+static void debugStack(Stack* stack, Node* (*select)(Node*)) {
     debug("[");
     for (Iterator* it = iterate(stack); !end(it); it = next(it)) {
         debugAST(select == NULL ? cursor(it) : select(cursor(it)));
@@ -63,3 +67,23 @@ void debugState(Closure* closure, Stack* stack) {
     debug("\n");
 }
 */
+
+void debugParseState(Tag tag, Stack* stack, bool trace) {
+    if (trace) {
+        debug("Token: '");
+        debugLexeme(tag.lexeme);
+        debug("'  Stack: ");
+        debugStack(stack, NULL);
+        debug("\n");
+    }
+}
+
+void debugParseStage(const char* label, Node* node, bool trace) {
+    if (trace) {
+        debugLine();
+        debug(label);
+        debug(": ");
+        debugAST(node);
+        debug("\n");
+    }
+}

@@ -162,7 +162,7 @@ maximum(ns) := ns.reduce(max)
 countFrom := iterate((+ 1))
 naturals := countFrom(0)
 primes := (
-    filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: m -> m % n != 0)
+    filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (m -> m % n != 0))
     filterPrime(countFrom(2))
 )
 

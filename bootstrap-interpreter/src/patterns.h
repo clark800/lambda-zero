@@ -1,2 +1,2 @@
-Node* newDestructuringLambda(Node* operator, Node* left, Node* right);
-Node* newPatternLambda(Node* operator, Node* left, Node* right);
+Node* reduceLambda(Node* operator, Node* left, Node* right);
+Node* reducePatternLambda(Node* operator, Node* left, Node* right);

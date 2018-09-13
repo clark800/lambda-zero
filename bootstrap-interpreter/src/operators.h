@@ -1,8 +1,14 @@
 typedef enum {IN, PRE, OPEN, OPENCALL, CLOSE} Fixity;
+typedef enum {L, R, N} Associativity;
+typedef unsigned char Precedence;
 
-Node* setRules(Node* operator, bool isAfterOperator);
 bool isSpecialOperator(Node* operator);
+bool isSpaceOperator(Node* operator);
 Fixity getFixity(Node* operator);
+Node* reduceOperator(Node* operator, Node* left, Node* right);
+void shiftOperator(Stack* stack, Node* operator);
 bool isHigherPrecedence(Node* left, Node* right);
-Node* applyOperator(Node* operator, Node* left, Node* right);
-bool isSpace(Node* token);
+Node* parseOperator(Tag tag, Stack* stack);
+void addOperator(const char* symbol, Precedence leftPrecedence,
+    Precedence rightPrecedence, Fixity fixity, Associativity associativity,
+    void (*shift)(Stack*, Node*), Node* (*reduce)(Node*, Node*, Node*));
