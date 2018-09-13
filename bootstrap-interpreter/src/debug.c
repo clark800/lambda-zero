@@ -21,8 +21,7 @@ static void serializeAST(Node* node, FILE* stream) {
     } else if (!isLeaf(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
-        fputs(isLambda(node) ? " -> " :
-            isDefinition(node) ? " = " : " ", stream);
+        fputs(isLambda(node) ? " -> " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
     } else if (isInteger(node)) {

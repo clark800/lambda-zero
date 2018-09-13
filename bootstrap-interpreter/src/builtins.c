@@ -15,13 +15,13 @@ static void printBacktrace(Closure* closure) {
     fputs("\n\nBacktrace:\n", stderr);
     Stack* backtrace = (Stack*)getBacktrace(closure);
     for (Iterator* it = iterate(backtrace); !end(it); it = next(it))
-        printTagLine(getTag(cursor(it)), "");
+        printTagLine(cursor(it), "");
 }
 
 static void printRuntimeError(const char* message, Closure* closure) {
     if (!TEST && !isEmpty((Stack*)getBacktrace(closure)))
         printBacktrace(closure);
-    printError("\nRuntime", message, getTag(getTerm(closure)));
+    printError("\nRuntime", message, getTerm(closure));
 }
 
 void runtimeError(const char* message, Closure* closure) {

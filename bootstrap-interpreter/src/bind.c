@@ -20,14 +20,12 @@ static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
 }
 
 static bool isDefined(Node* reference, Array* parameters) {
-    return !isThisToken(reference, "_") &&
-        findDebruijnIndex(reference, parameters) != 0;
+    return !isBlank(reference) && findDebruijnIndex(reference, parameters) != 0;
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     // this error should never happen, but if something invalid gets through
     // we can at least point to the location of the problem
-    syntaxErrorIf(getParseType(node) != OPERAND, "invalid syntax", node);
     if (isReference(node) && getValue(node) == 0) {
         bindReference(node, parameters, length(globals));
     } else if (isLambda(node)) {
@@ -44,7 +42,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
 
 static bool isDesugaredDefinition(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
-        !isThisToken(getParameter(getLeft(node)), "_");
+        !isBlank(getParameter(getLeft(node)));
 }
 
 Array* bind(Hold* root) {

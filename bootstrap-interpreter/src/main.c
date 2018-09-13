@@ -11,6 +11,7 @@
 #include "serialize.h"
 
 bool TEST = false;
+extern bool isIO;
 
 static void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();
@@ -24,7 +25,7 @@ static void interpret(const char* sourceCode) {
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     size_t memoryUsageBeforeSerialize = getMemoryUsage();
-    if (!isIO(program))
+    if (!isIO)
         serialize(getNode(valueClosure), program.globals);
     checkForMemoryLeak("serialize", memoryUsageBeforeSerialize);
     release(valueClosure);

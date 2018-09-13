@@ -7,18 +7,18 @@
 typedef union {
     Node* child;
     long long value;
-    const char* lexeme;
 } Branch;
 
 struct Node {
     unsigned int referenceCount, length;
     unsigned char isLeaf, type;
     Location location;
+    const char* lexeme;
     Branch left, right;
 };
 
 Node VOID_NODE = {.referenceCount=1, .length=4, .isLeaf=1, .type=0,
-    .location={0, 0}, .left={.lexeme="VOID"}, .right={.value=0}};
+    .location={0, 0}, .lexeme="VOID", .left={.value=0}, .right={.value=0}};
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {
@@ -33,8 +33,10 @@ Location getLocation(Node* node) {
     return node->location;
 }
 
-Node* setLocation(Node* node, Location location) {
-    node->location = location;
+Node* setTag(Node* node, Tag tag) {
+    node->lexeme = tag.lexeme.start;
+    node->length = tag.lexeme.length;
+    node->location = tag.location;
     return node;
 }
 
@@ -44,8 +46,9 @@ Node* newBranch(Tag tag, unsigned char type, Node* left, Node* right) {
     node->referenceCount = 0;
     node->isLeaf = 0;
     node->type = type;
-    node->length = 0;
+    node->length = tag.lexeme.length;
     node->location = tag.location;
+    node->lexeme = tag.lexeme.start;
     node->left.child = left;
     node->right.child = right;
     node->left.child->referenceCount += 1;
@@ -64,7 +67,8 @@ Node* newLeaf(Tag tag, unsigned char type, long long value) {
     node->type = type;
     node->length = tag.lexeme.length;
     node->location = tag.location;
-    node->left.lexeme = tag.lexeme.start;
+    node->lexeme = tag.lexeme.start;
+    node->left.value = 0;
     node->right.value = value;
     return node;
 }
@@ -96,8 +100,7 @@ Node* getRight(Node* node) {
 }
 
 Tag getTag(Node* node) {
-    return newTag(isLeaf(node) ?
-        newString(node->left.lexeme, node->length) : EMPTY, node->location);
+    return newTag(newString(node->lexeme, node->length), node->location);
 }
 
 void setLeft(Node* node, Node* left) {

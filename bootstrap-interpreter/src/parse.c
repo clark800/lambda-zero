@@ -197,13 +197,6 @@ static void debugStage(const char* label, Node* node, bool trace) {
     }
 }
 
-bool isIO(Program program) {
-    return isApplication(program.entry) &&
-        isApplication(getRight(program.entry)) &&
-        isGlobalReference(getLeft(getRight(program.entry))) &&
-        isThisToken(getLeft(getRight(program.entry)), "main");
-}
-
 void deleteProgram(Program program) {
     release(program.root);
     deleteArray(program.globals);
