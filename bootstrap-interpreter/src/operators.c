@@ -26,20 +26,6 @@ static Node* reduceInfix(Node* operator, Node* left, Node* right) {
         convertOperator(operator), left), right);
 }
 
-Node* reduceAsterisk(Node* operator, Node* left, Node* right) {
-    (void)left;
-    syntaxErrorIf(!isValidPattern(right), "invalid operand of", operator);
-    // rename operator so it will generate an error for being undefined if
-    // a prefix asterisk appears outside an ADT definition
-    return newName(renameTag(getTag(operator), "(*)"));
-}
-
-static Node* reduceComma(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(isDefinition(left), "missing scope", left);
-    syntaxErrorIf(isDefinition(right), "missing scope", right);
-    return newCommaList(getTag(operator), left, right);
-}
-
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;     // suppress unused parameter warning
     return reduceApply(operator, convertOperator(operator), right);
@@ -56,7 +42,7 @@ static Node* reduceEOF(Node* operator, Node* open, Node* contents) {
     syntaxErrorIf(!isEOF(open), "missing close for", open);
     syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
-    return isDefinition(contents) ? transformDefinition(contents) : contents;
+    return contents;
 }
 
 static Node* reduceUnmatched(Node* operator, Node* left, Node* right) {
@@ -84,10 +70,10 @@ static Rules RULES[] = {
     {"{", 22, 0, OPEN, L, reduceUnmatched},
     {"}", 0, 22, CLOSE, R, reduceCurlyBrackets},
     {"|", 1, 1, IN, N, reduceReserved},
-    {",", 2, 2, IN, L, reduceComma},
-    {"\n", 3, 3, IN, R, reduceNewline},
-    {":=", 4, 4, IN, N, reduceDefine},
-    {"::=", 4, 4, IN, N, reduceADTDefinition},
+    {",", 2, 2, IN, L, reduceApply},
+    {"\n", 4, 4, IN, R, reduceApply},
+    {":=", 4, 4, IN, R, reduceDefine},
+    {"::=", 4, 4, IN, R, reduceADTDefinition},
     {";", 5, 5, IN, L, newPatternLambda},
     {"|:", 5, 5, IN, N, reduceInfix},
     {"->", 6, 6, IN, R, newDestructuringLambda},

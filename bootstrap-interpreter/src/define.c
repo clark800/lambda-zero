@@ -1,8 +1,9 @@
 #include "lib/tree.h"
-#include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
 #include "patterns.h"
+
+bool isIO = false;
 
 static bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
@@ -27,7 +28,7 @@ static Node* newYCombinator(Tag tag) {
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
-    if (isComma(name) || !isReference(name) || !hasRecursiveCalls(value, name))
+    if (!isReference(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
     Tag tag = getTag(name);
@@ -44,21 +45,10 @@ static bool isTuple(Node* node) {
         isTupleConstructor(node);
 }
 
-Node* reduceDefine(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(operator);
-    if (isTuple(left))
-        return newDefinition(tag, left, right);
-    for (; isApplication(left); left = getLeft(left))
-        right = newDestructuringLambda(operator, getRight(left), right);
-    syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
-    syntaxErrorIf(!isReference(left), "invalid left hand side", operator);
-    return newDefinition(tag, left, transformRecursion(left, right));
-}
-
-static Node* applyDefinition(Node* definition, Node* scope) {
+static Node* newDefinition(Tag tag, Node* name, Node* value, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    Node* f = newDestructuringLambda(definition, getLeft(definition), scope);
-    return newApplication(getTag(definition), f, getRight(definition));
+    Node* f = newDestructuringLambda(name, name, scope);
+    return newApplication(tag, f, value);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -67,6 +57,7 @@ static Node* newChurchPair(Tag tag, Node* left, Node* right) {
 }
 
 static Node* newMainCall(Node* main) {
+    isIO = true;
     Tag tag = getTag(main);
     Node* print = newPrinter(tag);
     Node* get = newBuiltin(renameTag(tag, "get"), GET);
@@ -77,28 +68,76 @@ static Node* newMainCall(Node* main) {
     return newApplication(tag, print, newApplication(tag, main, input));
 }
 
-Node* transformDefinition(Node* definition) {
-    Node* name = getLeft(definition);
-    syntaxErrorIf(!isThisToken(name, "main"), "missing scope", definition);
-    return applyDefinition(definition, newMainCall(name));
+static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
+        unsigned int i, unsigned int n) {
+    // pattern is an application of a constructor name to a number of asterisks
+    // i is the index of this constructor in this algebraic data type
+    // n is the total number of constructors for this algebraic data type
+
+    // verify that all arguments in pattern are asterisks and count to get k
+    unsigned int k = 0;
+    for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
+        syntaxErrorIf(!isThisToken(getRight(pattern), "(*)"),
+            "constructor parameters must be asterisks", getRight(pattern));
+    syntaxErrorIf(!isReference(pattern), "invalid constructor name", pattern);
+
+    // let p_* be constructor parameters (k total)
+    // let c_* be constructor names (n total)
+    // build: p_1 -> ... -> p_k -> c_1 -> ... -> c_n -> c_i p_1 ... p_k
+    Node* constructor = newBlankReference(tag, (unsigned long long)(n - i));
+    for (unsigned int j = 0; j < k; ++j)
+        constructor = newApplication(tag, constructor,
+            newBlankReference(tag, (unsigned long long)(n + k - j)));
+    for (unsigned int j = 0; j < n + k; ++j)
+        constructor = newLambda(tag, newBlank(tag), constructor);
+    return newDefinition(tag, pattern, constructor, scope);
 }
 
-Node* reduceNewline(Node* operator, Node* left, Node* right) {
-    if (isDefinition(right))
-        right = transformDefinition(right);
-    if (isDefinition(left))
-        return applyDefinition(left, right);
-    if (isADT(left)) {
-        Stack* stack = (Stack*)getLeft(left);
-        for (Iterator* it = iterate(stack); !end(it); it = next(it))
-            right = applyDefinition(cursor(it), right);
-        return right;
-    }
-    return newApplication(getTag(operator), left, right);
+static inline bool isValidPattern(Node* node) {
+    return isReference(node) || (isApplication(node) &&
+        isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
 }
 
 Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
-    syntaxErrorIf(!isADT(right), "right side must be an ADT", operator);
-    return right;
+    if (!isApplication(right) || getTag(right).lexeme.start[0] != '\n')
+        syntaxError("missing scope", operator);
+    Node* adt = getLeft(right);
+    Node* scope = getRight(right);
+    if (!isApplication(adt) || getTag(adt).lexeme.start[0] != '{')
+        syntaxError("ADT required to right of", operator);
+    // for each item in the patterns comma list, define a constructor function,
+    // then return all of these definitions as a comma list, which the parser
+    // converts to a sequence of lines
+    unsigned int n = getArgumentCount(adt);
+    Tag tag = getTag(operator);
+    for (unsigned int i = 1; isApplication(adt); ++i, adt = getLeft(adt))
+        scope = newConstructorDefinition(tag, getRight(adt), scope, n - i, n);
+    return scope;
+}
+
+Node* reduceDefine(Node* operator, Node* left, Node* right) {
+    Tag tag = getTag(operator);
+    if (!isApplication(right) || getTag(right).lexeme.start[0] != '\n') {
+        if (isApplication(left) && isThisToken(getLeft(left), "main"))
+            return newMainCall(newLambda(tag, getRight(left), right));
+        syntaxError("missing scope", operator);
+    }
+    Node* value = getLeft(right);
+    Node* scope = getRight(right);
+    if (isTuple(left))
+        return newDefinition(tag, left, value, scope);
+    for (; isApplication(left); left = getLeft(left))
+        value = newDestructuringLambda(operator, getRight(left), value);
+    syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
+    syntaxErrorIf(!isReference(left), "invalid left hand side", operator);
+    return newDefinition(tag, left, transformRecursion(left, value), scope);
+}
+
+Node* reduceAsterisk(Node* operator, Node* left, Node* right) {
+    (void)left;
+    syntaxErrorIf(!isValidPattern(right), "invalid operand of", operator);
+    // rename operator so it will generate an error for being undefined if
+    // a prefix asterisk appears outside an ADT definition
+    return newName(renameTag(getTag(operator), "(*)"));
 }

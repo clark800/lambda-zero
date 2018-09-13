@@ -12,8 +12,9 @@ static void printThree(const char* a, const char* b, const char* c) {
     fputs(c, stderr);
 }
 
-void printTagLine(Tag tag, const char* quote) {
-    if (tag.lexeme.length > 0) {
+void printTagLine(Node* node, const char* quote) {
+    Tag tag = getTag(node);
+    if (isLeaf(node)) {
         fputs(" ", stderr);
         fputs(quote, stderr);
         printLexeme(tag.lexeme, stderr);
@@ -26,13 +27,13 @@ void printTagLine(Tag tag, const char* quote) {
     fputs("\n", stderr);
 }
 
-void printError(const char* type, const char* message, Tag tag) {
+void printError(const char* type, const char* message, Node* node) {
     printThree(type, " error: ", message);
-    printTagLine(tag, "\'");
+    printTagLine(node, "\'");
 }
 
 void syntaxError(const char* message, Node* token) {
-    printError("Syntax", message, getTag(token));
+    printError("Syntax", message, token);
     exit(1);
 }
 

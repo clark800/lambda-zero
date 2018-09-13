@@ -15,7 +15,7 @@ Node* newLeaf(Tag tag, unsigned char type, long long value);
 
 bool isLeaf(Node* node);
 Location getLocation(Node* node);
-Node* setLocation(Node* node, Location location);
+Node* setTag(Node* node, Tag tag);
 Tag getTag(Node* node);
 
 Node* getLeft(Node* branchNode);

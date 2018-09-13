@@ -90,10 +90,10 @@ P(a, b) ::= {(*a, *b)} \n f(x, ((a, b), c)) := a * c - b \n f(0, ((5, 4), 3))
 11
 ===============================================================================
 (a := 1, 2)
-Syntax error: missing scope at line 1 column 4
+Syntax error: missing scope ':=' at line 1 column 4
 ===============================================================================
 (1, b := 2)
-Syntax error: missing scope at line 1 column 7
+Syntax error: missing scope ':=' at line 1 column 7
 ===============================================================================
 1 + 2 +  + 4
 Syntax error: invalid character '' at line 1 column 9
@@ -107,12 +107,18 @@ Syntax error: must appear on the right side of '::=' '{' at line 1 column 5
 1,2 ::= {()}
 Syntax error: invalid left hand side '::=' at line 1 column 5
 ===============================================================================
-A ::= {1, 2}
+A ::= {a}
+Syntax error: missing scope '::=' at line 1 column 3
+===============================================================================
+A ::= {1, 2} \n 0
 Syntax error: invalid constructor name '2' at line 1 column 11
 ===============================================================================
-A ::= {a(b), c}
+A ::= {a(b), c} \n 0
 Syntax error: constructor parameters must be asterisks 'b' at line 1 column 10
 ===============================================================================
-A ::= {a := 0}
-Syntax error: missing scope at line 1 column 10
+A ::= {a := 0} \n 0
+Syntax error: missing scope ':=' at line 1 column 10
+===============================================================================
+A ::= (a, b) \n 0
+Syntax error: ADT required to right of '::=' at line 1 column 3
 ===============================================================================

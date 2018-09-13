@@ -1,5 +1,5 @@
-void printError(const char* type, const char* message, Tag tag);
-void printTagLine(Tag tag, const char* quote);
+void printError(const char* type, const char* message, Node* node);
+void printTagLine(Node* node, const char* quote);
 
 void syntaxError(const char* message, Node* token);
 void syntaxErrorIf(bool condition, const char* message, Node* token);
