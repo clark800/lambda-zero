@@ -1,2 +1,11 @@
-Hold* getFirstToken(const char* input);
-Hold* getNextToken(Hold* lastToken);
+typedef enum {END, IDENTIFIER, PUNCTUATION, NUMBER, CHARACTER, STRING}
+TokenType;
+
+typedef struct {
+    Tag tag;
+    TokenType type;
+} Token;
+
+Token lex(const char* start);
+const char* skip(Token token);
+Token newEOFToken(void);

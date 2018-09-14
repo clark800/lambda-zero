@@ -9,7 +9,7 @@ static Node* newProjection(Tag tag, unsigned int size, unsigned int index) {
     return projection;
 }
 
-Node* newDestructuringLambda(Node* operator, Node* left, Node* right) {
+Node* reduceLambda(Node* operator, Node* left, Node* right) {
     // lazy pattern matching
     Tag tag = getTag(operator);
     if (isReference(left))
@@ -18,7 +18,7 @@ Node* newDestructuringLambda(Node* operator, Node* left, Node* right) {
     // example: (x, y) -> body ---> _ -> (x -> y -> body) first(_) second(_)
     Node* body = right;
     for (Node* items = left; isApplication(items); items = getLeft(items))
-        body = newDestructuringLambda(operator, getRight(items), body);
+        body = reduceLambda(operator, getRight(items), body);
     for (unsigned int i = 0, size = getArgumentCount(left); i < size; ++i)
         body = newApplication(tag, body,
             newApplication(tag, newBlankReference(tag, 1),
@@ -64,7 +64,7 @@ static Node* getPatternExtension(Node* lambda) {
     return getBody(lambda);
 }
 
-Node* newPatternLambda(Node* operator, Node* left, Node* right) {
+Node* reducePatternLambda(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isLambda(left), "expected lambda to left of", operator);
     syntaxErrorIf(!isLambda(right), "expected lambda to right of", operator);
     Tag tag = getTag(operator);

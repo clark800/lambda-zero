@@ -3,10 +3,11 @@
 #include "scan.h"
 #include "ast.h"
 #include "errors.h"
+#include "lex.h"
 
 static Location location = {1, 1};
 
-static Node* createToken(String lexeme) {
+static Token createToken(String lexeme) {
     Tag tag = newTag(lexeme, location);
     char head = lexeme.length > 0 ? lexeme.start[0] : '\0';
     if (head == '\n')
@@ -17,22 +18,25 @@ static Node* createToken(String lexeme) {
     if (head != '\0' && iscntrl(head) && !isspace(head))
         syntaxError("invalid character", newOperator(tag));
     if (isDelimiterCharacter(head) || isOperatorCharacter(head))
-        return newToken(tag, PUNCTUATION);
+        return (Token){tag, PUNCTUATION};
     if (isdigit(head))
-        return newToken(tag, NUMBER);
+        return (Token){tag, NUMBER};
     if (head == '\'')
-        return newToken(tag, CHARACTER);
+        return (Token){tag, CHARACTER};
     if (head == '\"')
-        return newToken(tag, STRING);
-    return newToken(tag, IDENTIFIER);
+        return (Token){tag, STRING};
+    return (Token){tag, IDENTIFIER};
 }
 
-Hold* getFirstToken(const char* sourceCode) {
-    location = newLocation(1, 1);
-    return hold(createToken(getNextLexeme(sourceCode)));
+Token lex(const char* start) {
+    return start == NULL ? (Token){0} : createToken(getNextLexeme(start));
 }
 
-Hold* getNextToken(Hold* token) {
-    String lexeme = getLexeme(getNode(token));
-    return hold(createToken(getNextLexeme(lexeme.start + lexeme.length)));
+const char* skip(Token token) {
+    String lexeme = token.tag.lexeme;
+    return lexeme.start[0] == 0 ? NULL : lexeme.start + lexeme.length;
+}
+
+Token newEOFToken(void) {
+    return (Token){newTag(EMPTY, newLocation(0, 0)), PUNCTUATION};
 }

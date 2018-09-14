@@ -1,187 +1,42 @@
+#include <stdlib.h>
+#include "lib/array.h"
 #include "lib/tree.h"
+#include "lib/stack.h"
 #include "ast.h"
-#include "scan.h"       // isSpace
+#include "scan.h"       // isSpaceCharacter
 #include "errors.h"
-#include "define.h"
-#include "patterns.h"
-#include "brackets.h"
 #include "operators.h"
 
-typedef enum {L, R, N} Associativity;
-typedef unsigned char Precedence;
+static Array* RULES = NULL;
+
 typedef struct {
     const char* symbol;
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
     Associativity associativity;
-    Node* (*apply)(Node* operator, Node* left, Node* right);
+    void (*shift)(Stack* stack, Node* operator);
+    Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
 
-static Node* reduceApply(Node* operator, Node* left, Node* right) {
-    return newApplication(getTag(operator), left, right);
+bool isSpaceOperator(Node* node) {
+    return ((Rules*)getValue(node))->symbol[0] == ' ';
 }
 
-static Node* reduceInfix(Node* operator, Node* left, Node* right) {
-    return reduceApply(operator, reduceApply(operator,
-        convertOperator(operator), left), right);
-}
-
-static Node* reducePrefix(Node* operator, Node* left, Node* right) {
-    (void)left;     // suppress unused parameter warning
-    return reduceApply(operator, convertOperator(operator), right);
-}
-
-static Node* reduceNegate(Node* operator, Node* left, Node* right) {
-    (void)left;     // suppress unused parameter warning
-    Tag tag = getTag(operator);
-    return newApplication(tag, newName(renameTag(tag, "negate")), right);
-}
-
-static Node* reduceEOF(Node* operator, Node* open, Node* contents) {
-    (void)operator;
-    syntaxErrorIf(!isEOF(open), "missing close for", open);
-    syntaxErrorIf(isEOF(contents), "no input", open);
-    syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
-    return contents;
-}
-
-static Node* reduceUnmatched(Node* operator, Node* left, Node* right) {
-    syntaxError("missing close for", operator);
-    return left == NULL ? right : left; // suppress unused parameter warning
-}
-
-static Node* reduceReserved(Node* operator, Node* left, Node* right) {
-    syntaxError("reserved operator", operator);
-    return left == NULL ? right : left; // suppress unused parameter warning
-}
-
-// note: must check for comma lists and definitions in every
-// reducer for operators of lower precedence to ensure that parser-specific
-// node types don't reach the evaluator.
-static Rules RULES[] = {
-    // syntactic operators
-    {"\0", 0, 0, CLOSE, L, reduceEOF},
-    {"(", 22, 0, OPENCALL, L, reduceUnmatched},
-    {"(", 22, 0, OPEN, L, reduceUnmatched},
-    {")", 0, 22, CLOSE, R, reduceParentheses},
-    {"[", 22, 0, OPENCALL, L, reduceUnmatched},
-    {"[", 22, 0, OPEN, L, reduceUnmatched},
-    {"]", 0, 22, CLOSE, R, reduceSquareBrackets},
-    {"{", 22, 0, OPEN, L, reduceUnmatched},
-    {"}", 0, 22, CLOSE, R, reduceCurlyBrackets},
-    {"|", 1, 1, IN, N, reduceReserved},
-    {",", 2, 2, IN, L, reduceApply},
-    {"\n", 4, 4, IN, R, reduceApply},
-    {":=", 4, 4, IN, R, reduceDefine},
-    {"::=", 4, 4, IN, R, reduceADTDefinition},
-    {";", 5, 5, IN, L, newPatternLambda},
-    {"|:", 5, 5, IN, N, reduceInfix},
-    {"->", 6, 6, IN, R, newDestructuringLambda},
-
-    // conditional operators
-    {"||", 6, 6, IN, R, reduceInfix},
-    {"?", 7, 7, IN, R, reduceInfix},
-    {"?||", 7, 7, IN, R, reduceInfix},
-
-    // monadic operators
-    {">>=", 8, 8, IN, L, reduceInfix},
-
-    // logical operators
-    {"<=>", 9, 9, IN, N, reduceInfix},
-    {"=>", 10, 10, IN, N, reduceInfix},
-    {"\\/", 11, 11, IN, R, reduceInfix},
-    {"/\\", 12, 12, IN, R, reduceInfix},
-
-    // comparison/test operators
-    {"=", 13, 13, IN, N, reduceInfix},
-    {"!=", 13, 13, IN, N, reduceInfix},
-    {"=*=", 13, 13, IN, N, reduceInfix},
-    {"=?=", 13, 13, IN, N, reduceInfix},
-    {"<", 13, 13, IN, N, reduceInfix},
-    {">", 13, 13, IN, N, reduceInfix},
-    {"<=", 13, 13, IN, N, reduceInfix},
-    {">=", 13, 13, IN, N, reduceInfix},
-    {"=<", 13, 13, IN, N, reduceInfix},
-    {"~<", 13, 13, IN, N, reduceInfix},
-    {"<:", 13, 13, IN, N, reduceInfix},
-    {"<*=", 13, 13, IN, N, reduceInfix},
-    {":", 13, 13, IN, N, reduceInfix},
-    {"!:", 13, 13, IN, N, reduceInfix},
-    {"~", 13, 13, IN, N, reduceInfix},
-
-    // precedence 14: default
-    // arithmetic/list operators
-    {"..", 15, 15, IN, N, reduceInfix},
-    {"::", 16, 16, IN, R, reduceInfix},
-    {"&", 16, 16, IN, L, reduceInfix},
-    {"+", 16, 16, IN, L, reduceInfix},
-    {"\\./", 16, 16, IN, L, reduceInfix},
-    {"++", 16, 16, IN, R, reduceInfix},
-    {"-", 16, 16, IN, L, reduceInfix},
-    {"\\", 16, 16, IN, L, reduceInfix},
-    {"*", 17, 17, IN, L, reduceInfix},
-    {"**", 17, 17, IN, R, reduceInfix},
-    {"/", 17, 17, IN, L, reduceInfix},
-    {"%", 17, 17, IN, L, reduceInfix},
-    {"^", 18, 18, IN, R, reduceInfix},
-
-    // functional operators
-    {"<>", 19, 19, IN, R, reduceInfix},
-
-    // precedence 20: space operator
-    // prefix operators
-    {"-", 21, 21, PRE, L, reduceNegate},
-    {"--", 21, 21, PRE, L, reducePrefix},
-    {"!", 21, 21, PRE, L, reducePrefix},
-    {"#", 21, 21, PRE, L, reducePrefix},
-    {"*", 21, 21, PRE, L, reduceAsterisk},
-
-    // precedence 22: parentheses/brackets
-    {"^^", 23, 23, IN, L, reduceInfix},
-    {".", 24, 24, IN, L, reduceInfix},
-    {"`", 25, 25, PRE, L, reducePrefix}
-};
-
-static Rules DEFAULT = {"", 14, 14, IN, L, reduceInfix};
-static Rules SPACE = {" ", 20, 20, IN, L, reduceApply};
-
-static bool allowsOperatorBefore(Rules rules) {
-    return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
-}
-
-bool isSpace(Node* token) {
-    return isLeaf(token) && isSpaceCharacter(getLexeme(token).start[0]);
-}
-
-static Rules* lookupRules(Node* token, bool isAfterOperator) {
-    if (isSpace(token))
-        return &SPACE;
-    Rules* result = &DEFAULT;
-    for (unsigned int i = 0; i < sizeof(RULES)/sizeof(Rules); ++i) {
-        if (isThisToken(token, RULES[i].symbol)) {
-            result = &(RULES[i]);
-            if (!isAfterOperator || allowsOperatorBefore(RULES[i]))
-                return result;
-        }
-    }
-    return result;
-}
-
-Node* setRules(Node* token, bool isAfterOperator) {
-    return setValue(token, (long long)lookupRules(token, isAfterOperator));
+bool isSpecialOperator(Node* operator) {
+    Rules* rules = (Rules*)getValue(operator);
+    return rules->leftPrecedence <= 5 || rules->rightPrecedence <= 5;
 }
 
 Fixity getFixity(Node* operator) {
     return ((Rules*)getValue(operator))->fixity;
 }
 
-Node* applyOperator(Node* operator, Node* left, Node* right) {
-    return ((Rules*)getValue(operator))->apply(operator, left, right);
+Node* reduceOperator(Node* operator, Node* left, Node* right) {
+    return ((Rules*)getValue(operator))->reduce(operator, left, right);
 }
 
-bool isSpecialOperator(Node* operator) {
-    Rules* rules = (Rules*)getValue(operator);
-    return rules->apply != reduceInfix && rules->apply != reducePrefix;
+void shiftOperator(Stack* stack, Node* operator) {
+    ((Rules*)getValue(operator))->shift(stack, operator);
 }
 
 bool isHigherPrecedence(Node* left, Node* right) {
@@ -198,3 +53,48 @@ bool isHigherPrecedence(Node* left, Node* right) {
     else
         return leftRules->rightPrecedence >= rightRules->leftPrecedence;
 }
+
+void addOperator(const char* symbol, Precedence leftPrecedence,
+        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
+        void (*shift)(Stack*, Node*), Node* (*reduce)(Node*, Node*, Node*)) {
+    if (RULES == NULL)
+        RULES = newArray(1024);
+    Rules* rules = (Rules*)malloc(sizeof(Rules));
+    *rules = (Rules){symbol, leftPrecedence, rightPrecedence, fixity,
+        associativity, shift, reduce};
+    append(RULES, rules);
+}
+
+static bool allowsOperatorBefore(Rules rules) {
+    return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
+}
+
+static Rules* getRules(String lexeme, bool isAfterOperator) {
+    if (isSpaceCharacter(lexeme.start[0]))
+        lexeme = newString(" ", 1);
+    Rules* result = elementAt(RULES, 0);
+    for (unsigned int i = 0; i < length(RULES); ++i) {
+        Rules* rules = (Rules*)elementAt(RULES, i);
+        if (isThisString(lexeme, rules->symbol)) {
+            result = rules;
+            if (!isAfterOperator || allowsOperatorBefore(*rules))
+                return result;
+        }
+    }
+    return result;
+}
+
+static Node* setRules(Node* operator, bool isAfterOperator) {
+    Rules* rules = getRules(getLexeme(operator), isAfterOperator);
+    return setValue(operator, (long long)rules);
+}
+
+Node* parseOperator(Tag tag, Stack* stack) {
+    Node* operator = newOperator(tag);
+    setRules(operator, isEmpty(stack) || isOperator(peek(stack, 0)));
+    if (getFixity(operator) == PRE && isOperator(peek(stack, 0)) &&
+            isSpaceOperator(peek(stack, 0)))
+        setRules(operator, isOperator(peek(stack, 1)));
+    return operator;
+}
+

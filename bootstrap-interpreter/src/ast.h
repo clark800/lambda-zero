@@ -1,4 +1,3 @@
-typedef enum {IDENTIFIER, PUNCTUATION, NUMBER, CHARACTER, STRING} TokenType;
 typedef enum {NONE, REFERENCE, LAMBDA, APPLICATION, INTEGER, BUILTIN} NodeType;
 
 // ====================================
@@ -60,10 +59,6 @@ static inline bool isBlank(Node* node) {return isThisToken(node, "_");}
 // Functions to construct new nodes
 // ================================
 
-static inline Node* newToken(Tag tag, TokenType type) {
-    return newLeaf(tag, NONE, type);
-}
-
 static inline Node* newOperator(Tag tag) {return newLeaf(tag, NONE, 0);}
 
 static inline Node* newReference(Tag tag, long long value) {
@@ -78,10 +73,6 @@ static inline Node* newInteger(Tag tag, long long n) {
 
 static inline Node* newBuiltin(Tag tag, long long n) {
     return newLeaf(tag, BUILTIN, n);
-}
-
-static inline Node* newEOF(void) {
-    return newOperator(newTag(EMPTY, newLocation(0, 0)));
 }
 
 static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {

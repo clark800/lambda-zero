@@ -2,27 +2,18 @@
 #include "lib/array.h"
 #include "lib/stack.h"
 #include "ast.h"
-#include "errors.h"
 #include "lex.h"
-#include "operands.h"
+#include "tokens.h"
 #include "operators.h"
+#include "syntax.h"
 #include "bind.h"
 #include "debug.h"
 #include "parse.h"
 
 bool TRACE_PARSING = false;
 
-static bool isOperatorTop(Stack* stack) {
-    return isEmpty(stack) || isOperator(peek(stack, 0));
-}
-
-static bool isOpenOperator(Node* token) {
-    return isOperator(token) &&
-        (getFixity(token) == OPEN || getFixity(token) == OPENCALL);
-}
-
-static void pushOperand(Stack* stack, Node* node) {
-    if (isOperatorTop(stack)) {
+static void shiftOperand(Stack* stack, Node* node) {
+    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
         push(stack, node);
     } else {
         Hold* left = pop(stack);
@@ -31,31 +22,20 @@ static void pushOperand(Stack* stack, Node* node) {
     }
 }
 
-static void collapseOperator(Stack* stack) {
+static void reduceLeft(Stack* stack) {
     Hold* right = pop(stack);
     Hold* op = pop(stack);
     Node* operator = getNode(op);
     Hold* left = getFixity(operator) == IN ? pop(stack) : NULL;
-    pushOperand(stack, applyOperator(operator, getNode(left), getNode(right)));
+    shiftOperand(stack,
+        reduceOperator(operator, getNode(left), getNode(right)));
     release(right);
     release(op);
     if (left != NULL)
         release(left);
 }
 
-static void validateOperator(Node* top, Node* operator) {
-    if (isThisToken(operator, "{") && !isThisToken(top, "::="))
-        syntaxError("must appear on the right side of '::='", operator);
-    if (isOpenOperator(top) && isEOF(operator))
-        syntaxError("missing close for", top);
-    if (getFixity(operator) == CLOSE && !isCloseParen(operator) &&
-            isOperator(top) && !isOpenOperator(top))
-        syntaxError("missing right argument to", top);
-    if (getFixity(operator) == IN && isOperator(top) && !isOpenParen(top))
-        syntaxError("missing left argument to", operator);   // e.g. "5 - * 2"
-}
-
-static bool shouldCollapseOperator(Stack* stack, Node* collapser) {
+static bool shouldReduce(Stack* stack, Node* collapser) {
     // the operator that we are checking to collapse is at stack index 1
     if (isOperator(peek(stack, 0)))
         return false;                   // don't collapse over another operator
@@ -70,131 +50,48 @@ static bool shouldCollapseOperator(Stack* stack, Node* collapser) {
     return isHigherPrecedence(operator, collapser);
 }
 
-static Node* newSection(Node* operator, Node* left, Node* right) {
-    if (getFixity(operator) == PRE || isSpecialOperator(operator))
-        syntaxError("invalid operator in section", operator);
-    Node* body = applyOperator(operator, left, right);
-    return newLambda(getTag(operator), newBlank(getTag(operator)), body);
-}
-
-static Node* constructSection(Node* left, Node* right) {
-    if (isOperator(left) == isOperator(right))   // e.g. right is prefix
-        syntaxError("invalid operator in section", right);
-    return isOperator(left) ?
-        newSection(left, newBlankReference(getTag(left), 1), right) :
-        newSection(right, left, newBlankReference(getTag(right), 1));
-}
-
-static Hold* collapseSection(Stack* stack, Node* right) {
-    Hold* left = pop(stack);
-    Hold* result = hold(constructSection(getNode(left), right));
-    release(left);
-    return result;
-}
-
-static void collapseBracket(Stack* stack, Node* close) {
-    syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
-    Hold* contents = pop(stack);
-    if (isOpenOperator(getNode(contents))) {
-        pushOperand(stack, applyOperator(close, getNode(contents), NULL));
-    } else {
-        if (!isEOF(close) && isEOF(peek(stack, 0)))
-            syntaxError("missing open for", close);
-        Node* right = getNode(contents);
-        if (isCloseParen(close) && !isOpenParen(peek(stack, 0)))
-            contents = replaceHold(contents, collapseSection(stack, right));
-        Hold* open = pop(stack);
-        pushOperand(stack,
-            applyOperator(close, getNode(open), getNode(contents)));
-        release(open);
-    }
-    release(contents);
-}
-
-static void pushOperator(Stack* stack, Node* operator) {
-    // ignore spaces before operators
-    if (isSpace(peek(stack, 0))) {
-        release(pop(stack));
-        if (getFixity(operator) == PRE)
-            setRules(operator, isOperatorTop(stack));
-    }
-
-    // ignore spaces and newlines after operators
-    // note: close parens never appear on the stack
-    if ((isNewline(operator) || isSpace(operator)) && isOperatorTop(stack))
-        return;
-
+static void reduce(Stack* stack, Node* operator) {
+    if (getFixity(operator) != OPEN)
+        if (isOperator(peek(stack, 0)) && isSpaceOperator(peek(stack, 0)))
+            release(pop(stack));
     if (getFixity(operator) == CLOSE) {
         if (isNewline(peek(stack, 0)))
+            release(pop(stack));
+        if (isThisToken(peek(stack, 0), ";"))
             release(pop(stack));
         if (isComma(peek(stack, 0)) && !isOpenParen(peek(stack, 1)))
             release(pop(stack));        // ignore commas before close operators
     }
-
-    validateOperator(peek(stack, 0), operator);
 
     // ( a op1 b op2 c op3 d ...
     // opN is guaranteed to be in non-decreasing order of precedence
     // we collapse right-associatively up to the first operator encountered
     // that has lower precedence than token or equal precedence if token
     // is right associative
-    while (shouldCollapseOperator(stack, operator))
-        collapseOperator(stack);
-
-    if (getFixity(operator) == OPENCALL) {
-        Hold* top = pop(stack);
-        push(stack, operator);
-        push(stack, getNode(top));
-        push(stack, setRules(newComma(getTag(operator)), false));
-        release(top);
-    } else if (getFixity(operator) == CLOSE)
-        collapseBracket(stack, operator);
-    else
-        push(stack, operator);
+    while (shouldReduce(stack, operator))
+        reduceLeft(stack);
 }
 
-static void debugParseState(Node* token, Stack* stack, bool trace) {
-    if (trace) {
-        debug("Token: '");
-        debugAST(token);
-        debug("'  Stack: ");
-        debugStack(stack, NULL);
-        debug("\n");
-    }
+static void shiftToken(Stack* stack, Token token) {
+    Node* node = parseToken(token, stack);
+    if (isOperator(node)) {
+        reduce(stack, node);
+        shiftOperator(stack, node);
+        release(hold(node));    // some operators are never pushed to the stack
+    } else
+        shiftOperand(stack, node);
 }
 
 static Hold* parseString(const char* input, bool trace) {
     Stack* stack = newStack();
-    push(stack, setRules(newEOF(), false));
-    Hold* token = getFirstToken(input);
-    for (;; token = replaceHold(token, getNextToken(token))) {
-        debugParseState(getNode(token), stack, trace);
-        if (getValue(getNode(token)) == PUNCTUATION) {
-            Node* operator = newOperator(getTag(getNode(token)));
-            setRules(operator, isOperatorTop(stack));
-            pushOperator(stack, operator);
-            if (isEOF(operator)) {
-                Hold* result = pop(stack);
-                deleteStack(stack);
-                release(hold(operator));
-                release(token);
-                return result;
-            }
-            release(hold(operator));
-        } else {
-            pushOperand(stack, parseOperand(getNode(token)));
-        }
+    push(stack, parseToken(newEOFToken(), stack));
+    for (Token token = lex(input); token.type != END; token = lex(skip(token))){
+        debugParseState(token.tag, stack, trace);
+        shiftToken(stack, token);
     }
-}
-
-static void debugStage(const char* label, Node* node, bool trace) {
-    if (trace) {
-        debugLine();
-        debug(label);
-        debug(": ");
-        debugAST(node);
-        debug("\n");
-    }
+    Hold* result = pop(stack);
+    deleteStack(stack);
+    return result;
 }
 
 void deleteProgram(Program program) {
@@ -203,10 +100,11 @@ void deleteProgram(Program program) {
 }
 
 Program parse(const char* input) {
+    initOperators();
     Hold* result = parseString(input, TRACE_PARSING);
-    debugStage("parse", getNode(result), TRACE_PARSING);
+    debugParseStage("parse", getNode(result), TRACE_PARSING);
     Array* globals = bind(result);
-    debugStage("bind", getNode(result), TRACE_PARSING);
+    debugParseStage("bind", getNode(result), TRACE_PARSING);
     Node* entry = elementAt(globals, length(globals) - 1);
     return (Program){result, entry, globals};
 }

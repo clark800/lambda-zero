@@ -47,8 +47,7 @@ static bool isTuple(Node* node) {
 
 static Node* newDefinition(Tag tag, Node* name, Node* value, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    Node* f = newDestructuringLambda(name, name, scope);
-    return newApplication(tag, f, value);
+    return newApplication(tag, reduceLambda(name, name, scope), value);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -128,7 +127,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     if (isTuple(left))
         return newDefinition(tag, left, value, scope);
     for (; isApplication(left); left = getLeft(left))
-        value = newDestructuringLambda(operator, getRight(left), value);
+        value = reduceLambda(operator, getRight(left), value);
     syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
     syntaxErrorIf(!isReference(left), "invalid left hand side", operator);
     return newDefinition(tag, left, transformRecursion(left, value), scope);
