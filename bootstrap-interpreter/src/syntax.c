@@ -117,7 +117,6 @@ void initOperators(void) {
     addOperator("**", 17, 17, IN, R, shiftInfix, reduceInfix);
     addOperator("/", 17, 17, IN, L, shiftInfix, reduceInfix);
     addOperator("%", 17, 17, IN, L, shiftInfix, reduceInfix);
-    addOperator("^", 18, 18, IN, R, shiftInfix, reduceInfix);
 
     // functional operators
     addOperator("<>", 19, 19, IN, R, shiftInfix, reduceInfix);
@@ -133,6 +132,7 @@ void initOperators(void) {
     addOperator("*", 21, 21, PRE, L, shiftPrefix, reduceAsterisk);
 
     // precedence 22: parentheses/brackets
+    addOperator("^", 23, 23, IN, R, shiftInfix, reduceInfix);
     addOperator("^^", 23, 23, IN, L, shiftInfix, reduceInfix);
     addOperator(".", 24, 24, IN, L, shiftInfix, reduceInfix);
     addOperator("`", 25, 25, PRE, L, shiftPrefix, reducePrefix);
