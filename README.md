@@ -31,14 +31,14 @@
 ### Infinite list of natural numbers
 
     iterate(f, x) := x :: iterate(f, f(x))
-    countFrom := iterate((+ 1))
-    naturals := countFrom(0)
+    (...) := iterate((+ 1))
+    naturals := 0...
 
 ### Infinite list of prime numbers
 
     primes := (
         filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (m -> m % n != 0))
-        filterPrime(countFrom(2))
+        filterPrime(2...)
     )
 
 # Motivation
