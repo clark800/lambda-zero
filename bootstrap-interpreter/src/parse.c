@@ -44,7 +44,7 @@ static bool shouldReduce(Stack* stack, Node* collapser) {
     if (!isOperator(operator) || isEOF(operator))
         return false;                   // can't collapse non-operator or EOF
 
-    if (getFixity(operator) == IN && isOperator(peek(stack, 2)))
+    if (getFixity(operator) != PRE && isOperator(peek(stack, 2)))
         return false;                   // don't collapse section operators
 
     return isHigherPrecedence(operator, collapser);

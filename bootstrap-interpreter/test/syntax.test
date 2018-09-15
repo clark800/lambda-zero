@@ -122,3 +122,9 @@ Syntax error: missing scope ':=' at line 1 column 10
 A ::= (a, b) \n 0
 Syntax error: ADT required to right of '::=' at line 1 column 3
 ===============================================================================
+(...) := 0 \n (... 0)
+Syntax error: invalid operator in section '...' at line 2 column 3
+===============================================================================
+! ...
+Syntax error: missing left operand '...' at line 1 column 3
+===============================================================================

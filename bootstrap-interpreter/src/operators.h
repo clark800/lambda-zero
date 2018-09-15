@@ -1,4 +1,4 @@
-typedef enum {IN, PRE, OPEN, OPENCALL, CLOSE} Fixity;
+typedef enum {IN, PRE, POST, OPEN, OPENCALL, CLOSE} Fixity;
 typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
 

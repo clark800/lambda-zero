@@ -159,11 +159,11 @@ sum(ns) := ns.cascade((+), 0)
 product(ns) := ns.cascade((*), 1)
 minimum(ns) := ns.reduce(min)
 maximum(ns) := ns.reduce(max)
-countFrom := iterate((+ 1))
-naturals := countFrom(0)
+(...) := iterate((+ 1))
+naturals := 0...
 primes := (
     filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (m -> m % n != 0))
-    filterPrime(countFrom(2))
+    filterPrime(2...)
 )
 
 // string
