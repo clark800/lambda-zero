@@ -37,6 +37,6 @@ const char* skip(Token token) {
     return lexeme.start[0] == 0 ? NULL : lexeme.start + lexeme.length;
 }
 
-Token newEOFToken(void) {
+Token newStartToken(void) {
     return (Token){newTag(EMPTY, newLocation(0, 0)), PUNCTUATION};
 }

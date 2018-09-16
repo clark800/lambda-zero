@@ -96,7 +96,7 @@ syntax match zeroNiceOperator "><|" conceal cchar=⋊
 syntax match zeroNiceOperator "|><|" conceal cchar=⋈
 
 " circle and diamond operators
-syntax match zeroNiceOperator "<>" conceal cchar=○
+syntax match zeroNiceOperator "<>" conceal cchar=∘
 syntax match zeroNiceOperator "<+>" conceal cchar=⊕
 syntax match zeroNiceOperator "<->" conceal cchar=⊖
 syntax match zeroNiceOperator "<\*>" conceal cchar=⊛
@@ -160,6 +160,11 @@ syntax match zeroNiceOperator "|^|" conceal cchar=⌺
 syntax match zeroNiceOperator "\^\^(n)" conceal cchar=ⁿ
 syntax match zeroNiceOperator "\^\^(2)" conceal cchar=²
 syntax match zeroNiceOperator "\^\^(3)" conceal cchar=³
+syntax match zeroNiceOperator "\^+" conceal cchar=⁺
+syntax match zeroNiceOperator "\^-" conceal cchar=⁻
+syntax match zeroNiceOperator "\^=" conceal cchar=⁼
+syntax match zeroNiceOperator "\^<>" conceal cchar=°
+syntax match zeroNiceOperator "\^\*" conceal cchar=﹡
 
 " named operators
 syntax match zeroNiceOperator "\<int\>" conceal cchar=∫
@@ -263,7 +268,7 @@ syntax match lambdaZeroSubscript "_7" conceal contained cchar=₇
 syntax match lambdaZeroSubscript "_8" conceal contained cchar=₈
 syntax match lambdaZeroSubscript "_9" conceal contained cchar=₉
 
-
 highlight link zeroNiceOperator Operator
 highlight! link Conceal Operator
 setlocal conceallevel=2
+setlocal concealcursor=nc

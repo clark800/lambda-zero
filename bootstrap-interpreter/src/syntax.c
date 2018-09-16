@@ -72,10 +72,10 @@ void initOperators(void) {
 
     // syntactic operators
     addOperator("\0", 0, 0, CLOSE, L, shiftBracket, reduceEOF);
-    addOperator("(", 23, 0, OPENCALL, L, shiftOpenCall, reduceUnmatched);
+    addOperator("(", 23, 0, OPENCALL, L, push, reduceUnmatched);
     addOperator("(", 23, 0, OPEN, L, push, reduceUnmatched);
     addOperator(")", 0, 23, CLOSE, R, shiftBracket, reduceParentheses);
-    addOperator("[", 23, 0, OPENCALL, L, shiftOpenCall, reduceUnmatched);
+    addOperator("[", 23, 0, OPENCALL, L, push, reduceUnmatched);
     addOperator("[", 23, 0, OPEN, L, push, reduceUnmatched);
     addOperator("]", 0, 23, CLOSE, R, shiftBracket, reduceSquareBrackets);
     addOperator("{", 23, 0, OPEN, L, shiftOpenCurly, reduceUnmatched);

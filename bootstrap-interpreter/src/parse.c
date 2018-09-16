@@ -84,7 +84,7 @@ static void shiftToken(Stack* stack, Token token) {
 
 static Hold* parseString(const char* input, bool trace) {
     Stack* stack = newStack();
-    push(stack, parseToken(newEOFToken(), stack));
+    push(stack, parseToken(newStartToken(), stack));
     for (Token token = lex(input); token.type != END; token = lex(skip(token))){
         debugParseState(token.tag, stack, trace);
         shiftToken(stack, token);
