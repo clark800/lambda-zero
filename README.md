@@ -37,7 +37,7 @@
 ### Infinite list of prime numbers
 
     primes := (
-        filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (m -> m % n != 0))
+        filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))
         filterPrime(2...)
     )
 

@@ -32,18 +32,31 @@ static Node* newTuple(Node* open, Node* commaList) {
     return applyToCommaList(getTag(open), name, commaList);
 }
 
+static Node* newSection(Tag tag, const char* name, Node* body) {
+    return setTag(newLambda(tag, newName(renameTag(tag, name)), body), tag);
+}
+
+static Node* createSection(Tag tag, Node* contents) {
+    if (isThisToken(contents, "_._")) {
+        Node* left = getLeft(contents);
+        if (isApplication(left) && isLeaf(getLeft(left)))
+            return getLeft(left);       // parenthesized operator
+        return newSection(tag, "_.", newSection(tag, "._", contents));
+    }
+    return newSection(tag, getLexeme(contents).start, contents);
+}
+
 Node* reduceParentheses(Node* open, Node* function, Node* contents) {
-    syntaxErrorIf(!isThisToken(open, "("), "missing close for", open);
+    syntaxErrorIf(!isThisLeaf(open, "("), "missing close for", open);
     Tag tag = getTag(open);
     if (contents == NULL) {
         Node* unit = newName(renameTag(tag, "()"));
         return function == NULL ? unit : newApplication(tag, function, unit);
     }
-    if (isOperator(contents)) {
-        if (isSpecialOperator(contents) && !isComma(contents))
-            syntaxError("invalid operator in parentheses", contents);
+    if (isOperator(contents))
         contents = convertOperator(contents);
-    }
+    if (isSection(contents))
+        contents = createSection(tag, contents);
     if (function != NULL)
         return applyToCommaList(tag, function, contents);
     if (isCommaList(contents))
@@ -54,7 +67,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
 }
 
 Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
-    syntaxErrorIf(!isThisToken(open, "["), "missing close for", open);
+    syntaxErrorIf(!isThisLeaf(open, "["), "missing close for", open);
     Tag tag = getTag(open);
     if (contents == NULL) {
         syntaxErrorIf(left != NULL, "missing argument to", open);
@@ -75,7 +88,7 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
 
 Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     (void)left;
-    syntaxErrorIf(!isThisToken(open, "{"), "missing close for", open);
+    syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
     syntaxErrorIf(patterns == NULL, "missing patterns", open);
     return newTuple(open, patterns);
 }
@@ -93,28 +106,6 @@ Node* reduceUnmatched(Node* open, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-static Node* newSection(Node* operator, Node* left, Node* right) {
-    if (getFixity(operator) != IN || isSpecialOperator(operator))
-        syntaxError("invalid operator in section", operator);
-    Node* body = reduceOperator(operator, left, right);
-    return newLambda(getTag(operator), newBlank(getTag(operator)), body);
-}
-
-static Node* constructSection(Node* left, Node* right) {
-    if (isOperator(left) == isOperator(right))   // e.g. right is prefix
-        syntaxError("invalid operator in section", right);
-    return isOperator(left) ?
-        newSection(left, newBlankReference(getTag(left), 1), right) :
-        newSection(right, left, newBlankReference(getTag(right), 1));
-}
-
-static Node* reduceSection(Stack* stack, Node* right) {
-    Hold* left = pop(stack);
-    Node* result = constructSection(getNode(left), right);
-    release(left);
-    return result;
-}
-
 void shiftBracket(Stack* stack, Node* close) {
     syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
     Hold* top = pop(stack);
@@ -128,9 +119,7 @@ void shiftBracket(Stack* stack, Node* close) {
         Node* right = getNode(top);
         if (!isEOF(close) && isEOF(peek(stack, 0)))
             syntaxError("missing open for", close);
-        if (isCloseParen(close) && !isOpenParen(peek(stack, 0)))
-            right = reduceSection(stack, right);
-        if (!isCloseParen(close) && isOperator(right))
+        if (isOperator(right) && !isOpenParen(peek(stack, 0)))
             syntaxError("missing right argument to", right);
         Hold* open = pop(stack);
         Node* op = getNode(open);
@@ -149,7 +138,7 @@ void shiftBracket(Stack* stack, Node* close) {
 }
 
 void shiftOpenCurly(Stack* stack, Node* operator) {
-    if (!isThisToken(peek(stack, 0), "::="))
+    if (!isThisLeaf(peek(stack, 0), "::="))
         syntaxError("must appear on the right side of '::='", operator);
     push(stack, operator);
 }

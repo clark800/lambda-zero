@@ -38,9 +38,10 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
 }
 
 static void shiftInfix(Stack* stack, Node* operator) {
-    Node* top = peek(stack, 0);
-    if (isOperator(top) && !isOpenParen(top))
-        syntaxError("missing left argument to", operator);   // e.g. "5 - * 2"
+    if (!isSpecial(operator) && isOpenParen(peek(stack, 0)))
+        push(stack, newName(renameTag(getTag(operator), "_.")));
+    if (isOperator(peek(stack, 0)))
+        syntaxError("missing left argument to", operator);
     push(stack, operator);
 }
 
@@ -63,7 +64,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
         Hold* operand = pop(stack);
         push(stack, reduceOperator(operator, getNode(operand), NULL));
         release(operand);
-   }
+    }
 }
 
 void initOperators(void) {

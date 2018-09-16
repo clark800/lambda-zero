@@ -3,6 +3,7 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "lex.h"
+#include "errors.h"
 #include "tokens.h"
 #include "operators.h"
 #include "syntax.h"
@@ -26,6 +27,8 @@ static void reduceLeft(Stack* stack) {
     Hold* right = pop(stack);
     Hold* op = pop(stack);
     Node* operator = getNode(op);
+    if (getFixity(operator) == POST)
+        syntaxError("missing left argument to", operator);
     Hold* left = getFixity(operator) == IN ? pop(stack) : NULL;
     shiftOperand(stack,
         reduceOperator(operator, getNode(left), getNode(right)));
@@ -44,9 +47,6 @@ static bool shouldReduce(Stack* stack, Node* collapser) {
     if (!isOperator(operator) || isEOF(operator))
         return false;                   // can't collapse non-operator or EOF
 
-    if (getFixity(operator) != PRE && isOperator(peek(stack, 2)))
-        return false;                   // don't collapse section operators
-
     return isHigherPrecedence(operator, collapser);
 }
 
@@ -57,10 +57,13 @@ static void reduce(Stack* stack, Node* operator) {
     if (getFixity(operator) == CLOSE) {
         if (isNewline(peek(stack, 0)))
             release(pop(stack));
-        if (isThisToken(peek(stack, 0), ";"))
+        if (isThisLeaf(peek(stack, 0), ";"))
             release(pop(stack));
-        if (isComma(peek(stack, 0)) && !isOpenParen(peek(stack, 1)))
-            release(pop(stack));        // ignore commas before close operators
+
+        Node* top = peek(stack, 0);
+        if (isCloseParen(operator) && isOperator(top))
+            if (getFixity(top) == IN && !isSpecial(top))
+                push(stack, newName(renameTag(getTag(top), "._")));
     }
 
     // ( a op1 b op2 c op3 d ...
