@@ -31,6 +31,10 @@ Fixity getFixity(Node* operator) {
     return ((Rules*)getValue(operator))->fixity;
 }
 
+Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
+    return ((Rules*)getValue(close))->reduce(open, left, right);
+}
+
 Node* reduceOperator(Node* operator, Node* left, Node* right) {
     return ((Rules*)getValue(operator))->reduce(operator, left, right);
 }

@@ -8,4 +8,4 @@ typedef struct {
 
 Token lex(const char* start);
 const char* skip(Token token);
-Token newEOFToken(void);
+Token newStartToken(void);

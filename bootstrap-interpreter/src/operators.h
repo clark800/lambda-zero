@@ -6,6 +6,7 @@ bool isSpecialOperator(Node* operator);
 bool isSpaceOperator(Node* operator);
 Fixity getFixity(Node* operator);
 Node* reduceOperator(Node* operator, Node* left, Node* right);
+Node* reduceBracket(Node* open, Node* close, Node* left, Node* right);
 void shiftOperator(Stack* stack, Node* operator);
 bool isHigherPrecedence(Node* left, Node* right);
 Node* parseOperator(Tag tag, Stack* stack);
