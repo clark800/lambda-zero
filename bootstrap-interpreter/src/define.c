@@ -7,15 +7,15 @@ bool isIO = false;
 
 static bool hasRecursiveCalls(Node* node, Node* name) {
     if (isLambda(node)) {
-        if (isSameToken(getParameter(node), name))
+        if (isSameLexeme(getParameter(node), name))
             syntaxError("symbol already defined", getParameter(node));
         return hasRecursiveCalls(getBody(node), name);
     }
     if (isApplication(node))
         return hasRecursiveCalls(getLeft(node), name)
             || hasRecursiveCalls(getRight(node), name);
-    if (isReference(node))
-        return isSameToken(node, name);
+    if (isSymbol(node))
+        return isSameLexeme(node, name);
     return false;
 }
 
@@ -28,7 +28,7 @@ static Node* newYCombinator(Tag tag) {
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
-    if (!isReference(name) || !hasRecursiveCalls(value, name))
+    if (!isSymbol(name) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (Y (name -> value))
     Tag tag = getTag(name);
@@ -36,8 +36,8 @@ static Node* transformRecursion(Node* name, Node* value) {
     return newApplication(tag, yCombinator, newLambda(tag, name, value));
 }
 
-static bool isTupleConstructor(Node* token) {
-    return isLeaf(token) && getLexeme(token).start[0] == ',';
+static bool isTupleConstructor(Node* node) {
+    return isSymbol(node) && getLexeme(node).start[0] == ',';
 }
 
 static bool isTuple(Node* node) {
@@ -76,9 +76,9 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     // verify that all arguments in pattern are asterisks and count to get k
     unsigned int k = 0;
     for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
-        syntaxErrorIf(!isThisToken(getRight(pattern), "(*)"),
+        syntaxErrorIf(!isThisLexeme(getRight(pattern), "(*)"),
             "constructor parameters must be asterisks", getRight(pattern));
-    syntaxErrorIf(!isReference(pattern), "invalid constructor name", pattern);
+    syntaxErrorIf(!isSymbol(pattern), "invalid constructor name", pattern);
 
     // let p_* be constructor parameters (k total)
     // let c_* be constructor names (n total)
@@ -93,7 +93,7 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
 }
 
 static inline bool isValidPattern(Node* node) {
-    return isReference(node) || (isApplication(node) &&
+    return isSymbol(node) || (isApplication(node) &&
         isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
 }
 
@@ -129,7 +129,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     for (; isApplication(left); left = getLeft(left))
         value = reduceLambda(operator, getRight(left), value);
     syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
-    syntaxErrorIf(!isReference(left), "invalid left hand side", operator);
+    syntaxErrorIf(!isSymbol(left), "invalid left hand side", operator);
     return newDefinition(tag, left, transformRecursion(left, value), scope);
 }
 

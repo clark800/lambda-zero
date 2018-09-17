@@ -1,10 +1,14 @@
+#include <stdlib.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include "lib/tree.h"
 #include "lib/array.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "lex.h"
-#include "tokens.h"
-#include "operators.h"
+#include "ast.h"
+#include "errors.h"
+#include "symbols.h"
 #include "syntax.h"
 #include "bind.h"
 #include "debug.h"
@@ -12,99 +16,98 @@
 
 bool TRACE_PARSING = false;
 
-static void shiftOperand(Stack* stack, Node* node) {
-    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
-        push(stack, node);
-    } else {
-        Hold* left = pop(stack);
-        push(stack, newApplication(getTag(node), getNode(left), node));
-        release(left);
+static bool isIntegerLexeme(String lexeme) {
+    for (unsigned int i = 0; i < lexeme.length; ++i)
+        if (!isdigit(lexeme.start[i]))
+            return false;
+    return lexeme.length > 0;
+}
+
+static Node* parseInteger(Tag tag) {
+    tokenErrorIf(!isIntegerLexeme(tag.lexeme), "invalid token", tag);
+    errno = 0;
+    long long value = strtoll(tag.lexeme.start, NULL, 10);
+    tokenErrorIf((value == LLONG_MIN || value == LLONG_MAX) &&
+        errno == ERANGE, "magnitude of integer is too large", tag);
+    return newInteger(tag, value);
+}
+
+static const char* skipQuoteCharacter(const char* start) {
+    return start[0] == '\\' ? start + 2 : start + 1;
+}
+
+static char decodeCharacter(const char* start, Tag tag) {
+    tokenErrorIf(start[0] <= 0, "invalid character in", tag);
+    if (start[0] != '\\')
+        return start[0];
+    switch (start[1]) {
+        case '0': return '\0';
+        case 't': return '\t';
+        case 'r': return '\r';
+        case 'n': return '\n';
+        case '\n': return '\n';
+        case '\\': return '\\';
+        case '\"': return '\"';
+        case '\'': return '\'';
+        default: tokenErrorIf(true, "invalid escape sequence in", tag);
     }
+    return 0;
 }
 
-static void reduceTop(Stack* stack) {
-    Hold* right = pop(stack);
-    Hold* op = pop(stack);
-    Node* operator = getNode(op);
-    Hold* left = getFixity(operator) == IN ? pop(stack) : NULL;
-    shiftOperand(stack,
-        reduceOperator(operator, getNode(left), getNode(right)));
-    release(right);
-    release(op);
-    if (left != NULL)
-        release(left);
+static Node* parseCharacterLiteral(Tag tag) {
+    char quote = tag.lexeme.start[0];
+    const char* end = tag.lexeme.start + tag.lexeme.length - 1;
+    tokenErrorIf(end[0] != quote, "missing end quote for", tag);
+    const char* skip = skipQuoteCharacter(tag.lexeme.start + 1);
+    tokenErrorIf(skip != end, "invalid character literal", tag);
+    return newInteger(tag, decodeCharacter(tag.lexeme.start + 1, tag));
 }
 
-static void reduceLeft(Stack* stack, Node* operator) {
-    if (!isOpenOperator(operator) && isSpaceOperator(peek(stack, 0)))
-        release(pop(stack));
-    if (getFixity(operator) == CLOSE) {
-        if (isThisLeaf(peek(stack, 0), "\n"))
-            release(pop(stack));
-        if (isThisLeaf(peek(stack, 0), ";"))
-            release(pop(stack));
+static Node* buildStringLiteral(Tag tag, const char* start) {
+    char c = start[0];
+    tokenErrorIf(c == '\n' || c == 0, "missing end quote for", tag);
+    return c == tag.lexeme.start[0] ? newNil(tag) :
+        prepend(tag, newInteger(tag, decodeCharacter(start, tag)),
+        buildStringLiteral(tag, skipQuoteCharacter(start)));
+}
 
-        Node* top = peek(stack, 0);
-        if (isOperator(top) && !isSpecial(top)) {
-            if (isThisLeaf(peek(stack, 1), "_.")) {
-                // bracketed infix operator
-                Hold* op = pop(stack);
-                release(pop(stack));
-                push(stack, convertOperator(getNode(op)));
-                release(op);
-            } else if (isOpenOperator(peek(stack, 1))) {
-                // bracketed prefix operator
-                Hold* op = pop(stack);
-                push(stack, convertOperator(getNode(op)));
-                release(op);
-            } else if (getFixity(top) == IN || getFixity(top) == PRE)
-                push(stack, newName(renameTag(getTag(top), "._")));
-        }
+static Node* parseStringLiteral(Tag tag) {
+    return buildStringLiteral(tag, tag.lexeme.start + 1);
+}
+
+static Node* parseToken(Token token, Stack* stack) {
+    switch (token.type) {
+        case NUMERIC: return parseInteger(token.tag);
+        case STRING: return parseStringLiteral(token.tag);
+        case CHARACTER: return parseCharacterLiteral(token.tag);
+        case INVALID: tokenErrorIf(true, "invalid character", token.tag);
+            return NULL;
+        default:
+            return parseSymbol(isSpaceCharacter(token.tag.lexeme.start[0]) ?
+                renameTag(token.tag, " ") : token.tag, stack);
     }
-
-    // ( a op1 b op2 c op3 d ...
-    // opN is guaranteed to be in non-decreasing order of precedence
-    // we collapse right-associatively up to the first operator encountered
-    // that has lower precedence than token or equal precedence if token
-    // is right associative
-    while (!isOperator(peek(stack, 0)) &&
-            isHigherPrecedence(peek(stack, 1), operator))
-        reduceTop(stack);
-}
-
-static void shiftToken(Stack* stack, Token token) {
-    Node* node = parseToken(token, stack);
-    if (isOperator(node)) {
-        reduceLeft(stack, node);
-        shiftOperator(stack, node);
-        release(hold(node));    // some operators are never pushed to the stack
-    } else
-        shiftOperand(stack, node);
-}
-
-static Hold* parseString(const char* input, bool trace) {
-    Stack* stack = newStack();
-    push(stack, parseToken(newStartToken(), stack));
-    for (Token token = lex(input); token.type != END; token = lex(skip(token))){
-        debugParseState(token.tag, stack, trace);
-        shiftToken(stack, token);
-    }
-    Hold* result = pop(stack);
-    deleteStack(stack);
-    return result;
-}
-
-void deleteProgram(Program program) {
-    release(program.root);
-    deleteArray(program.globals);
 }
 
 Program parse(const char* input) {
-    initOperators();
-    Hold* result = parseString(input, TRACE_PARSING);
+    initSymbols();
+    Stack* stack = newStack();
+    push(stack, parseToken(newStartToken(), stack));
+    for (Token token = lex(input); token.type != END; token = lex(skip(token))){
+        debugParseState(token.tag, stack, TRACE_PARSING);
+        Node* node = parseToken(token, stack);
+        shift(stack, node);
+        release(hold(node));
+    }
+    Hold* result = pop(stack);
+    deleteStack(stack);
     debugParseStage("parse", getNode(result), TRACE_PARSING);
     Array* globals = bind(result);
     debugParseStage("bind", getNode(result), TRACE_PARSING);
     Node* entry = elementAt(globals, length(globals) - 1);
     return (Program){result, entry, globals};
+}
+
+void deleteProgram(Program program) {
+    release(program.root);
+    deleteArray(program.globals);
 }

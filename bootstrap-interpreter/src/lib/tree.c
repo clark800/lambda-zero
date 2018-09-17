@@ -60,7 +60,7 @@ Node* newPair(Node* left, Node* right) {
     return newBranch(newTag(EMPTY, newLocation(0, 0)), 0, left, right);
 }
 
-Node* newLeaf(Tag tag, unsigned char type, long long value) {
+Node* newLeaf(Tag tag, unsigned char type, long long value, void* data) {
     Node* node = (Node*)allocate();
     node->referenceCount = 0;
     node->isLeaf = 1;
@@ -68,8 +68,8 @@ Node* newLeaf(Tag tag, unsigned char type, long long value) {
     node->length = tag.lexeme.length;
     node->location = tag.location;
     node->lexeme = tag.lexeme.start;
-    node->left.value = 0;
-    node->right.value = value;
+    node->left.value = value;
+    node->right.child = (Node*)data;
     return node;
 }
 
@@ -125,13 +125,18 @@ unsigned char getType(Node* node) {
 
 long long getValue(Node* node) {
     assert(isLeaf(node));
-    return node->right.value;
+    return node->left.value;
 }
 
 Node* setValue(Node* node, long long value) {
     assert(isLeaf(node));
-    node->right.value = value;
+    node->left.value = value;
     return node;
+}
+
+void* getData(Node* node) {
+    assert(isLeaf(node));
+    return (void*)node->right.child;
 }
 
 Hold* hold(Node* node) {

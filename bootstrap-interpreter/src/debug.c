@@ -31,12 +31,12 @@ static void serializeAST(Node* node, FILE* stream) {
     } else if (isInteger(node)) {
         // builtins create integers, so not all integers will exist in input
         fputll(getValue(node), stream);
-    } else if (isReference(node)) {
-        printToken(node, stream);
+    } else if (isSymbol(node)) {
+        printSymbol(node, stream);
         fputs("#", stream);
         fputll(getValue(node), stream);
     } else {
-        printToken(node, stream);
+        printSymbol(node, stream);
     }
 }
 

@@ -1,4 +1,4 @@
-typedef enum {NONE, REFERENCE, LAMBDA, APPLICATION, INTEGER, BUILTIN} NodeType;
+typedef enum {SYMBOL, LAMBDA, APPLICATION, INTEGER, BUILTIN} NodeType;
 
 // ====================================
 // Functions to get a value from a node
@@ -23,19 +23,19 @@ static inline unsigned long long getGlobalIndex(Node* reference) {
 // Functions to test if a node is a certain type
 // =============================================
 
-static inline bool isSameToken(Node* tokenA, Node* tokenB) {
-    return isSameString(getLexeme(tokenA), getLexeme(tokenB));
+static inline bool isSameLexeme(Node* a, Node* b) {
+    return isSameString(getLexeme(a), getLexeme(b));
 }
 
-static inline bool isThisToken(Node* token, const char* lexeme) {
-    return isThisString(getLexeme(token), lexeme);
+static inline bool isThisLexeme(Node* node, const char* lexeme) {
+    return isThisString(getLexeme(node), lexeme);
 }
 
 static inline bool isThisLeaf(Node* leaf, const char* lexeme) {
-    return isLeaf(leaf) && isThisToken(leaf, lexeme);
+    return isLeaf(leaf) && isThisLexeme(leaf, lexeme);
 }
 
-static inline bool isOperator(Node* node) {return getNodeType(node) == NONE;}
+static inline bool isSymbol(Node* node) {return getNodeType(node) == SYMBOL;}
 static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
 static inline bool isInteger(Node* node) {return getNodeType(node) == INTEGER;}
 static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
@@ -44,40 +44,41 @@ static inline bool isApplication(Node* node) {
     return getNodeType(node) == APPLICATION;
 }
 
-static inline bool isReference(Node* node) {
-    return getNodeType(node) == REFERENCE;
-}
-
 static inline bool isGlobalReference(Node* node) {
-    return getNodeType(node) == REFERENCE && getValue(node) < 0;
+    return isSymbol(node) && getValue(node) < 0;
 }
 
 static inline bool isEOF(Node* node) {return isThisLeaf(node, "\0");}
 static inline bool isBlank(Node* node) {return isThisLeaf(node, "_");}
 
 static inline bool isSection(Node* node) {
-    return isThisToken(node, "_._") ||
-        isThisToken(node, "_.") || isThisToken(node, "._");
+    return isThisLexeme(node, "_._") ||
+        isThisLexeme(node, "_.") || isThisLexeme(node, "._");
 }
 
 // ================================
 // Functions to construct new nodes
 // ================================
 
-static inline Node* newOperator(Tag tag) {return newLeaf(tag, NONE, 0);}
 
-static inline Node* newReference(Tag tag, long long value) {
-    return newLeaf(tag, REFERENCE, value);
+static inline Node* newSymbol(Tag tag, void* rules) {
+    return newLeaf(tag, SYMBOL, 0, rules);
 }
 
-static inline Node* newName(Tag tag) {return newReference(tag, 0);}
+static inline Node* newName(Tag tag) {return newSymbol(tag, NULL);}
+
+static inline Node* newBlank(Tag tag) {return newName(renameTag(tag, "_"));}
+
+static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
+    return newLeaf(renameTag(tag, "_"), SYMBOL, (long long)debruijn, NULL);
+}
 
 static inline Node* newInteger(Tag tag, long long n) {
-    return newLeaf(tag, INTEGER, n);
+    return newLeaf(tag, INTEGER, n, NULL);
 }
 
 static inline Node* newBuiltin(Tag tag, long long n) {
-    return newLeaf(tag, BUILTIN, n);
+    return newLeaf(tag, BUILTIN, n, NULL);
 }
 
 static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
@@ -86,7 +87,7 @@ static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
     // which is useful in cases like string literals where we need to point
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
-    assert(isReference(parameter) && getValue(parameter) == 0);
+    assert(isSymbol(parameter) && getValue(parameter) == 0);
     return newBranch(tag, LAMBDA, parameter, body);
 }
 
@@ -95,11 +96,6 @@ static inline Node* newApplication(Tag tag, Node* left, Node* right) {
 }
 
 static inline Node* newNil(Tag tag) {return newName(renameTag(tag, "[]"));}
-static inline Node* newBlank(Tag tag) {return newName(renameTag(tag, "_"));}
-
-static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
-    return newReference(renameTag(tag, "_"), (long long)debruijn);
-}
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
     Node* operator = newName(renameTag(tag, "::"));

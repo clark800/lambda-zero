@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lib/tree.h"
-#include "ast.h"
 #include "print.h"
 
 extern bool TEST;
@@ -12,14 +11,11 @@ static void printThree(const char* a, const char* b, const char* c) {
     fputs(c, stderr);
 }
 
-void printTagLine(Node* node, const char* quote) {
-    Tag tag = getTag(node);
-    if (isLeaf(node)) {
-        fputs(" ", stderr);
-        fputs(quote, stderr);
-        printLexeme(tag.lexeme, stderr);
-        fputs(quote, stderr);
-    }
+void printTagLine(Tag tag, const char* quote) {
+    fputs(" ", stderr);
+    fputs(quote, stderr);
+    printLexeme(tag.lexeme, stderr);
+    fputs(quote, stderr);
     fputs(" at line ", stderr);
     fputll(tag.location.line, stderr);
     fputs(" column ", stderr);
@@ -27,19 +23,24 @@ void printTagLine(Node* node, const char* quote) {
     fputs("\n", stderr);
 }
 
-void printError(const char* type, const char* message, Node* node) {
+void printError(const char* type, const char* message, Tag tag) {
     printThree(type, " error: ", message);
-    printTagLine(node, "\'");
+    printTagLine(tag, "\'");
 }
 
-void syntaxError(const char* message, Node* token) {
-    printError("Syntax", message, token);
-    exit(1);
+void tokenErrorIf(bool condition, const char* message, Tag tag) {
+    if (condition) {
+        printError("Syntax", message, tag);
+        exit(1);
+    }
 }
 
-void syntaxErrorIf(bool condition, const char* message, Node* token) {
-    if (condition)
-        syntaxError(message, token);
+void syntaxErrorIf(bool condition, const char* message, Node* node) {
+    tokenErrorIf(condition, message, getTag(node));
+}
+
+void syntaxError(const char* message, Node* node) {
+    syntaxErrorIf(true, message, node);
 }
 
 void usageError(const char* name) {

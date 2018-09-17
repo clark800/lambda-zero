@@ -13,8 +13,8 @@ void printLexeme(String lexeme, FILE* stream) {
     }
 }
 
-void printToken(Node* token, FILE* stream) {
-    printLexeme(getLexeme(token), stream);
+void printSymbol(Node* symbol, FILE* stream) {
+    printLexeme(getLexeme(symbol), stream);
 }
 
 void fputll(long long n, FILE* stream) {

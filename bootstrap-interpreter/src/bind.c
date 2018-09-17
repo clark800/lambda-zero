@@ -5,7 +5,7 @@
 
 static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     for (unsigned long long i = 1; i <= length(parameters); ++i)
-        if (isSameToken(elementAt(parameters, length(parameters) - i), symbol))
+        if (isSameLexeme(elementAt(parameters, length(parameters) - i), symbol))
             return i;
     return 0;
 }
@@ -26,7 +26,7 @@ static bool isDefined(Node* reference, Array* parameters) {
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     // this error should never happen, but if something invalid gets through
     // we can at least point to the location of the problem
-    if (isReference(node) && getValue(node) == 0) {
+    if (isSymbol(node) && getValue(node) == 0) {
         bindReference(node, parameters, length(globals));
     } else if (isLambda(node)) {
         if (isDefined(getParameter(node), parameters))
