@@ -28,7 +28,11 @@ static inline bool isSameToken(Node* tokenA, Node* tokenB) {
 }
 
 static inline bool isThisToken(Node* token, const char* lexeme) {
-    return isLeaf(token) && isThisString(getLexeme(token), lexeme);
+    return isThisString(getLexeme(token), lexeme);
+}
+
+static inline bool isThisLeaf(Node* leaf, const char* lexeme) {
+    return isLeaf(leaf) && isThisToken(leaf, lexeme);
 }
 
 static inline bool isOperator(Node* node) {return getNodeType(node) == NONE;}
@@ -48,12 +52,17 @@ static inline bool isGlobalReference(Node* node) {
     return getNodeType(node) == REFERENCE && getValue(node) < 0;
 }
 
-static inline bool isNewline(Node* node) {return isThisToken(node, "\n");}
-static inline bool isOpenParen(Node* node) {return isThisToken(node, "(");}
-static inline bool isCloseParen(Node* node) {return isThisToken(node, ")");}
-static inline bool isEOF(Node* node) {return isThisToken(node, "\0");}
-static inline bool isComma(Node* node) {return isThisToken(node, ",");}
-static inline bool isBlank(Node* node) {return isThisToken(node, "_");}
+static inline bool isNewline(Node* node) {return isThisLeaf(node, "\n");}
+static inline bool isOpenParen(Node* node) {return isThisLeaf(node, "(");}
+static inline bool isCloseParen(Node* node) {return isThisLeaf(node, ")");}
+static inline bool isEOF(Node* node) {return isThisLeaf(node, "\0");}
+static inline bool isComma(Node* node) {return isThisLeaf(node, ",");}
+static inline bool isBlank(Node* node) {return isThisLeaf(node, "_");}
+
+static inline bool isSection(Node* node) {
+    return node != NULL && (isThisToken(node, "_._") ||
+        isThisToken(node, "_.") || isThisToken(node, "._"));
+}
 
 // ================================
 // Functions to construct new nodes
@@ -111,6 +120,10 @@ static inline Node* newBoolean(Tag tag, bool value) {
 // Helper functions
 // ====================================
 
+static inline Node* renameNode(Node* node, const char* name) {
+    return setTag(node, renameTag(getTag(node), name));
+}
+
 static inline unsigned int getArgumentCount(Node* application) {
     unsigned int i = 0;
     for (Node* n = application; isApplication(n); ++i)
@@ -132,7 +145,7 @@ static inline Node* convertOperator(Node* operator) {
     static const char* const builtins[] =
         {"+", "-", "*", "/", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
     for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
-        if (isThisToken(operator, builtins[i]))
+        if (isThisLeaf(operator, builtins[i]))
             return newBuiltin(getTag(operator), i);
     return newName(getTag(operator));
 }

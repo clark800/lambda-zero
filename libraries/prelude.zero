@@ -58,6 +58,7 @@ Unit ::= {()}
 Pair(a, b) ::= {(*a, *b)}
 Triple(a, b, c) ::= {(*a, *b, *c)}
 Quadruple(w, x, y, z) ::= {(*w, *x, *y, *z)}
+pair(a, b) := (a, b)
 first((x, y)) := x
 second((x, y)) := y
 swap((x, y)) := (y, x)
@@ -82,7 +83,7 @@ fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
 cascade(xs, f, z) := xs.match([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))
 xs ++ ys := xs.fold((::), ys)                   // concatenate two lists
 join(xss) := xss.fold((++), [])            // concatenate list of lists
-length(xs) := xs.fold(constant((+ 1)), 0)         // get length of list
+length(xs) := xs.fold(constant(+ 1), 0)         // get length of list
 reverse(xs) := xs.cascade(`(::), [])
 dropIf(ns, p) := ns.match([] -> []; n :: ns' -> p(n) ? ns' || ns)
 takeWhile(xs, p) := xs.match(
@@ -107,7 +108,7 @@ zipWith(xs, f, ys) := xs.match(
         y :: ys' -> f(x, y) :: zipWith(xs', f, ys')
     )
 )
-zip(xs, ys) := zipWith(xs, (,), ys)
+zip(xs, ys) := zipWith(xs, pair, ys)
 unzip(xs) := (xs.map(first), xs.map(second))
 ns ** ms := join(ns.map(n -> ms.map(m -> (n, m))))
 interleave(xs, y) := (
@@ -124,7 +125,7 @@ find(xs, p) := xs.match(
 )
 // foldMap : a[] --> (a --> s --> b ** s) --> s --> (b[], s)
 foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
-    f(x, s).mapFirst((:: ys)), ([], z)).mapFirst(reverse)
+    f(x, s).mapFirst(:: ys), ([], z)).mapFirst(reverse)
 
 // fallible function
 f^^(n)(z) := n < 0 ? error("(^^): negative") || n = 0 ? z || f^^(n - 1)(f(z))
@@ -159,10 +160,10 @@ sum(ns) := ns.cascade((+), 0)
 product(ns) := ns.cascade((*), 1)
 minimum(ns) := ns.reduce(min)
 maximum(ns) := ns.reduce(max)
-(...) := iterate((+ 1))
+(...) := iterate(+ 1)
 naturals := 0...
 primes := (
-    filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (m -> m % n != 0))
+    filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))
     filterPrime(2...)
 )
 

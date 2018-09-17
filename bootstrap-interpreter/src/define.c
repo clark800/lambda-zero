@@ -76,7 +76,7 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     // verify that all arguments in pattern are asterisks and count to get k
     unsigned int k = 0;
     for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
-        syntaxErrorIf(!isThisToken(getRight(pattern), "(*)"),
+        syntaxErrorIf(!isThisLeaf(getRight(pattern), "(*)"),
             "constructor parameters must be asterisks", getRight(pattern));
     syntaxErrorIf(!isReference(pattern), "invalid constructor name", pattern);
 
@@ -118,7 +118,7 @@ Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     if (!isApplication(right) || getTag(right).lexeme.start[0] != '\n') {
-        if (isApplication(left) && isThisToken(getLeft(left), "main"))
+        if (isApplication(left) && isThisLeaf(getLeft(left), "main"))
             return newMainCall(newLambda(tag, getRight(left), right));
         syntaxError("missing scope", operator);
     }

@@ -11,7 +11,7 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
 }
 
 static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
-    syntaxErrorIf(isThisToken(node, "_"), "cannot reference", node);
+    syntaxErrorIf(isBlank(node), "cannot reference", node);
     unsigned long long index = findDebruijnIndex(node, parameters);
     syntaxErrorIf(index == 0, "undefined symbol", node);
     unsigned long long localDepth = length(parameters) - globalDepth;

@@ -22,7 +22,7 @@ bool isSpaceOperator(Node* node) {
     return ((Rules*)getValue(node))->symbol[0] == ' ';
 }
 
-bool isSpecialOperator(Node* operator) {
+bool isSpecial(Node* operator) {
     Rules* rules = (Rules*)getValue(operator);
     return rules->leftPrecedence <= 5 || rules->rightPrecedence <= 5;
 }
@@ -36,7 +36,14 @@ Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
 }
 
 Node* reduceOperator(Node* operator, Node* left, Node* right) {
-    return ((Rules*)getValue(operator))->reduce(operator, left, right);
+    Node* result = ((Rules*)getValue(operator))->reduce(operator, left, right);
+    if (isSpecial(operator) && (isSection(left) || isSection(right)))
+        syntaxError("operator does not support sections", operator);
+    if (left != NULL && isThisToken(left, "_."))
+        return renameNode(result, isThisToken(right, "._") ? "_._" : "_.");
+    if (right != NULL && isThisToken(right, "._"))
+        return renameNode(result, "._");
+    return result;
 }
 
 void shiftOperator(Stack* stack, Node* operator) {
