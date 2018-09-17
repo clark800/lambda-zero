@@ -76,7 +76,7 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     // verify that all arguments in pattern are asterisks and count to get k
     unsigned int k = 0;
     for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
-        syntaxErrorIf(!isThisLeaf(getRight(pattern), "(*)"),
+        syntaxErrorIf(!isThisToken(getRight(pattern), "(*)"),
             "constructor parameters must be asterisks", getRight(pattern));
     syntaxErrorIf(!isReference(pattern), "invalid constructor name", pattern);
 
@@ -138,5 +138,6 @@ Node* reduceAsterisk(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isValidPattern(right), "invalid operand of", operator);
     // rename operator so it will generate an error for being undefined if
     // a prefix asterisk appears outside an ADT definition
-    return newName(renameTag(getTag(operator), "(*)"));
+    Tag tag = renameTag(getTag(operator), "(*)");
+    return newApplication(tag, newName(tag), right);
 }

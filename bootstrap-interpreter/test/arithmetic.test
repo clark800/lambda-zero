@@ -75,7 +75,7 @@ negate(n) := 0 - n \n (-9223372036854775807) % (-1)
 Syntax error: missing close for '(' at line 1 column 5
 ===============================================================================
 +
-Syntax error: missing left argument to '+' at line 1 column 1
+Syntax error: missing left operand for '+' at line 1 column 1
 ===============================================================================
 (+)
 \nRuntime error: missing argument to '+' at line 1 column 2
@@ -93,7 +93,7 @@ negate(n) := 0 - n \n 5- -2
 7
 ===============================================================================
 5 - + 2
-Syntax error: missing left argument to '+' at line 1 column 5
+Syntax error: missing left operand for '+' at line 1 column 5
 ===============================================================================
 negate(n) := 0 - n \n !x := -x \n ((+) !2!3)
 -5
@@ -105,16 +105,16 @@ negate(n) := 0 - n \n !x := -x \n ((+) !2 !3)
 1
 ===============================================================================
 (+ +)
-Syntax error: missing left argument to '+' at line 1 column 4
+Syntax error: missing left operand for '+' at line 1 column 4
 ===============================================================================
 (+ + +)
-Syntax error: missing left argument to '+' at line 1 column 4
+Syntax error: missing left operand for '+' at line 1 column 4
 ===============================================================================
 (! +)
-Syntax error: missing left argument to '+' at line 1 column 4
+Syntax error: missing left operand for '+' at line 1 column 4
 ===============================================================================
-(+ !)
-Syntax error: missing right argument to '!' at line 1 column 4
+!a := 0 - a \n (+ !) 5 3
+2
 ===============================================================================
 1+2-3+4-5+6
 5

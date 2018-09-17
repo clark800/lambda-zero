@@ -19,30 +19,41 @@ typedef struct {
 } Rules;
 
 bool isSpaceOperator(Node* node) {
-    return ((Rules*)getValue(node))->symbol[0] == ' ';
+    return isOperator(node) && ((Rules*)getValue(node))->symbol[0] == ' ';
 }
 
-bool isSpecial(Node* operator) {
-    Rules* rules = (Rules*)getValue(operator);
-    return rules->leftPrecedence <= 5 || rules->rightPrecedence <= 5;
+bool isSpecial(Node* node) {
+    if (!isOperator(node))
+        return false;
+    Rules* rules = (Rules*)getValue(node);
+    return (rules->leftPrecedence <= 5 || rules->rightPrecedence <= 5);
 }
 
 Fixity getFixity(Node* operator) {
     return ((Rules*)getValue(operator))->fixity;
 }
 
+bool isOpenOperator(Node* node) {
+    return isOperator(node) && getFixity(node) == OPEN;
+}
+
 Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
     return ((Rules*)getValue(close))->reduce(open, left, right);
 }
 
+static Node* propagateSection(Node* operator, Node* node, const char* name) {
+    if (isSpecial(operator) || !isApplication(node))
+        syntaxError("operator does not support sections", operator);
+    return setTag(node, renameTag(getTag(node), name));
+}
+
 Node* reduceOperator(Node* operator, Node* left, Node* right) {
     Node* result = ((Rules*)getValue(operator))->reduce(operator, left, right);
-    if (isSpecial(operator) && (isSection(left) || isSection(right)))
-        syntaxError("operator does not support sections", operator);
-    if (left != NULL && isThisToken(left, "_."))
-        return renameNode(result, isThisToken(right, "._") ? "_._" : "_.");
-    if (right != NULL && isThisToken(right, "._"))
-        return renameNode(result, "._");
+    if (left != NULL && isSection(left))
+        return propagateSection(operator, result,
+            right != NULL && isSection(right) ?  "_._" : "_.");
+    if (right != NULL && isSection(right))
+        return propagateSection(operator, result, "._");
     return result;
 }
 
@@ -51,6 +62,9 @@ void shiftOperator(Stack* stack, Node* operator) {
 }
 
 bool isHigherPrecedence(Node* left, Node* right) {
+    assert(isOperator(left) || isOperator(right));
+    if (isEOF(left))
+        return false;
     Rules* leftRules = (Rules*)getValue(left);
     Rules* rightRules = (Rules*)getValue(right);
     if (leftRules->rightPrecedence == rightRules->leftPrecedence) {
@@ -100,12 +114,11 @@ static Node* setRules(Node* operator, bool isAfterOperator) {
     return setValue(operator, (long long)rules);
 }
 
-Node* parseOperator(Tag tag, Stack* stack) {
-    Node* operator = newOperator(tag);
-    setRules(operator, isEmpty(stack) || isOperator(peek(stack, 0)));
-    if (getFixity(operator) == PRE && isOperator(peek(stack, 0)) &&
-            isSpaceOperator(peek(stack, 0)))
-        setRules(operator, isOperator(peek(stack, 1)));
-    return operator;
+Node* getPrevious(Stack* stack) {
+    return isSpaceOperator(peek(stack, 0)) ? peek(stack, 1) : peek(stack, 0);
 }
 
+Node* parseOperator(Tag tag, Stack* stack) {
+    return setRules(newOperator(tag),
+        isEmpty(stack) || isOperator(getPrevious(stack)));
+}

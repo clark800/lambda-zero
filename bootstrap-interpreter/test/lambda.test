@@ -59,6 +59,9 @@ Syntax error: symbol already defined 'x' at line 1 column 8
 (0 -> 5) 4
 Syntax error: invalid parameter '0' at line 1 column 2
 ===============================================================================
-(->)
-Syntax error: missing left argument to '->' at line 1 column 2
+(-> 0)
+Syntax error: missing left operand for '->' at line 1 column 2
+===============================================================================
+(x ->)
+Syntax error: missing right operand for '->' at line 1 column 4
 ===============================================================================

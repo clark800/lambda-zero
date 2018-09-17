@@ -37,16 +37,26 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
-static void shiftInfix(Stack* stack, Node* operator) {
-    if (!isSpecial(operator) && isOpenParen(peek(stack, 0)))
-        push(stack, newName(renameTag(getTag(operator), "_.")));
-    if (isOperator(peek(stack, 0)))
-        syntaxError("missing left argument to", operator);
+static void shiftPrefix(Stack* stack, Node* operator) {
     push(stack, operator);
 }
 
-static void shiftPrefix(Stack* stack, Node* operator) {
+static void shiftInfix(Stack* stack, Node* operator) {
+    if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
+        push(stack, newName(renameTag(getTag(operator), "_.")));
+    if (isOperator(peek(stack, 0)))
+        syntaxError("missing left operand for", operator);
     push(stack, operator);
+}
+
+static void shiftPostfix(Stack* stack, Node* operator) {
+    if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
+        push(stack, newName(renameTag(getTag(operator), "_.")));
+    if (isOperator(peek(stack, 0)))
+        syntaxError("missing left operand for", operator);
+    Hold* operand = pop(stack);
+    push(stack, reduceOperator(operator, getNode(operand), NULL));
+    release(operand);
 }
 
 static void shiftWhitespace(Stack* stack, Node* operator) {
@@ -55,28 +65,14 @@ static void shiftWhitespace(Stack* stack, Node* operator) {
         push(stack, operator);
 }
 
-static void shiftPostfix(Stack* stack, Node* operator) {
-    Node* top = peek(stack, 0);
-    if (isOpenParen(top)) {
-        push(stack, operator);
-    } else {
-        syntaxErrorIf(isOperator(top), "missing left operand", operator);
-        Hold* operand = pop(stack);
-        push(stack, reduceOperator(operator, getNode(operand), NULL));
-        release(operand);
-    }
-}
-
 void initOperators(void) {
     // default (must be first)
     addOperator("", 14, 14, IN, L, shiftInfix, reduceInfix);
 
     // syntactic operators
     addOperator("\0", 0, 0, CLOSE, L, shiftBracket, reduceEOF);
-    addOperator("(", 23, 0, OPENCALL, L, push, reduceUnmatched);
     addOperator("(", 23, 0, OPEN, L, push, reduceUnmatched);
     addOperator(")", 0, 23, CLOSE, R, shiftBracket, reduceParentheses);
-    addOperator("[", 23, 0, OPENCALL, L, push, reduceUnmatched);
     addOperator("[", 23, 0, OPEN, L, push, reduceUnmatched);
     addOperator("]", 0, 23, CLOSE, R, shiftBracket, reduceSquareBrackets);
     addOperator("{", 23, 0, OPEN, L, shiftOpenCurly, reduceUnmatched);

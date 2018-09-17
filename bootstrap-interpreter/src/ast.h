@@ -52,16 +52,12 @@ static inline bool isGlobalReference(Node* node) {
     return getNodeType(node) == REFERENCE && getValue(node) < 0;
 }
 
-static inline bool isNewline(Node* node) {return isThisLeaf(node, "\n");}
-static inline bool isOpenParen(Node* node) {return isThisLeaf(node, "(");}
-static inline bool isCloseParen(Node* node) {return isThisLeaf(node, ")");}
 static inline bool isEOF(Node* node) {return isThisLeaf(node, "\0");}
-static inline bool isComma(Node* node) {return isThisLeaf(node, ",");}
 static inline bool isBlank(Node* node) {return isThisLeaf(node, "_");}
 
 static inline bool isSection(Node* node) {
-    return node != NULL && (isThisToken(node, "_._") ||
-        isThisToken(node, "_.") || isThisToken(node, "._"));
+    return isThisToken(node, "_._") ||
+        isThisToken(node, "_.") || isThisToken(node, "._");
 }
 
 // ================================
@@ -98,7 +94,6 @@ static inline Node* newApplication(Tag tag, Node* left, Node* right) {
     return newBranch(tag, APPLICATION, left, right);
 }
 
-static inline Node* newComma(Tag tag) {return newOperator(renameTag(tag, ","));}
 static inline Node* newNil(Tag tag) {return newName(renameTag(tag, "[]"));}
 static inline Node* newBlank(Tag tag) {return newName(renameTag(tag, "_"));}
 
@@ -114,21 +109,6 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
 static inline Node* newBoolean(Tag tag, bool value) {
     return newLambda(tag, newBlank(tag), newLambda(tag, newBlank(tag),
         value ? newBlankReference(tag, 1) : newBlankReference(tag, 2)));
-}
-
-// ====================================
-// Helper functions
-// ====================================
-
-static inline Node* renameNode(Node* node, const char* name) {
-    return setTag(node, renameTag(getTag(node), name));
-}
-
-static inline unsigned int getArgumentCount(Node* application) {
-    unsigned int i = 0;
-    for (Node* n = application; isApplication(n); ++i)
-        n = getLeft(n);
-    return i;
 }
 
 // ====================================
