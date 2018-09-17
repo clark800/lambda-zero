@@ -37,12 +37,10 @@ static Node* newSection(Tag tag, const char* name, Node* body) {
 }
 
 static Node* createSection(Tag tag, Node* contents) {
-    if (isThisToken(contents, "_._")) {
-        Node* left = getLeft(contents);
-        if (isApplication(left) && isLeaf(getLeft(left)))
-            return getLeft(left);       // parenthesized operator
+    if (isThisToken(contents, "_._"))
         return newSection(tag, "_.", newSection(tag, "._", contents));
-    }
+    if (isLeaf(getLeft(contents)))
+        return getLeft(contents);   // parenthesized postfix operator
     return newSection(tag, getLexeme(contents).start, contents);
 }
 
@@ -53,8 +51,6 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
         Node* unit = newName(renameTag(tag, "()"));
         return function == NULL ? unit : newApplication(tag, function, unit);
     }
-    if (isOperator(contents))
-        contents = convertOperator(contents);
     if (isSection(contents))
         contents = createSection(tag, contents);
     if (function != NULL)
@@ -73,6 +69,7 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
         syntaxErrorIf(left != NULL, "missing argument to", open);
         return newNil(tag);
     }
+    syntaxErrorIf(isSection(contents), "invalid section", open);
     if (left != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
         Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
@@ -90,6 +87,7 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     (void)left;
     syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
     syntaxErrorIf(patterns == NULL, "missing patterns", open);
+    syntaxErrorIf(isSection(patterns), "invalid section", open);
     return newTuple(open, patterns);
 }
 
@@ -106,32 +104,28 @@ Node* reduceUnmatched(Node* open, Node* left, Node* right) {
     return left == NULL ? right : left; // suppress unused parameter warning
 }
 
+void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
+    if (isEOF(open) || isOperator(peek(stack, 0))) {
+        push(stack, reduceBracket(open, close, NULL, contents));
+    } else {
+        Hold* left = pop(stack);
+        push(stack, reduceBracket(open, close, getNode(left), contents));
+        release(left);
+    }
+}
+
 void shiftBracket(Stack* stack, Node* close) {
     syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
     Hold* top = pop(stack);
-    if (isOperator(getNode(top)) && getFixity(getNode(top)) == OPENCALL) {
-        Hold* left = pop(stack);
-        push(stack, reduceBracket(getNode(top), close, getNode(left), NULL));
-        release(left);
-    } else if (isOperator(getNode(top)) && getFixity(getNode(top)) == OPEN) {
-        push(stack, reduceBracket(getNode(top), close, NULL, NULL));
+    if (isOpenOperator(getNode(top))) {
+        pushBracket(stack, getNode(top), close, NULL);
     } else {
-        Node* right = getNode(top);
-        if (!isEOF(close) && isEOF(peek(stack, 0)))
-            syntaxError("missing open for", close);
-        if (isOperator(right) && !isOpenParen(peek(stack, 0)))
-            syntaxError("missing right argument to", right);
         Hold* open = pop(stack);
-        Node* op = getNode(open);
-        if (isOperator(op) && getFixity(op) == OPENCALL) {
-            Hold* left = pop(stack);
-            push(stack, reduceBracket(op, close, getNode(left), right));
-            release(left);
-        } else if (isOperator(op) && (getFixity(op) == OPEN || isEOF(op))) {
-            push(stack, reduceBracket(op, close, NULL, right));
-        } else {
-           syntaxError("missing open for", close);
-        }
+        if (isEOF(getNode(open)) && !isEOF(close))
+            syntaxError("missing open for", close);
+        if (isOperator(getNode(top)))
+            syntaxError("missing right operand for", getNode(top));
+        pushBracket(stack, getNode(open), close, getNode(top));
         release(open);
     }
     release(top);

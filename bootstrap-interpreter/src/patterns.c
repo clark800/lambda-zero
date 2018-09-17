@@ -2,6 +2,13 @@
 #include "ast.h"
 #include "errors.h"
 
+unsigned int getArgumentCount(Node* application) {
+    unsigned int i = 0;
+    for (Node* n = application; isApplication(n); ++i)
+        n = getLeft(n);
+    return i;
+}
+
 static Node* newProjection(Tag tag, unsigned int size, unsigned int index) {
     Node* projection = newBlankReference(tag, size - index);
     for (unsigned int i = 0; i < size; ++i)

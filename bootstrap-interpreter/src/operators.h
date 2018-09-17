@@ -1,9 +1,10 @@
-typedef enum {IN, PRE, POST, OPEN, OPENCALL, CLOSE} Fixity;
+typedef enum {IN, PRE, POST, OPEN, CLOSE} Fixity;
 typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
 
-bool isSpecial(Node* operator);
-bool isSpaceOperator(Node* operator);
+bool isSpecial(Node* node);
+bool isSpaceOperator(Node* node);
+bool isOpenOperator(Node* node);
 Fixity getFixity(Node* operator);
 Node* reduceOperator(Node* operator, Node* left, Node* right);
 Node* reduceBracket(Node* open, Node* close, Node* left, Node* right);
