@@ -84,7 +84,7 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
 }
 
 Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
-    (void)left;
+    syntaxErrorIf(left != NULL, "missing space before", open);
     syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
     syntaxErrorIf(patterns == NULL, "missing patterns", open);
     syntaxErrorIf(isSection(patterns), "invalid section", open);
@@ -92,7 +92,7 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
 }
 
 Node* reduceEOF(Node* open, Node* left, Node* contents) {
-    (void)left;
+    syntaxErrorIf(left != NULL, "invalid syntax", open);  // should never happen
     syntaxErrorIf(!isEOF(open), "missing close for", open);
     syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
@@ -117,6 +117,7 @@ void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
 void shiftOpen(Stack* stack, Node* open) {
     reduceLeft(stack, open);
     push(stack, open);
+    addScopeMarker();
 }
 
 void shiftOpenCurly(Stack* stack, Node* operator) {
@@ -163,4 +164,5 @@ void shiftClose(Stack* stack, Node* close) {
         release(open);
     }
     release(contents);
+    endScope();
 }

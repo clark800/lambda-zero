@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "lib/array.h"
 #include "lib/tree.h"
 #include "lib/stack.h"
@@ -9,7 +10,7 @@
 static Array* RULES = NULL;
 
 typedef struct {
-    const char* symbol;
+    String lexeme;
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
     Associativity associativity;
@@ -17,11 +18,29 @@ typedef struct {
     Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
 
+static void shiftOperand(Stack* stack, Node* node) {
+    Node* operand = reduce(node, NULL, NULL);
+    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
+        push(stack, operand);
+    } else {
+        Hold* left = pop(stack);
+        push(stack, newApplication(getTag(node), getNode(left), operand));
+        release(left);
+    }
+}
+
+static Node* reduceOperand(Node* operand, Node* left, Node* right) {
+    (void)left, (void)right;
+    return operand;
+}
+
 static inline Rules* getRules(Node* node) {
+    static Rules operand =
+        {{"", 0}, 0, 0, NOFIX, N, shiftOperand, reduceOperand};
     if (!isSymbol(node))
-        return elementAt(RULES, 0);
+        return &operand;
     Rules* rules = (Rules*)getData(node);
-    return rules == NULL ? elementAt(RULES, 0) : rules;
+    return rules == NULL ? &operand : rules;
 }
 
 Fixity getFixity(Node* operator) {
@@ -33,7 +52,7 @@ bool isOperator(Node* node) {
 }
 
 bool isSpaceOperator(Node* node) {
-    return isOperator(node) && getRules(node)->symbol[0] == ' ';
+    return isOperator(node) && getRules(node)->lexeme.start[0] == ' ';
 }
 
 bool isSpecial(Node* node) {
@@ -89,42 +108,17 @@ bool isHigherPrecedence(Node* left, Node* right) {
         return leftRules->rightPrecedence >= rightRules->leftPrecedence;
 }
 
-void addSymbol(const char* symbol, Precedence leftPrecedence,
-        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
-    if (RULES == NULL)
-        RULES = newArray(1024);
-    Rules* rules = (Rules*)malloc(sizeof(Rules));
-    *rules = (Rules){symbol, leftPrecedence, rightPrecedence, fixity,
-        associativity, shifter, reducer};
-    append(RULES, rules);
-}
-
-static bool allowsOperatorBefore(Rules rules) {
-    return rules.fixity == PREFIX || rules.fixity == OPENFIX ||
-        rules.fixity == CLOSEFIX || rules.fixity == NOFIX;
-}
-
-static Rules* findRules(String lexeme, bool isAfterOperator) {
-    Rules* result = elementAt(RULES, 0);
+static Rules* findRules(String lexeme) {
     for (unsigned int i = 0; i < length(RULES); ++i) {
-        Rules* rules = (Rules*)elementAt(RULES, i);
-        if (isThisString(lexeme, rules->symbol)) {
-            result = rules;
-            if (!isAfterOperator || allowsOperatorBefore(*rules))
-                return result;
-        }
+        Rules* rules = elementAt(RULES, i);
+        if (isSameString(lexeme, rules->lexeme))
+            return rules;
     }
-    return result;
+    return NULL;
 }
 
-static Node* getPrevious(Stack* stack) {
-    return isSpaceOperator(peek(stack, 0)) ? peek(stack, 1) : peek(stack, 0);
-}
-
-Node* parseSymbol(Tag tag, Stack* stack) {
-    return newSymbol(tag, findRules(tag.lexeme,
-        isEmpty(stack) || isOperator(getPrevious(stack))));
+Node* parseSymbol(Tag tag) {
+    return newSymbol(tag, findRules(tag.lexeme));
 }
 
 static void reduceTop(Stack* stack) {
@@ -143,4 +137,39 @@ void reduceLeft(Stack* stack, Node* operator) {
     while (!isOperator(peek(stack, 0)) &&
             isHigherPrecedence(peek(stack, 1), operator))
         reduceTop(stack);
+}
+
+static void appendSyntax(Rules rules) {
+    Rules* new = (Rules*)malloc(sizeof(Rules));
+    *new = rules;
+    append(RULES, new);
+}
+
+void addSyntax(Node* name, Precedence leftPrecedence,
+        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
+        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
+    String lexeme = getLexeme(name);
+    syntaxErrorIf(findRules(lexeme) != NULL, "syntax already defined", name);
+    appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
+        associativity, shifter, reducer});
+}
+
+void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
+        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
+        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
+    if (RULES == NULL)
+        RULES = newArray(1024);
+    String lexeme = newString(symbol, (unsigned int)strlen(symbol));
+    appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
+        associativity, shifter, reducer});
+}
+
+void addScopeMarker(void) {
+    addBuiltinSyntax("\0", 0, 0, NOFIX, N, NULL, NULL);
+}
+
+void endScope(void) {
+    while (((Rules*)elementAt(RULES, length(RULES) - 1))->lexeme.start[0] != 0)
+        unappend(RULES);
+    unappend(RULES);
 }

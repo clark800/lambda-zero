@@ -42,12 +42,11 @@ function oneline_suite {
     local testcases_path="$DIR/$1"
     local name="$(basename "$testcases_path" ".test")"
     local failures=0
-    local prelude=""
     local newline=$'\n'
-    local flags=""
+    local prelude="$(cat "$DIR/../../libraries/operators.zero")$newline"
+    local flags="-t"
     if [[ "$#" -eq 2 ]]; then
-        prelude="$(cat "$DIR/$2")$newline"
-        flags="-t"
+        prelude+="$(cat "$DIR/$2")$newline"
     fi
     header "$name"
     while read -r line; do

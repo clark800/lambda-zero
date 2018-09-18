@@ -1,0 +1,52 @@
+//$ operators.zero
+
+syntax(||) := infixR(6)
+syntax(?) := infixR(7)
+syntax(?!) := infixR(7)
+syntax(>>) := infixL(8)
+
+syntax(<=>) := infix(9)
+syntax(=>) := infix(10)
+syntax(\/) := infixR(11)
+syntax(/\) := infixR(12)
+
+syntax(=) := infix(13)
+syntax(!=) := infix(13)
+syntax(=*=) := infix(13)
+syntax(=?=) := infix(13)
+syntax(<) := infix(13)
+syntax(>) := infix(13)
+syntax(<=) := infix(13)
+syntax(>=) := infix(13)
+syntax(=<) := infix(13)
+syntax(~<) := infix(13)
+syntax(<:) := infix(13)
+syntax(<*=) := infix(13)
+syntax(:) := infix(13)
+syntax(!:) := infix(13)
+syntax(~) := infix(13)
+
+syntax(|:) := infix(14)
+syntax(..) := infix(14)
+
+syntax(::) := infixR(15)
+syntax(++) := infixR(15)
+syntax(&) := infixL(15)
+syntax(+) := infixL(15)
+syntax(-) := infixL(15)
+
+syntax(*) := infixL(16)
+syntax(/) := infixL(16)
+syntax(%) := infixL(16)
+
+syntax(<>) := infixR(19)
+
+syntax(!) := prefix(20)
+syntax(#) := prefix(20)
+
+syntax(^) := infixR(21)
+syntax(^^) := infixL(24)
+syntax(.) := infixL(25)
+syntax(`) := prefix(26)
+
+//$

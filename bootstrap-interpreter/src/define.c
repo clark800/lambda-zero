@@ -67,6 +67,18 @@ static Node* newMainCall(Node* main) {
     return newApplication(tag, print, newApplication(tag, main, input));
 }
 
+static inline bool isValidPattern(Node* node) {
+    return isSymbol(node) || (isApplication(node) &&
+        isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
+}
+
+static bool isValidConstructorParameter(Node* parameter) {
+    return isApplication(parameter) && isApplication(getLeft(parameter)) &&
+        isValidPattern(getRight(parameter)) &&
+        isBlank(getRight(getLeft(parameter))) &&
+        isThisLeaf(getLeft(getLeft(parameter)), ":");
+}
+
 static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
         unsigned int i, unsigned int n) {
     // pattern is an application of a constructor name to a number of asterisks
@@ -76,8 +88,8 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     // verify that all arguments in pattern are asterisks and count to get k
     unsigned int k = 0;
     for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
-        syntaxErrorIf(!isThisLexeme(getRight(pattern), "(*)"),
-            "constructor parameters must be asterisks", getRight(pattern));
+        if (!isValidConstructorParameter(getRight(pattern)))
+            syntaxError("invalid constructor parameter", getRight(pattern));
     syntaxErrorIf(!isSymbol(pattern), "invalid constructor name", pattern);
 
     // let p_* be constructor parameters (k total)
@@ -90,11 +102,6 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     for (unsigned int j = 0; j < n + k; ++j)
         constructor = newLambda(tag, newBlank(tag), constructor);
     return newDefinition(tag, pattern, constructor, scope);
-}
-
-static inline bool isValidPattern(Node* node) {
-    return isSymbol(node) || (isApplication(node) &&
-        isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
 }
 
 Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
@@ -131,13 +138,4 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
     syntaxErrorIf(!isSymbol(left), "invalid left hand side", operator);
     return newDefinition(tag, left, transformRecursion(left, value), scope);
-}
-
-Node* reduceAsterisk(Node* operator, Node* left, Node* right) {
-    (void)left;
-    syntaxErrorIf(!isValidPattern(right), "invalid operand of", operator);
-    // rename operator so it will generate an error for being undefined if
-    // a prefix asterisk appears outside an ADT definition
-    Tag tag = renameTag(getTag(operator), "(*)");
-    return newApplication(tag, newName(tag), right);
 }
