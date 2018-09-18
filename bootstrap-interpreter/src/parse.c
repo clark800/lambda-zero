@@ -91,9 +91,12 @@ static Node* parseToken(Token token, Stack* stack) {
 Program parse(const char* input) {
     initSymbols();
     Stack* stack = newStack();
-    push(stack, parseToken(newStartToken(), stack));
-    for (Token token = lex(input); token.type != END; token = lex(skip(token))){
+    Token start = newStartToken(input);
+    push(stack, parseToken(start, stack));
+    for (Token token = lex(start); token.type != END; token = lex(token)) {
         debugParseState(token.tag, stack, TRACE_PARSING);
+        if (token.type == COMMENT)
+            continue;
         Node* node = parseToken(token, stack);
         shift(stack, node);
         release(hold(node));

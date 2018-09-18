@@ -1,5 +1,5 @@
-typedef enum {END, SYMBOLIC, NUMERIC, CHARACTER, STRING, INVALID}
-TokenType;
+typedef enum {END, SYMBOLIC, NUMERIC, CHARACTER, STRING, COMMENT, INVALID}
+    TokenType;
 
 typedef struct {
     Tag tag;
@@ -7,6 +7,5 @@ typedef struct {
 } Token;
 
 bool isSpaceCharacter(char c);
-Token lex(const char* start);
-const char* skip(Token token);
-Token newStartToken(void);
+Token lex(Token token);
+Token newStartToken(const char* start);
