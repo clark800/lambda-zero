@@ -1,12 +1,12 @@
-// naming conventions
-// x, y, z unspecified type
-// f, g, h function type
-// n, m, k integer type
-// b, c    boolean type
-// p, q    boolean-valued function
-// m*      maybe of *
-// *s      list of *
-// **      pair of * and *
+/* naming conventions
+x, y, z unspecified type
+f, g, h function type
+n, m, k integer type
+b, c    boolean type
+p, q    boolean-valued function
+mx      maybe of x
+xs      list of x
+xy      pair of x and y */
 
 // function
 x.f := f(x)                     // uniform function call syntax

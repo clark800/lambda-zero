@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
@@ -7,9 +6,9 @@
 
 bool isSpaceCharacter(char c) {return c == ' ' || c == '\t' || c == '\r';}
 static bool isQuoteCharacter(char c) {return c == '"' || c == '\'';}
+static bool isNotNewline(char c) {return c != '\n';}
 static bool isLineComment(const char* s) {return s[0] == '/' && s[1] == '/';}
 static bool isBlockComment(const char* s) {return s[0] == '/' && s[1] == '*';}
-static bool isNotNewline(char c) {return c != '\n';}
 
 static bool isDelimiterCharacter(char c) {
     return c == '\0' || strchr(" \t\r\n,;()[]{}", c) != NULL;
@@ -36,12 +35,6 @@ static const char* skipBlockComment(const char* s) {
     return s[0] == '\0' ? s : s + 2;
 }
 
-static const char* skipComments(const char* s) {
-    while (isLineComment(s) || isBlockComment(s))
-        s = isLineComment(s) ? skipWhile(s, isNotNewline) : skipBlockComment(s);
-    return s;
-}
-
 static const char* skipQuote(const char* s) {
     char quote = s[0];
     // assumption is that s points to the opening quotation mark
@@ -55,6 +48,10 @@ static const char* skipQuote(const char* s) {
 }
 
 static const char* skipLexeme(const char* s) {
+    if (isLineComment(s))
+        return skipWhile(s, isNotNewline);
+    if (isBlockComment(s))
+        return skipBlockComment(s);
     if (isSpaceCharacter(s[0]))
         return skipWhile(s, isSpaceCharacter);
     if (isQuoteCharacter(s[0]))
@@ -66,23 +63,30 @@ static const char* skipLexeme(const char* s) {
     return s[0] == '\0' ? s : s + 1;    // delimiter or invalid character
 }
 
-static String getNextLexeme(const char* start) {
-    start = skipComments(start);
+static String getNextLexeme(Tag tag) {
+    const char* start = tag.lexeme.start + tag.lexeme.length;
     return newString(start, (unsigned int)(skipLexeme(start) - start));
 }
 
-static Location location = {1, 1};
+static Location advanceLocation(Tag tag) {
+    // must scan the whole lexeme for newlines because of block comments
+    for (unsigned int i = 0; i < tag.lexeme.length; ++i)
+        tag.location = (tag.lexeme.start[i] == '\n') ?
+            newLocation(tag.location.line + 1, 1) :
+            newLocation(tag.location.line, tag.location.column + 1);
+    return tag.location;
+}
 
-static Token createToken(String lexeme) {
-    Tag tag = newTag(lexeme, location);
-    char head = lexeme.length > 0 ? lexeme.start[0] : '\0';
-    if (head == '\n')
-        location = newLocation(location.line + 1, 1);
-    else
-        location = newLocation(location.line, location.column + lexeme.length);
+Token lex(Token token) {
+    if (token.tag.lexeme.start[0] == '\0')
+        return (Token){newTag(EMPTY, token.tag.location), END};
+    Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
-    if (head != '\0' && iscntrl(head) && !isspace(head))
+    char head = tag.lexeme.start[0];
+    if (head < 0 || (head != '\0' && iscntrl(head) && !isspace(head)))
         return (Token){tag, INVALID};
+    if (isLineComment(tag.lexeme.start) || isBlockComment(tag.lexeme.start))
+        return (Token){tag, COMMENT};
     if (isdigit(head))
         return (Token){tag, NUMERIC};
     if (head == '\'')
@@ -92,15 +96,6 @@ static Token createToken(String lexeme) {
     return (Token){tag, SYMBOLIC};
 }
 
-Token lex(const char* start) {
-    return start == NULL ? (Token){0} : createToken(getNextLexeme(start));
-}
-
-const char* skip(Token token) {
-    String lexeme = token.tag.lexeme;
-    return lexeme.start[0] == 0 ? NULL : lexeme.start + lexeme.length;
-}
-
-Token newStartToken(void) {
-    return (Token){newTag(EMPTY, newLocation(0, 0)), SYMBOLIC};
+Token newStartToken(const char* start) {
+    return (Token){newTag(newString(start, 0), newLocation(1, 1)), SYMBOLIC};
 }
