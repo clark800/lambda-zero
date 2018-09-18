@@ -4,14 +4,14 @@
 #include "lib/tag.h"
 #include "lex.h"
 
-bool isSpaceCharacter(char c) {return c == ' ' || c == '\t' || c == '\r';}
-static bool isQuoteCharacter(char c) {return c == '"' || c == '\'';}
+static bool isQuote(char c) {return c == '"' || c == '\'';}
 static bool isNotNewline(char c) {return c != '\n';}
 static bool isLineComment(const char* s) {return s[0] == '/' && s[1] == '/';}
 static bool isBlockComment(const char* s) {return s[0] == '/' && s[1] == '*';}
+static bool isSpace(char c) {return c > 0 && isspace(c) && c != '\n';}
 
-static bool isDelimiterCharacter(char c) {
-    return c == '\0' || strchr(" \t\r\n,;()[]{}", c) != NULL;
+static bool isInvalid(char c) {
+    return c < 0 || (iscntrl(c) && !isspace(c) && c != '\0');
 }
 
 static bool isOperandCharacter(char c) {
@@ -19,10 +19,14 @@ static bool isOperandCharacter(char c) {
     return c > 0 && (isalnum(c) || c == '\'' || c == '_');
 }
 
+static bool isDelimiter(char c) {
+    return c == '\0' || isSpace(c) || strchr("\n,;()[]{}", c) != NULL;
+}
+
 static bool isOperatorCharacter(char c) {
     // check c > 0 to ensure it is ASCII
-    return c > 0 && !isDelimiterCharacter(c) && !isOperandCharacter(c)
-        && !isQuoteCharacter(c);
+    return c > 0 && !isDelimiter(c) && !isOperandCharacter(c)
+        && !isQuote(c) && !isInvalid(c);
 }
 
 static const char* skipWhile(const char* s, bool (*predicate)(char)) {
@@ -52,9 +56,9 @@ static const char* skipLexeme(const char* s) {
         return skipWhile(s, isNotNewline);
     if (isBlockComment(s))
         return skipBlockComment(s);
-    if (isSpaceCharacter(s[0]))
-        return skipWhile(s, isSpaceCharacter);
-    if (isQuoteCharacter(s[0]))
+    if (isSpace(s[0]))
+        return skipWhile(s, isSpace);
+    if (isQuote(s[0]))
         return skipQuote(s);
     if (isOperandCharacter(s[0]))
         return skipWhile(s, isOperandCharacter);
@@ -69,11 +73,18 @@ static String getNextLexeme(Tag tag) {
 }
 
 static Location advanceLocation(Tag tag) {
+    if (isLineComment(tag.lexeme.start) && tag.lexeme.start[2] == '$') {
+        const char* file = skipWhile(&(tag.lexeme.start[3]), isSpace);
+        if (file[0] == '\n' || file[0] == '\0')
+            return newLocation(NULL, 0, 0);
+        return newLocation(file, 1, 0);
+    }
     // must scan the whole lexeme for newlines because of block comments
     for (unsigned int i = 0; i < tag.lexeme.length; ++i)
         tag.location = (tag.lexeme.start[i] == '\n') ?
-            newLocation(tag.location.line + 1, 1) :
-            newLocation(tag.location.line, tag.location.column + 1);
+            newLocation(tag.location.file, tag.location.line + 1, 1) :
+            newLocation(tag.location.file,
+                tag.location.line, tag.location.column + 1);
     return tag.location;
 }
 
@@ -83,8 +94,10 @@ Token lex(Token token) {
     Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
     char head = tag.lexeme.start[0];
-    if (head < 0 || (head != '\0' && iscntrl(head) && !isspace(head)))
+    if (isInvalid(head))
         return (Token){tag, INVALID};
+    if (isSpace(head))
+        return (Token){tag, SPACE};
     if (isLineComment(tag.lexeme.start) || isBlockComment(tag.lexeme.start))
         return (Token){tag, COMMENT};
     if (isdigit(head))
@@ -97,5 +110,5 @@ Token lex(Token token) {
 }
 
 Token newStartToken(const char* start) {
-    return (Token){newTag(newString(start, 0), newLocation(1, 1)), SYMBOLIC};
+    return (Token){newTag(newString(start, 0), newLocation(0, 1, 1)), SYMBOLIC};
 }

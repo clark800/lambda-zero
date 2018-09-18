@@ -8,8 +8,8 @@ String newString(const char* start, unsigned int length) {
     return (String){start, length};
 }
 
-Location newLocation(unsigned int line, unsigned int column) {
-    return (Location){line, column};
+Location newLocation(const char* file, unsigned int line, unsigned int column) {
+    return (Location){file, line, column};
 }
 
 Tag newTag(String lexeme, Location location) {

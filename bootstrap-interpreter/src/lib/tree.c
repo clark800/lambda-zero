@@ -57,7 +57,7 @@ Node* newBranch(Tag tag, unsigned char type, Node* left, Node* right) {
 }
 
 Node* newPair(Node* left, Node* right) {
-    return newBranch(newTag(EMPTY, newLocation(0, 0)), 0, left, right);
+    return newBranch(newTag(EMPTY, newLocation(NULL, 0, 0)), 0, left, right);
 }
 
 Node* newLeaf(Tag tag, unsigned char type, long long value, void* data) {
