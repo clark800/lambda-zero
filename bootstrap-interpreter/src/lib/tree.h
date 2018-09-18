@@ -11,7 +11,7 @@ void destroyNodeAllocator(void);
 
 Node* newBranch(Tag tag, unsigned char type, Node* left, Node* right);
 Node* newPair(Node* left, Node* right);
-Node* newLeaf(Tag tag, unsigned char type, long long value);
+Node* newLeaf(Tag tag, unsigned char type, long long value, void* data);
 
 bool isLeaf(Node* node);
 Location getLocation(Node* node);
@@ -25,6 +25,7 @@ void setRight(Node* branchNode, Node* right);
 
 unsigned char getType(Node* node);
 long long getValue(Node* leafNode);
+void* getData(Node* leafNode);
 Node* setValue(Node* leafNode, long long value);
 
 typedef struct Hold Hold;

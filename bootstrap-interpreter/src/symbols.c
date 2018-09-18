@@ -3,9 +3,8 @@
 #include "lib/tree.h"
 #include "lib/stack.h"
 #include "ast.h"
-#include "scan.h"       // isSpaceCharacter
 #include "errors.h"
-#include "operators.h"
+#include "symbols.h"
 
 static Array* RULES = NULL;
 
@@ -18,27 +17,38 @@ typedef struct {
     Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
 
+static inline Rules* getRules(Node* node) {
+    if (!isSymbol(node))
+        return elementAt(RULES, 0);
+    Rules* rules = (Rules*)getData(node);
+    return rules == NULL ? elementAt(RULES, 0) : rules;
+}
+
+Fixity getFixity(Node* operator) {
+    return getRules(operator)->fixity;
+}
+
+bool isOperator(Node* node) {
+    return isSymbol(node) && getFixity(node) != NOFIX;
+}
+
 bool isSpaceOperator(Node* node) {
-    return isOperator(node) && ((Rules*)getValue(node))->symbol[0] == ' ';
+    return isOperator(node) && getRules(node)->symbol[0] == ' ';
 }
 
 bool isSpecial(Node* node) {
     if (!isOperator(node))
         return false;
-    Rules* rules = (Rules*)getValue(node);
+    Rules* rules = getRules(node);
     return (rules->leftPrecedence <= 5 || rules->rightPrecedence <= 5);
 }
 
-Fixity getFixity(Node* operator) {
-    return ((Rules*)getValue(operator))->fixity;
-}
-
 bool isOpenOperator(Node* node) {
-    return isOperator(node) && getFixity(node) == OPEN;
+    return isOperator(node) && getFixity(node) == OPENFIX;
 }
 
 Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
-    return ((Rules*)getValue(close))->reduce(open, left, right);
+    return getRules(close)->reduce(open, left, right);
 }
 
 static Node* propagateSection(Node* operator, Node* node, const char* name) {
@@ -47,8 +57,8 @@ static Node* propagateSection(Node* operator, Node* node, const char* name) {
     return setTag(node, renameTag(getTag(node), name));
 }
 
-Node* reduceOperator(Node* operator, Node* left, Node* right) {
-    Node* result = ((Rules*)getValue(operator))->reduce(operator, left, right);
+Node* reduce(Node* operator, Node* left, Node* right) {
+    Node* result = getRules(operator)->reduce(operator, left, right);
     if (left != NULL && isSection(left))
         return propagateSection(operator, result,
             right != NULL && isSection(right) ?  "_._" : "_.");
@@ -57,16 +67,16 @@ Node* reduceOperator(Node* operator, Node* left, Node* right) {
     return result;
 }
 
-void shiftOperator(Stack* stack, Node* operator) {
-    ((Rules*)getValue(operator))->shift(stack, operator);
+void shift(Stack* stack, Node* node) {
+    getRules(node)->shift(stack, node);
 }
 
 bool isHigherPrecedence(Node* left, Node* right) {
-    assert(isOperator(left) || isOperator(right));
+    assert(isOperator(left) && isOperator(right));
     if (isEOF(left))
         return false;
-    Rules* leftRules = (Rules*)getValue(left);
-    Rules* rightRules = (Rules*)getValue(right);
+    Rules* leftRules = getRules(left);
+    Rules* rightRules = getRules(right);
     if (leftRules->rightPrecedence == rightRules->leftPrecedence) {
         const char* message = "operator is non-associative";
         syntaxErrorIf(leftRules->associativity == N, message, left);
@@ -79,24 +89,23 @@ bool isHigherPrecedence(Node* left, Node* right) {
         return leftRules->rightPrecedence >= rightRules->leftPrecedence;
 }
 
-void addOperator(const char* symbol, Precedence leftPrecedence,
+void addSymbol(const char* symbol, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        void (*shift)(Stack*, Node*), Node* (*reduce)(Node*, Node*, Node*)) {
+        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
     if (RULES == NULL)
         RULES = newArray(1024);
     Rules* rules = (Rules*)malloc(sizeof(Rules));
     *rules = (Rules){symbol, leftPrecedence, rightPrecedence, fixity,
-        associativity, shift, reduce};
+        associativity, shifter, reducer};
     append(RULES, rules);
 }
 
 static bool allowsOperatorBefore(Rules rules) {
-    return rules.fixity == PRE || rules.fixity == OPEN || rules.fixity == CLOSE;
+    return rules.fixity == PREFIX || rules.fixity == OPENFIX ||
+        rules.fixity == CLOSEFIX || rules.fixity == NOFIX;
 }
 
-static Rules* getRules(String lexeme, bool isAfterOperator) {
-    if (isSpaceCharacter(lexeme.start[0]))
-        lexeme = newString(" ", 1);
+static Rules* findRules(String lexeme, bool isAfterOperator) {
     Rules* result = elementAt(RULES, 0);
     for (unsigned int i = 0; i < length(RULES); ++i) {
         Rules* rules = (Rules*)elementAt(RULES, i);
@@ -109,16 +118,29 @@ static Rules* getRules(String lexeme, bool isAfterOperator) {
     return result;
 }
 
-static Node* setRules(Node* operator, bool isAfterOperator) {
-    Rules* rules = getRules(getLexeme(operator), isAfterOperator);
-    return setValue(operator, (long long)rules);
-}
-
-Node* getPrevious(Stack* stack) {
+static Node* getPrevious(Stack* stack) {
     return isSpaceOperator(peek(stack, 0)) ? peek(stack, 1) : peek(stack, 0);
 }
 
-Node* parseOperator(Tag tag, Stack* stack) {
-    return setRules(newOperator(tag),
-        isEmpty(stack) || isOperator(getPrevious(stack)));
+Node* parseSymbol(Tag tag, Stack* stack) {
+    return newSymbol(tag, findRules(tag.lexeme,
+        isEmpty(stack) || isOperator(getPrevious(stack))));
+}
+
+static void reduceTop(Stack* stack) {
+    Hold* right = pop(stack);
+    Hold* op = pop(stack);
+    Node* operator = getNode(op);
+    Hold* left = getFixity(operator) == INFIX ? pop(stack) : NULL;
+    shift(stack, reduce(operator, getNode(left), getNode(right)));
+    release(right);
+    release(op);
+    if (left != NULL)
+        release(left);
+}
+
+void reduceLeft(Stack* stack, Node* operator) {
+    while (!isOperator(peek(stack, 0)) &&
+            isHigherPrecedence(peek(stack, 1), operator))
+        reduceTop(stack);
 }

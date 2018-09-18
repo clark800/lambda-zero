@@ -18,7 +18,7 @@ Syntax error: undefined symbol '()' at line 1 column 1
 1
 ==========================================================================
 1 , 2
-Syntax error: comma not inside brackets at line 1 column 3
+Syntax error: comma not inside brackets ',' at line 1 column 3
 ==========================================================================
 (, 1)
 Syntax error: missing left operand for ',' at line 1 column 2

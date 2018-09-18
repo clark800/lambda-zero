@@ -32,7 +32,7 @@ static Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
     switch (getNodeType(node)) {
         case BUILTIN:
         case INTEGER: return newClosure(node, VOID, trace);
-        case REFERENCE: return isGlobalReference(node) ?
+        case SYMBOL: return isGlobalReference(node) ?
             newClosure(node, VOID, trace) : getReferee(node, locals);
         default: return newClosure(node, locals, trace);
     }
@@ -104,7 +104,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
         //debugState(closure, stack);
         switch (getNodeType(getTerm(closure))) {
             case APPLICATION: evaluateApplication(closure, stack); break;
-            case REFERENCE: evaluateReference(closure, stack, globals); break;
+            case SYMBOL: evaluateReference(closure, stack, globals); break;
             case BUILTIN: evaluateBuiltin(closure, stack, globals); break;
             case INTEGER:
                 applyUpdates(closure, stack);
@@ -116,7 +116,6 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
                 if (isEmpty(stack))
                     return hold(closure);
                 evaluateLambda(closure, stack); break;
-            case NONE: assert(false); break;
         }
     }
 }

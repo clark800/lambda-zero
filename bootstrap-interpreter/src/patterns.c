@@ -19,7 +19,7 @@ static Node* newProjection(Tag tag, unsigned int size, unsigned int index) {
 Node* reduceLambda(Node* operator, Node* left, Node* right) {
     // lazy pattern matching
     Tag tag = getTag(operator);
-    if (isReference(left))
+    if (isSymbol(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
     // example: (x, y) -> body ---> _ -> (x -> y -> body) first(_) second(_)
@@ -36,7 +36,7 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
 /*
 Node* newStrictDestructuringLambda(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
-    if (isReference(left))
+    if (isSymbol(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
     // example: (x, y) -> body ---> _ -> _ (x -> y -> body)

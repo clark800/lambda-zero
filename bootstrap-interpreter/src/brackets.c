@@ -3,10 +3,10 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
-#include "operators.h"
+#include "symbols.h"
 
 static bool isCommaList(Node* node) {
-    return isApplication(node) && isThisString(getLexeme(node), ",");
+    return isApplication(node) && isThisLexeme(node, ",");
 }
 
 static unsigned int getCommaListLength(Node* node) {
@@ -37,7 +37,7 @@ static Node* newSection(Tag tag, const char* name, Node* body) {
 }
 
 static Node* createSection(Tag tag, Node* contents) {
-    if (isThisToken(contents, "_._"))
+    if (isThisLexeme(contents, "_._"))
         return newSection(tag, "_.", newSection(tag, "._", contents));
     if (isLeaf(getLeft(contents)))
         return getLeft(contents);   // parenthesized postfix operator
@@ -114,25 +114,53 @@ void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
     }
 }
 
-void shiftBracket(Stack* stack, Node* close) {
-    syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
-    Hold* top = pop(stack);
-    if (isOpenOperator(getNode(top))) {
-        pushBracket(stack, getNode(top), close, NULL);
-    } else {
-        Hold* open = pop(stack);
-        if (isEOF(getNode(open)) && !isEOF(close))
-            syntaxError("missing open for", close);
-        if (isOperator(getNode(top)))
-            syntaxError("missing right operand for", getNode(top));
-        pushBracket(stack, getNode(open), close, getNode(top));
-        release(open);
-    }
-    release(top);
+void shiftOpen(Stack* stack, Node* open) {
+    reduceLeft(stack, open);
+    push(stack, open);
 }
 
 void shiftOpenCurly(Stack* stack, Node* operator) {
     if (!isThisLeaf(peek(stack, 0), "::="))
         syntaxError("must appear on the right side of '::='", operator);
-    push(stack, operator);
+    shiftOpen(stack, operator);
+}
+
+void shiftClose(Stack* stack, Node* close) {
+    if (isThisLeaf(peek(stack, 0), "\n") || isSpaceOperator(peek(stack, 0)))
+        release(pop(stack));
+    if (isThisLeaf(peek(stack, 0), ";"))
+        release(pop(stack));
+
+    Node* top = peek(stack, 0);
+    if (isOperator(top) && !isSpecial(top)) {
+        if (isThisLeaf(peek(stack, 1), "_.")) {
+            // bracketed infix operator
+            Hold* op = pop(stack);
+            release(pop(stack));
+            push(stack, convertOperator(getNode(op)));
+            release(op);
+        } else if (isOpenOperator(peek(stack, 1))) {
+            // bracketed prefix operator
+            Hold* op = pop(stack);
+            push(stack, convertOperator(getNode(op)));
+            release(op);
+        } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
+            push(stack, newName(renameTag(getTag(top), "._")));
+    }
+
+    reduceLeft(stack, close);
+    syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
+    Hold* contents = pop(stack);
+    if (isOpenOperator(getNode(contents))) {
+        pushBracket(stack, getNode(contents), close, NULL);
+    } else {
+        Hold* open = pop(stack);
+        if (isEOF(getNode(open)) && !isEOF(close))
+            syntaxError("missing open for", close);
+        if (isOperator(getNode(contents)))
+            syntaxError("missing right operand for", getNode(contents));
+        pushBracket(stack, getNode(open), close, getNode(contents));
+        release(open);
+    }
+    release(contents);
 }

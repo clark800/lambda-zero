@@ -2,7 +2,7 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
-#include "operators.h"
+#include "symbols.h"
 #include "patterns.h"
 #include "define.h"
 #include "brackets.h"
@@ -38,10 +38,16 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
 }
 
 static void shiftPrefix(Stack* stack, Node* operator) {
+    if (isSpaceOperator(peek(stack, 0)))
+        release(pop(stack));
+    reduceLeft(stack, operator);
     push(stack, operator);
 }
 
 static void shiftInfix(Stack* stack, Node* operator) {
+    if (isSpaceOperator(peek(stack, 0)))
+        release(pop(stack));
+    reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
         push(stack, newName(renameTag(getTag(operator), "_.")));
     if (isOperator(peek(stack, 0)))
@@ -50,106 +56,141 @@ static void shiftInfix(Stack* stack, Node* operator) {
 }
 
 static void shiftPostfix(Stack* stack, Node* operator) {
+    if (isSpaceOperator(peek(stack, 0)))
+        release(pop(stack));
+    reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
         push(stack, newName(renameTag(getTag(operator), "_.")));
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);
-    push(stack, reduceOperator(operator, getNode(operand), NULL));
+    push(stack, reduce(operator, getNode(operand), NULL));
     release(operand);
 }
 
 static void shiftWhitespace(Stack* stack, Node* operator) {
+    if (isSpaceOperator(peek(stack, 0)))
+        release(pop(stack));
+    reduceLeft(stack, operator);
     // ignore whitespace after operators
     if (!isOperator(peek(stack, 0)))
         push(stack, operator);
 }
 
-void initOperators(void) {
-    // default (must be first)
-    addOperator("", 14, 14, IN, L, shiftInfix, reduceInfix);
+static Node* reduceError(Node* operator, Node* left, Node* right) {
+    (void)left, (void)right;
+    Tag tag = getTag(operator);
+    Node* print = newPrinter(tag);
+    Node* exit = newBuiltin(renameTag(tag, "exit"), EXIT);
+    Node* error = newBuiltin(renameTag(tag, "error"), ERROR);
+    Node* blank = newBlankReference(tag, 1);
+    // error(message) ~> (_ -> exit(print(error(_))))(message)
+    return newLambda(tag, newBlank(tag),
+        newApplication(tag, exit, newApplication(tag, print,
+        newApplication(tag, error, blank))));
+}
+
+void shiftOperand(Stack* stack, Node* node) {
+    Node* operand = reduce(node, NULL, NULL);
+    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
+        push(stack, operand);
+    } else {
+        Hold* left = pop(stack);
+        push(stack, newApplication(getTag(node), getNode(left), operand));
+        release(left);
+    }
+}
+
+static Node* reduceOperand(Node* operand, Node* left, Node* right) {
+    (void)left, (void)right;
+    return operand;
+}
+
+void initSymbols(void) {
+    addSymbol("(_)", 0, 0, NOFIX, N, shiftOperand, reduceOperand);
+    addSymbol("error", 0, 0, NOFIX, N, shiftOperand, reduceError);
 
     // syntactic operators
-    addOperator("\0", 0, 0, CLOSE, L, shiftBracket, reduceEOF);
-    addOperator("(", 23, 0, OPEN, L, push, reduceUnmatched);
-    addOperator(")", 0, 23, CLOSE, R, shiftBracket, reduceParentheses);
-    addOperator("[", 23, 0, OPEN, L, push, reduceUnmatched);
-    addOperator("]", 0, 23, CLOSE, R, shiftBracket, reduceSquareBrackets);
-    addOperator("{", 23, 0, OPEN, L, shiftOpenCurly, reduceUnmatched);
-    addOperator("}", 0, 23, CLOSE, R, shiftBracket, reduceCurlyBrackets);
-    addOperator("|", 1, 1, IN, N, shiftInfix, reduceReserved);
-    addOperator(",", 2, 2, IN, L, shiftInfix, reduceApply);
-    addOperator("\n", 3, 3, IN, R, shiftWhitespace, reduceApply);
-    addOperator(":=", 3, 3, IN, R, shiftInfix, reduceDefine);
-    addOperator("::=", 3, 3, IN, R, shiftInfix, reduceADTDefinition);
-    addOperator(";", 4, 4, IN, L, shiftInfix, reducePatternLambda);
-    addOperator("->", 5, 5, IN, R, shiftInfix, reduceLambda);
+    addSymbol("\0", 0, 0, CLOSEFIX, L, shiftClose, reduceEOF);
+    addSymbol("(", 23, 0, OPENFIX, L, shiftOpen, reduceUnmatched);
+    addSymbol(")", 0, 23, CLOSEFIX, R, shiftClose, reduceParentheses);
+    addSymbol("[", 23, 0, OPENFIX, L, shiftOpen, reduceUnmatched);
+    addSymbol("]", 0, 23, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
+    addSymbol("{", 23, 0, OPENFIX, L, shiftOpenCurly, reduceUnmatched);
+    addSymbol("}", 0, 23, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
+    addSymbol("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
+    addSymbol(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
+    addSymbol("\n", 3, 3, INFIX, R, shiftWhitespace, reduceApply);
+    addSymbol(":=", 3, 3, INFIX, R, shiftInfix, reduceDefine);
+    addSymbol("::=", 3, 3, INFIX, R, shiftInfix, reduceADTDefinition);
+    addSymbol(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
+    addSymbol("->", 5, 5, INFIX, R, shiftInfix, reduceLambda);
 
     // conditional operators
-    addOperator("||", 6, 6, IN, R, shiftInfix, reduceInfix);
-    addOperator("?", 7, 7, IN, R, shiftInfix, reduceInfix);
-    addOperator("?||", 7, 7, IN, R, shiftInfix, reduceInfix);
+    addSymbol("||", 6, 6, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("?", 7, 7, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("?||", 7, 7, INFIX, R, shiftInfix, reduceInfix);
 
     // monadic operators
-    addOperator(">>=", 8, 8, IN, L, shiftInfix, reduceInfix);
+    addSymbol(">>=", 8, 8, INFIX, L, shiftInfix, reduceInfix);
 
     // logical operators
-    addOperator("<=>", 9, 9, IN, N, shiftInfix, reduceInfix);
-    addOperator("=>", 10, 10, IN, N, shiftInfix, reduceInfix);
-    addOperator("\\/", 11, 11, IN, R, shiftInfix, reduceInfix);
-    addOperator("/\\", 12, 12, IN, R, shiftInfix, reduceInfix);
+    addSymbol("<=>", 9, 9, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("=>", 10, 10, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("\\/", 11, 11, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("/\\", 12, 12, INFIX, R, shiftInfix, reduceInfix);
 
     // comparison/test operators
-    addOperator("=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("!=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("=*=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("=?=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("<", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator(">", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("<=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator(">=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("=<", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("~<", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("<:", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("<*=", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator(":", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("!:", 13, 13, IN, N, shiftInfix, reduceInfix);
-    addOperator("~", 13, 13, IN, N, shiftInfix, reduceInfix);
+    addSymbol("=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("!=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("=*=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("=?=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("<", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol(">", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("<=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol(">=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("=<", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("~<", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("<:", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("<*=", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol(":", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("!:", 13, 13, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("~", 13, 13, INFIX, N, shiftInfix, reduceInfix);
 
     // precedence 14: default
     // arithmetic/list operators
-    addOperator("|:", 14, 14, IN, N, shiftInfix, reduceInfix);
-    addOperator("..", 15, 15, IN, N, shiftInfix, reduceInfix);
-    addOperator("::", 16, 16, IN, R, shiftInfix, reduceInfix);
-    addOperator("&", 16, 16, IN, L, shiftInfix, reduceInfix);
-    addOperator("+", 16, 16, IN, L, shiftInfix, reduceInfix);
-    addOperator("\\./", 16, 16, IN, L, shiftInfix, reduceInfix);
-    addOperator("++", 16, 16, IN, R, shiftInfix, reduceInfix);
-    addOperator("-", 16, 16, IN, L, shiftInfix, reduceInfix);
-    addOperator("\\", 16, 16, IN, L, shiftInfix, reduceInfix);
-    addOperator("*", 17, 17, IN, L, shiftInfix, reduceInfix);
-    addOperator("**", 17, 17, IN, R, shiftInfix, reduceInfix);
-    addOperator("/", 17, 17, IN, L, shiftInfix, reduceInfix);
-    addOperator("%", 17, 17, IN, L, shiftInfix, reduceInfix);
+    addSymbol("|:", 14, 14, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("..", 15, 15, INFIX, N, shiftInfix, reduceInfix);
+    addSymbol("::", 16, 16, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("&", 16, 16, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("+", 16, 16, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("\\./", 16, 16, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("++", 16, 16, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("-", 16, 16, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("\\", 16, 16, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("*", 17, 17, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("**", 17, 17, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("/", 17, 17, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("%", 17, 17, INFIX, L, shiftInfix, reduceInfix);
 
     // functional operators
-    addOperator("<>", 19, 19, IN, R, shiftInfix, reduceInfix);
+    addSymbol("<>", 19, 19, INFIX, R, shiftInfix, reduceInfix);
 
     // space operator
-    addOperator(" ", 20, 20, IN, L, shiftWhitespace, reduceApply);
+    addSymbol(" ", 20, 20, INFIX, L, shiftWhitespace, reduceApply);
 
     // prefix/postfix operators
-    addOperator("-", 21, 21, PRE, L, shiftPrefix, reduceNegate);
-    addOperator("--", 21, 21, PRE, L, shiftPrefix, reducePrefix);
-    addOperator("!", 21, 21, PRE, L, shiftPrefix, reducePrefix);
-    addOperator("#", 21, 21, PRE, L, shiftPrefix, reducePrefix);
-    addOperator("*", 21, 21, PRE, L, shiftPrefix, reduceAsterisk);
-    addOperator("...", 21, 21, POST, L, shiftPostfix, reducePostfix);
+    addSymbol("-", 21, 21, PREFIX, L, shiftPrefix, reduceNegate);
+    addSymbol("--", 21, 21, PREFIX, L, shiftPrefix, reducePrefix);
+    addSymbol("!", 21, 21, PREFIX, L, shiftPrefix, reducePrefix);
+    addSymbol("#", 21, 21, PREFIX, L, shiftPrefix, reducePrefix);
+    addSymbol("*", 21, 21, PREFIX, L, shiftPrefix, reduceAsterisk);
+    addSymbol("...", 21, 21, POSTFIX, L, shiftPostfix, reducePostfix);
 
-    addOperator("^", 22, 22, IN, R, shiftInfix, reduceInfix);
+    addSymbol("^", 22, 22, INFIX, R, shiftInfix, reduceInfix);
 
     // precedence 23: parentheses/brackets
-    addOperator("^^", 24, 24, IN, L, shiftInfix, reduceInfix);
-    addOperator(".", 25, 25, IN, L, shiftInfix, reduceInfix);
-    addOperator("`", 26, 26, PRE, L, shiftPrefix, reducePrefix);
+    addSymbol("^^", 24, 24, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol(".", 25, 25, INFIX, L, shiftInfix, reduceInfix);
+    addSymbol("`", 26, 26, PREFIX, L, shiftPrefix, reducePrefix);
 }

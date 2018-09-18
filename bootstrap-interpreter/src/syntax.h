@@ -1,1 +1,1 @@
-void initOperators(void);
+void initSymbols(void);
