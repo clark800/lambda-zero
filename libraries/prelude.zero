@@ -1,3 +1,4 @@
+//$ prelude.zero
 /* naming conventions
 x, y, z unspecified type
 f, g, h function type
@@ -294,3 +295,5 @@ undefined := error("undefined")
 
 // repl
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)
+
+//$

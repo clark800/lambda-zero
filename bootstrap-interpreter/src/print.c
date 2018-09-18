@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include "lib/tree.h"
 #include "lib/util.h"
-#include "ast.h"
+
+void printLine(const char* line, FILE* stream) {
+    size_t length = 0;
+    for (; line[length] != '\0' && line[length] != '\n'; ++length);
+    fwrite(line, sizeof(char), length, stream);
+}
 
 void printLexeme(String lexeme, FILE* stream) {
     if (lexeme.start[0] < 0)
@@ -14,7 +19,7 @@ void printLexeme(String lexeme, FILE* stream) {
 }
 
 void printSymbol(Node* symbol, FILE* stream) {
-    printLexeme(getLexeme(symbol), stream);
+    printLexeme(getTag(symbol).lexeme, stream);
 }
 
 void fputll(long long n, FILE* stream) {

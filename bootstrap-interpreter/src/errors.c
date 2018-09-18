@@ -16,7 +16,12 @@ void printTagLine(Tag tag, const char* quote) {
     fputs(quote, stderr);
     printLexeme(tag.lexeme, stderr);
     fputs(quote, stderr);
-    fputs(" at line ", stderr);
+    fputs(" at ", stderr);
+    if (tag.location.file != NULL) {
+        printLine(tag.location.file, stderr);
+        fputs(" " , stderr);
+    }
+    fputs("line ", stderr);
     fputll(tag.location.line, stderr);
     fputs(" column ", stderr);
     fputll(tag.location.column, stderr);

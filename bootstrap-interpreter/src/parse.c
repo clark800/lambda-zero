@@ -82,9 +82,8 @@ static Node* parseToken(Token token, Stack* stack) {
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
             return NULL;
-        default:
-            return parseSymbol(isSpaceCharacter(token.tag.lexeme.start[0]) ?
-                renameTag(token.tag, " ") : token.tag, stack);
+        case SPACE: return parseSymbol(renameTag(token.tag, " "), stack);
+        default: return parseSymbol(token.tag, stack);
     }
 }
 
