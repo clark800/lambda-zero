@@ -16,11 +16,17 @@
 
 bool TRACE_PARSING = false;
 
-static bool isIntegerLexeme(String lexeme) {
+static bool isNaturalLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
         if (!isdigit(lexeme.start[i]))
             return false;
     return lexeme.length > 0;
+}
+
+static bool isIntegerLexeme(String lexeme) {
+    if (lexeme.start[0] != '-')
+        return isNaturalLexeme(lexeme);
+    return isNaturalLexeme(newString(lexeme.start + 1, lexeme.length - 1));
 }
 
 static Node* parseInteger(Tag tag) {
