@@ -176,18 +176,18 @@ void initSymbols(void) {
     // functional operators
     addSymbol("<>", 19, 19, INFIX, R, shiftInfix, reduceInfix);
 
-    // space operator
-    addSymbol(" ", 20, 20, INFIX, L, shiftWhitespace, reduceApply);
-
     // prefix/postfix operators
-    addSymbol("-", 21, 21, PREFIX, L, shiftPrefix, reduceNegate);
-    addSymbol("--", 21, 21, PREFIX, L, shiftPrefix, reducePrefix);
-    addSymbol("!", 21, 21, PREFIX, L, shiftPrefix, reducePrefix);
-    addSymbol("#", 21, 21, PREFIX, L, shiftPrefix, reducePrefix);
-    addSymbol("*", 21, 21, PREFIX, L, shiftPrefix, reduceAsterisk);
-    addSymbol("...", 21, 21, POSTFIX, L, shiftPostfix, reducePostfix);
+    addSymbol("-", 20, 20, PREFIX, L, shiftPrefix, reduceNegate);
+    addSymbol("--", 20, 20, PREFIX, L, shiftPrefix, reducePrefix);
+    addSymbol("!", 20, 20, PREFIX, L, shiftPrefix, reducePrefix);
+    addSymbol("#", 20, 20, PREFIX, L, shiftPrefix, reducePrefix);
+    addSymbol("*", 20, 20, PREFIX, L, shiftPrefix, reduceAsterisk);
+    addSymbol("...", 20, 20, POSTFIX, L, shiftPostfix, reducePostfix);
 
-    addSymbol("^", 22, 22, INFIX, R, shiftInfix, reduceInfix);
+    addSymbol("^", 21, 21, INFIX, R, shiftInfix, reduceInfix);
+
+    // space operator
+    addSymbol(" ", 22, 22, INFIX, L, shiftWhitespace, reduceApply);
 
     // precedence 23: parentheses/brackets
     addSymbol("^^", 24, 24, INFIX, L, shiftInfix, reduceInfix);

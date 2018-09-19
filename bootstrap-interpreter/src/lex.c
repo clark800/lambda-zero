@@ -4,29 +4,28 @@
 #include "lib/tag.h"
 #include "lex.h"
 
+static bool isPeriod(char c) {return c == '.';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}
 static bool isNotNewline(char c) {return c != '\n';}
 static bool isLineComment(const char* s) {return s[0] == '/' && s[1] == '/';}
 static bool isBlockComment(const char* s) {return s[0] == '/' && s[1] == '*';}
 static bool isSpace(char c) {return c > 0 && isspace(c) && c != '\n';}
 
+static bool isNumeric(const char* s) {
+    return isdigit(s[0]) || (s[0] == '-' && isdigit(s[1]));
+}
+
+static bool isComment(const char* s) {
+    return isLineComment(s) || isBlockComment(s);
+}
+
 static bool isInvalid(char c) {
     return c < 0 || (iscntrl(c) && !isspace(c) && c != '\0');
 }
 
-static bool isOperandCharacter(char c) {
-    // check c > 0 to ensure it is ASCII
-    return c > 0 && (isalnum(c) || c == '\'' || c == '_');
-}
-
-static bool isDelimiter(char c) {
-    return c == '\0' || isSpace(c) || strchr("\n,;()[]{}", c) != NULL;
-}
-
-static bool isOperatorCharacter(char c) {
-    // check c > 0 to ensure it is ASCII
-    return c > 0 && !isDelimiter(c) && !isOperandCharacter(c)
-        && !isQuote(c) && !isInvalid(c);
+static bool isNotDelimiter(char c) {
+    return !(c == '\0' || isSpace(c) || isInvalid(c) ||
+        strchr("`.,;()[]{}@$\"\n", c) != NULL);
 }
 
 static const char* skipWhile(const char* s, bool (*predicate)(char)) {
@@ -52,19 +51,13 @@ static const char* skipQuote(const char* s) {
 }
 
 static const char* skipLexeme(const char* s) {
-    if (isLineComment(s))
-        return skipWhile(s, isNotNewline);
-    if (isBlockComment(s))
-        return skipBlockComment(s);
-    if (isSpace(s[0]))
-        return skipWhile(s, isSpace);
-    if (isQuote(s[0]))
-        return skipQuote(s);
-    if (isOperandCharacter(s[0]))
-        return skipWhile(s, isOperandCharacter);
-    if (isOperatorCharacter(s[0]))
-        return skipWhile(s, isOperatorCharacter);
-    return s[0] == '\0' ? s : s + 1;    // delimiter or invalid character
+    if (isLineComment(s)) return skipWhile(s, isNotNewline);
+    if (isBlockComment(s)) return skipBlockComment(s);
+    if (isSpace(s[0])) return skipWhile(s, isSpace);
+    if (isPeriod(s[0])) return skipWhile(s, isPeriod);
+    if (isQuote(s[0])) return skipQuote(s);
+    if (isNotDelimiter(s[0])) return skipWhile(s, isNotDelimiter);
+    return s[0] == '\0' ? s : s + 1;
 }
 
 static String getNextLexeme(Tag tag) {
@@ -94,18 +87,12 @@ Token lex(Token token) {
     Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
     char head = tag.lexeme.start[0];
-    if (isInvalid(head))
-        return (Token){tag, INVALID};
-    if (isSpace(head))
-        return (Token){tag, SPACE};
-    if (isLineComment(tag.lexeme.start) || isBlockComment(tag.lexeme.start))
-        return (Token){tag, COMMENT};
-    if (isdigit(head))
-        return (Token){tag, NUMERIC};
-    if (head == '\'')
-        return (Token){tag, CHARACTER};
-    if (head == '\"')
-        return (Token){tag, STRING};
+    if (isInvalid(head)) return (Token){tag, INVALID};
+    if (isSpace(head)) return (Token){tag, SPACE};
+    if (head == '\'') return (Token){tag, CHARACTER};
+    if (head == '\"') return (Token){tag, STRING};
+    if (isComment(tag.lexeme.start)) return (Token){tag, COMMENT};
+    if (isNumeric(tag.lexeme.start)) return (Token){tag, NUMERIC};
     return (Token){tag, SYMBOLIC};
 }
 
