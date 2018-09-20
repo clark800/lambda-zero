@@ -80,6 +80,10 @@ static Hold* evaluateError(Closure* builtin, Closure* message) {
         printRuntimeError("hit", builtin);
         fputc((int)'\n', stderr);
     }
+    if (message == NULL) {
+        fputs("undefined", stderr);
+        exit(1);
+    }
     STDERR = true;
     return hold(message);
 }
@@ -144,8 +148,9 @@ static Node* computeBuiltin(Closure* builtin, long long left, long long right) {
         case LESSTHANOREQUAL: return newBoolean(tag, left <= right);
         case GREATERTHANOREQUAL: return newBoolean(tag, left >= right);
         case PUT: return evaluatePut(builtin, left);
-        default: assert(false); return NULL;
     }
+    assert(false);
+    return NULL;
 }
 
 static Hold* evaluateIntegerBuiltin(
@@ -159,6 +164,7 @@ Hold* evaluateBuiltinNode(Closure* builtin, Closure* left, Closure* right) {
     switch (getValue(getTerm(builtin))) {
         case GET: return makeResult(builtin, evaluateGet(builtin, left, right));
         case ERROR: return evaluateError(builtin, left);
+        case UNDEFINED: return evaluateError(builtin, NULL);
         case EXIT: return error("\n");
         default: return evaluateIntegerBuiltin(builtin, left, right);
     }

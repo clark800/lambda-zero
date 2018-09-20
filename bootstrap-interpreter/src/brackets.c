@@ -138,12 +138,12 @@ void shiftClose(Stack* stack, Node* close) {
             // bracketed infix operator
             Hold* op = pop(stack);
             release(pop(stack));
-            push(stack, convertOperator(getNode(op)));
+            push(stack, convertOperator(getTag(getNode(op))));
             release(op);
         } else if (isOpenOperator(peek(stack, 1))) {
             // bracketed prefix operator
             Hold* op = pop(stack);
-            push(stack, convertOperator(getNode(op)));
+            push(stack, convertOperator(getTag(getNode(op))));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
             push(stack, newName(renameTag(getTag(top), "._")));

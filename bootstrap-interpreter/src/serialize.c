@@ -15,7 +15,7 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
         fputs(")", stream);
     } else if (isLambda(node)) {
         fputs("(", stream);
-        printSymbol(getParameter(node), stream);
+        printLexeme(getLexeme(getParameter(node)), stream);
         fputs(" -> ", stream);
         serializeNode(getBody(node), locals, globals, depth + 1, stream);
         fputs(")", stream);
@@ -30,12 +30,12 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             Closure* next = getListElement(locals, debruijn - depth);
             serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
         } else {
-            printSymbol(node, stream);
+            printLexeme(getLexeme(node), stream);
         }
     } else if (isInteger(node)) {
         fputll(getValue(node), stream);
     } else if (isBuiltin(node)) {
-        printSymbol(node, stream);
+        printLexeme(getLexeme(node), stream);
     } else {
         assert(false);
     }

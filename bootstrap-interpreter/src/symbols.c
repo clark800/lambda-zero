@@ -172,4 +172,6 @@ void endScope(void) {
     while (((Rules*)elementAt(RULES, length(RULES) - 1))->lexeme.start[0] != 0)
         unappend(RULES);
     unappend(RULES);
+    if (length(RULES) == 0)
+        deleteArray(RULES);
 }

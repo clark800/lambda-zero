@@ -45,11 +45,6 @@ static bool isDesugaredDefinition(Node* node) {
         !isBlank(getParameter(getLeft(node)));
 }
 
-static bool isIdentity(Node* node) {
-    return isLambda(node) && isSymbol(getBody(node)) &&
-        isSameLexeme(getParameter(node), getBody(node));
-}
-
 Array* bind(Hold* root) {
     Node* node = getNode(root);
     Array* parameters = newArray(2048);         // names of globals and locals

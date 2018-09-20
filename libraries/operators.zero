@@ -1,4 +1,4 @@
-//$ operators.zero
+--* operators.zero
 
 syntax(||) := infixR(6)
 syntax(?) := infixR(7)
@@ -37,16 +37,16 @@ syntax(-) := infixL(15)
 
 syntax(*) := infixL(16)
 syntax(/) := infixL(16)
+syntax(//) := infixL(16)
 syntax(%) := infixL(16)
-
 syntax(<>) := infixR(19)
 
 syntax(!) := prefix(20)
 syntax(#) := prefix(20)
 
-syntax(^) := infixR(21)
+syntax(^) := infixR(22)
 syntax(^^) := infixL(24)
-syntax(.) := infixL(25)
-syntax(`) := prefix(26)
+syntax(.) := infixL(95)
+syntax(`) := prefix(95)
 
-//$
+--*

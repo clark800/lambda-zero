@@ -82,6 +82,7 @@ function run {
         "arithmetic.test"
         "definition.test"
         "quote.test"
+        "tuples.test ../../libraries/prelude.zero"
         "math.test ../../libraries/prelude.zero"
         "prelude.test ../../libraries/prelude.zero"
         "show.test ../../libraries/prelude.zero"

@@ -8,19 +8,13 @@ void debug(const char* message) {
     fputs(message, stderr);
 }
 
-static void debugLexeme(String lexeme) {
-    printLexeme(lexeme, stderr);
-}
-
 static void debugLine(void) {
     debug("======================================");
     debug("======================================\n");
 }
 
 static void serializeAST(Node* node, FILE* stream) {
-    if (node == NULL) {
-        fputs("NULL", stream);     // for debugging
-    } else if (node == VOID) {
+    if (node == VOID) {
         fputs("VOID", stream);
     } else if (!isLeaf(node)) {
         fputs("(", stream);
@@ -31,12 +25,10 @@ static void serializeAST(Node* node, FILE* stream) {
     } else if (isInteger(node)) {
         // builtins create integers, so not all integers will exist in input
         fputll(getValue(node), stream);
-    } else if (isSymbol(node)) {
-        printSymbol(node, stream);
-        fputs("#", stream);
-        fputll(getValue(node), stream);
     } else {
-        printSymbol(node, stream);
+        printLexeme(getLexeme(node), stream);
+        //fputs("#", stream);
+        //fputll(getValue(node), stream);
     }
 }
 
@@ -45,13 +37,14 @@ void debugAST(Node* node) {
 }
 
 static void debugStack(Stack* stack, Node* (*select)(Node*)) {
-    debug("[");
-    for (Iterator* it = iterate(stack); !end(it); it = next(it)) {
+    Stack* reversed = newStack();
+    for (Iterator* it = iterate(stack); !end(it); it = next(it))
+        push(reversed, cursor(it));
+    for (Iterator* it = iterate(reversed); !end(it); it = next(it)) {
         debugAST(select == NULL ? cursor(it) : select(cursor(it)));
-        if (!end(next(it)))
-            debug(", ");
+        debug(" | ");
     }
-    debug("]");
+    deleteStack(reversed);
 }
 
 /*
@@ -71,7 +64,7 @@ void debugState(Closure* closure, Stack* stack) {
 void debugParseState(Tag tag, Stack* stack, bool trace) {
     if (trace) {
         debug("Token: '");
-        debugLexeme(tag.lexeme);
+        printLexeme(tag.lexeme, stderr);
         debug("'  Stack: ");
         debugStack(stack, NULL);
         debug("\n");

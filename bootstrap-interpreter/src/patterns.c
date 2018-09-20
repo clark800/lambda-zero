@@ -48,7 +48,7 @@ Node* newStrictDestructuringLambda(Node* operator, Node* left, Node* right) {
 }
 */
 
-static Node* getHead(Node* node) {
+Node* getHead(Node* node) {
     for (; isApplication(node); node = getLeft(node));
     return node;
 }

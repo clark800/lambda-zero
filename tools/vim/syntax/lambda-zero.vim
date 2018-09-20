@@ -5,7 +5,7 @@ syntax match lambdaZeroOperator "[-`~!@#$%^&\*=\+\\|:<.>/\?]\+"
 syntax match lambdaZeroInteger "\<\d\+"
 syntax region lambdaZeroString start=/\(^\|[^"]\)"/ skip=/\v(\\[\\"]){-1}/ end=/"/ oneline
 syntax region lambdaZeroCharacter start=/\(^\|\W\)'/ skip=/\v(\\[\\']){-1}/ end=/'/ oneline
-syntax match lambdaZeroLineComment "\(^\|\s\)//.*$"
+syntax match lambdaZeroLineComment "\(^\|\s\)--.*$"
 
 highlight link lambdaZeroDelimiter Operator
 highlight link lambdaZeroName Normal
