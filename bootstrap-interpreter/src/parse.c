@@ -81,15 +81,15 @@ static Node* parseStringLiteral(Tag tag) {
     return buildStringLiteral(tag, tag.lexeme.start + 1);
 }
 
-static Node* parseToken(Token token, Stack* stack) {
+static Node* parseToken(Token token) {
     switch (token.type) {
         case NUMERIC: return parseInteger(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
             return NULL;
-        case SPACE: return parseSymbol(renameTag(token.tag, " "), stack);
-        default: return parseSymbol(token.tag, stack);
+        case SPACE: return parseSymbol(renameTag(token.tag, " "));
+        default: return parseSymbol(token.tag);
     }
 }
 
@@ -97,14 +97,14 @@ Program parse(const char* input) {
     initSymbols();
     Stack* stack = newStack();
     Token start = newStartToken(input);
-    push(stack, parseToken(start, stack));
+    push(stack, parseToken(start));
     for (Token token = lex(start); token.type != END; token = lex(token)) {
         debugParseState(token.tag, stack, TRACE_PARSING);
-        if (token.type == COMMENT)
-            continue;
-        Node* node = parseToken(token, stack);
-        shift(stack, node);
-        release(hold(node));
+        if (token.type != COMMENT) {
+            Node* node = parseToken(token);
+            shift(stack, node);
+            release(hold(node));
+        }
     }
     Hold* result = pop(stack);
     deleteStack(stack);
@@ -112,6 +112,7 @@ Program parse(const char* input) {
     Array* globals = bind(result);
     debugParseStage("bind", getNode(result), TRACE_PARSING);
     Node* entry = elementAt(globals, length(globals) - 1);
+    debugParseStage("entry", entry, TRACE_PARSING);
     return (Program){result, entry, globals};
 }
 

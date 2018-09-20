@@ -45,19 +45,28 @@ static bool isDesugaredDefinition(Node* node) {
         !isBlank(getParameter(getLeft(node)));
 }
 
+static bool isIdentity(Node* node) {
+    return isLambda(node) && isSymbol(getBody(node)) &&
+        isSameLexeme(getParameter(node), getBody(node));
+}
+
 Array* bind(Hold* root) {
     Node* node = getNode(root);
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
-    for (; isDesugaredDefinition(node); node = getBody(getLeft(node))) {
+    while (isDesugaredDefinition(node)) {
         Node* definedSymbol = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
         if (isDefined(definedSymbol, parameters))
             syntaxError("symbol already defined", definedSymbol);
-
+        if (isIdentity(getLeft(node))) {
+            node = getRight(node);
+            continue;                           // ignore syntax declarations
+        }
         bindWith(definedValue, parameters, globals);
         append(parameters, definedSymbol);
         append(globals, definedValue);
+        node = getBody(getLeft(node));
     }
     bindWith(node, parameters, globals);
     deleteArray(parameters);
