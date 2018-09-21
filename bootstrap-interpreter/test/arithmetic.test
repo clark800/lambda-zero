@@ -29,7 +29,7 @@
 5 * 5
 25
 ===============================================================================
-5 / 2
+5 // 2
 2
 ===============================================================================
 (3 + 4) + (2 * 3)
@@ -62,8 +62,8 @@ Syntax error: magnitude of integer is too large '-9223372036854775809' at line 1
 -9223372036854775807 - 1
 \nRuntime error: integer overflow in '-' at line 1 column 22
 ===============================================================================
-1 / 0
-\nRuntime error: divide by zero in '/' at line 1 column 3
+1 // 0
+\nRuntime error: divide by zero in '//' at line 1 column 3
 ===============================================================================
 -5 % -2
 -1
@@ -92,14 +92,14 @@ Syntax error: missing left operand for '+' at line 1 column 1
 - n := 0 - n \n 5 - - 2
 7
 ===============================================================================
-5 - + 2
-Syntax error: missing left operand for '+' at line 1 column 5
+5 - * 2
+Syntax error: missing left operand for '*' at line 1 column 5
 ===============================================================================
 - n := 0 - n \n ! x := - x \n ((+) ! 2 ! 3)
 -5
 ===============================================================================
 (-) 3 2
-Syntax error: undefined symbol '(-)' at line 1 column 2
+1
 ===============================================================================
 (+ +)
 Syntax error: missing left operand for '+' at line 1 column 4

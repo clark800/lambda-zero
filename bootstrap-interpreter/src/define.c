@@ -108,15 +108,20 @@ Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
     if (!isApplication(right) || getTag(right).lexeme.start[0] != '\n')
         syntaxError("missing scope", operator);
+
     Node* adt = getLeft(right);
-    Node* scope = getRight(right);
     if (!isApplication(adt) || getTag(adt).lexeme.start[0] != '{')
         syntaxError("ADT required to right of", operator);
+
+    // define ADT name so that the symbol can't be defined twice
+    Tag tag = getTag(operator);
+    Node* undefined = newName(renameTag(tag, "undefined"));
+    Node* scope = newDefinition(tag, getHead(left), undefined, getRight(right));
+
     // for each item in the patterns comma list, define a constructor function,
     // then return all of these definitions as a comma list, which the parser
     // converts to a sequence of lines
     unsigned int n = getArgumentCount(adt);
-    Tag tag = getTag(operator);
     for (unsigned int i = 1; isApplication(adt); ++i, adt = getLeft(adt))
         scope = newConstructorDefinition(tag, getRight(adt), scope, n - i, n);
     return scope;

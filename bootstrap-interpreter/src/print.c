@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "lib/tree.h"
+#include <stdbool.h>
+#include "lib/tag.h"
 #include "lib/util.h"
 
 void printLine(const char* line, FILE* stream) {
@@ -9,17 +10,12 @@ void printLine(const char* line, FILE* stream) {
 }
 
 void printLexeme(String lexeme, FILE* stream) {
-    if (lexeme.start[0] < 0)
-        fputs("?", stream);
+    if (lexeme.length == 0 || lexeme.start[0] == '\0')
+        fputs("\\0", stream);
     else switch (lexeme.start[0]) {
         case '\n': fputs("\\n", stream); break;
-        case '\0': fputs("\\0", stream); break;
         default: fwrite(lexeme.start, sizeof(char), lexeme.length, stream);
     }
-}
-
-void printSymbol(Node* symbol, FILE* stream) {
-    printLexeme(getTag(symbol).lexeme, stream);
 }
 
 void fputll(long long n, FILE* stream) {

@@ -51,6 +51,11 @@ static inline bool isGlobalReference(Node* node) {
 static inline bool isEOF(Node* node) {return isThisLeaf(node, "\0");}
 static inline bool isBlank(Node* node) {return isThisLeaf(node, "_");}
 
+static inline bool isIdentity(Node* node) {
+    return isLambda(node) && isSymbol(getBody(node)) &&
+        isSameLexeme(getParameter(node), getBody(node));
+}
+
 static inline bool isSection(Node* node) {
     return isThisLexeme(node, "_._") ||
         isThisLexeme(node, "_.") || isThisLexeme(node, "._");
@@ -113,17 +118,17 @@ static inline Node* newBoolean(Tag tag, bool value) {
 
 enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULUS,
       EQUAL, NOTEQUAL, LESSTHAN, GREATERTHAN, LESSTHANOREQUAL,
-      GREATERTHANOREQUAL, ERROR, EXIT, PUT, GET};
+      GREATERTHANOREQUAL, ERROR, UNDEFINED, EXIT, PUT, GET};
 
-static inline Node* convertOperator(Node* operator) {
+static inline Node* convertOperator(Tag tag) {
     // names in builtins must line up with codes in BuiltinCode, except
     // EXIT, PUT, GET which don't have accessible names
     static const char* const builtins[] =
-        {"+", "-", "*", "/", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
+        {"+", "-", "*", "//", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
     for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
-        if (isThisLeaf(operator, builtins[i]))
-            return newBuiltin(getTag(operator), i);
-    return newName(getTag(operator));
+        if (isThisString(tag.lexeme, builtins[i]))
+            return newBuiltin(tag, i);
+    return newName(tag);
 }
 
 static inline Node* newPrinter(Tag tag) {

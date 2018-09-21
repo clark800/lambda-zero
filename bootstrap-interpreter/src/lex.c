@@ -7,8 +7,8 @@
 static bool isPeriod(char c) {return c == '.';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}
 static bool isNotNewline(char c) {return c != '\n';}
-static bool isLineComment(const char* s) {return s[0] == '/' && s[1] == '/';}
-static bool isBlockComment(const char* s) {return s[0] == '/' && s[1] == '*';}
+static bool isLineComment(const char* s) {return s[0] == '-' && s[1] == '-';}
+static bool isBlockComment(const char* s) {return s[0] == '`' && s[1] == '`';}
 static bool isSpace(char c) {return c > 0 && isspace(c) && c != '\n';}
 
 static bool isNumeric(const char* s) {
@@ -34,7 +34,7 @@ static const char* skipWhile(const char* s, bool (*predicate)(char)) {
 }
 
 static const char* skipBlockComment(const char* s) {
-    for (; s[0] != '\0' && (s[0] != '*' || s[1] != '/'); ++s);
+    for (s += 2; s[0] != '\0' && (s[0] != '`' || s[1] != '`'); ++s);
     return s[0] == '\0' ? s : s + 2;
 }
 
@@ -66,7 +66,7 @@ static String getNextLexeme(Tag tag) {
 }
 
 static Location advanceLocation(Tag tag) {
-    if (isLineComment(tag.lexeme.start) && tag.lexeme.start[2] == '$') {
+    if (isLineComment(tag.lexeme.start) && tag.lexeme.start[2] == '*') {
         const char* file = skipWhile(&(tag.lexeme.start[3]), isSpace);
         if (file[0] == '\n' || file[0] == '\0')
             return newLocation(NULL, 0, 0);
