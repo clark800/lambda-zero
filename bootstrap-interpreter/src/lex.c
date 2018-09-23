@@ -11,10 +11,6 @@ static bool isLineComment(const char* s) {return s[0] == '-' && s[1] == '-';}
 static bool isBlockComment(const char* s) {return s[0] == '`' && s[1] == '`';}
 static bool isSpace(char c) {return c > 0 && isspace(c) && c != '\n';}
 
-static bool isNumeric(const char* s) {
-    return isdigit(s[0]) || (s[0] == '-' && isdigit(s[1]));
-}
-
 static bool isComment(const char* s) {
     return isLineComment(s) || isBlockComment(s);
 }
@@ -89,10 +85,10 @@ Token lex(Token token) {
     char head = tag.lexeme.start[0];
     if (isInvalid(head)) return (Token){tag, INVALID};
     if (isSpace(head)) return (Token){tag, SPACE};
+    if (isdigit(head)) return (Token){tag, NUMERIC};
     if (head == '\'') return (Token){tag, CHARACTER};
     if (head == '\"') return (Token){tag, STRING};
     if (isComment(tag.lexeme.start)) return (Token){tag, COMMENT};
-    if (isNumeric(tag.lexeme.start)) return (Token){tag, NUMERIC};
     return (Token){tag, SYMBOLIC};
 }
 

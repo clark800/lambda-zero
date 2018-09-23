@@ -3,8 +3,8 @@
 " first
 
 syntax match zeroNiceOperator "!" conceal cchar=¬
+syntax match zeroNiceOperator "\*" conceal cchar=⋅
 syntax match zeroNiceOperator "\*\*" conceal cchar=×
-syntax match zeroNiceOperator ">:<" conceal cchar=⨰     " bitwise xor
 syntax match zeroNiceOperator "><" conceal cchar=⪤
 syntax match zeroNiceOperator ":" conceal cchar=∈
 syntax match zeroNiceOperator "!:" conceal cchar=∉
@@ -12,7 +12,6 @@ syntax match zeroNiceOperator "::" conceal cchar=∷
 syntax match zeroNiceOperator "++" conceal cchar=⧺
 syntax match zeroNiceOperator "\.\." conceal cchar=‥
 syntax match zeroNiceOperator "\.\.\." conceal cchar=…
-syntax match zeroNiceOperator "-:" conceal cchar=∸      " bitwise not
 syntax match zeroNiceOperator "##" conceal cchar=⩨
 syntax match zeroNiceOperator "&" conceal cchar=∩
 syntax match zeroNiceOperator "\~\~" conceal cchar=≀
@@ -22,6 +21,8 @@ syntax match zeroNiceOperator "-+-" conceal cchar=⩱
 syntax match zeroNiceOperator "|:" conceal cchar=¦
 syntax match zeroNiceOperator "?!" conceal cchar=⁈
 syntax match zeroNiceOperator "//" conceal cchar=⫽
+syntax match zeroNiceOperator "-:" conceal cchar=∸      " bitwise not
+syntax match zeroNiceOperator ">:<" conceal cchar=⨰     " bitwise xor
 
 " comparison operators
 syntax match zeroNiceOperator "\~:" conceal cchar=∻     " or ⩪ ?
