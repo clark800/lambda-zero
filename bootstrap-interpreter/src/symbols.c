@@ -52,8 +52,8 @@ bool isOperator(Node* node) {
     return isSymbol(node) && getFixity(node) != NOFIX;
 }
 
-bool isSpaceOperator(Node* node) {
-    return isOperator(node) && getRules(node)->lexeme.start[0] == ' ';
+bool isSpace(Node* node) {
+    return isOperator(node) && isThisLeaf(node, " ");
 }
 
 bool isSpecial(Node* node) {
@@ -117,7 +117,10 @@ static Rules* findRules(String lexeme) {
 }
 
 Node* parseSymbol(Tag tag) {
-    return newSymbol(tag, findRules(tag.lexeme));
+    Rules* rules = findRules(tag.lexeme);
+    if (rules == NULL && isThisString(tag.lexeme, " "))
+        return newSymbol(tag, findRules(newString("( )", 3)));
+    return newSymbol(tag, rules);
 }
 
 static void reduceTop(Stack* stack) {
@@ -144,12 +147,11 @@ static void appendSyntax(Rules rules) {
     append(RULES, new);
 }
 
-void addSyntax(Node* name, Precedence leftPrecedence,
+void addSyntax(Tag tag, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
-    String lexeme = getLexeme(name);
-    syntaxErrorIf(findRules(lexeme) != NULL, "syntax already defined", name);
-    appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
+    tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
+    appendSyntax((Rules){tag.lexeme, leftPrecedence, rightPrecedence, fixity,
         associativity, false, shifter, reducer});
 }
 
