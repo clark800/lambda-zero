@@ -9,24 +9,21 @@ extern Node* const VOID;
 void initNodeAllocator(void);
 void destroyNodeAllocator(void);
 
-Node* newBranch(Tag tag, unsigned char type, Node* left, Node* right);
+Node* newBranch(Tag tag, char type, Node* left, Node* right);
 Node* newPair(Node* left, Node* right);
-Node* newLeaf(Tag tag, unsigned char type, long long value, void* data);
+Node* newLeaf(Tag tag, char type, long long value, void* data);
 
 bool isLeaf(Node* node);
-Location getLocation(Node* node);
-Node* setTag(Node* node, Tag tag);
 Tag getTag(Node* node);
-
+void setTag(Node* node, Tag tag);
 Node* getLeft(Node* branchNode);
 Node* getRight(Node* branchNode);
 void setLeft(Node* branchNode, Node* left);
 void setRight(Node* branchNode, Node* right);
-
-unsigned char getType(Node* node);
+char getType(Node* node);
 long long getValue(Node* leafNode);
+void setValue(Node* leafNode, long long value);
 void* getData(Node* leafNode);
-Node* setValue(Node* leafNode, long long value);
 
 typedef struct Hold Hold;
 Hold* hold(Node* node);

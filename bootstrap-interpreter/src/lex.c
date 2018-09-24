@@ -79,7 +79,7 @@ static Location advanceLocation(Tag tag) {
 
 Token lex(Token token) {
     if (token.tag.lexeme.start[0] == '\0')
-        return (Token){newTag(EMPTY, token.tag.location), END};
+        return (Token){token.tag, END};
     Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
     char head = tag.lexeme.start[0];
