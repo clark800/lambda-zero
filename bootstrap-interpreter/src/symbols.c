@@ -73,7 +73,8 @@ Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
 static Node* propagateSection(Node* operator, Node* node, const char* name) {
     if (isSpecial(operator) || !isApplication(node))
         syntaxError("operator does not support sections", operator);
-    return setTag(node, renameTag(getTag(node), name));
+    setTag(node, renameTag(getTag(node), name));
+    return node;
 }
 
 Node* reduce(Node* operator, Node* left, Node* right) {

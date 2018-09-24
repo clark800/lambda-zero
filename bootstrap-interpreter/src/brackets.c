@@ -33,7 +33,7 @@ static Node* newTuple(Node* open, Node* commaList) {
 }
 
 static Node* newSection(Tag tag, const char* name, Node* body) {
-    return setTag(newLambda(tag, newName(renameTag(tag, name)), body), tag);
+    return newLambda(tag, newName(renameTag(tag, name)), body);
 }
 
 static Node* createSection(Tag tag, Node* contents) {
@@ -58,7 +58,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     if (isCommaList(contents))
         return newTuple(open, contents);
     if (isApplication(contents))
-        return setTag(contents, tag);
+        setTag(contents, tag);
     return contents;
 }
 

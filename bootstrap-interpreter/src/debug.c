@@ -14,9 +14,7 @@ static void debugLine(void) {
 }
 
 static void serializeAST(Node* node, FILE* stream) {
-    if (node == VOID) {
-        fputs("VOID", stream);
-    } else if (!isLeaf(node)) {
+    if (!isLeaf(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
         fputs(isLambda(node) ? " -> " : " ", stream);
