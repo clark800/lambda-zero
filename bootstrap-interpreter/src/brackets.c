@@ -86,7 +86,8 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
 Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     syntaxErrorIf(left != NULL, "missing space before", open);
     syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
-    syntaxErrorIf(patterns == NULL, "missing patterns", open);
+    if (patterns == NULL)
+        return newName(renameTag(getTag(open), "{}"));
     syntaxErrorIf(isSection(patterns), "invalid section", open);
     return newTuple(open, patterns);
 }

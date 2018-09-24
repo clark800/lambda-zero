@@ -11,6 +11,7 @@ xy      pair of x and y ``
 
 -- undefined
 undefined := error("")
+Void ::= {}
 
 -- function
 x.f := f(x)                     -- uniform function call syntax
