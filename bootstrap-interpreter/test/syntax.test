@@ -122,3 +122,6 @@ Syntax error: symbol already defined 'A' at line 3 column 2
 undefined := 9 \n A ::= {()} \n A
 9
 ===============================================================================
+syntax(|_|) := infix(20) \n 0
+Syntax error: invalid underscore in operator name '|_|' at line 1 column 8
+===============================================================================

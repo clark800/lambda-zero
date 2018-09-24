@@ -110,7 +110,7 @@ Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
         syntaxError("missing scope", operator);
 
     Node* adt = getLeft(right);
-    if (!isApplication(adt) || getTag(adt).lexeme.start[0] != '{')
+    if (getTag(adt).lexeme.start[0] != '{')
         syntaxError("ADT required to right of", operator);
 
     // define ADT name so that the symbol can't be defined twice

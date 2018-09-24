@@ -1,25 +1,17 @@
-#include <assert.h>
 #include "tree.h"
 #include "stack.h"
 
-Stack* newStack() {
-    return (Stack*)newPair(VOID, VOID);
-}
+Stack* newStack() {return (Stack*)newPair(VOID, VOID);}
+void deleteStack(Stack* stack) {release(hold((Node*)stack));}
+static Node* getHead(Stack* stack) {return getRight((Node*)stack);}
+static void setHead(Stack* stack, Node* head) {setRight((Node*)stack, head);}
+bool isEmpty(Stack* stack) {return getHead(stack) == VOID;}
+Iterator* iterate(Stack* stack) {return (Iterator*)getHead(stack);}
+Node* cursor(Iterator* iterator) {return getLeft((Node*)iterator);}
+bool end(Iterator* iterator) {return (Node*)iterator == VOID;}
 
-void deleteStack(Stack* stack) {
-    release(hold((Node*)stack));
-}
-
-static Node* getHead(Stack* stack) {
-    return getRight((Node*)stack);
-}
-
-static void setHead(Stack* stack, Node* head) {
-    setRight((Node*)stack, head);
-}
-
-bool isEmpty(Stack* stack) {
-    return getHead(stack) == VOID;
+Iterator* next(Iterator* iterator) {
+    return (Iterator*)getRight((Node*)iterator);
 }
 
 void push(Stack* stack, Node* node) {
@@ -39,18 +31,3 @@ Node* peek(Stack* stack, size_t i) {
     return getListElement(getHead(stack), i);
 }
 
-Iterator* iterate(Stack* stack) {
-   return (Iterator*)getHead(stack);
-}
-
-Iterator* next(Iterator* iterator) {
-    return (Iterator*)getRight((Node*)iterator);
-}
-
-Node* cursor(Iterator* iterator) {
-    return getLeft((Node*)iterator);
-}
-
-bool end(Iterator* iterator) {
-    return (Node*)iterator == VOID;
-}
