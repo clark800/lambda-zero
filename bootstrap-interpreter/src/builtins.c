@@ -60,12 +60,6 @@ static long long divide(long long left, long long right, Closure* builtin) {
     return left / right;
 }
 
-static long long modulo(long long left, long long right, Closure* builtin) {
-    if (right == 0)
-        runtimeError("divide by zero in", builtin);
-    return left % right;
-}
-
 unsigned int getBuiltinArity(Node* builtin) {
     switch (getValue(builtin)) {
         case ERROR: return 1;
@@ -140,7 +134,7 @@ static Node* computeBuiltin(Closure* builtin, long long left, long long right) {
         case MINUS: return newInteger(tag, subtract(left, right, builtin));
         case TIMES: return newInteger(tag, multiply(left, right, builtin));
         case DIVIDE: return newInteger(tag, divide(left, right, builtin));
-        case MODULUS: return newInteger(tag, modulo(left, right, builtin));
+        case MODULUS: return newInteger(tag, right == 0 ? left : left % right);
         case EQUAL: return newBoolean(tag, left == right);
         case NOTEQUAL: return newBoolean(tag, left != right);
         case LESSTHAN: return newBoolean(tag, left < right);
