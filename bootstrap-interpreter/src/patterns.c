@@ -22,6 +22,9 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
     if (isSymbol(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
+    if (isThisLexeme(left, "@"))
+        return newLambda(tag, getLeft(left), newApplication(tag,
+            reduceLambda(operator, getRight(left), right), getLeft(left)));
     // example: (x, y) -> body ---> _ -> (x -> y -> body) first(_) second(_)
     Node* body = right;
     for (Node* items = left; isApplication(items); items = getLeft(items))

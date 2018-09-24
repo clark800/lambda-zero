@@ -31,7 +31,6 @@ Node* setValue(Node* leafNode, long long value);
 typedef struct Hold Hold;
 Hold* hold(Node* node);
 void release(Hold* node);
-Hold* replaceHold(Hold* oldHold, Hold* newHold);
 Node* getNode(Hold* hold);
 
 Node* getListElement(Node* node, unsigned long long n);
