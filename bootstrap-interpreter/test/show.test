@@ -2,7 +2,7 @@
 main(input) := showInteger(123)
 123
 ===============================================================================
-main(input) := showInteger(-123)
+main(input) := showInteger(negate(123))
 -123
 ===============================================================================
 main(input) := showString(deduplicate("abc" ++ "bbd"))

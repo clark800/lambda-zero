@@ -12,10 +12,8 @@ static Node* reduceApply(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
-    Tag tag = (isThisLeaf(operator, "-") && isThisLeaf(left, "_.")) ?
-        renameTag(getTag(operator), "(-)") : getTag(operator);
     return reduceApply(operator, reduceApply(operator,
-        convertOperator(tag), left), right);
+        convertOperator(getTag(operator)), left), right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
@@ -45,10 +43,12 @@ static void shiftInfix(Stack* stack, Node* operator) {
         release(pop(stack));
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
-        if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-            push(stack, newName(renameTag(getTag(operator), "_.")));
+        if (isThisLeaf(operator, "+"))
+            operator = parseSymbol(renameTag(getTag(operator), "(+)"));
         else if (isThisLeaf(operator, "-"))
             operator = parseSymbol(renameTag(getTag(operator), "(-)"));
+        else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
+            push(stack, newName(renameTag(getTag(operator), "_.")));
         else syntaxError("missing left operand for", operator);
     }
     if (isThisLeaf(operator, ":=") && isThisLexeme(peek(stack, 0), "syntax"))
@@ -98,6 +98,7 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
         syntaxError("invalid precedence", getRight(right));
     Precedence p = (Precedence)precedence;
     Node* fixity = getLeft(right);
+
     if (isThisLeaf(fixity, "infix"))
         addSyntax(name, p, p, INFIX, N, shiftInfix, reduceInfix);
     else if (isThisLeaf(fixity, "infixL"))
@@ -109,6 +110,14 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     else if (isThisLeaf(fixity, "postfix"))
         addSyntax(name, p, p, POSTFIX, L, shiftPostfix, reducePostfix);
     else syntaxError("invalid fixity", fixity);
+
+    // add special case prefix operators for "+" and "-"
+    // done here to avoid hard-coding a precedence for them
+    if (isThisLeaf(name, "+") && isThisLeaf(fixity, "infixL"))
+        addBuiltinSyntax("(+)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
+    if (isThisLeaf(name, "-") && isThisLeaf(fixity, "infixL"))
+        addBuiltinSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
+
     // reduce to an identity function with the operator symbol as parameter name
     // so that if the operator symbol is already defined it will be a syntax
     // error. this ensures that operator symbols can't be used before their
@@ -137,7 +146,6 @@ void initSymbols(void) {
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
     addBuiltinSyntax("syntax", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax("->", 5, 5, INFIX, R, shiftInfix, reduceLambda);
-    addBuiltinSyntax("error", 20, 20, PREFIX, L, shiftPrefix, reduceError);
-    addBuiltinSyntax("(-)", 20, 20, PREFIX, L, shiftPrefix, reducePrefix);
+    addBuiltinSyntax("error", 80, 80, PREFIX, L, shiftPrefix, reduceError);
     addBuiltinSyntax(" ", 80, 80, INFIX, L, shiftWhitespace, reduceApply);
 }

@@ -37,11 +37,11 @@ while(f, p, z) := f.until((!) <> p, z)
 
 -- math
 N ::= {zero, up(_ : N)}
-Z ::= {positive(_ : N), negative(_ : N)}
+Z ::= {+(_ : N), -(_ : N)}
 Q ::= {(_ : Z) / (_ : Z)}
-- n := 0 - n
-abs(n) := n >= 0 ? n || -(n)
-sign(n) := n = 0 ? 0 || n > 0 ? 1 || -1
+negate(n) := 0 - n
+abs(n) := n >= 0 ? n || negate(n)
+sign(n) := n = 0 ? 0 || n > 0 ? 1 || negate(1)
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
 mod(n, m) := n % m
@@ -52,7 +52,7 @@ factorial(n) := (n = 0) ? 1 || n * factorial(n - 1)
 gcd(n, m) := (m = 0) ? n || gcd(m, n.mod(m))
 n ^ m := (
     m = 0 ? 1
-    m < 0 ? 1 // n ^ -(m)
+    m < 0 ? 1 // n ^ negate(m)
     isEven(m) ? (*).mirror(n ^ (m // 2))
     n * n ^ (m - 1)
 )
@@ -87,7 +87,7 @@ fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
 cascade(xs, f, z) := xs.match([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))
 xs ++ ys := xs.fold((::), ys)                   -- concatenate two lists
 join(xss) := xss.fold((++), [])            -- concatenate list of lists
-length(xs) := xs.fold(constant(+ 1), 0)         -- get length of list
+length(xs) := xs.fold(constant(1 +), 0)         -- get length of list
 reverse(xs) := xs.cascade(`(::), [])
 dropIf(ns, p) := ns.match([] -> []; n :: ns' -> p(n) ? ns' || ns)
 takeWhile(xs, p) := xs.match(
@@ -163,7 +163,7 @@ sum(ns) := ns.cascade((+), 0)
 product(ns) := ns.cascade((*), 1)
 minimum(ns) := ns.reduce(min)
 maximum(ns) := ns.reduce(max)
-countFrom := iterate(+ 1)
+countFrom := iterate(1 +)
 naturals := countFrom(0)
 primes := (
     filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))
@@ -287,7 +287,7 @@ parseDigit(digit, base) :=
 parseNatural(string, base) :=
     string.cascade(x -> d -> base * x + parseDigit(d, base), 0)
 parseInteger(string, base) := string.head = '-' ?
-    - parseNatural(tail(string), base) || parseNatural(string, base)
+    negate(parseNatural(tail(string), base)) || parseNatural(string, base)
 
 -- trees
 Tree(a) ::= {node(_ : a, _ : List(Tree(a)))}

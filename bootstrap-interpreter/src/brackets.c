@@ -143,7 +143,12 @@ void shiftClose(Stack* stack, Node* close) {
         } else if (isOpenOperator(peek(stack, 1))) {
             // bracketed prefix operator
             Hold* op = pop(stack);
-            push(stack, convertOperator(getTag(getNode(op))));
+            Tag tag = getTag(getNode(op));
+            if (isThisLeaf(getNode(op), "(+)"))
+                tag = renameTag(tag, "+");
+            else if (isThisLeaf(getNode(op), "(-)"))
+                tag = renameTag(tag, "-");
+            push(stack, convertOperator(tag));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
             push(stack, newName(renameTag(getTag(top), "._")));

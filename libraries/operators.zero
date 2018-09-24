@@ -9,6 +9,7 @@ syntax(<=>) := infix(9)
 syntax(=>) := infix(10)
 syntax(\/) := infixR(11)
 syntax(/\) := infixR(12)
+syntax(!) := prefix(13)
 
 syntax(=) := infix(13)
 syntax(!=) := infix(13)
@@ -31,21 +32,23 @@ syntax(..) := infix(14)
 
 syntax(::) := infixR(15)
 syntax(++) := infixR(15)
-syntax(&) := infixL(15)
 syntax(+) := infixL(15)
 syntax(-) := infixL(15)
+syntax(U) := infixL(15)
+syntax(up) := prefix(15)
 
 syntax(*) := infixL(16)
 syntax(/) := infixL(16)
 syntax(//) := infixL(16)
 syntax(%) := infixL(16)
-syntax(<>) := infixR(19)
+syntax(&) := infixL(16)
 
-syntax(!) := prefix(20)
-syntax(#) := prefix(20)
+syntax(^) := infixR(17)
 
-syntax(^) := infixR(22)
-syntax(^^) := infixL(24)
+syntax(#) := prefix(18)
+syntax(<>) := infixR(18)
+syntax(^^) := infixL(19)
+
 syntax(.) := infixL(95)
 syntax(`) := prefix(95)
 

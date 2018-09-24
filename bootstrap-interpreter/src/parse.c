@@ -23,14 +23,8 @@ static bool isNaturalLexeme(String lexeme) {
     return lexeme.length > 0;
 }
 
-static bool isIntegerLexeme(String lexeme) {
-    if (lexeme.start[0] != '-')
-        return isNaturalLexeme(lexeme);
-    return isNaturalLexeme(newString(lexeme.start + 1, lexeme.length - 1));
-}
-
-static Node* parseInteger(Tag tag) {
-    tokenErrorIf(!isIntegerLexeme(tag.lexeme), "invalid token", tag);
+static Node* parseNatural(Tag tag) {
+    tokenErrorIf(!isNaturalLexeme(tag.lexeme), "invalid token", tag);
     errno = 0;
     long long value = strtoll(tag.lexeme.start, NULL, 10);
     tokenErrorIf((value == LLONG_MIN || value == LLONG_MAX) &&
@@ -83,7 +77,7 @@ static Node* parseStringLiteral(Tag tag) {
 
 static Node* parseToken(Token token) {
     switch (token.type) {
-        case NUMERIC: return parseInteger(token.tag);
+        case NUMERIC: return parseNatural(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
