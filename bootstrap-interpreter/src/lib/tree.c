@@ -148,11 +148,6 @@ void release(Hold* nodeHold) {
     releaseNode((Node*)nodeHold);
 }
 
-Hold* replaceHold(Hold* oldHold, Hold* newHold) {
-    release(oldHold); // even if newHold == oldHold, we still must release one
-    return newHold;
-}
-
 Node* getNode(Hold* nodeHold) {
     return (Node*)nodeHold;
 }

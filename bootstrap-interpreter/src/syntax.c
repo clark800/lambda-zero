@@ -146,6 +146,7 @@ void initSymbols(void) {
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
     addBuiltinSyntax("syntax", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax("->", 5, 5, INFIX, R, shiftInfix, reduceLambda);
+    addBuiltinSyntax("@", 6, 6, INFIX, N, shiftInfix, reduceApply);
     addBuiltinSyntax("error", 80, 80, PREFIX, L, shiftPrefix, reduceError);
     addBuiltinSyntax(" ", 80, 80, INFIX, L, shiftWhitespace, reduceApply);
 }
