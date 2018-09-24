@@ -21,6 +21,13 @@ const char* strchr(const char* s, int c) {
     return c == 0 ? s : NULL;
 }
 
+const char* memchr(const char* s, int c, size_t n) {
+    for (size_t i = 0; i < n; ++i)
+        if (s[i] == c)
+            return s;
+    return NULL;
+}
+
 /*
 char* strcpy(char* dest, const char* src) {
     while ((*dest++ = *src++));

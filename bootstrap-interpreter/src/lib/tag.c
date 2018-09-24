@@ -25,3 +25,7 @@ bool isThisString(String a, const char* b) {
 bool isSameString(String a, String b) {
     return a.length == b.length && strncmp(a.start, b.start, a.length) == 0;
 }
+
+bool contains(String a, char c) {
+    return memchr(a.start, c, a.length) != NULL;
+}
