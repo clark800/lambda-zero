@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include <string.h>
 #include "lib/array.h"
 #include "lib/tree.h"
+#include "lib/util.h"
 #include "lib/stack.h"
 #include "ast.h"
 #include "errors.h"
@@ -14,6 +14,7 @@ typedef struct {
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
     Associativity associativity;
+    bool special;
     void (*shift)(Stack* stack, Node* operator);
     Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
@@ -36,7 +37,7 @@ static Node* reduceOperand(Node* operand, Node* left, Node* right) {
 
 static inline Rules* getRules(Node* node) {
     static Rules operand =
-        {{"", 0}, 0, 0, NOFIX, N, shiftOperand, reduceOperand};
+        {{"", 0}, 0, 0, NOFIX, N, false, shiftOperand, reduceOperand};
     if (!isSymbol(node))
         return &operand;
     Rules* rules = (Rules*)getData(node);
@@ -56,10 +57,7 @@ bool isSpaceOperator(Node* node) {
 }
 
 bool isSpecial(Node* node) {
-    if (!isOperator(node))
-        return false;
-    Rules* rules = getRules(node);
-    return (rules->leftPrecedence <= 5 || rules->rightPrecedence <= 5);
+    return isOperator(node) && ((Rules*)getRules(node))->special;
 }
 
 bool isOpenOperator(Node* node) {
@@ -141,7 +139,7 @@ void reduceLeft(Stack* stack, Node* operator) {
 }
 
 static void appendSyntax(Rules rules) {
-    Rules* new = (Rules*)malloc(sizeof(Rules));
+    Rules* new = (Rules*)smalloc(sizeof(Rules));
     *new = rules;
     append(RULES, new);
 }
@@ -152,7 +150,7 @@ void addSyntax(Node* name, Precedence leftPrecedence,
     String lexeme = getLexeme(name);
     syntaxErrorIf(findRules(lexeme) != NULL, "syntax already defined", name);
     appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
-        associativity, shifter, reducer});
+        associativity, false, shifter, reducer});
 }
 
 void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
@@ -160,9 +158,10 @@ void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
     if (RULES == NULL)
         RULES = newArray(1024);
+    bool special = strncmp(symbol, "(+)", 4) && strncmp(symbol, "(-)", 4);
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
     appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
-        associativity, shifter, reducer});
+        associativity, special, shifter, reducer});
 }
 
 void addScopeMarker(void) {
