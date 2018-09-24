@@ -83,7 +83,7 @@ mx ?! d := mx.match(nothing -> d; just(x) -> x)    -- just value or default
 -- list
 List(a) ::= {[], (_ : a) :: (_ : List(a))}
 prepend := `(::)
-isEmpty := [] -> true; _ :: _ -> false
+isNil := [] -> true; _ :: _ -> false     -- note: isEmpty is reserved for sets
 fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
 cascade(xs, f, z) := xs.match([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))
 xs ++ ys := xs.fold((::), ys)                   -- concatenate two lists
@@ -141,9 +141,9 @@ drop(xs, n) := (tail ^^ n)(xs)            -- drop n elements from front of list
 take(xs, n) := n = 0 ? [] || head(xs) :: tail(xs).take(n - 1)
 xs[n] := head(xs.drop(n))          -- get element of list at index
 xs[start, end] := xs.drop(start).take(end - start)
-last(xs) := tail.until(isEmpty <> tail, xs).head    -- get last element of list
+last(xs) := tail.until(isNil <> tail, xs).head    -- get last element of list
 dropLast(xs) :=
-    isEmpty(xs) \/ isEmpty(tail(xs)) ? [] || head(xs) :: dropLast(tail(xs))
+    isNil(xs) \/ isNil(tail(xs)) ? [] || head(xs) :: dropLast(tail(xs))
 reduce(xs, f) := tail(xs).cascade(f, xs[0])
 
 -- generic list constructors
@@ -173,7 +173,7 @@ primes := (
 
 -- string
 xs =*= ys := xs.match(        -- string equality
-    [] -> isEmpty(ys);
+    [] -> isNil(ys);
     x :: xs' -> ys.match(
         [] -> false;
         y :: ys' -> x = y /\ xs' =*= ys'
@@ -190,7 +190,7 @@ ns <*= ms := ns.match(      -- string comparison
 
 indexOf(nss, key) := (
     indexOf'(list, depth) := (
-        isEmpty(list) ? nothing
+        isNil(list) ? nothing
         list[0] =*= key ? just(depth)
         indexOf'(tail(list), depth + 1)
     )
@@ -222,13 +222,13 @@ splitOn(ns, delimiter) := ns.split(`startsWith(delimiter))
 
 splitWith(ns, splitter) := (
     (before, after) := splitter(ns)
-    before.isEmpty ? ([], ns)
+    before.isNil ? ([], ns)
     (before', after') := after.splitWith(splitter)
     (before ++ before', after')
 )
 
 partition(ns, splitter) := (
-    ns.isEmpty ? []
+    ns.isNil ? []
     (before, after) := splitter(ns)
     before :: partition(after, splitter)
 )
@@ -239,7 +239,7 @@ partitionBy(ns, p) := ns.partition(`splitWhen(p) <> `dropIf(p))
 partitionOn(ns, delimiter) := ns.partition(
     `splitOn(delimiter) <> `dropPrefix(delimiter))
 
-words(ns) := (ns.partitionOn(" ") |: (!) <> isEmpty)
+words(ns) := (ns.partitionOn(" ") |: (!) <> isNil)
 lines(ns) := ns.partitionOn("\n")
 
 -- ASCII character classes
