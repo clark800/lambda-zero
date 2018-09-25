@@ -104,7 +104,7 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isLeaf(name), "expected symbol operand to", getLeft(left));
     if (contains(getLexeme(name), '_') && !isThisLexeme(name, "__"))
        syntaxError("invalid underscore in operator name", name);
-    if (!isApplication(right) || !isInteger(getRight(right)))
+    if (!isApplication(right) || !isNatural(getRight(right)))
         syntaxError("invalid syntax definition", operator);
     long long precedence = getValue(getRight(right));
     if (precedence < 0 || precedence > 99)

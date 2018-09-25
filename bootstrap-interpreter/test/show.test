@@ -1,8 +1,8 @@
 ===============================================================================
-main(input) := showInteger(123)
-123
+main(input) := showInteger(+ 123)
++123
 ===============================================================================
-main(input) := showInteger(negate(123))
+main(input) := showInteger(- 123)
 -123
 ===============================================================================
 main(input) := showString(deduplicate("abc" ++ "bbd"))
@@ -11,36 +11,36 @@ main(input) := showString(deduplicate("abc" ++ "bbd"))
 main(input) := showString(deduplicate("acbbcda"))
 "acbd"
 ===============================================================================
-main(input) := showIntegerList((0..10)[3, 7])
-[3, 4, 5, 6]
+main(input) := (0..10).map(positive)[3, 7].showList(showInteger)
+[+3, +4, +5, +6]
 ===============================================================================
-main(input) := showStringPair(" 12 3  4 ".split((= '3') <> head))
+main(input) := showPair(" 12 3  4 ".split((= '3') <> head), showString, showString)
 (" 12 ", "3  4 ")
 ===============================================================================
-main(input) := showStringPair(" 12 3  4 ".splitOn("3"))
+main(input) := showPair(" 12 3  4 ".splitOn("3"), showString, showString)
 (" 12 ", "3  4 ")
 ===============================================================================
-main(input) := showStringList(" 12 3  4 ".partitionOn(" "))
+main(input) := showList(" 12 3  4 ".partitionOn(" "), showString)
 ["12", "3", "", "4", ""]
 ===============================================================================
-main(input) := showStringList("12 3  4".partitionBy((= ' ')))
+main(input) := showList("12 3  4".partitionBy((= ' ')), showString)
 ["12", "3", "", "4"]
 ===============================================================================
-main(input) := showStringList("a..b...c....d..".partitionOn(".."))
+main(input) := showList("a..b...c....d..".partitionOn(".."), showString)
 ["a", "b", ".c", "", "d", ""]
 ===============================================================================
-main(input) := showIntegerListList(words(" 12 3  4 "))
+main(input) := showList(words(" 12 3  4 "), `showList(showNatural))
 [[49, 50], [51], [52]]
 ===============================================================================
 main(input) := showString("   12 3  4 ".dropWhile((= ' ')))
 "12 3  4 "
 ===============================================================================
-main(input) := showIntegerList(5..9)
-[5, 6, 7, 8, 9]
+main(input) := showList((5..9).map(positive), showInteger)
+[+5, +6, +7, +8, +9]
 ===============================================================================
-main(input) := showIntegerListPair(splitWhen((1 .. 5), (>= 3)))
-([1, 2], [3, 4, 5])
+main(input) := showList(second(splitWhen((1 .. 5), (>= 3))), showNatural)
+[3, 4, 5]
 ===============================================================================
-main(input) := showIntegerList(sort([5, 88, 43, 22, 91, 17]))
+main(input) := showList(sort([5, 88, 43, 22, 91, 17]), showNatural)
 [5, 17, 22, 43, 88, 91]
 ===============================================================================

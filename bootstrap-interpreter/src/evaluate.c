@@ -31,7 +31,7 @@ static Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
     // the other cases are short-circuit optmizations
     switch (getNodeType(node)) {
         case BUILTIN:
-        case INTEGER: return newClosure(node, VOID, trace);
+        case NATURAL: return newClosure(node, VOID, trace);
         case SYMBOL: return isGlobalReference(node) ?
             newClosure(node, VOID, trace) : getReferee(node, locals);
         default: return newClosure(node, locals, trace);
@@ -55,7 +55,7 @@ static void evaluateLambda(Closure* closure, Stack* stack) {
 }
 
 static bool isValue(Node* node) {
-    return isLambda(node) || isInteger(node) || isBuiltin(node);
+    return isLambda(node) || isNatural(node) || isBuiltin(node);
 }
 
 static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
@@ -97,6 +97,17 @@ static void evaluateBuiltin(Closure* closure, Stack* stack, Globals* globals) {
         release(right);
 }
 
+static void evaluateNatural(Closure* closure) {
+    long long n = getValue(getTerm(closure));
+    Tag tag = getTag(getTerm(closure));
+    Node* blank = newBlank(tag);
+    setTerm(closure, n == 0 ?
+        newLambda(tag, blank, newLambda(tag, blank,
+            newBlankReference(tag, 2))) :
+        newLambda(tag, blank, newLambda(tag, blank, newApplication(tag,
+            newBlankReference(tag, 1), newNatural(tag, n - 1)))));
+}
+
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     while (true) {
         //#include "debug.h"
@@ -106,11 +117,11 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
             case APPLICATION: evaluateApplication(closure, stack); break;
             case SYMBOL: evaluateReference(closure, stack, globals); break;
             case BUILTIN: evaluateBuiltin(closure, stack, globals); break;
-            case INTEGER:
+            case NATURAL:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return hold(closure);
-                runtimeError("extra argument", peek(stack, 0)); break;
+                evaluateNatural(closure); break;
             case LAMBDA:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))

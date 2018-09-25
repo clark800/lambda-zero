@@ -20,8 +20,8 @@ static void serializeAST(Node* node, FILE* stream) {
         fputs(isLambda(node) ? " -> " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
-    } else if (isInteger(node)) {
-        // builtins create integers, so not all integers will exist in input
+    } else if (isNatural(node)) {
+        // builtins create naturals, so not all naturals will exist in input
         fputll(getValue(node), stream);
     } else {
         printLexeme(getLexeme(node), stream);

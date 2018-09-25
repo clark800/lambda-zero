@@ -40,22 +40,22 @@ while(f, p, z) := f.until((!) <> p, z)
 N ::= {zero, up(_ : N)}
 Z ::= {+(_ : N), -(_ : N)}
 Q ::= {(_ : Z) / (_ : Z)}
-negate(n) := 0 - n
-abs(n) := n >= 0 ? n || negate(n)
-sign(n) := n = 0 ? 0 || n > 0 ? 1 || negate(1)
+positive(n) := + n
+negative(n) := - n
+negate := + n -> - n; - n -> + n
+abs := + n -> + n; - n -> + n
+abs' := + n -> n; - n -> n
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
 mod(n, m) := n % m
 isEven(n) := n.mod(2) = 0
 isOdd(n) := n.mod(2) != 0
 divides(n, m) := m.mod(n) = 0
-factorial(n) := (n = 0) ? 1 || n * factorial(n - 1)
+factorial(n) := n.match(zero -> 1; up(n') -> n * factorial(n'))
 gcd(n, m) := (m = 0) ? n || gcd(m, n.mod(m))
-n ^ m := (
-    m = 0 ? 1
-    m < 0 ? 1 // n ^ negate(m)
-    isEven(m) ? (*).mirror(n ^ (m // 2))
-    n * n ^ (m - 1)
+n ^ m := m.match(
+    zero -> 1;
+    up(m') -> isEven(m) ? (*).mirror(n ^ (m // 2)) || n * n ^ m'
 )
 
 -- tuple
@@ -99,10 +99,10 @@ dropWhile(xs, p) := xs.match(
     [] -> [];
     x :: xs' -> p(x) ? dropWhile(xs', p) || xs
 )
-takeSafe(xs, n) := n = 0 ? just([]) ||
-    xs.match([] -> nothing; x :: xs' -> takeSafe(xs', n - 1) >> just <> (x ::))
-dropSafe(xs, n) := n = 0 ? xs ||
-    xs.match([] -> []; _ :: xs' -> dropSafe(xs', n - 1))
+takeSafe(xs, n) := n.match(zero -> just([]); up(n') ->
+    xs.match([] -> nothing; x :: xs' -> takeSafe(xs', n') >> just <> (x ::)))
+dropSafe(xs, n) := n.match(zero -> xs; up(n') ->
+    xs.match([] -> []; _ :: xs' -> dropSafe(xs', n')))
 filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
 (|:) := filter
 map(xs, f) := fold(xs, (::) <> f, [])          -- map function over list
@@ -132,13 +132,13 @@ foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
     f(x, s).mapFirst(:: ys), ([], z)).mapFirst(reverse)
 
 -- fallible function
-f ^^ n := n < 0 ? error("(^^): negative") || n = 0 ? id || f <> f ^^ (n - 1)
+f ^^ n := n.match(zero -> id; up(n') -> f <> f ^^ n')
 
 -- fallible list
 head := [] -> error("head: empty list"); x :: _ -> x
 tail := [] -> error("tail: empty list"); _ :: xs -> xs
 drop(xs, n) := (tail ^^ n)(xs)            -- drop n elements from front of list
-take(xs, n) := n = 0 ? [] || head(xs) :: tail(xs).take(n - 1)
+take(xs, n) := n.match(zero -> []; up(n') -> head(xs) :: tail(xs).take(n'))
 xs[n] := head(xs.drop(n))          -- get element of list at index
 xs[start, end] := xs.drop(start).take(end - start)
 last(xs) := tail.until(isNil <> tail, xs).head    -- get last element of list
@@ -264,22 +264,12 @@ showNatural(n) := (
     n = 0 ? "0" || reverse(showReversedNatural(n))
 )
 
+showSign := + _ -> "+" ; - _ -> "-"
+showInteger(z) := showSign(z) ++ showNatural(abs'(z))
 showString(ns) := "\"" ++ ns ++ "\""     -- todo: escape
-showPair(xsxs) := "(" ++ xsxs.first ++ ", " ++ xsxs.second ++ ")"
-showList(xs) := "[" ++ xs.joinWith(", ") ++ "]"
-showInteger(n) := (n < 0 ? "-" || "") ++ showNatural(abs(n))
-
-showStringPair(nsns) := showPair(nsns.mapPair(showString))
-showIntegerPair(nn) := showPair(nn.mapPair(showInteger))
-showStringIntegerPair(nsn) := showPair(
-    (showString(nsn.first), showInteger(nsn.second)))
-
-showStringList(nss) := showList(nss.map(showString))
-showIntegerList(ns) := showList(ns.map(showInteger))
-showIntegerPairList(nns) := showList(nns.map(showIntegerPair))
-showIntegerListPair(nsns) := showPair(nsns.mapPair(showIntegerList))
-showIntegerListList(nss) := showList(nss.map(showIntegerList))
-showStringIntegerPairList(nsns) := showList(nsns.map(showStringIntegerPair))
+showPair(xsxs, showFirst, showSecond) :=
+    "(" ++ showFirst(xsxs.first) ++ ", " ++ showSecond(xsxs.second) ++ ")"
+showList(xs, showElement) := "[" ++ xs.map(showElement).joinWith(", ") ++ "]"
 
 -- parsing
 parseDigit(digit, base) :=
@@ -288,7 +278,7 @@ parseDigit(digit, base) :=
 parseNatural(string, base) :=
     string.cascade(x -> d -> base * x + parseDigit(d, base), 0)
 parseInteger(string, base) := string.head = '-' ?
-    negate(parseNatural(tail(string), base)) || parseNatural(string, base)
+    - parseNatural(tail(string), base) || + parseNatural(string, base)
 
 -- trees
 Tree(a) ::= {node(_ : a, _ : List(Tree(a)))}
