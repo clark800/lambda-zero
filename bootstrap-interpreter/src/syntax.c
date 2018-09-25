@@ -16,6 +16,11 @@ static Node* reduceInfix(Node* operator, Node* left, Node* right) {
         convertOperator(getTag(operator)), left), right);
 }
 
+static Node* reduceSpace(Node* operator, Node* left, Node* right) {
+    Tag tag = renameTag(getTag(operator), "__");
+    return newApplication(tag, newApplication(tag, newName(tag), left), right);
+}
+
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
     return reduceApply(operator, convertOperator(getTag(operator)), right);
@@ -88,7 +93,7 @@ static Node* reduceError(Node* operator, Node* left, Node* right) {
         newApplication(tag, newBuiltin(tag, ERROR), right)));
 }
 
-static Node* reduceSpace(Node* operator, Node* left, Node* right) {
+static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
     syntaxError("operator syntax undeclared", operator);
     return reduceApply(operator, left, right);  // suppress unused warning
 }
@@ -97,7 +102,7 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isApplication(left), "invalid left operand", left);
     Node* name = getRight(left);
     syntaxErrorIf(!isLeaf(name), "expected symbol operand to", getLeft(left));
-    if (contains(getLexeme(name), '_'))
+    if (contains(getLexeme(name), '_') && !isThisLexeme(name, "__"))
        syntaxError("invalid underscore in operator name", name);
     if (!isApplication(right) || !isInteger(getRight(right)))
         syntaxError("invalid syntax definition", operator);
@@ -108,11 +113,12 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     Node* fixity = getLeft(right);
 
     Tag tag = getTag(name);
-    if (isThisLeaf(name, "()")) {
+    if (isThisLeaf(name, "__")) {
         if (!isThisLeaf(fixity, "infixL"))
-            syntaxError("syntax of ' ' must be infixL", getLeft(left));
-        tag = renameTag(getTag(name), " ");
-        addSyntax(tag, p, p, INFIX, L, shiftWhitespace, reduceInfix);
+            syntaxError("syntax must be infixL", name);
+        addSyntax(tag, p, p, INFIX, L, shiftInfix, reduceInfix);
+        Tag space = renameTag(tag, " ");
+        addSyntax(space, p, p, INFIX, L, shiftWhitespace, reduceSpace);
     }
     else if (isThisLeaf(fixity, "infix"))
         addSyntax(tag, p, p, INFIX, N, shiftInfix, reduceInfix);
@@ -162,5 +168,5 @@ void initSymbols(void) {
     addBuiltinSyntax("@", 6, 6, INFIX, N, shiftInfix, reduceApply);
     addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
-    addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftWhitespace, reduceSpace);
+    addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftWhitespace, reduceInvalid);
 }

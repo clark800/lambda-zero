@@ -59,7 +59,7 @@ Syntax error: missing left operand for '%' at line 1 column 1
 5 - * 2
 Syntax error: missing left operand for '*' at line 1 column 5
 ===============================================================================
-syntax( ) := infixL(80) \n f x := f(x) \n ! n := 0 - n \n ((+) ! 2 ! 3)
+syntax(__) := infixL(80) \n f x := f(x) \n ! n := 0 - n \n ((+) ! 2 ! 3)
 -5
 ===============================================================================
 (-)(3)(2)
