@@ -28,18 +28,18 @@ static Node* reducePostfix(Node* operator, Node* left, Node* right) {
 
 static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     syntaxError("reserved operator", operator);
-    return left == NULL ? right : left; // suppress unused parameter warning
+    return reduceApply(operator, left, right);  // suppress unused warning
 }
 
 static void shiftPrefix(Stack* stack, Node* operator) {
-    if (isSpaceOperator(peek(stack, 0)))
+    if (isSpace(peek(stack, 0)))
         release(pop(stack));
     reduceLeft(stack, operator);
     push(stack, operator);
 }
 
 static void shiftInfix(Stack* stack, Node* operator) {
-    if (isSpaceOperator(peek(stack, 0)))
+    if (isSpace(peek(stack, 0)))
         release(pop(stack));
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
@@ -57,7 +57,7 @@ static void shiftInfix(Stack* stack, Node* operator) {
 }
 
 static void shiftPostfix(Stack* stack, Node* operator) {
-    if (isSpaceOperator(peek(stack, 0)))
+    if (isSpace(peek(stack, 0)))
         release(pop(stack));
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
@@ -70,7 +70,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
 }
 
 static void shiftWhitespace(Stack* stack, Node* operator) {
-    if (isSpaceOperator(peek(stack, 0)))
+    if (isSpace(peek(stack, 0)))
         release(pop(stack));
     reduceLeft(stack, operator);
     // ignore whitespace after operators
@@ -88,7 +88,13 @@ static Node* reduceError(Node* operator, Node* left, Node* right) {
         newApplication(tag, newBuiltin(tag, ERROR), right)));
 }
 
+static Node* reduceSpace(Node* operator, Node* left, Node* right) {
+    syntaxError("operator syntax undeclared", operator);
+    return reduceApply(operator, left, right);  // suppress unused warning
+}
+
 static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isApplication(left), "invalid left operand", left);
     Node* name = getRight(left);
     syntaxErrorIf(!isLeaf(name), "expected symbol operand to", getLeft(left));
     if (contains(getLexeme(name), '_'))
@@ -101,16 +107,23 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     Precedence p = (Precedence)precedence;
     Node* fixity = getLeft(right);
 
-    if (isThisLeaf(fixity, "infix"))
-        addSyntax(name, p, p, INFIX, N, shiftInfix, reduceInfix);
+    Tag tag = getTag(name);
+    if (isThisLeaf(name, "()")) {
+        if (!isThisLeaf(fixity, "infixL"))
+            syntaxError("syntax of ' ' must be infixL", getLeft(left));
+        tag = renameTag(getTag(name), " ");
+        addSyntax(tag, p, p, INFIX, L, shiftWhitespace, reduceInfix);
+    }
+    else if (isThisLeaf(fixity, "infix"))
+        addSyntax(tag, p, p, INFIX, N, shiftInfix, reduceInfix);
     else if (isThisLeaf(fixity, "infixL"))
-        addSyntax(name, p, p, INFIX, L, shiftInfix, reduceInfix);
+        addSyntax(tag, p, p, INFIX, L, shiftInfix, reduceInfix);
     else if (isThisLeaf(fixity, "infixR"))
-        addSyntax(name, p, p, INFIX, R, shiftInfix, reduceInfix);
+        addSyntax(tag, p, p, INFIX, R, shiftInfix, reduceInfix);
     else if (isThisLeaf(fixity, "prefix"))
-        addSyntax(name, p, p, PREFIX, L, shiftPrefix, reducePrefix);
+        addSyntax(tag, p, p, PREFIX, L, shiftPrefix, reducePrefix);
     else if (isThisLeaf(fixity, "postfix"))
-        addSyntax(name, p, p, POSTFIX, L, shiftPostfix, reducePostfix);
+        addSyntax(tag, p, p, POSTFIX, L, shiftPostfix, reducePostfix);
     else syntaxError("invalid fixity", fixity);
 
     // add special case prefix operators for "+" and "-"
@@ -127,8 +140,7 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     // must follow syntax declaration. builtin operators don't need to be
     // defined, but they can only be accessed as operators, which again means
     // that use must follow syntax declaration.
-    Node* symbol = newName(getTag(name));
-    return newLambda(getTag(operator), symbol, symbol);
+    return newLambda(getTag(operator), newName(tag), newName(tag));
 }
 
 void initSymbols(void) {
@@ -146,9 +158,9 @@ void initSymbols(void) {
     addBuiltinSyntax("::=", 3, 3, INFIX, R, shiftInfix, reduceADTDefinition);
     addBuiltinSyntax("(:=)", 4, 4, INFIX, N, shiftInfix, reduceSyntax);
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
-    addBuiltinSyntax("syntax", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax("->", 5, 5, INFIX, R, shiftInfix, reduceLambda);
     addBuiltinSyntax("@", 6, 6, INFIX, N, shiftInfix, reduceApply);
-    addBuiltinSyntax("error", 80, 80, PREFIX, L, shiftPrefix, reduceError);
-    addBuiltinSyntax(" ", 80, 80, INFIX, L, shiftWhitespace, reduceApply);
+    addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
+    addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
+    addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftWhitespace, reduceSpace);
 }
