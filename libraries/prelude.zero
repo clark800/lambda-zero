@@ -37,7 +37,28 @@ until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
 
 -- math
-N ::= {zero, up(_ : N)}
+`` builtins
+N ::= {0, up(_ : N)}
+(=) := 0 -> (0 -> true; up _ -> false);
+      up(n) -> (0 -> false; up m -> n = m)
+(!=) := 0 -> (0 -> false; up _ -> true);
+      up _ -> (0 -> true; up m -> n != m)
+(<) := 0 -> (0 -> false; up _-> true);
+      up n -> (0 -> false; up m -> n < m)
+(>) := 0 -> (0 -> false; up _ -> false);
+      up n -> (0 -> true; up m -> n > m)
+(<=) := 0 -> (0 -> true; up _ -> true);
+      up n -> (0 -> false; up m -> n <= m)
+(>=) := 0 -> (0 -> true; up _ -> false);
+      up n -> (0 -> true; up m -> n >= m)
+(+) := 0 -> m -> m; up(n) -> m -> up(n + m)
+(-) := 0 -> (0 -> 0; up m -> undefined);
+      up n -> (0 -> up n; up m -> n - m)
+(*) := 0 -> _ -> 0; up n -> m -> m + n * m
+n // m := m = 0 ? undefined || n < m ? 0 || up((n - m) // m)
+n % m := m = 0 ? n || n < m ? n || (n - m) % m
+``
+
 Z ::= {+(_ : N), -(_ : N)}
 Q ::= {(_ : Z) / (_ : Z)}
 positive(n) := + n
@@ -51,11 +72,11 @@ mod(n, m) := n % m
 isEven(n) := n.mod(2) = 0
 isOdd(n) := n.mod(2) != 0
 divides(n, m) := m.mod(n) = 0
-factorial(n) := n.match(zero -> 1; up(n') -> n * factorial(n'))
+factorial(n) := n.match(0 -> 1; up n' -> n * factorial(n'))
 gcd(n, m) := (m = 0) ? n || gcd(m, n.mod(m))
 n ^ m := m.match(
-    zero -> 1;
-    up(m') -> isEven(m) ? (*).mirror(n ^ (m // 2)) || n * n ^ m'
+    0 -> 1;
+    up m' -> isEven(m) ? (*).mirror(n ^ (m // 2)) || n * n ^ m'
 )
 
 -- tuple
@@ -88,7 +109,7 @@ fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
 cascade(xs, f, z) := xs.match([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))
 xs ++ ys := xs.fold((::), ys)                   -- concatenate two lists
 join(xss) := xss.fold((++), [])            -- concatenate list of lists
-length(xs) := xs.fold(constant(1 +), 0)         -- get length of list
+length(xs) := xs.fold(constant(up), 0)         -- get length of list
 reverse(xs) := xs.cascade(`(::), [])
 dropIf(ns, p) := ns.match([] -> []; n :: ns' -> p(n) ? ns' || ns)
 takeWhile(xs, p) := xs.match(
@@ -99,9 +120,9 @@ dropWhile(xs, p) := xs.match(
     [] -> [];
     x :: xs' -> p(x) ? dropWhile(xs', p) || xs
 )
-takeSafe(xs, n) := n.match(zero -> just([]); up(n') ->
+takeSafe(xs, n) := n.match(0 -> just([]); up n' ->
     xs.match([] -> nothing; x :: xs' -> takeSafe(xs', n') >> just <> (x ::)))
-dropSafe(xs, n) := n.match(zero -> xs; up(n') ->
+dropSafe(xs, n) := n.match(0 -> xs; up n' ->
     xs.match([] -> []; _ :: xs' -> dropSafe(xs', n')))
 filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
 (|:) := filter
@@ -132,13 +153,13 @@ foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
     f(x, s).mapFirst(:: ys), ([], z)).mapFirst(reverse)
 
 -- fallible function
-f ^^ n := n.match(zero -> id; up(n') -> f <> f ^^ n')
+f ^^ n := n.match(0 -> id; up n' -> f <> f ^^ n')
 
 -- fallible list
 head := [] -> error("head: empty list"); x :: _ -> x
 tail := [] -> error("tail: empty list"); _ :: xs -> xs
 drop(xs, n) := (tail ^^ n)(xs)            -- drop n elements from front of list
-take(xs, n) := n.match(zero -> []; up(n') -> head(xs) :: tail(xs).take(n'))
+take(xs, n) := n.match(0 -> []; up n' -> head(xs) :: tail(xs).take(n'))
 xs[n] := head(xs.drop(n))          -- get element of list at index
 xs[start, end] := xs.drop(start).take(end - start)
 last(xs) := tail.until(isNil <> tail, xs).head    -- get last element of list
@@ -164,7 +185,7 @@ sum(ns) := ns.cascade((+), 0)
 product(ns) := ns.cascade((*), 1)
 minimum(ns) := ns.reduce(min)
 maximum(ns) := ns.reduce(max)
-countFrom := iterate(1 +)
+countFrom := iterate(up)
 naturals := countFrom(0)
 primes := (
     filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))

@@ -134,6 +134,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
             return newMainCall(newLambda(tag, getRight(left), right));
         syntaxError("missing scope", operator);
     }
+
     Node* value = getLeft(right);
     Node* scope = getRight(right);
     if (isTuple(left))

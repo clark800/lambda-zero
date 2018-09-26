@@ -8,6 +8,7 @@ static inline NodeType getNodeType(Node* node) {return (NodeType)getType(node);}
 static inline String getLexeme(Node* node) {return getTag(node).lexeme;}
 static inline Node* getParameter(Node* lambda) {return getLeft(lambda);}
 static inline Node* getBody(Node* lambda) {return getRight(lambda);}
+static inline long long getBuiltinCode(Node* node) {return getValue(node);}
 
 static inline unsigned long long getDebruijnIndex(Node* reference) {
     assert(getValue(reference) > 0);
@@ -86,13 +87,17 @@ static inline Node* newBuiltin(Tag tag, long long n) {
     return newLeaf(tag, BUILTIN, n, NULL);
 }
 
+static inline bool isValidParameter(Node* node) {
+    return isNatural(node) || (isSymbol(node) && getValue(node) == 0);
+}
+
 static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
     // we could make the left child of a lambda VOID, but storing a parameter
     // lets us decouple the location of the lambda from the parameter name,
     // which is useful in cases like string literals where we need to point
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
-    assert(isSymbol(parameter) && getValue(parameter) == 0);
+    assert(isValidParameter(parameter));
     return newBranch(tag, LAMBDA, parameter, body);
 }
 
@@ -116,15 +121,15 @@ static inline Node* newBoolean(Tag tag, bool value) {
 // Builtins
 // ====================================
 
-enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULUS,
+enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULO,
       EQUAL, NOTEQUAL, LESSTHAN, GREATERTHAN, LESSTHANOREQUAL,
-      GREATERTHANOREQUAL, ERROR, UNDEFINED, EXIT, PUT, GET};
+      GREATERTHANOREQUAL, INCREMENT, ERROR, UNDEFINED, EXIT, PUT, GET};
 
 static inline Node* convertOperator(Tag tag) {
     // names in builtins must line up with codes in BuiltinCode, except
     // EXIT, PUT, GET which don't have accessible names
-    static const char* const builtins[] =
-        {"+", "-", "*", "//", "%", "=", "!=", "<", ">", "<=", ">=", "error"};
+    static const char* const builtins[] = {"+", "-", "*", "//", "%",
+        "=", "!=", "<", ">", "<=", ">=", "up", "error"};
     for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
         if (isThisString(tag.lexeme, builtins[i]))
             return newBuiltin(tag, i);

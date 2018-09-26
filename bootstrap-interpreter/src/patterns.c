@@ -19,7 +19,7 @@ static Node* newProjection(Tag tag, unsigned int size, unsigned int index) {
 Node* reduceLambda(Node* operator, Node* left, Node* right) {
     // lazy pattern matching
     Tag tag = getTag(operator);
-    if (isSymbol(left))
+    if (isValidParameter(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
 

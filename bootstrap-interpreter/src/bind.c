@@ -19,8 +19,9 @@ static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
         (long long)(index - length(parameters) - 1));
 }
 
-static bool isDefined(Node* reference, Array* parameters) {
-    return !isBlank(reference) && findDebruijnIndex(reference, parameters) != 0;
+static bool isDefined(Node* parameter, Array* parameters) {
+    return isNatural(parameter) ||
+        (!isBlank(parameter) && findDebruijnIndex(parameter, parameters) != 0);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {

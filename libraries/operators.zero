@@ -35,19 +35,19 @@ syntax(++) := infixR(15)
 syntax(+) := infixL(15)
 syntax(-) := infixL(15)
 syntax(U) := infixL(15)
-syntax(up) := prefix(15)
 
 syntax(*) := infixL(16)
 syntax(/) := infixL(16)
 syntax(//) := infixL(16)
 syntax(%) := infixL(16)
 syntax(&) := infixL(16)
+syntax(<>) := infixR(16)
 
 syntax(^) := infixR(17)
+syntax(^^) := infixL(17)
 
+syntax(up) := prefix(18)
 syntax(#) := prefix(18)
-syntax(<>) := infixR(18)
-syntax(^^) := infixL(19)
 
 syntax(.) := infixL(95)
 syntax(`) := prefix(95)
