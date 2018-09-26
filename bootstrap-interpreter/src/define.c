@@ -60,7 +60,7 @@ static Node* newMainCall(Node* main) {
     Tag tag = getTag(main);
     Node* print = newPrinter(tag);
     Node* get = newBuiltin(renameTag(tag, "get"), GET);
-    Node* get0 = newApplication(tag, get, newInteger(tag, 0));
+    Node* get0 = newApplication(tag, get, newNatural(tag, 0));
     Node* operators = newChurchPair(tag,
         newName(renameTag(tag, "[]")), newName(renameTag(tag, "::")));
     Node* input = newApplication(tag, get0, operators);

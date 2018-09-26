@@ -32,7 +32,7 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
         } else {
             printLexeme(getLexeme(node), stream);
         }
-    } else if (isInteger(node)) {
+    } else if (isNatural(node)) {
         fputll(getValue(node), stream);
     } else if (isBuiltin(node)) {
         printLexeme(getLexeme(node), stream);

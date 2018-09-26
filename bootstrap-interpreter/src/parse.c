@@ -28,8 +28,8 @@ static Node* parseNatural(Tag tag) {
     errno = 0;
     long long value = strtoll(tag.lexeme.start, NULL, 10);
     tokenErrorIf((value == LLONG_MIN || value == LLONG_MAX) &&
-        errno == ERANGE, "magnitude of integer is too large", tag);
-    return newInteger(tag, value);
+        errno == ERANGE, "magnitude of natural is too large", tag);
+    return newNatural(tag, value);
 }
 
 static const char* skipQuoteCharacter(const char* start) {
@@ -60,14 +60,14 @@ static Node* parseCharacterLiteral(Tag tag) {
     tokenErrorIf(end[0] != quote, "missing end quote for", tag);
     const char* skip = skipQuoteCharacter(tag.lexeme.start + 1);
     tokenErrorIf(skip != end, "invalid character literal", tag);
-    return newInteger(tag, decodeCharacter(tag.lexeme.start + 1, tag));
+    return newNatural(tag, decodeCharacter(tag.lexeme.start + 1, tag));
 }
 
 static Node* buildStringLiteral(Tag tag, const char* start) {
     char c = start[0];
     tokenErrorIf(c == '\n' || c == 0, "missing end quote for", tag);
     return c == tag.lexeme.start[0] ? newNil(tag) :
-        prepend(tag, newInteger(tag, decodeCharacter(start, tag)),
+        prepend(tag, newNatural(tag, decodeCharacter(start, tag)),
         buildStringLiteral(tag, skipQuoteCharacter(start)));
 }
 

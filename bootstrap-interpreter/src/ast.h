@@ -1,4 +1,4 @@
-typedef enum {SYMBOL, LAMBDA, APPLICATION, INTEGER, BUILTIN} NodeType;
+typedef enum {SYMBOL, LAMBDA, APPLICATION, NATURAL, BUILTIN} NodeType;
 
 // ====================================
 // Functions to get a value from a node
@@ -37,7 +37,7 @@ static inline bool isThisLeaf(Node* leaf, const char* lexeme) {
 
 static inline bool isSymbol(Node* node) {return getNodeType(node) == SYMBOL;}
 static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
-static inline bool isInteger(Node* node) {return getNodeType(node) == INTEGER;}
+static inline bool isNatural(Node* node) {return getNodeType(node) == NATURAL;}
 static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
 
 static inline bool isApplication(Node* node) {
@@ -78,8 +78,8 @@ static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
     return newLeaf(renameTag(tag, "_"), SYMBOL, (long long)debruijn, NULL);
 }
 
-static inline Node* newInteger(Tag tag, long long n) {
-    return newLeaf(tag, INTEGER, n, NULL);
+static inline Node* newNatural(Tag tag, long long n) {
+    return newLeaf(tag, NATURAL, n, NULL);
 }
 
 static inline Node* newBuiltin(Tag tag, long long n) {

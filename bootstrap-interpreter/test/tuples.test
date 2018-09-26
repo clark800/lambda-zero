@@ -1,6 +1,6 @@
 ==========================================================================
 1 + (1, 2)
-\nRuntime error: expected integer argument to '+' at line 1 column 3
+\nRuntime error: expected natural argument to '+' at line 1 column 3
 ==========================================================================
 ((a, b) -> a + b)((1, 2))
 3

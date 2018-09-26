@@ -22,10 +22,13 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
     if (isSymbol(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
+
+    // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
     if (isThisLexeme(left, "@"))
-        return newLambda(tag, getLeft(left), newApplication(tag,
+        return newLambda(getTag(left), getLeft(left), newApplication(tag,
             reduceLambda(operator, getRight(left), right), getLeft(left)));
-    // example: (x, y) -> body ---> _ -> (x -> y -> body) first(_) second(_)
+
+    // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     Node* body = right;
     for (Node* items = left; isApplication(items); items = getLeft(items))
         body = reduceLambda(operator, getRight(items), body);
@@ -67,6 +70,12 @@ static bool isLazyPatternLambda(Node* lambda) {
 }
 
 static Node* getPatternExtension(Node* lambda) {
+    if (isThisLexeme(lambda, "@")) {
+        Tag tag = getTag(lambda);
+        Node* extension = getPatternExtension(getLeft(getBody(lambda)));
+        return newApplication(tag, newLambda(tag, getLeft(lambda), extension),
+            newBlankReference(tag, 2));
+    }
     if (isStrictPatternLambda(lambda))
         return getRight(getBody(lambda));
     if (isLazyPatternLambda(lambda))
@@ -78,6 +87,10 @@ Node* reducePatternLambda(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isLambda(left), "expected lambda to left of", operator);
     syntaxErrorIf(!isLambda(right), "expected lambda to right of", operator);
     Tag tag = getTag(operator);
+    // example: z -> 0; up(n) -> n  ~>  _ -> _ 0 (n -> n)
+    // example: z -> 0; n' @ up(n) -> n  ~>
+    //          z -> 0; (n' -> ((up(n) -> n) n'))  ~>
+    //          _ -> _ 0 ((n' -> (n -> n)) _)
     Node* base = isStrictPatternLambda(left) ? getBody(left) : newApplication(
         tag, newBlankReference(tag, 1), getPatternExtension(left));
     return newLambda(tag, newBlank(tag),
