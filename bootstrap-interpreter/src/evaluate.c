@@ -9,6 +9,11 @@
 typedef const Array Globals;
 static Hold* evaluateClosure(Closure* closure, Globals* globals);
 
+static void eraseUpdates(Stack* stack) {
+    while (!isEmpty(stack) && isUpdate(peek(stack, 0)))
+        release(pop(stack));
+}
+
 static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
         Hold* update = pop(stack);
@@ -75,7 +80,7 @@ static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
 }
 
 static Hold* popArgument(Closure* closure, Stack* stack, Globals* globals) {
-    applyUpdates(closure, stack);
+    eraseUpdates(stack);    // partially applied builtins are not values
     if (isEmpty(stack))
         runtimeError("missing argument to", closure);
     Hold* expression = pop(stack);
@@ -97,15 +102,13 @@ static void evaluateBuiltin(Closure* closure, Stack* stack, Globals* globals) {
         release(right);
 }
 
-static void evaluateNatural(Closure* closure) {
-    long long n = getValue(getTerm(closure));
-    Tag tag = getTag(getTerm(closure));
+static Node* expandNatural(Node* natural) {
+    long long n = getValue(natural);
+    Tag tag = getTag(natural);
     Node* blank = newBlank(tag);
-    setTerm(closure, n == 0 ?
-        newLambda(tag, blank, newLambda(tag, blank,
-            newBlankReference(tag, 2))) :
-        newLambda(tag, blank, newLambda(tag, blank, newApplication(tag,
-            newBlankReference(tag, 1), newNatural(tag, n - 1)))));
+    Node* body = n == 0 ? newBlankReference(tag, 2) :
+       newApplication(tag, newBlankReference(tag, 1), newNatural(tag, n - 1));
+    return newLambda(tag, blank, newLambda(tag, blank, body));
 }
 
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
@@ -121,7 +124,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return hold(closure);
-                evaluateNatural(closure); break;
+                setTerm(closure, expandNatural(getTerm(closure))); break;
             case LAMBDA:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
