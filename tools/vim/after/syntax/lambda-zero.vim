@@ -20,6 +20,7 @@ syntax match zeroNiceOperator "-+" conceal cchar=∓
 syntax match zeroNiceOperator "-+-" conceal cchar=⩱
 syntax match zeroNiceOperator "|:" conceal cchar=¦
 syntax match zeroNiceOperator "?!" conceal cchar=⁈
+syntax match zeroNiceOperator "??" conceal cchar=⁇
 syntax match zeroNiceOperator "//" conceal cchar=⫽
 syntax match zeroNiceOperator "-:" conceal cchar=∸      " bitwise not
 syntax match zeroNiceOperator ">:<" conceal cchar=⨰     " bitwise xor

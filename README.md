@@ -22,7 +22,7 @@
 
 ### Factorial
 
-    factorial(n) := (n = 0) ? 1 || n * factorial(n - 1)
+    factorial := 0 -> 1; n @ up n' -> n * factorial(n')
 
 ### Quicksort
 
@@ -31,7 +31,7 @@
 ### Infinite list of natural numbers
 
     iterate(f, x) := x :: iterate(f, f(x))
-    countFrom := iterate(+ 1)
+    countFrom := iterate(up)
     naturals := countFrom(0)
 
 ### Infinite list of prime numbers

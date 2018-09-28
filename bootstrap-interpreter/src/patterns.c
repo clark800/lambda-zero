@@ -24,9 +24,12 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
-    if (isThisLexeme(left, "@"))
+    if (isThisLexeme(left, "@")) {
+        if (!isSymbol(getLeft(left)) || isBlank(getLeft(left)))
+           syntaxError("invalid left operand to", left);
         return newLambda(getTag(left), getLeft(left), newApplication(tag,
             reduceLambda(operator, getRight(left), right), getLeft(left)));
+    }
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     Node* body = right;
@@ -73,8 +76,8 @@ static Node* getPatternExtension(Node* lambda) {
     if (isThisLexeme(lambda, "@")) {
         Tag tag = getTag(lambda);
         Node* extension = getPatternExtension(getLeft(getBody(lambda)));
-        return newApplication(tag, newLambda(tag, getLeft(lambda), extension),
-            newBlankReference(tag, 2));
+        return newApplication(tag, newLambda(tag,
+            getParameter(lambda), extension), newBlankReference(tag, 1));
     }
     if (isStrictPatternLambda(lambda))
         return getRight(getBody(lambda));
