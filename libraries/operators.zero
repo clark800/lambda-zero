@@ -2,7 +2,7 @@
 
 syntax(||) := infixR(6)
 syntax(?) := infixR(7)
-syntax(?!) := infixR(7)
+syntax(??) := infixR(7)
 syntax(>>) := infixL(8)
 
 syntax(<=>) := infix(9)
