@@ -152,3 +152,6 @@ Syntax error: invalid left operand to '@' at line 1 column 7
 _ @ x -> x
 Syntax error: invalid left operand to '@' at line 1 column 3
 ===============================================================================
++1
+Syntax error: invalid token '+1' at line 1 column 1
+===============================================================================
