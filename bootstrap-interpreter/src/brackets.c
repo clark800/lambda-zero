@@ -95,7 +95,6 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
 Node* reduceEOF(Node* open, Node* left, Node* contents) {
     syntaxErrorIf(left != NULL, "invalid syntax", open);  // should never happen
     syntaxErrorIf(!isEOF(open), "missing close for", open);
-    syntaxErrorIf(isEOF(contents), "no input", open);
     syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
     return contents;
 }

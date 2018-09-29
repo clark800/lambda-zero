@@ -101,6 +101,7 @@ Program parse(const char* input) {
         }
     }
     Hold* result = pop(stack);
+    syntaxErrorIf(isEOF(getNode(result)), "no input", getNode(result));
     deleteStack(stack);
     debugParseStage("parse", getNode(result), TRACE_PARSING);
     Array* globals = bind(result);
