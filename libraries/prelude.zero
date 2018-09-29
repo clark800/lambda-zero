@@ -31,6 +31,7 @@ if(b, x, y) := b.match(false -> y; true -> x)
 ! b := b ? false || true
 b /\ c := b ? c || false
 b \/ c := b ? true || c
+b \|/ c := b ? ! c || c
 b => c := b ? c || true
 b <=> c := b ? c || ! c
 until(f, p, z) := p(z) ? z || f.until(p, f(z))
