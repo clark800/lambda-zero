@@ -152,12 +152,12 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
 }
 
 void initSymbols(void) {
-    addBuiltinSyntax("\0", 0, 0, CLOSEFIX, L, shiftClose, reduceEOF);
-    addBuiltinSyntax("(", 90, 0, OPENFIX, L, shiftOpen, reduceUnmatched);
+    addBuiltinSyntax("\0", 0, 0, CLOSEFIX, R, shiftClose, reduceEOF);
+    addBuiltinSyntax("(", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
     addBuiltinSyntax(")", 0, 90, CLOSEFIX, R, shiftClose, reduceParentheses);
-    addBuiltinSyntax("[", 90, 0, OPENFIX, L, shiftOpen, reduceUnmatched);
+    addBuiltinSyntax("[", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
     addBuiltinSyntax("]", 0, 90, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
-    addBuiltinSyntax("{", 90, 0, OPENFIX, L, shiftOpenCurly, reduceUnmatched);
+    addBuiltinSyntax("{", 90, 0, OPENFIX, R, shiftOpenCurly, reduceUnmatched);
     addBuiltinSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
     addBuiltinSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
     addBuiltinSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
