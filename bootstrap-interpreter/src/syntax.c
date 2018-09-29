@@ -171,4 +171,5 @@ void initSymbols(void) {
     addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftWhitespace, reduceInvalid);
+    addBuiltinSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
 }
