@@ -8,6 +8,8 @@ struct Array {
     void** elements;
 };
 
+size_t length(const Array* array) {return array->length;}
+
 Array* newArray(size_t initialCapacity) {
     Array* array = (Array*)smalloc(sizeof(Array));
     array->capacity = initialCapacity;
@@ -36,10 +38,6 @@ void append(Array* array, void* value) {
 void* unappend(Array* array) {
     assert(array->length > 0);
     return array->elements[array->length--];
-}
-
-size_t length(const Array* array) {
-    return array->length;
 }
 
 void* elementAt(const Array* array, size_t index) {

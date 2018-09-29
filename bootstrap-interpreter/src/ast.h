@@ -127,7 +127,7 @@ enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULO,
 
 static inline Node* convertOperator(Tag tag) {
     // names in builtins must line up with codes in BuiltinCode, except
-    // EXIT, PUT, GET which don't have accessible names
+    // UNDEFINED, EXIT, PUT, GET which don't have accessible names
     static const char* const builtins[] = {"+", "-", "*", "//", "%",
         "=", "!=", "<", ">", "<=", ">=", "+1", "error"};
     for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
@@ -141,8 +141,6 @@ static inline Node* newPrinter(Tag tag) {
     Node* fold = newName(renameTag(tag, "fold"));
     Node* unit = newName(renameTag(tag, "()"));
     Node* blank = newBlankReference(tag, 1);
-
-    Node* body = newApplication(tag, newApplication(tag, newApplication(tag,
-        fold, blank), put), unit);
-    return newLambda(tag, newBlank(tag), body);
+    return newLambda(tag, newBlank(tag), newApplication(tag,
+        newApplication(tag, newApplication(tag, fold, blank), put), unit));
 }

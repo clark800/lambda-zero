@@ -101,8 +101,9 @@ Node* reduceEOF(Node* open, Node* left, Node* contents) {
 }
 
 Node* reduceUnmatched(Node* open, Node* left, Node* right) {
+    (void)left, (void)right;
     syntaxError("missing close for", open);
-    return left == NULL ? right : left; // suppress unused parameter warning
+    return NULL;
 }
 
 void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {

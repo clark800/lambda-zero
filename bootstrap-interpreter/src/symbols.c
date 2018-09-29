@@ -95,16 +95,16 @@ bool isHigherPrecedence(Node* left, Node* right) {
         return false;
     Rules* leftRules = getRules(left);
     Rules* rightRules = getRules(right);
+
     if (leftRules->rightPrecedence == rightRules->leftPrecedence) {
         const char* message = "operator is non-associative";
         syntaxErrorIf(leftRules->associativity == N, message, left);
         syntaxErrorIf(rightRules->associativity == N, message, right);
     }
 
-    if (rightRules->associativity == R)
-        return leftRules->rightPrecedence > rightRules->leftPrecedence;
-    else
-        return leftRules->rightPrecedence >= rightRules->leftPrecedence;
+    return rightRules->associativity == R ?
+        leftRules->rightPrecedence > rightRules->leftPrecedence :
+        leftRules->rightPrecedence >= rightRules->leftPrecedence;
 }
 
 static Rules* findRules(String lexeme) {
@@ -125,12 +125,11 @@ Node* parseSymbol(Tag tag) {
 
 static void reduceTop(Stack* stack) {
     Hold* right = pop(stack);
-    Hold* op = pop(stack);
-    Node* operator = getNode(op);
-    Hold* left = getFixity(operator) == INFIX ? pop(stack) : NULL;
-    shift(stack, reduce(operator, getNode(left), getNode(right)));
+    Hold* operator = pop(stack);
+    Hold* left = getFixity(getNode(operator)) == INFIX ? pop(stack) : NULL;
+    shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
-    release(op);
+    release(operator);
     if (left != NULL)
         release(left);
 }

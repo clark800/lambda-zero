@@ -38,7 +38,7 @@ while(f, p, z) := f.until((!) <> p, z)
 
 -- math
 `` builtins
-N ::= {0, +1(_ : N)}
+N ::= {0, +1(down : N)}
 (=) := 0 -> (0 -> true; +1 _ -> false);
       +1(n) -> (0 -> false; +1 m -> n = m)
 (!=) := 0 -> (0 -> false; +1 _ -> true);
@@ -60,7 +60,7 @@ n % m := m = 0 ? n || n < m ? n || (n - m) % m
 ``
 
 Z ::= {+(_ : N), -(_ : N)}
-Q ::= {(_ : Z) / (_ : Z)}
+Q ::= {(numerator : Z) / (denominator : Z)}
 positive(n) := + n
 negative(n) := - n
 negate := + n -> - n; - n -> + n
@@ -78,15 +78,15 @@ n ^ m := m.match(
     0 -> 1;
     +1 m' -> isEven(m) ? (*).mirror(n ^ (m // 2)) || n * n ^ m'
 )
+f ^^ n := n.match(0 -> id; +1 n' -> f <> f ^^ n')
 
 -- tuple
 Unit ::= {()}
-Pair(a, b) ::= {(_ : a, _ : b)}
-Triple(a, b, c) ::= {(_ : a, _ : b, _ : c)}
-Quadruple(w, x, y, z) ::= {(_ : w, _ : x, _ : y, _ : z)}
+Pair(a, b) ::= {(first : a, second : b)}
+Triple(a, b, c) ::= {(first_3 : a, second_3 : b, third_3 : c)}
+Quadruple(a, b, c, d) ::=
+    {(first_4 : a, second_4 : b, third_4 : c, fouth_4 : d)}
 pair(a, b) := (a, b)
-first((x, y)) := x
-second((x, y)) := y
 swap((x, y)) := (y, x)
 mapFirst(xy, f) := (f(first(xy)), second(xy))
 mapSecond(xy, f) := (first(xy), f(second(xy)))
@@ -95,14 +95,14 @@ curry(f) := x -> y -> f((x, y))
 uncurry(f) := xx -> f(first(xx), second(xx))
 
 -- maybe
-Maybe(a) ::= {nothing, just(_ : a)}
+Maybe(a) ::= {nothing, just(thing : a)}
 isNothing := nothing -> true; just(_) -> false
 isJust := nothing -> false; just(_) -> true
 mx >> f := mx.match(nothing -> nothing; just(x) -> f(x))   -- maybe bind
 mx ?? d := mx.match(nothing -> d; just(x) -> x)    -- just value or default
 
 -- list
-List(a) ::= {[], (_ : a) :: (_ : List(a))}
+List(a) ::= {[], (head : a) :: (tail : List(a))}
 prepend := `(::)
 isNil := [] -> true; _ :: _ -> false     -- note: isEmpty is reserved for sets
 fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
@@ -111,6 +111,15 @@ xs ++ ys := xs.fold((::), ys)                   -- concatenate two lists
 join(xss) := xss.fold((++), [])            -- concatenate list of lists
 length(xs) := xs.fold(constant(+1), 0)         -- get length of list
 reverse(xs) := xs.cascade(`(::), [])
+drop(xs, n) := (tail ^^ n)(xs)            -- drop n elements from front of list
+take(xs, n) := n.match(0 -> []; +1 n' -> head(xs) :: tail(xs).take(n'))
+xs[n] := head(xs.drop(n))          -- get element of list at index
+xs[start, end] := xs.drop(start).take(end - start)
+last(xs) := tail.until(isNil <> tail, xs).head    -- get last element of list
+dropLast(xs) :=
+    isNil(xs) \/ isNil(tail(xs)) ? [] || head(xs) :: dropLast(tail(xs))
+reduce(xs, f) := tail(xs).cascade(f, xs[0])
+
 dropIf(ns, p) := ns.match([] -> []; n :: ns' -> p(n) ? ns' || ns)
 takeWhile(xs, p) := xs.match(
     [] -> [];
@@ -148,24 +157,10 @@ find(xs, p) := xs.match(
     [] -> nothing;
     x :: xs' -> p(x) ? just(x) || xs'.find(p)
 )
+
 -- foldMap : a[] --> (a --> s --> b ** s) --> s --> (b[], s)
 foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
     f(x, s).mapFirst(:: ys), ([], z)).mapFirst(reverse)
-
--- fallible function
-f ^^ n := n.match(0 -> id; +1 n' -> f <> f ^^ n')
-
--- fallible list
-head := [] -> error("head: empty list"); x :: _ -> x
-tail := [] -> error("tail: empty list"); _ :: xs -> xs
-drop(xs, n) := (tail ^^ n)(xs)            -- drop n elements from front of list
-take(xs, n) := n.match(0 -> []; +1 n' -> head(xs) :: tail(xs).take(n'))
-xs[n] := head(xs.drop(n))          -- get element of list at index
-xs[start, end] := xs.drop(start).take(end - start)
-last(xs) := tail.until(isNil <> tail, xs).head    -- get last element of list
-dropLast(xs) :=
-    isNil(xs) \/ isNil(tail(xs)) ? [] || head(xs) :: dropLast(tail(xs))
-reduce(xs, f) := tail(xs).cascade(f, xs[0])
 
 -- generic list constructors
 iterate(f, x) := x :: iterate(f, f(x))       -- iteratively apply f
@@ -302,7 +297,7 @@ parseInteger(string, base) := string.head = '-' ?
     - parseNatural(tail(string), base) || + parseNatural(string, base)
 
 -- trees
-Tree(a) ::= {node(_ : a, _ : List(Tree(a)))}
+Tree(a) ::= {node(datum : a, children : List(Tree(a)))}
 
 -- repl
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)

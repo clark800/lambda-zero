@@ -36,13 +36,10 @@ static Node* transformRecursion(Node* name, Node* value) {
     return newApplication(tag, yCombinator, newLambda(tag, name, value));
 }
 
-static bool isTupleConstructor(Node* node) {
-    return isSymbol(node) && getLexeme(node).start[0] == ',';
-}
-
 static bool isTuple(Node* node) {
+    // a tuple is a spine of applications headed by a symbol starting with comma
     return isApplication(node) ? isTuple(getLeft(node)) :
-        isTupleConstructor(node);
+        (isSymbol(node) && getLexeme(node).start[0] == ',');
 }
 
 static Node* newDefinition(Tag tag, Node* name, Node* value, Node* scope) {
@@ -75,31 +72,53 @@ static inline bool isValidPattern(Node* node) {
 static bool isValidConstructorParameter(Node* parameter) {
     return isApplication(parameter) && isApplication(getLeft(parameter)) &&
         isValidPattern(getRight(parameter)) &&
-        isBlank(getRight(getLeft(parameter))) &&
+        isSymbol(getRight(getLeft(parameter))) &&
         isThisLeaf(getLeft(getLeft(parameter)), ":");
+}
+
+static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
+        unsigned int i, unsigned int n, unsigned int j, unsigned int m) {
+    if (!isValidConstructorParameter(parameter))
+        syntaxError("invalid constructor parameter", parameter);
+    Node* name = getRight(getLeft(parameter));
+    if (isBlank(name))
+        return scope;
+    // defined argument = c_1 -> ... -> c_n -> c_i P_1 ... P_m
+    // undefined argument = c_1 -> ... -> c_n -> c_x ...    (x != i)
+    // getter is a function that returns P_j for defined arguments and
+    // undefined for undefined arguments:
+    // getter = _ -> _ undefined (1) ... projector (i) ... undefined (n)
+    Node* projector = newProjector(tag, m, j);
+    Node* getter = newBlankReference(tag, 1);
+    for (unsigned int k = 0; k < n; ++k)
+        getter = newApplication(tag, getter, k == i ? projector :
+            newName(renameTag(tag, "undefined")));
+    getter = newLambda(tag, newBlank(tag), getter);
+    return newDefinition(tag, name, getter, scope);
 }
 
 static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
         unsigned int i, unsigned int n) {
-    // pattern is an application of a constructor name to a number of asterisks
+    // pattern is an application of a constructor name to a number of parameters
     // i is the index of this constructor in this algebraic data type
     // n is the total number of constructors for this algebraic data type
-
-    // verify that all arguments in pattern are asterisks and count to get k
-    unsigned int k = 0;
-    for (; isApplication(pattern); ++k, pattern = getLeft(pattern))
-        if (!isValidConstructorParameter(getRight(pattern)))
-            syntaxError("invalid constructor parameter", getRight(pattern));
+    // j is the index of the constructor parameter
+    // m is the total number of parameters for this constructor
+    // k = m - j - 1
+    unsigned int m = getArgumentCount(pattern);
+    for (unsigned int k = 0; k < m; ++k, pattern = getLeft(pattern))
+        scope = newGetterDefinition(tag, getRight(pattern), scope, i, n,
+            m - k - 1, m);
     syntaxErrorIf(!isSymbol(pattern), "invalid constructor name", pattern);
 
-    // let p_* be constructor parameters (k total)
+    // let p_* be constructor parameters (m total)
     // let c_* be constructor names (n total)
-    // build: p_1 -> ... -> p_k -> c_1 -> ... -> c_n -> c_i p_1 ... p_k
+    // build: p_1 -> ... -> p_m -> c_1 -> ... -> c_n -> c_i p_1 ... p_m
     Node* constructor = newBlankReference(tag, (unsigned long long)(n - i));
-    for (unsigned int j = 0; j < k; ++j)
+    for (unsigned int j = 0; j < m; ++j)
         constructor = newApplication(tag, constructor,
-            newBlankReference(tag, (unsigned long long)(n + k - j)));
-    for (unsigned int j = 0; j < n + k; ++j)
+            newBlankReference(tag, (unsigned long long)(n + m - j)));
+    for (unsigned int q = 0; q < n + m; ++q)
         constructor = newLambda(tag, newBlank(tag), constructor);
     return newDefinition(tag, pattern, constructor, scope);
 }
@@ -118,9 +137,7 @@ Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
     Node* undefined = newName(renameTag(tag, "undefined"));
     Node* scope = newDefinition(tag, getHead(left), undefined, getRight(right));
 
-    // for each item in the patterns comma list, define a constructor function,
-    // then return all of these definitions as a comma list, which the parser
-    // converts to a sequence of lines
+    // for each item in the patterns tuple, define a constructor function
     unsigned int n = getArgumentCount(adt);
     for (unsigned int i = 1; isApplication(adt); ++i, adt = getLeft(adt))
         scope = newConstructorDefinition(tag, getRight(adt), scope, n - i, n);

@@ -9,11 +9,11 @@ unsigned int getArgumentCount(Node* application) {
     return i;
 }
 
-static Node* newProjection(Tag tag, unsigned int size, unsigned int index) {
-    Node* projection = newBlankReference(tag, size - index);
+Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
+    Node* projector = newBlankReference(tag, size - index);
     for (unsigned int i = 0; i < size; ++i)
-        projection = newLambda(tag, newBlank(tag), projection);
-    return projection;
+        projector = newLambda(tag, newBlank(tag), projector);
+    return projector;
 }
 
 Node* reduceLambda(Node* operator, Node* left, Node* right) {
@@ -36,9 +36,8 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
     for (Node* items = left; isApplication(items); items = getLeft(items))
         body = reduceLambda(operator, getRight(items), body);
     for (unsigned int i = 0, size = getArgumentCount(left); i < size; ++i)
-        body = newApplication(tag, body,
-            newApplication(tag, newBlankReference(tag, 1),
-                newProjection(tag, size, i)));
+        body = newApplication(tag, body, newApplication(tag,
+            newBlankReference(tag, 1), newProjector(tag, size, i)));
     return newLambda(tag, newBlank(tag), body);
 }
 
