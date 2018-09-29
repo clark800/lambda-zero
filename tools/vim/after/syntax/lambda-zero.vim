@@ -10,6 +10,7 @@ syntax match zeroNiceOperator ":" conceal cchar=∈
 syntax match zeroNiceOperator "!:" conceal cchar=∉
 syntax match zeroNiceOperator "::" conceal cchar=∷
 syntax match zeroNiceOperator "++" conceal cchar=⧺
+syntax match zeroNiceOperator "+1" conceal cchar=↑
 syntax match zeroNiceOperator "\.\." conceal cchar=‥
 syntax match zeroNiceOperator "\.\.\." conceal cchar=…
 syntax match zeroNiceOperator "##" conceal cchar=⩨
@@ -168,7 +169,6 @@ syntax match zeroNiceOperator "\^\*" conceal cchar=﹡
 
 " named operators
 syntax match zeroNiceOperator "\<U\>" conceal cchar=⋃
-syntax match zeroNiceOperator "\<up\>" conceal cchar=↑
 syntax match zeroNiceOperator "\<down\>" conceal cchar=↓
 syntax match zeroNiceOperator "\<integral\>" conceal cchar=∫
 syntax match zeroNiceOperator "\<infinity\>" conceal cchar=∞
