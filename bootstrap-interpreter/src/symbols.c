@@ -100,6 +100,8 @@ bool isHigherPrecedence(Node* left, Node* right) {
         const char* message = "operator is non-associative";
         syntaxErrorIf(leftRules->associativity == N, message, left);
         syntaxErrorIf(rightRules->associativity == N, message, right);
+        if (leftRules->associativity != rightRules->associativity)
+            syntaxError("incompatible associativity", right);
     }
 
     return rightRules->associativity == R ?
