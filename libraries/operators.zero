@@ -2,14 +2,14 @@
 
 syntax(||) := infixR(6)
 syntax(?) := infixR(7)
-syntax(??) := infixR(7)
+syntax(?!) := infixR(7)
+syntax(??) := infixL(8)
 syntax(>>) := infixL(8)
 
 syntax(<=>) := infix(9)
 syntax(=>) := infixR(10)
 syntax(\/) := infixR(11)
 syntax(/\) := infixR(12)
-syntax(!) := prefix(13)
 
 syntax(=) := infix(13)
 syntax(!=) := infix(13)
@@ -46,6 +46,7 @@ syntax(<>) := infixR(16)
 syntax(^) := infixR(17)
 syntax(^^) := infixL(17)
 
+syntax(!) := prefix(18)
 syntax(up) := prefix(18)
 syntax(#) := prefix(18)
 
