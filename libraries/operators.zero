@@ -46,7 +46,7 @@ syntax(<>) := infixR(16)
 syntax(^) := infixR(17)
 syntax(^^) := infixL(17)
 
-syntax(+1) := prefix(18)
+syntax(up) := prefix(18)
 syntax(#) := prefix(18)
 
 syntax(.) := infixL(95)

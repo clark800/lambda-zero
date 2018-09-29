@@ -129,7 +129,7 @@ static inline Node* convertOperator(Tag tag) {
     // names in builtins must line up with codes in BuiltinCode, except
     // UNDEFINED, EXIT, PUT, GET which don't have accessible names
     static const char* const builtins[] = {"+", "-", "*", "//", "%",
-        "=", "!=", "<", ">", "<=", ">=", "+1", "error"};
+        "=", "!=", "<", ">", "<=", ">=", "up", "error"};
     for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
         if (isThisString(tag.lexeme, builtins[i]))
             return newBuiltin(tag, i);
