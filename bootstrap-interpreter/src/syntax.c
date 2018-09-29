@@ -32,8 +32,9 @@ static Node* reducePostfix(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceReserved(Node* operator, Node* left, Node* right) {
+    (void)left, (void)right;
     syntaxError("reserved operator", operator);
-    return reduceApply(operator, left, right);  // suppress unused warning
+    return NULL;
 }
 
 static void shiftPrefix(Stack* stack, Node* operator) {
@@ -94,8 +95,9 @@ static Node* reduceError(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
+    (void)left, (void)right;
     syntaxError("operator syntax undeclared", operator);
-    return reduceApply(operator, left, right);  // suppress unused warning
+    return NULL;
 }
 
 static Node* reduceSyntax(Node* operator, Node* left, Node* right) {

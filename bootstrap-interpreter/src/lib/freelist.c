@@ -19,17 +19,11 @@ static size_t COUNT = 0;
 void initPool(size_t itemSize, size_t initialCapacity) {
     assert(POOL == NULL);
     SIZE = /*sizeof(void*) + */ itemSize;
-    POOL = newPool(SIZE, initialCapacity);
-    NEXT = POOL;
+    NEXT = POOL = newPool(SIZE, initialCapacity);
 }
 
-void destroyPool(void) {
-    deletePool(POOL);
-}
-
-size_t getMemoryUsage(void) {
-    return COUNT * SIZE;
-}
+void destroyPool(void) {deletePool(POOL);}
+size_t getMemoryUsage(void) {return COUNT * SIZE;}
 
 /*void* mark(void* slot) {
     *(void**)slot = MARKER;
