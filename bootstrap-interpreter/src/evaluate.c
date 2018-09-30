@@ -2,7 +2,6 @@
 #include "lib/array.h"
 #include "lib/stack.h"
 #include "ast.h"
-#include "errors.h"
 #include "closure.h"
 #include "builtins.h"
 

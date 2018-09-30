@@ -13,9 +13,8 @@ digraph graphname {
             label="parser";
             parse;
             lex;
-            scan;
-            operands;
-            operators;
+            symbols;
+            syntax;
             define;
             brackets;
             patterns;
@@ -35,24 +34,14 @@ digraph graphname {
         main;
     }
 
-    print -> ast;
-
-    errors -> ast;
     errors -> print;
 
     debug -> ast;
     debug -> print;
-    debug -> closure;
 
     serialize -> ast;
     serialize -> print;
     serialize -> closure;
-
-    closure -> errors;
-
-    lex -> scan;
-    lex -> ast;
-    lex -> errors;
 
     bind -> ast;
     bind -> errors;
@@ -62,27 +51,27 @@ digraph graphname {
 
     brackets -> ast;
     brackets -> errors;
-    brackets -> operators;
+    brackets -> symbols;
 
     define -> ast;
     define -> errors;
     define -> patterns;
 
-    operands -> ast;
-    operands -> errors;
+    symbols -> ast;
+    symbols -> errors;
 
-    operators -> ast;
-    operators -> scan;
-    operators -> errors;
-    operators -> define;
-    operators -> patterns;
-    operators -> brackets;
+    syntax -> ast;
+    syntax -> errors;
+    syntax -> symbols;
+    syntax -> patterns;
+    syntax -> define;
+    syntax -> brackets;
 
+    parse -> lex;
     parse -> ast;
     parse -> errors;
-    parse -> lex;
-    parse -> operands;
-    parse -> operators;
+    parse -> symbols;
+    parse -> syntax;
     parse -> bind;
     parse -> debug;
 
@@ -91,7 +80,6 @@ digraph graphname {
     builtins -> closure;
 
     evaluate -> ast;
-    evaluate -> errors;
     evaluate -> closure;
     evaluate -> builtins;
 
