@@ -3,6 +3,7 @@
 " first
 
 syntax match zeroNiceOperator "!" conceal cchar=¬
+syntax match zeroNiceOperator "!!" conceal cchar=‼
 syntax match zeroNiceOperator "\*" conceal cchar=⋅
 syntax match zeroNiceOperator "\*\*" conceal cchar=×
 syntax match zeroNiceOperator "><" conceal cchar=⪤

@@ -11,12 +11,13 @@
 -:
 ##
 &
-\./
+U
 ~~
 +-
 -+
+//
 
-// comparison operators
+-- comparison operators
 ~:
 !~
 <=
@@ -40,7 +41,7 @@
 =<>=
 =?=
 
-// arrow operators
+-- arrow operators
 <-
 ->
 <=>
@@ -61,7 +62,7 @@
 =>>
 <<=
 
-// wedge and triangle operators
+-- wedge and triangle operators
 \-/
 /\
 \/
@@ -88,7 +89,7 @@
 ><|
 |><|
 
-// circle and diamond operators
+-- circle and diamond operators
 <>
 <+>
 <->
@@ -109,7 +110,7 @@
 <^>
 <.>
 
-// bar and turnstile operators
+-- bar and turnstile operators
 ||
 |-
 -|
@@ -124,7 +125,7 @@
 =||=
 |==|
 
-// boxed operators
+-- boxed operators
 |&|
 |..|
 |||
@@ -149,12 +150,12 @@
 |?|
 |^|
 
-// superscript operators
+-- superscript operators
 ^^(n)
 ^^(2)
 ^^(3)
 
-// named operators
+-- named operators
 int
 infinity
 powerSet
@@ -167,7 +168,7 @@ div
 curl
 laplacian
 
-// greek letters
+-- greek letters
 alpha
 beta
 gamma
@@ -232,7 +233,7 @@ Y
 Z
 i
 
-// subscripts and primes
+-- subscripts and primes
 x'
 x''
 x'''

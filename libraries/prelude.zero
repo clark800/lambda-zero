@@ -159,8 +159,8 @@ find(xs, p) := xs.match(
     x :: xs' -> p(x) ? just(x) || xs'.find(p)
 )
 
--- foldMap : a[] --> (a --> s --> b ** s) --> s --> (b[], s)
-foldMap(xs, f, z) := xs.cascade((ys, s) -> x ->
+-- cascadeMap : a[] --> (a --> s --> b ** s) --> s --> (b[], s)
+cascadeMap(xs, f, z) := xs.cascade((ys, s) -> x ->
     f(x, s).mapFirst(:: ys), ([], z)).mapFirst(reverse)
 
 -- generic list constructors
