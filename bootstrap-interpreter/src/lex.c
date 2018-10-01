@@ -16,7 +16,7 @@ static bool isComment(const char* s) {
 }
 
 static bool isNumeric(const char* s) {
-    return isdigit(s[0]) || ((s[0] == '+' || s[0] == '-') && isdigit(s[1]));
+    return (bool)isdigit(s[0] == '+' || s[0] == '-' ? s[1] : s[0]);
 }
 
 static bool isInvalid(char c) {
@@ -50,12 +50,19 @@ static const char* skipQuote(const char* s) {
     return s;
 }
 
+static const char* skipNumeric(const char* s) {
+    s = skipWhile(s, isNotDelimiter);
+    if (s[0] == '.' && isdigit(s[1])) s = skipWhile(++s, isNotDelimiter);
+    return s;
+}
+
 static const char* skipLexeme(const char* s) {
     if (isLineComment(s)) return skipWhile(s, isNotNewline);
     if (isBlockComment(s)) return skipBlockComment(s);
     if (isSpace(s[0])) return skipWhile(s, isSpace);
     if (isPeriod(s[0])) return skipWhile(s, isPeriod);
     if (isQuote(s[0])) return skipQuote(s);
+    if (isNumeric(s)) return skipNumeric(s);
     if (isNotDelimiter(s[0])) return skipWhile(s, isNotDelimiter);
     return s[0] == '\0' ? s : s + 1;
 }
