@@ -187,6 +187,10 @@ primes := (
     filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))
     filterPrime(countFrom(2))
 )
+fibonaccis := (
+    f(m, n) := m :: f(n, m + n)
+    f(0, 1)
+)
 
 -- string
 xs =*= ys := xs.match(        -- string equality
