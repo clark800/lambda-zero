@@ -38,15 +38,12 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
 }
 
 static void shiftPrefix(Stack* stack, Node* operator) {
-    if (isSpace(peek(stack, 0)))
-        release(pop(stack));
     reduceLeft(stack, operator);
     push(stack, operator);
 }
 
 static void shiftInfix(Stack* stack, Node* operator) {
-    if (isSpace(peek(stack, 0)))
-        release(pop(stack));
+    erase(stack, " ");
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
         if (isThisLeaf(operator, "+"))
@@ -63,8 +60,7 @@ static void shiftInfix(Stack* stack, Node* operator) {
 }
 
 static void shiftPostfix(Stack* stack, Node* operator) {
-    if (isSpace(peek(stack, 0)))
-        release(pop(stack));
+    erase(stack, " ");
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
         push(stack, newName(renameTag(getTag(operator), "_.")));
@@ -76,10 +72,10 @@ static void shiftPostfix(Stack* stack, Node* operator) {
 }
 
 static void shiftWhitespace(Stack* stack, Node* operator) {
-    if (isSpace(peek(stack, 0)))
-        release(pop(stack));
+    erase(stack, " ");
     reduceLeft(stack, operator);
-    // ignore whitespace after operators
+    // ignore whitespace after operators (note: close and postfix are never
+    // pushed onto the stack, so the operator must be expecting a right operand)
     if (!isOperator(peek(stack, 0)))
         push(stack, operator);
 }
@@ -136,9 +132,9 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
 
     // add special case prefix operators for "+" and "-"
     // done here to avoid hard-coding a precedence for them
-    if (isThisLeaf(name, "+") && isThisLeaf(fixity, "infixL"))
+    if (isThisLeaf(name, "+"))
         addBuiltinSyntax("(+)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
-    if (isThisLeaf(name, "-") && isThisLeaf(fixity, "infixL"))
+    if (isThisLeaf(name, "-"))
         addBuiltinSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
 
     // reduce to an identity function with the operator symbol as parameter name
