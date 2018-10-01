@@ -20,14 +20,9 @@ typedef struct {
 } Rules;
 
 static void shiftOperand(Stack* stack, Node* node) {
-    Node* operand = reduce(node, NULL, NULL);
-    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
-        push(stack, operand);
-    } else {
-        Hold* left = pop(stack);
-        push(stack, newApplication(getTag(node), getNode(left), operand));
-        release(left);
-    }
+    if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
+        syntaxError("missing operator before", node);
+    push(stack, reduce(node, NULL, NULL));
 }
 
 static Node* reduceOperand(Node* operand, Node* left, Node* right) {
@@ -52,8 +47,9 @@ bool isOperator(Node* node) {
     return isSymbol(node) && getFixity(node) != NOFIX;
 }
 
-bool isSpace(Node* node) {
-    return isOperator(node) && isThisLeaf(node, " ");
+void erase(Stack* stack, const char* lexeme) {
+    if (!isEmpty(stack) && isThisLeaf(peek(stack, 0), lexeme))
+        release(pop(stack));
 }
 
 bool isSpecial(Node* node) {

@@ -4,8 +4,8 @@ typedef unsigned char Precedence;
 
 bool isOperator(Node* node);
 bool isSpecial(Node* node);
-bool isSpace(Node* node);
 bool isOpenOperator(Node* node);
+void erase(Stack* stack, const char* lexeme);
 Fixity getFixity(Node* operator);
 
 Node* reduce(Node* operator, Node* left, Node* right);
