@@ -1,5 +1,5 @@
 --* prelude.zero
-`` naming conventions
+{= naming conventions
 x, y, z unspecified type
 f, g, h function type
 n, m, k integer type
@@ -7,7 +7,7 @@ b, c    boolean type
 p, q    boolean-valued function
 mx      maybe of x
 xs      list of x
-xy      pair of x and y ``
+xy      pair of x and y =}
 
 -- undefined
 undefined := error("")
@@ -38,7 +38,7 @@ until(f, p, z) := p(z) ? z || f.until(p, f(z))
 while(f, p, z) := f.until((!) <> p, z)
 
 -- math
-`` builtins
+{= builtins
 N ::= {0, up(down : N)}
 (=) := 0 -> (0 -> true; up _ -> false);
       up n -> (0 -> false; up m -> n = m)
@@ -58,7 +58,7 @@ N ::= {0, up(down : N)}
 (*) := 0 -> _ -> 0; up n -> m -> m + n * m
 n // m := m = 0 ? undefined || n < m ? 0 || up((n - m) // m)
 n % m := m = 0 ? n || n < m ? n || (n - m) % m
-``
+=}
 
 Z ::= {+(_ : N), -(_ : N)}
 Q ::= {(numerator : Z) / (denominator : Z)}

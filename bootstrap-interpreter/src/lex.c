@@ -8,7 +8,7 @@ static bool isPeriod(char c) {return c == '.';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}
 static bool isNotNewline(char c) {return c != '\n';}
 static bool isLineComment(const char* s) {return s[0] == '-' && s[1] == '-';}
-static bool isBlockComment(const char* s) {return s[0] == '`' && s[1] == '`';}
+static bool isBlockComment(const char* s) {return s[0] == '{' && s[1] == '=';}
 static bool isSpace(char c) {return c > 0 && isspace(c) && c != '\n';}
 
 static bool isComment(const char* s) {
@@ -34,7 +34,7 @@ static const char* skipWhile(const char* s, bool (*predicate)(char)) {
 }
 
 static const char* skipBlockComment(const char* s) {
-    for (s += 2; s[0] != '\0' && (s[0] != '`' || s[1] != '`'); ++s);
+    for (s += 2; s[0] != '\0' && (s[0] != '=' || s[1] != '}'); ++s);
     return s[0] == '\0' ? s : s + 2;
 }
 
