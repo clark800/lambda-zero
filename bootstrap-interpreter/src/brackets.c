@@ -128,12 +128,11 @@ void shiftOpenCurly(Stack* stack, Node* operator) {
 }
 
 void shiftClose(Stack* stack, Node* close) {
-    erase(stack, " ");
-    erase(stack, "\n");
+    eraseWhitespace(stack);
     erase(stack, ";");
 
     Node* top = peek(stack, 0);
-    if (isOperator(top) && !isSpecial(top)) {
+    if (isOperator(top) && !isSpecial(top) && !isEOF(close)) {
         if (isThisLeaf(peek(stack, 1), "_.")) {
             // bracketed infix operator
             Hold* op = pop(stack);
