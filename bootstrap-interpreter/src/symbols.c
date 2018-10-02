@@ -52,6 +52,8 @@ void erase(Stack* stack, const char* lexeme) {
         release(pop(stack));
 }
 
+void eraseWhitespace(Stack* stack) {erase(stack, "\n"), erase(stack, " ");}
+
 bool isSpecial(Node* node) {
     return isOperator(node) && ((Rules*)getRules(node))->special;
 }

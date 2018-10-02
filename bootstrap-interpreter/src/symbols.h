@@ -6,6 +6,7 @@ bool isOperator(Node* node);
 bool isSpecial(Node* node);
 bool isOpenOperator(Node* node);
 void erase(Stack* stack, const char* lexeme);
+void eraseWhitespace(Stack* stack);
 Fixity getFixity(Node* operator);
 
 Node* reduce(Node* operator, Node* left, Node* right);

@@ -43,7 +43,7 @@ static void shiftPrefix(Stack* stack, Node* operator) {
 }
 
 static void shiftInfix(Stack* stack, Node* operator) {
-    erase(stack, " ");
+    eraseWhitespace(stack);
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
         if (isThisLeaf(operator, "+"))
@@ -60,7 +60,7 @@ static void shiftInfix(Stack* stack, Node* operator) {
 }
 
 static void shiftPostfix(Stack* stack, Node* operator) {
-    erase(stack, " ");
+    eraseWhitespace(stack);
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
         push(stack, newName(renameTag(getTag(operator), "_.")));
