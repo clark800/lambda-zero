@@ -25,7 +25,7 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
     if (isThisLexeme(left, "@")) {
-        if (!isSymbol(getLeft(left)) || isBlank(getLeft(left)))
+        if (!isSymbol(getLeft(left)) || isUnused(getLeft(left)))
            syntaxError("invalid left operand to", left);
         return newLambda(getTag(left), getLeft(left), newApplication(tag,
             reduceLambda(operator, getRight(left), right), getLeft(left)));

@@ -77,9 +77,9 @@ Node* reduce(Node* operator, Node* left, Node* right) {
     Node* result = getRules(operator)->reduce(operator, left, right);
     if (left != NULL && isSection(left))
         return propagateSection(operator, result,
-            right != NULL && isSection(right) ?  "_._" : "_.");
+            right != NULL && isSection(right) ?  ".*." : ".*");
     if (right != NULL && isSection(right))
-        return propagateSection(operator, result, "._");
+        return propagateSection(operator, result, "*.");
     return result;
 }
 

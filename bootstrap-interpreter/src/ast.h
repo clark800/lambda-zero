@@ -52,14 +52,18 @@ static inline bool isGlobalReference(Node* node) {
 static inline bool isEOF(Node* node) {return isThisLeaf(node, "\0");}
 static inline bool isBlank(Node* node) {return isThisLeaf(node, "_");}
 
+static inline bool isUnused(Node* node) {
+    return getLexeme(node).start[0] == '_';
+}
+
 static inline bool isIdentity(Node* node) {
     return isLambda(node) && isSymbol(getBody(node)) &&
         isSameLexeme(getParameter(node), getBody(node));
 }
 
 static inline bool isSection(Node* node) {
-    return isThisLexeme(node, "_._") ||
-        isThisLexeme(node, "_.") || isThisLexeme(node, "._");
+    return isThisLexeme(node, ".*.") ||
+        isThisLexeme(node, ".*") || isThisLexeme(node, "*.");
 }
 
 // ================================
