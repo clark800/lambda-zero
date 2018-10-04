@@ -11,7 +11,8 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
 }
 
 static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
-    syntaxErrorIf(isBlank(node), "cannot reference", node);
+    if (isUnused(node))
+       syntaxError("cannot reference a symbol starting with underscore", node);
     unsigned long long index = findDebruijnIndex(node, parameters);
     syntaxErrorIf(index == 0, "undefined symbol", node);
     unsigned long long localDepth = length(parameters) - globalDepth;

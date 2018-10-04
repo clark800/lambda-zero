@@ -37,8 +37,8 @@ static Node* newSection(Tag tag, const char* name, Node* body) {
 }
 
 static Node* createSection(Tag tag, Node* contents) {
-    if (isThisLexeme(contents, "_._"))
-        return newSection(tag, "_.", newSection(tag, "._", contents));
+    if (isThisLexeme(contents, ".*."))
+        return newSection(tag, ".*", newSection(tag, "*.", contents));
     if (isLeaf(getLeft(contents)))
         return getLeft(contents);   // parenthesized postfix operator
     return newSection(tag, getLexeme(contents).start, contents);
@@ -133,7 +133,7 @@ void shiftClose(Stack* stack, Node* close) {
 
     Node* top = peek(stack, 0);
     if (isOperator(top) && !isSpecial(top) && !isEOF(close)) {
-        if (isThisLeaf(peek(stack, 1), "_.")) {
+        if (isThisLeaf(peek(stack, 1), ".*")) {
             // bracketed infix operator
             Hold* op = pop(stack);
             release(pop(stack));
@@ -150,7 +150,7 @@ void shiftClose(Stack* stack, Node* close) {
             push(stack, convertOperator(tag));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
-            push(stack, newName(renameTag(getTag(top), "._")));
+            push(stack, newName(renameTag(getTag(top), "*.")));
     }
 
     reduceLeft(stack, close);

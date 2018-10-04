@@ -125,19 +125,13 @@ undefined := 9 \n A ::= {()} \n A
 syntax(|_|) := infix(20) \n 0
 Syntax error: invalid underscore in operator name '|_|' at line 1 column 8
 ===============================================================================
-syntax(__) := infixR(20) \n 0
-Syntax error: syntax must be infixL '__' at line 1 column 8
+syntax( ) := infixR(20) \n 0
+Syntax error: syntax must be infixL 'infixR' at line 1 column 14
 ===============================================================================
-syntax(__) := infixL(20) \n syntax(__) := infixL(20) \n 0
-Syntax error: syntax already defined '__' at line 2 column 9
+syntax( ) := infixL(20) \n syntax( ) := infixL(20) \n 0
+Syntax error: syntax already defined ' ' at line 2 column 8
 ===============================================================================
-syntax(__) := infixL(20) \n a b := a * b \n (__)
-(a -> (b -> ((* a) b)))
-===============================================================================
-syntax(__) := infixL(20) \n a b := a * b \n (__ 2)(3)
-6
-===============================================================================
-syntax(__) := infixL(20) \n (__)(a, b) := a * b \n 2 3
+syntax( ) := infixL(20) \n a b := a * b \n 2 3
 6
 ===============================================================================
 y @ x -> x

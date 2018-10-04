@@ -16,11 +16,6 @@ static Node* reduceInfix(Node* operator, Node* left, Node* right) {
         convertOperator(getTag(operator)), left), right);
 }
 
-static Node* reduceSpace(Node* operator, Node* left, Node* right) {
-    Tag tag = renameTag(getTag(operator), "__");
-    return newApplication(tag, newApplication(tag, newName(tag), left), right);
-}
-
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
     return reduceApply(operator, convertOperator(getTag(operator)), right);
@@ -51,7 +46,7 @@ static void shiftInfix(Stack* stack, Node* operator) {
         else if (isThisLeaf(operator, "-"))
             operator = parseSymbol(renameTag(getTag(operator), "(-)"));
         else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-            push(stack, newName(renameTag(getTag(operator), "_.")));
+            push(stack, newName(renameTag(getTag(operator), ".*")));
         else syntaxError("missing left operand for", operator);
     }
     if (isThisLeaf(operator, ":=") && isThisLexeme(peek(stack, 0), "syntax"))
@@ -63,7 +58,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     eraseWhitespace(stack);
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-        push(stack, newName(renameTag(getTag(operator), "_.")));
+        push(stack, newName(renameTag(getTag(operator), ".*")));
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);
@@ -100,7 +95,7 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isApplication(left), "invalid left operand", left);
     Node* name = getRight(left);
     syntaxErrorIf(!isLeaf(name), "expected symbol operand to", getLeft(left));
-    if (contains(getLexeme(name), '_') && !isThisLexeme(name, "__"))
+    if (contains(getLexeme(name), '_'))
        syntaxError("invalid underscore in operator name", name);
     if (!isApplication(right) || !isNatural(getRight(right)))
         syntaxError("invalid syntax definition", operator);
@@ -111,12 +106,11 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     Node* fixity = getLeft(right);
 
     Tag tag = getTag(name);
-    if (isThisLeaf(name, "__")) {
+    if (isThisLeaf(name, "()")) {
+        tag = renameTag(tag, " ");
         if (!isThisLeaf(fixity, "infixL"))
-            syntaxError("syntax must be infixL", name);
-        addSyntax(tag, p, p, INFIX, L, shiftInfix, reduceInfix);
-        Tag space = renameTag(tag, " ");
-        addSyntax(space, p, p, INFIX, L, shiftWhitespace, reduceSpace);
+            syntaxError("syntax must be infixL", fixity);
+        addSyntax(tag, p, p, INFIX, L, shiftWhitespace, reduceInfix);
     }
     else if (isThisLeaf(fixity, "infix"))
         addSyntax(tag, p, p, INFIX, N, shiftInfix, reduceInfix);

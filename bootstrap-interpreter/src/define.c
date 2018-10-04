@@ -81,7 +81,7 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
     if (!isValidConstructorParameter(parameter))
         syntaxError("invalid constructor parameter", parameter);
     Node* name = getRight(getLeft(parameter));
-    if (isBlank(name))
+    if (isUnused(name))
         return scope;
     // defined argument = c_1 -> ... -> c_n -> c_i P_1 ... P_m
     // undefined argument = c_1 -> ... -> c_n -> c_x ...    (x != i)
