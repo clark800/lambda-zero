@@ -1,0 +1,114 @@
+--* define.zero
+
+newDefinition(tag, name, value, scope) :=
+    newApplication(tag, reduceLambda(name, name, scope), value)
+
+hasRecursiveCalls(node, name) := (
+    getNodeType(node).match(
+        SYMBOL -> getLexeme(node) =*= getLexeme(name);
+        LAMBDA -> (
+            getLexeme(getParameter(node)) =*= getLexeme(name) ?
+                syntaxError("symbol already defined", getParameter(node))
+            hasRecursiveCalls(getBody(node), name)
+        );
+        APPLICATION -> 
+            hasRecursiveCalls(getLeft(node), name) \/
+            hasRecursiveCalls(getRight(node), name);
+        NATURAL -> false;
+        BUILTIN -> false;
+    )
+)
+
+transformRecursion(name, value) := (
+    ! isSymbol(name) \/ ! hasRecursiveCalls(value, name) ?
+        value
+    tag := getTag(name)
+    newApplication(tag, newYCombinator(tag),
+        newLambda(tag, newName(tag), value))
+)
+
+getNameAndValue(operator, left, right) := (
+    isNull(right) ? undefined                   -- force syntax errors
+    ! isApplication(left) ? (left, right)
+    getNameAndValue(operator, getLeft(left),
+        reduceLambda(operator, getRight(left), right))
+)
+
+isTupleConstructor(node) := isSymbol(node) /\
+    ! isNil(getLexeme(node)) /\ getLexeme(node)[0] = ','
+
+isTuple(node) :=
+    isApplication(node) ? isTuple(getLeft(node)) || isTupleConstructor(node)
+
+getNameValueScope(operator, left, right) := (
+    isApplication(right) /\ isThisLexeme(right, "\n") ? (
+        (name, value) := getNameAndValue(operator, left, getLeft(right))
+        (name, value, getRight(right))
+    )
+    (name, value) := getNameAndValue(operator, left, right)
+    isThisSymbol(name, "main") ?
+        (name, value, name)
+    syntaxError("missing scope", operator)
+)
+
+reduceDefine(operator, left, right) := (
+    tag := getTag(operator)
+    (name, value, scope) := getNameValueScope(operator, left, right)
+    isTuple(left) ?
+        newDefinition(tag, left, getLeft(right), scope)
+    isBuiltin(name) ? syntaxError("cannot define a builtin operator", name)
+    ! isSymbol(name) ? syntaxError("invalid left hand side", operator)
+    newDefinition(tag, name, transformRecursion(name, value), scope)
+)
+
+isValidConstructorParameter(parameter) :=
+    isApplication(parameter) /\ isApplication(getLeft(parameter)) /\
+    isValidPattern(getRight(parameter)) /\
+    isSymbol(getRight(getLeft(parameter))) /\
+    isThisSymbol(getLeft(getLeft(parameter)), ":")
+
+newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
+    ! isValidConstructorParameter(parameter) ?
+        syntaxError("invalid constructor parameter", parameter)
+    name := getRight(getLeft(parameter))
+    isUnused(name) ?
+        scope
+    projector := newProjector(tag, m, k)
+    undefined' := newName(renameTag(tag, "undefined"))
+    arguments := (0 .. n - 1).map(q -> q = j ? projector || undefined)
+    getter := newLambda(tag, newUnderscore(tag, 0),
+        arguments.cascade(newApplication(tag), newUnderscore(tag, 1)))
+    newDefinition(tag, name, getter, scope)
+)
+
+newConstructorDefinition(tag, n, (pattern, j), scope) := (
+    name := getHead(pattern)
+    ! isSymbol(name) ?
+        syntaxError("invalid constructor name", name)
+    parameters := getArguments(pattern)
+    m := length(parameters)
+    scope' := zip(parameters, naturals).fold(
+        newGetterDefinition(tag, n, j, m), scope)
+    base := newUnderscore(tag, n - j)
+    arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
+    body := arguments.cascade(newApplication(tag), base)
+    constructor := ((newLambda(tag, newUnderscore(tag, 0)))^^(n + m))(body)
+    newDefinition(tag, name, constructor, scope')
+)
+
+reduceADT(operator, left, right) := (
+    ! isValidPattern(left) ? syntaxError("invalid left hand side", operator)
+    ! isApplication(right) \/ ! isThisLexeme(right, "\n") ?
+        syntaxError("missing scope", operator)
+    adt := getLeft(right)
+    ! isThisLexeme(adt, "{") /\ ! isThisLexeme(adt, "{}") ?
+        syntaxError("ADT required to right of", operator)
+    tag := getTag(operator)
+    undefined' := newName(renameTag(tag, "undefined"))
+    scope := newDefinition(tag, getHead(left), undefined', getRight(right))
+    constructors := getArguments(adt)
+    n := length(constructors)
+    zip(constructors, naturals).fold(newConstructorDefinition(tag, n), scope)
+)
+
+--*

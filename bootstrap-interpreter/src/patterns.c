@@ -24,12 +24,9 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
-    if (isThisLexeme(left, "@")) {
-        if (!isSymbol(getLeft(left)) || isUnused(getLeft(left)))
-           syntaxError("invalid left operand to", left);
-        return newLambda(getTag(left), getLeft(left), newApplication(tag,
+    if (isThisLexeme(left, "@"))
+        return reduceLambda(left, getLeft(left), newApplication(tag,
             reduceLambda(operator, getRight(left), right), getLeft(left)));
-    }
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     Node* body = right;

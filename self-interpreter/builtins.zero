@@ -1,65 +1,85 @@
+--* builtins.zero
+
+getCharacter(node) := ( 
+    isNatural(node) ? getValue(node)
+    runtimeError("expected byte value in string at", node)
+)
+
+getFirstCharacter(node) :=
+    getCharacter(getRight(getLeft(getBody(getBody(node)))))
+
+-- todo: this only works for literal strings
+extractString(astString) := getFirstCharacter(astString) ::
+    extractString(getRight(getBody(getBody(astString))))
+
 getBuiltin(builtin) := (
     maxInteger := 9223372036854775807
 
-    getIntegerValue(term) := (
-        isInteger(term) ? getInteger(term)
-        runtimeError("expected integer argument to", builtin)
+    getNatural(term) := (
+        isNatural(term) ? getValue(term)
+        runtimeError("expected natural argument to", builtin)
     )
 
     compute(f, left, right) :=
-        f(getIntegerValue(getTerm(left)), getIntegerValue(getTerm(right)))
+        f(getNatural(getTerm(left)), getNatural(getTerm(right)))
 
-    makeIntegerBuiltin(f, left, right) :=
-        newClosure(newInteger(getTag(builtin), f.compute(left, right)), [])
+    makeNaturalBuiltin(f, left, right) :=
+        Closure(newNatural(getTag(builtin), f.compute(left, right)), [])
 
     makeComparisonBuiltin(f, left, right) :=
-        newClosure(newBoolean(getTag(builtin), f.compute(left, right)), [])
+        Closure(newBoolean(getTag(builtin), f.compute(left, right)), [])
 
     addBuiltin(left, right) := (
-        left > 0 /\ right > 0 /\ left > maxInteger - right ?
-            runtimeError("integer overflow in", builtin)
-        left < 0 /\ right < 0 /\ left < -maxInteger - right ?
-            runtimeError("integer overflow in", builtin)
+        left > maxInteger - right ?
+            runtimeError("overflow in", builtin)
         left + right
     )
 
     subtractBuiltin(left, right) := (
-        left > 0 /\ right < 0 /\ left > maxInteger + right ?
-            runtimeError("integer overflow in", builtin)
-        left < 0 /\ right > 0 /\ left < -maxInteger + right ?
-            runtimeError("integer overflow in", builtin)
+        right > left ?
+            runtimeError("underflow in", builtin)
         left - right
     )
 
     multiplyBuiltin(left, right) := (
-        right != 0 /\ abs(left) > abs(maxInteger / right) ?
-            runtimeError("integer overflow in", builtin)
+        right != 0 /\ left > maxInteger // right ?
+            runtimeError("overflow in", builtin)
         left * right
     )
 
     divideBuiltin(left, right) := (
         right = 0 ? runtimeError("divide by zero in", builtin)
-        left / right
+        left // right
     )
 
     moduloBuiltin(left, right) := (
-        right = 0 ? runtimeError("divide by zero in", builtin)
+        right = 0 ? left
         left % right
     )
 
+    upBuiltin(left, right) := (
+        left >= maxInteger ?
+            runtimeError("overflow in", builtin)
+        left + 1
+    )
+
     builtins := newDictionary([
-        ("+", (2, makeIntegerBuiltin(addBuiltin))),
-        ("-", (2, makeIntegerBuiltin(subtractBuiltin))),
-        ("*", (2, makeIntegerBuiltin(multiplyBuiltin))),
-        ("/", (2, makeIntegerBuiltin(divideBuiltin))),
-        ("%", (2, makeIntegerBuiltin(moduloBuiltin))),
-        ("=", (2, makeComparisonBuiltin((=)))),
-        ("!=", (2, makeComparisonBuiltin((!=)))),
-        ("<", (2, makeComparisonBuiltin((<)))),
-        (">", (2, makeComparisonBuiltin((>)))),
-        ("<=", (2, makeComparisonBuiltin((<=)))),
-        (">=", (2, makeComparisonBuiltin((>=)))),
+        ("+", (2, makeNaturalBuiltin(addBuiltin))),
+        ("-", (2, makeNaturalBuiltin(subtractBuiltin))),
+        ("*", (2, makeNaturalBuiltin(multiplyBuiltin))),
+        ("//", (2, makeNaturalBuiltin(divideBuiltin))),
+        ("%", (2, makeNaturalBuiltin(moduloBuiltin))),
+        ("=", (2, makeComparisonBuiltin(=))),
+        ("!=", (2, makeComparisonBuiltin(!=))),
+        ("<", (2, makeComparisonBuiltin(<))),
+        (">", (2, makeComparisonBuiltin(>))),
+        ("<=", (2, makeComparisonBuiltin(<=))),
+        (">=", (2, makeComparisonBuiltin(>=))),
+        ("up", (1, makeNaturalBuiltin(upBuiltin))),
         ("error", (1, closure -> error(extractString(getTerm(closure)))))
     ])
+
     builtins.lookup(getLexeme(builtin))
 )
+
+--*

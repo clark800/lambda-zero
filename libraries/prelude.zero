@@ -154,6 +154,7 @@ joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs |: p, xs |: (!) <> p)
 any(xs, p) := xs.map(p).fold((\/), false)     -- test if any element satisfies p
 all(xs, p) := xs.map(p).fold((/\), true)      -- test if all elements satisfy p
+count(xs, p) := length(xs |: p)
 find(xs, p) := xs.match(
     [] -> nothing;
     x :: xs' -> p(x) ? just(x) || xs'.find(p)
@@ -302,7 +303,7 @@ parseInteger(string, base) := string.head = '-' ?
     - parseNatural(tail(string), base) || + parseNatural(string, base)
 
 -- trees
-Tree(a) ::= {node(datum : a, children : List(Tree(a)))}
+Tree(a) ::= {Node(getData : a, getChildren : List(Tree(a)))}
 
 -- repl
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)

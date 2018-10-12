@@ -1,127 +1,97 @@
-parse(code, input) := (
-    isOpenOperator(operator) :=
-        isOperator(operator) /\ getRules(operator, false).fixity = openfix
+--* parse.zero
 
-    pushOperand(stack, operand) := (
-        stack.isEmpty \/ isOperator(stack[0]) ? operand :: stack
-        isList(operand) ? (
-            getListLength(operand) > 1 ?
-                syntaxError("too many arguments to", newName(getTag(operand)))
-            index := getRight(getLeft(getBody(operand)))
-            reduceInfix(newName(getTag(operand)), stack[0], index) :: (--stack)
-        )
-        isTuple(operand) /\ !isUnit(operand) ?
-            applyToTuple(stack[0], operand) :: (--stack)
-        newApplication(getTag(operand), stack[0], operand) :: (--stack)
-    )
-
-    shouldCollapseStack(collapser, stack) := (
-        isOperator(stack[0]) ? false
-        operator := stack[1]
-        !isOperator(operator) \/ isEOF(operator) ? false
-        left := stack[2]
-        rules := getRules(operator, isOperator(left))
-        isOperator(left) /\ rules.fixity != openfix /\ rules.fixity != prefix ?
-            false
-        isHigherPrecedence((operator, rules),
-            (collapser, getRules(collapser, false)))
-    )
-
-    collapseStack(stack) := (
-        rules := getRules(stack[1], isOperator(stack[2]))
-        rules.fixity = prefix ?
-            pushOperand(stack.drop(2), rules.collapse(stack[1], eof, stack[0]))
-        pushOperand(stack.drop(3), rules.collapse(stack[1], stack[2], stack[0]))
-    )
-
-    validateOperators(left, right) := (
-        leftRules := getRules(left, false)
-        isEOF(right) /\ leftRules.fixity = openfix ?
-            syntaxError("missing close for", left)
-        rightRules := getRules(right, isOperator(left))
-        rightRules.fixity = closefix /\ !isCloseParen(right) /\
-            leftRules.fixity != openfix ?
-                syntaxError("missing right argument to", left)
-        rightRules.fixity = infix /\ !isOpenParen(left) ?
-            syntaxError("missing left argument to", right)
-        id
-    )
-
-    validateOperator(stack, operator) :=
-        isOperator(stack[0]) ? validateOperators(stack[0], operator) || id
-
-    collapseLeftOperand(stack, collapser) := (
-        validateOperator(stack, collapser)
-        collapseStack.while(shouldCollapseStack(collapser), stack)
-    )
-
-    newSection(operator, left, right) := (
-        rules := getRules(operator, false)
-        isSpecialOperator(operator) \/ rules.fixity != infix ?
-            syntaxError("invalid operator in section", operator)
-        newLambda(getTag(operator), blank, reduceInfix(operator, left, right))
-    )
-
-    constructSection(left, right) := (
-        isOperator(left) /\ isOperator(right) ?
-            syntaxError("invalid operator in section", right)
-        isOperator(left) ? newSection(left, blank, right)
-        newSection(right, left, blank)
-    )
-
-    collapseSection(stack, close) := (
-        // close is a close parenthesis, stack[0] is not EOF or open operator,
-        // and stack[1] is not EOF or open operator
-        !isOpenParen(stack[2]) ? syntaxError("missing open for", close)
-        pushOperand(stack.drop(3), constructSection(stack[1], stack[0]))
-    )
-
-    collapseBracket(stack, close, rules) := (
-        isEOF(stack[0]) ? syntaxError("missing open for", close)
-        isOpenOperator(stack[0]) ?
-            pushOperand(--stack, rules.collapse(close, stack[0], eof))
-        isEOF(stack[1]) ? syntaxError("missing open for", close)
-        isCloseParen(close) /\ !isOpenOperator(stack[1]) ?
-            collapseSection(stack, close)
-        open := stack[1]
-        contents := stack[0]
-        contents' := isOpenParen(open) /\ !isOperator(stack[2]) /\
-            (isTuple(contents) \/ isList(contents)) ?
-            newTuple(getTag(open), contents) || contents
-        pushOperand(stack.drop(2), rules.collapse(close, open, contents'))
-    )
-
-    pushOperator'(stack, operator) := (
-        // ignore spaces and newlines after operators
-        (isSpace(operator) \/ isNewline(operator)) /\ isOperator(stack[0]) ?
-            stack
-        isEOF(operator) ? collapseLeftOperand(stack.dropIf(isNewline), operator)
-        rules := getRules(operator, isOperator(stack[0]))
-        rules.fixity = closefix ? (
-            stack' := collapseLeftOperand(stack.dropIf(isNewline), operator)
-            collapseBracket(stack', operator, rules)
-        )
-        // redundant call to validateOperator to make errors match which
-        // appears first under strict evaluation
-        validateOperator(stack, operator)
-        operator :: collapseLeftOperand(stack, operator)
-    )
-
-    pushOperator(stack, operator) := (
-        // ignore spaces before operators
-        pushOperator'(
-            stack.dropIf((!isOpenOperator(operator) /\) <> isSpace), operator)
-    )
-
-    pushToken(stack, token) := isOperator(token) ?
-        pushOperator(stack, token) || pushOperand(stack, token)
-    // parser state is the pair (stack, tokens), similar to a list split
-    // except that the left side has been structured
-    // shiftToken is a state -> state transformer
-    shiftToken((stack, tokens)) := (pushToken(stack, tokens[0]), --tokens)
-    tokens := lex(code ++ [0])
-    ast := head(first(shiftToken.until(isEmpty <> second, ([eof], tokens))))
-    isCommaList(ast) ?
-        syntaxError("comma not inside brackets", ast)
-    bind(desugar(ast, input))
+parseEscapeCode(code, tag) := (
+    code = '0' ? '\0'
+    code = 'n' ? '\n'
+    code = 't' ? '\t'
+    code = 'r' ? '\r'
+    code = '\\' ? '\\'
+    code = '\"' ? '\"'
+    code = '\'' ? '\''
+    error("Syntax error: invalid escape sequence in " ++ showTag(tag))
 )
+
+parseQuotedCharacter(tag, string) := (
+    c := head(string)
+    c < 0 \/ c > 127 ?
+        error("Syntax error: invalid character in " ++ showTag(tag))
+    c != '\\' ?
+        newNatural(tag, c)
+    isNil(tail(string)) ?
+        error("Syntax error: missing end quote for " ++ showTag(tag))
+    newNatural(tag, parseEscapeCode(head(tail(string)), tag))
+)
+
+splitStringLiteral(string) := (
+    isNil(string) ? []
+    n := head(string) = '\\' /\ ! isNil(tail(string)) ? 2 || 1
+    string.take(n) :: splitStringLiteral(string.drop(n))
+)
+
+buildStringLiteral(tag, characters) := (
+    isNil(characters) ? newNil(tag)
+    prependList(tag, head(characters),
+        buildStringLiteral(tag, tail(characters)))
+)
+
+getQuoteContents(tag) := (
+    lexeme := getTagLexeme(tag)
+    lexeme.length > 1 /\ lexeme.last = head(lexeme) ? dropLast(tail(lexeme))
+    error("Syntax error: missing end quote for " ++ showTag(tag))
+)
+
+getQuotedCharacters(tag) :=
+    splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
+
+parseStringLiteral(tag) := buildStringLiteral(tag, getQuotedCharacters(tag))
+
+parseCharacterLiteral(tag) := (
+    characters := getQuotedCharacters(tag)
+    (characters.length = 1)? head(characters)
+    error("Syntax error: invalid character literal " ++ showTag(tag))
+)
+
+parseNumericLiteral(tag) := (
+    lexeme := getTagLexeme(tag)
+    lexeme.any((!) <> isDigit) ?
+        error("Syntax error: invalid token " ++
+            showLexemeAndLocationLine(tag, "'"))
+    maxNatural := "9223372036854775807"
+    natural := lexeme.dropWhile((= '0'))
+    natural.length > maxNatural.length ?
+        error("Syntax error: magnitude of natural is too large " ++
+            showLexemeAndLocationLine(tag, "'"))
+    natural.length = maxNatural.length /\
+        zipWith(natural, (>), maxNatural).any(id) ?
+        error("Syntax error: magnitude of natural is too large " ++
+            showLexemeAndLocationLine(tag, "'"))
+    newNatural(tag, parseNatural(lexeme, 10))
+)
+
+parseToken(operators, token) := (
+    tag := getTokenTag(token)
+    getTokenCode(token).match(
+        Space -> parseSymbol(operators, renameTag(tag, " "));
+        Symbolic -> parseSymbol(operators, tag);
+        Numeric -> parseNumericLiteral(tag);
+        Character -> parseCharacterLiteral(tag);
+        String -> parseStringLiteral(tag);
+        Comment -> error("internal error");
+        Invalid -> syntaxError("invalid character", newName(tag));
+    )
+)
+
+shiftToken(state, token) := shift(state, parseToken(getOperators(state), token))
+
+parse(code, input) := (
+    tokens := lex(code ++ [0]) |: (!) <> isComment
+    state := State([parseToken(OPERATORS, START)], OPERATORS)
+    stack := getStack(tokens.cascade(shiftToken, state))
+    -- use "count" to force any syntaxErrors in the stack
+    stack.count((!) <> isEOF) = 0 ? syntaxError("no input", head(stack))
+    length(stack) != 1 ? error("parser error")
+    -- error(showAST(head(stack)))
+    bind(head(stack))
+)
+
+--*

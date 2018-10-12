@@ -43,11 +43,12 @@ function oneline_suite {
     local name="$(basename "$testcases_path" ".test")"
     local failures=0
     local newline=$'\n'
-    local prelude="$(cat "$DIR/../../libraries/operators.zero")$newline"
+    local prelude=""
     local flags="-t"
-    if [[ "$#" -eq 2 ]]; then
-        prelude+="$(cat "$DIR/$2")$newline"
-    fi
+    shift
+    for filename in "$@"; do
+        prelude+="$(cat "$DIR/$filename")$newline"
+    done
     header "$name"
     while read -r line; do
         read -r output_line
@@ -76,28 +77,40 @@ function summarize {
 
 function run {
     local failures=0
+    local LIB="../../libraries"
     declare -a suites=(
+        "tokens.test"
+        "quote.test"
+        "brackets.test"
         "lambda.test"
         "syntax.test"
-        "arithmetic.test"
-        "definition.test"
-        "quote.test"
-        "tuples.test ../../libraries/prelude.zero"
-        "math.test ../../libraries/prelude.zero"
-        "prelude.test ../../libraries/prelude.zero"
-        "show.test ../../libraries/prelude.zero"
-        "infinite.test ../../libraries/prelude.zero"
+        "adt.test"
+        "arithmetic.test $LIB/operators.zero"
+        "definition.test $LIB/operators.zero"
+        "sections.test $LIB/operators.zero"
+        "as.test $LIB/operators.zero"
+        "tuples.test $LIB/operators.zero $LIB/prelude.zero"
+        "math.test $LIB/operators.zero $LIB/prelude.zero"
+        "prelude.test $LIB/operators.zero $LIB/prelude.zero"
+        "show.test $LIB/operators.zero $LIB/prelude.zero"
+        "infinite.test $LIB/operators.zero $LIB/prelude.zero"
     )
     if [[ "$META" -eq 1 ]]; then
         ulimit -s unlimited     # prevent segfaults due to high recursion depth
         suites=(
-            "lambda.test"
-            "arithmetic.test"
-            "definition.test"
-            "syntax.test"
+            "tokens.test"
             "quote.test"
-            "math.test ../../libraries/prelude.zero"
-            "prelude.test ../../libraries/prelude.zero"
+            "brackets.test"
+            "lambda.test"
+            "syntax.test"
+            "adt.test"
+            "arithmetic.test $LIB/operators.zero"
+            "definition.test $LIB/operators.zero"
+            "sections.test $LIB/operators.zero"
+            "as.test $LIB/operators.zero"
+            "tuples.test $LIB/operators.zero $LIB/prelude.zero"
+            "math.test $LIB/operators.zero $LIB/prelude.zero"
+            "prelude.test $LIB/operators.zero $LIB/prelude.zero"
         )
     fi
     for suite in "${suites[@]}"; do
