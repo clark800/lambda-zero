@@ -104,10 +104,10 @@ static void evaluateBuiltin(Closure* closure, Stack* stack, Globals* globals) {
 static Node* expandNatural(Node* natural) {
     long long n = getValue(natural);
     Tag tag = getTag(natural);
-    Node* blank = newBlank(tag);
-    Node* body = n == 0 ? newBlankReference(tag, 2) :
-       newApplication(tag, newBlankReference(tag, 1), newNatural(tag, n - 1));
-    return newLambda(tag, blank, newLambda(tag, blank, body));
+    Node* underscore = newUnderscore(tag, 0);
+    Node* body = n == 0 ? newUnderscore(tag, 2) :
+       newApplication(tag, newUnderscore(tag, 1), newNatural(tag, n - 1));
+    return newLambda(tag, underscore, newLambda(tag, underscore, body));
 }
 
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {

@@ -13,8 +13,6 @@ parseEscapeCode(code, tag) := (
 
 parseQuotedCharacter(tag, string) := (
     c := head(string)
-    c < 0 \/ c > 127 ?
-        error("Syntax error: invalid character in " ++ showTag(tag))
     c != '\\' ?
         newNatural(tag, c)
     isNil(tail(string)) ?
@@ -71,7 +69,8 @@ parseNumericLiteral(tag) := (
 parseToken(operators, token) := (
     tag := getTokenTag(token)
     getTokenCode(token).match(
-        Space -> parseSymbol(operators, renameTag(tag, " "));
+        Blank -> parseSymbol(operators, renameTag(tag, " "));
+        Newline -> parseSymbol(operators, renameTag(tag, "\n"));
         Symbolic -> parseSymbol(operators, tag);
         Numeric -> parseNumericLiteral(tag);
         Character -> parseCharacterLiteral(tag);

@@ -97,7 +97,8 @@ shiftOpen(state, open) := (
 )
 
 shiftOpenCurly(state, open) := (
-    ! isThisSymbol(head(getStack(state)), "::=") ?
+    top := head(getStack(state))
+    ! isThisSymbol(top, "::=") /\ ! isThisSymbol(top, "⩴") ?
         syntaxError("must appear on the right side of '::='", open)
     shiftOpen(state, open)
 )

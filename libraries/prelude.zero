@@ -10,23 +10,23 @@ xs      list of x
 xy      pair of x and y =}
 
 -- undefined
-undefined := error("")
-Void ::= {}
+undefined ≔ error("")
+Void ⩴ {}
 
 -- function
-x.f := f(x)                     -- uniform function call syntax
+x.f ≔ f(x)                     -- uniform function call syntax
 match := (.)
 f || x := f(x)                  -- low precedence application
-f <> g := x -> f(g(x))          -- function composition
+f <> g := x ↦ f(g(x))          -- function composition
 `f(x, y) := f(y, x)             -- flip order of first two arguments of function
 id(x) := x                      -- identity function
-constant(x) := _ -> x           -- return value does not depend on parameter
-on(f, g) := x -> y -> f(g(x), g(y)) -- apply binary f with unary g applied first
+constant(x) := _ ↦ x           -- return value does not depend on parameter
+on(f, g) := x ↦ y ↦ f(g(x), g(y)) -- apply binary f with unary g applied first
 mirror(f)(x) := f(x, x)         -- convert binary function to unary function
 
 -- boolean
-Boolean ::= {false, true}
-if(b, x, y) := b.match(false -> y; true -> x)
+Boolean ⩴ {false, true}
+if(b, x, y) := b.match(false ↦ y; true ↦ x)
 (?) := if
 ! b := b ? false || true
 b /\ c := b ? c || false
@@ -39,81 +39,81 @@ while(f, p, z) := f.until((!) <> p, z)
 
 -- math
 {= builtins
-N ::= {0, up(down : N)}
-(=) := 0 -> (0 -> true; up _ -> false);
-      up n -> (0 -> false; up m -> n = m)
-(!=) := 0 -> (0 -> false; up _ -> true);
-      up _ -> (0 -> true; up m -> n != m)
-(<) := 0 -> (0 -> false; up _-> true);
-      up n -> (0 -> false; up m -> n < m)
-(>) := 0 -> (0 -> false; up _ -> false);
-      up n -> (0 -> true; up m -> n > m)
-(<=) := 0 -> (0 -> true; up _ -> true);
-      up n -> (0 -> false; up m -> n <= m)
-(>=) := 0 -> (0 -> true; up _ -> false);
-      up n -> (0 -> true; up m -> n >= m)
-(+) := 0 -> m -> m; up n -> m -> up(n + m)
-(-) := 0 -> (0 -> 0; up m -> undefined);
-      up n -> (0 -> up n; up m -> n - m)
-(*) := 0 -> _ -> 0; up n -> m -> m + n * m
+N ⩴ {0, up(down : N)}
+(=) := 0 ↦ (0 ↦ true; up _ ↦ false);
+      up n ↦ (0 ↦ false; up m ↦ n = m)
+(!=) := 0 ↦ (0 ↦ false; up _ ↦ true);
+      up _ ↦ (0 ↦ true; up m ↦ n != m)
+(<) := 0 ↦ (0 ↦ false; up _↦ true);
+      up n ↦ (0 ↦ false; up m ↦ n < m)
+(>) := 0 ↦ (0 ↦ false; up _ ↦ false);
+      up n ↦ (0 ↦ true; up m ↦ n > m)
+(<=) := 0 ↦ (0 ↦ true; up _ ↦ true);
+      up n ↦ (0 ↦ false; up m ↦ n <= m)
+(>=) := 0 ↦ (0 ↦ true; up _ ↦ false);
+      up n ↦ (0 ↦ true; up m ↦ n >= m)
+(+) := 0 ↦ m ↦ m; up n ↦ m ↦ up(n + m)
+(-) := 0 ↦ (0 ↦ 0; up m ↦ undefined);
+      up n ↦ (0 ↦ up n; up m ↦ n - m)
+(*) := 0 ↦ _ ↦ 0; up n ↦ m ↦ m + n * m
 n // m := m = 0 ? undefined || n < m ? 0 || up((n - m) // m)
 n % m := m = 0 ? n || n < m ? n || (n - m) % m
 =}
 
-Z ::= {+(_ : N), -(_ : N)}
-Q ::= {(numerator : Z) / (denominator : Z)}
+Z ⩴ {+(_ : N), -(_ : N)}
+Q ⩴ {(numerator : Z) / (denominator : Z)}
 positive(n) := + n
 negative(n) := - n
-negate := + n -> - n; - n -> + n
-abs := + n -> + n; - n -> + n
-abs' := + n -> n; - n -> n
+negate := + n ↦ - n; - n ↦ + n
+abs := + n ↦ + n; - n ↦ + n
+abs' := + n ↦ n; - n ↦ n
 min(n, m) := n <= m ? n || m
 max(n, m) := n >= m ? n || m
 mod(n, m) := n % m
 isEven(n) := n.mod(2) = 0
 isOdd(n) := n.mod(2) != 0
 divides(n, m) := m.mod(n) = 0
-factorial := 0 -> 1; n @ up(n') -> n * factorial(n')
+factorial := 0 ↦ 1; n @ up(n') ↦ n * factorial(n')
 gcd(n, m) := (m = 0) ? n || gcd(m, n.mod(m))
 n ^ m := m.match(
-    0 -> 1;
-    up m' -> isEven(m) ? (*).mirror(n ^ (m // 2)) || n * n ^ m'
+    0 ↦ 1;
+    up m' ↦ isEven(m) ? (*).mirror(n ^ (m // 2)) || n * n ^ m'
 )
-f ^^ n := n.match(0 -> id; up n' -> f <> f ^^ n')
+f ^^ n := n.match(0 ↦ id; up n' ↦ f <> f ^^ n')
 
 -- tuple
-Unit ::= {()}
-Pair(a, b) ::= {(first : a, second : b)}
-Triple(a, b, c) ::= {(first_3 : a, second_3 : b, third_3 : c)}
-Quadruple(a, b, c, d) ::=
+Unit ⩴ {()}
+Pair(a, b) ⩴ {(first : a, second : b)}
+Triple(a, b, c) ⩴ {(first_3 : a, second_3 : b, third_3 : c)}
+Quadruple(a, b, c, d) ⩴
     {(first_4 : a, second_4 : b, third_4 : c, fouth_4 : d)}
 pair(a, b) := (a, b)
 swap((x, y)) := (y, x)
 mapFirst(xy, f) := (f(first(xy)), second(xy))
 mapSecond(xy, f) := (first(xy), f(second(xy)))
 mapPair(xx, f) := (f(first(xx)), f(second(xx)))
-curry(f) := x -> y -> f((x, y))
-uncurry(f) := xx -> f(first(xx), second(xx))
+curry(f) := x ↦ y ↦ f((x, y))
+uncurry(f) := xx ↦ f(first(xx), second(xx))
 
 -- maybe
-Maybe(a) ::= {nothing, just(thing : a)}
-isNothing := nothing -> true; just(_) -> false
-isJust := nothing -> false; just(_) -> true
-mx ?? f := mx.match(nothing -> nothing; just(x) -> f(x))   -- maybe bind
-mx ?! d := mx.match(nothing -> d; just(x) -> x)    -- just value or default
+Maybe(a) ⩴ {nothing, just(thing : a)}
+isNothing := nothing ↦ true; just(_) ↦ false
+isJust := nothing ↦ false; just(_) ↦ true
+mx ?? f := mx.match(nothing ↦ nothing; just(x) ↦ f(x))   -- maybe bind
+mx ?! d := mx.match(nothing ↦ d; just(x) ↦ x)    -- just value or default
 
 -- list
-List(a) ::= {[], (head : a) :: (tail : List(a))}
+List(a) ⩴ {[], (head : a) :: (tail : List(a))}
 prepend := `(::)
-isNil := [] -> true; _ :: _ -> false     -- note: isEmpty is reserved for sets
-fold(xs, f, z) := xs.match([] -> z; x :: xs' -> f(x, fold(xs', f, z)))
-cascade(xs, f, z) := xs.match([] -> z; x :: xs' -> cascade(xs', f, f(z, x)))
+isNil := [] ↦ true; _ :: _ ↦ false     -- note: isEmpty is reserved for sets
+fold(xs, f, z) := xs.match([] ↦ z; x :: xs' ↦ f(x, fold(xs', f, z)))
+cascade(xs, f, z) := xs.match([] ↦ z; x :: xs' ↦ cascade(xs', f, f(z, x)))
 xs ++ ys := xs.fold((::), ys)                   -- concatenate two lists
 join(xss) := xss.fold((++), [])            -- concatenate list of lists
 length(xs) := xs.fold(constant(up), 0)         -- get length of list
 reverse(xs) := xs.cascade(`(::), [])
 drop(xs, n) := (tail ^^ n)(xs)            -- drop n elements from front of list
-take(xs, n) := n.match(0 -> []; up n' -> head(xs) :: tail(xs).take(n'))
+take(xs, n) := n.match(0 ↦ []; up n' ↦ head(xs) :: tail(xs).take(n'))
 xs[n] := head(xs.drop(n))          -- get element of list at index
 xs[start, end] := xs.drop(start).take(end - start)
 last(xs) := tail.until(isNil <> tail, xs).head    -- get last element of list
@@ -121,34 +121,34 @@ dropLast(xs) :=
     isNil(xs) \/ isNil(tail(xs)) ? [] || head(xs) :: dropLast(tail(xs))
 reduce(xs, f) := tail(xs).cascade(f, xs[0])
 
-dropIf(ns, p) := ns.match([] -> []; n :: ns' -> p(n) ? ns' || ns)
+dropIf(ns, p) := ns.match([] ↦ []; n :: ns' ↦ p(n) ? ns' || ns)
 takeWhile(xs, p) := xs.match(
-    [] -> [];
-    x :: xs' -> p(x) ? x :: takeWhile(xs', p) || []
+    [] ↦ [];
+    x :: xs' ↦ p(x) ? x :: takeWhile(xs', p) || []
 )
 dropWhile(xs, p) := xs.match(
-    [] -> [];
-    x :: xs' -> p(x) ? dropWhile(xs', p) || xs
+    [] ↦ [];
+    x :: xs' ↦ p(x) ? dropWhile(xs', p) || xs
 )
-takeSafe(xs, n) := n.match(0 -> just([]); up n' ->
-    xs.match([] -> nothing; x :: xs' -> takeSafe(xs', n') ?? just <> (x ::)))
-dropSafe(xs, n) := n.match(0 -> xs; up n' ->
-    xs.match([] -> []; _ :: xs' -> dropSafe(xs', n')))
-filter(xs, p) := fold(xs, x -> xs' -> if(p(x), x :: xs', xs'), [])
+takeSafe(xs, n) := n.match(0 ↦ just([]); up n' ↦
+    xs.match([] ↦ nothing; x :: xs' ↦ takeSafe(xs', n') ?? just <> (x ::)))
+dropSafe(xs, n) := n.match(0 ↦ xs; up n' ↦
+    xs.match([] ↦ []; _ :: xs' ↦ dropSafe(xs', n')))
+filter(xs, p) := fold(xs, x ↦ xs' ↦ if(p(x), x :: xs', xs'), [])
 (|:) := filter
 map(xs, f) := fold(xs, (::) <> f, [])          -- map function over list
 zipWith(xs, f, ys) := xs.match(
-    [] -> [];
-    x :: xs' -> ys.match(
-        [] -> [];
-        y :: ys' -> f(x, y) :: zipWith(xs', f, ys')
+    [] ↦ [];
+    x :: xs' ↦ ys.match(
+        [] ↦ [];
+        y :: ys' ↦ f(x, y) :: zipWith(xs', f, ys')
     )
 )
 zip(xs, ys) := zipWith(xs, pair, ys)
 unzip(xs) := (xs.map(first), xs.map(second))
 interleave(xs, y) := (
-    interleave' := [] -> []; x :: xs' -> y :: x :: interleave'(xs')
-    xs.match([] -> []; x :: xs' -> x :: interleave'(xs'))
+    interleave' := [] ↦ []; x :: xs' ↦ y :: x :: interleave'(xs')
+    xs.match([] ↦ []; x :: xs' ↦ x :: interleave'(xs'))
 )
 joinWith(xss, ys) := join(interleave(xss, ys))
 bisect(xs, p) := (xs |: p, xs |: (!) <> p)
@@ -156,12 +156,12 @@ any(xs, p) := xs.map(p).fold((\/), false)     -- test if any element satisfies p
 all(xs, p) := xs.map(p).fold((/\), true)      -- test if all elements satisfy p
 count(xs, p) := length(xs |: p)
 find(xs, p) := xs.match(
-    [] -> nothing;
-    x :: xs' -> p(x) ? just(x) || xs'.find(p)
+    [] ↦ nothing;
+    x :: xs' ↦ p(x) ? just(x) || xs'.find(p)
 )
 
--- cascadeMap : a[] --> (a --> s --> b ** s) --> s --> (b[], s)
-cascadeMap(xs, f, z) := xs.cascade((ys, s) -> x ->
+-- cascadeMap : a[] => (a => s => b ** s) =>  s => (b[], s)
+cascadeMap(xs, f, z) := xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(:: ys), ([], z)).mapFirst(reverse)
 
 -- generic list constructors
@@ -172,11 +172,11 @@ cycle(xs) := xs ++ cycle(xs)                 -- infinitely cycle list
 
 -- integer list
 n .. m := n > m ? [] || n :: (n + 1 .. m)
-sort := [] -> []; n :: ns -> sort(ns |: (<= n)) ++ [n] ++ sort(ns |: (> n))
-deduplicate := [] -> []; n :: ns -> n :: deduplicate(ns |: (!= n))
+sort := [] ↦ []; n :: ns ↦ sort(ns |: (<= n)) ++ [n] ++ sort(ns |: (> n))
+deduplicate := [] ↦ []; n :: ns ↦ n :: deduplicate(ns |: (!= n))
 deduplicateBy(xs, (=?=)) := xs.match(
-    [] -> [];
-    x :: xs' -> x :: deduplicateBy(xs' |: (!) <> (=?= x), (=?=))
+    [] ↦ [];
+    x :: xs' ↦ x :: deduplicateBy(xs' |: (!) <> (=?= x), (=?=))
 )
 sum(ns) := ns.cascade((+), 0)
 product(ns) := ns.cascade((*), 1)
@@ -185,7 +185,7 @@ maximum(ns) := ns.reduce(max)
 countFrom := iterate(up)
 naturals := countFrom(0)
 primes := (
-    filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))
+    filterPrime := [] ↦ []; n :: ns ↦ n :: filterPrime(ns |: (% n != 0))
     filterPrime(countFrom(2))
 )
 fibonaccis := (
@@ -195,18 +195,18 @@ fibonaccis := (
 
 -- string
 xs =*= ys := xs.match(        -- string equality
-    [] -> isNil(ys);
-    x :: xs' -> ys.match(
-        [] -> false;
-        y :: ys' -> x = y /\ xs' =*= ys'
+    [] ↦ isNil(ys);
+    x :: xs' ↦ ys.match(
+        [] ↦ false;
+        y :: ys' ↦ x = y /\ xs' =*= ys'
     )
 )
 
 ns <*= ms := ns.match(      -- string comparison
-    [] -> true;
-    n :: ns' -> ms.match(
-        [] -> false;
-        m :: ms' -> n < m \/ n = m /\ ns' <*= ms'
+    [] ↦ true;
+    n :: ns' ↦ ms.match(
+        [] ↦ false;
+        m :: ms' ↦ n < m \/ n = m /\ ns' <*= ms'
     )
 )
 
@@ -222,16 +222,16 @@ indexOf(nss, key) := (
 contains(nss, key) := isJust(nss.indexOf(key))
 
 startsWith(ns, ks) := ks.match(
-    [] -> true;
-    k :: ks' -> ns.match(
-        [] -> false;
-        n :: ns' -> n = k /\ startsWith(ns', ks')
+    [] ↦ true;
+    k :: ks' ↦ ns.match(
+        [] ↦ false;
+        n :: ns' ↦ n = k /\ startsWith(ns', ks')
     )
 )
 
 split(ns, p) := ns.match(
-    [] -> ([], []);
-    n :: ns' -> (
+    [] ↦ ([], []);
+    n :: ns' ↦ (
         p(ns) ? ([], ns)
         (before, after) := ns'.split(p)
         (n :: before, after)
@@ -286,7 +286,7 @@ showNatural(n) := (
     n = 0 ? "0" || reverse(showReversedNatural(n))
 )
 
-showSign := + _ -> "+" ; - _ -> "-"
+showSign := + _ ↦ "+" ; - _ ↦ "-"
 showInteger(z) := showSign(z) ++ showNatural(abs'(z))
 showString(ns) := "\"" ++ ns ++ "\""     -- todo: escape
 showPair(xsxs, showFirst, showSecond) :=
@@ -298,12 +298,12 @@ parseDigit(digit, base) :=
     isDigit(digit) /\ digit - '0' < base ? digit - '0' ||
     error("Invalid digit in base " ++ showInteger(base) ++ ": " ++ [digit])
 parseNatural(string, base) :=
-    string.cascade(x -> d -> base * x + parseDigit(d, base), 0)
+    string.cascade(x ↦ d ↦ base * x + parseDigit(d, base), 0)
 parseInteger(string, base) := string.head = '-' ?
     - parseNatural(tail(string), base) || + parseNatural(string, base)
 
 -- trees
-Tree(a) ::= {Node(getData : a, getChildren : List(Tree(a)))}
+Tree(a) ⩴ {Node(getData : a, getChildren : List(Tree(a)))}
 
 -- repl
 repl(in, prompt, f) := prompt ++ in.lines.map(f).joinWith("\n" ++ prompt)

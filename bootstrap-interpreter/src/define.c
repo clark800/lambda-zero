@@ -20,11 +20,12 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
 }
 
 static Node* newYCombinator(Tag tag) {
-    Node* x = newBlankReference(tag, 1);
-    Node* y = newBlankReference(tag, 2);
+    Node* underscore = newUnderscore(tag, 0);
+    Node* x = newUnderscore(tag, 1);
+    Node* y = newUnderscore(tag, 2);
     Node* yxx = newApplication(tag, y, newApplication(tag, x, x));
-    Node* xyxx = newLambda(tag, newBlank(tag), yxx);
-    return newLambda(tag, newBlank(tag), newApplication(tag, xyxx, xyxx));
+    Node* xyxx = newLambda(tag, underscore, yxx);
+    return newLambda(tag, underscore, newApplication(tag, xyxx, xyxx));
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
@@ -48,8 +49,8 @@ static Node* newDefinition(Tag tag, Node* name, Node* value, Node* scope) {
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
-    return newLambda(tag, newBlank(tag), newApplication(tag,
-        newApplication(tag, newBlankReference(tag, 1), left), right));
+    return newLambda(tag, newUnderscore(tag, 0), newApplication(tag,
+        newApplication(tag, newUnderscore(tag, 1), left), right));
 }
 
 static Node* newMainCall(Node* main) {
@@ -89,11 +90,11 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
     // undefined for undefined arguments:
     // getter = _ -> _ undefined (1) ... projector (i) ... undefined (n)
     Node* projector = newProjector(tag, m, j);
-    Node* getter = newBlankReference(tag, 1);
+    Node* getter = newUnderscore(tag, 1);
     for (unsigned int k = 0; k < n; ++k)
         getter = newApplication(tag, getter, k == i ? projector :
             newName(renameTag(tag, "undefined")));
-    getter = newLambda(tag, newBlank(tag), getter);
+    getter = newLambda(tag, newUnderscore(tag, 0), getter);
     return newDefinition(tag, name, getter, scope);
 }
 
@@ -114,12 +115,12 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     // let p_* be constructor parameters (m total)
     // let c_* be constructor names (n total)
     // build: p_1 -> ... -> p_m -> c_1 -> ... -> c_n -> c_i p_1 ... p_m
-    Node* constructor = newBlankReference(tag, (unsigned long long)(n - i));
+    Node* constructor = newUnderscore(tag, (unsigned long long)(n - i));
     for (unsigned int j = 0; j < m; ++j)
         constructor = newApplication(tag, constructor,
-            newBlankReference(tag, (unsigned long long)(n + m - j)));
+            newUnderscore(tag, (unsigned long long)(n + m - j)));
     for (unsigned int q = 0; q < n + m; ++q)
-        constructor = newLambda(tag, newBlank(tag), constructor);
+        constructor = newLambda(tag, newUnderscore(tag, 0), constructor);
     return newDefinition(tag, pattern, constructor, scope);
 }
 

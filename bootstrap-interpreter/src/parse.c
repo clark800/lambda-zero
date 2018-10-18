@@ -36,10 +36,9 @@ static const char* skipQuoteCharacter(const char* start) {
     return start[0] == '\\' ? start + 2 : start + 1;
 }
 
-static char decodeCharacter(const char* start, Tag tag) {
-    tokenErrorIf(start[0] <= 0, "invalid character in", tag);
+static unsigned char decodeCharacter(const char* start, Tag tag) {
     if (start[0] != '\\')
-        return start[0];
+        return (unsigned char)start[0];
     switch (start[1]) {
         case '0': return '\0';
         case 't': return '\t';
@@ -82,7 +81,8 @@ static Node* parseToken(Token token) {
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
             return NULL;
-        case SPACE: return parseSymbol(renameTag(token.tag, " "));
+        case BLANK: return parseSymbol(renameTag(token.tag, " "));
+        case NEWLINE: return parseSymbol(renameTag(token.tag, "\n"));
         default: return parseSymbol(token.tag);
     }
 }

@@ -10,9 +10,9 @@ unsigned int getArgumentCount(Node* application) {
 }
 
 Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
-    Node* projector = newBlankReference(tag, size - index);
+    Node* projector = newUnderscore(tag, size - index);
     for (unsigned int i = 0; i < size; ++i)
-        projector = newLambda(tag, newBlank(tag), projector);
+        projector = newLambda(tag, newUnderscore(tag, 0), projector);
     return projector;
 }
 
@@ -34,8 +34,8 @@ Node* reduceLambda(Node* operator, Node* left, Node* right) {
         body = reduceLambda(operator, getRight(items), body);
     for (unsigned int i = 0, size = getArgumentCount(left); i < size; ++i)
         body = newApplication(tag, body, newApplication(tag,
-            newBlankReference(tag, 1), newProjector(tag, size, i)));
-    return newLambda(tag, newBlank(tag), body);
+            newUnderscore(tag, 1), newProjector(tag, size, i)));
+    return newLambda(tag, newUnderscore(tag, 0), body);
 }
 
 /*
@@ -48,8 +48,8 @@ Node* newStrictDestructuringLambda(Node* operator, Node* left, Node* right) {
     for (; isApplication(left); left = getLeft(left))
         right = newStrictDestructuringLambda(operator, getRight(left), right);
     // discard left, which is the value constructor
-    return newLambda(tag, newBlank(tag),
-        newApplication(tag, newBlankReference(tag, 1), right));
+    return newLambda(tag, newUnderscore(tag, 0),
+        newApplication(tag, newUnderscore(tag, 1), right));
 }
 */
 
@@ -59,13 +59,15 @@ Node* getHead(Node* node) {
 }
 
 static bool isStrictPatternLambda(Node* lambda) {
-    return isBlank(getParameter(lambda)) && isBlank(getHead(getBody(lambda)));
+    return isUnderscore(getParameter(lambda)) &&
+        isUnderscore(getHead(getBody(lambda)));
 }
 
 static bool isLazyPatternLambda(Node* lambda) {
-    return isBlank(getParameter(lambda)) && isApplication(getBody(lambda)) &&
+    return isUnderscore(getParameter(lambda)) &&
+        isApplication(getBody(lambda)) &&
         isApplication(getRight(getBody(lambda))) &&
-        isBlank(getLeft(getRight(getBody(lambda))));
+        isUnderscore(getLeft(getRight(getBody(lambda))));
 }
 
 static Node* getPatternExtension(Node* lambda) {
@@ -73,7 +75,7 @@ static Node* getPatternExtension(Node* lambda) {
         Tag tag = getTag(lambda);
         Node* extension = getPatternExtension(getLeft(getBody(lambda)));
         return newApplication(tag, newLambda(tag,
-            getParameter(lambda), extension), newBlankReference(tag, 1));
+            getParameter(lambda), extension), newUnderscore(tag, 1));
     }
     if (isStrictPatternLambda(lambda))
         return getRight(getBody(lambda));
@@ -91,7 +93,7 @@ Node* reducePatternLambda(Node* operator, Node* left, Node* right) {
     //          z -> 0; (n' -> ((up(n) -> n) n'))  ~>
     //          _ -> _ 0 ((n' -> (n -> n)) _)
     Node* base = isStrictPatternLambda(left) ? getBody(left) : newApplication(
-        tag, newBlankReference(tag, 1), getPatternExtension(left));
-    return newLambda(tag, newBlank(tag),
+        tag, newUnderscore(tag, 1), getPatternExtension(left));
+    return newLambda(tag, newUnderscore(tag, 0),
         newApplication(tag, base, getPatternExtension(right)));
 }

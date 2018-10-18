@@ -8,17 +8,17 @@ LocationType ::= {Location(
 
 TagType ::= {Tag(getTagLexeme : List(Integer), getTagLocation : LocationType)}
 
-isDelimiter(n) := " \n\0,;.`()[]{}@$\"".any((= n))
 isLineComment(lexeme) := lexeme.startsWith("--")
 isBlockComment(lexeme) := lexeme.startsWith("{=")
 isNumeric(lexeme) := isDigit(head(lexeme)) \/
     ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ ! isNil(tail(lexeme)) /\
       isDigit(head(tail(lexeme))))
-isInvalid(c) := c < 0 \/ (isControl(c) /\ ! isWhitespace(c) /\ c != 0)
-isSpace(c) := c > 0 /\ isWhitespace(c) /\ c != '\n'
+isNewline(c) := c = '\n' \/ c = '\r'
+isInvalid(c) := c != 0 /\ isControl(c) /\ ! isBlank(c) /\ ! isNewline(c)
+isDelimiter(c) := " \t\n\r\0,;.`()[]{}@$\"".any((= c)) \/ isInvalid(c)
 
 splitQuoteCharacter(quote, ns) := (
-    ns.isNil \/ head(ns) = quote \/ head(ns) = '\n' ? ([], ns)
+    ns.isNil \/ head(ns) = quote \/ isNewline(head(ns)) ? ([], ns)
     n := (head(ns) = '\\' /\ ! isNil(tail(ns))) ? 2 || 1
     ns.splitAt(n)
 )
@@ -45,8 +45,9 @@ splitLexeme(ns) := (
     ns.isNil ? ([], [])
     c := head(ns)
     c.isBlank ? ns.splitWhen((!) <> isBlank)
+    c.isNewline ? ns.splitWhen((!) <> isNewline)
     c.isQuote ? splitQuote(ns)
-    ns.isLineComment ? ns.splitOn("\n")
+    ns.isLineComment ? ns.splitWhen(isNewline)
     ns.isBlockComment ? ns.splitOn("=}").shiftSplit.shiftSplit
     ns.isNumeric ? splitNumeric(ns)
     c = '.' ? ns.splitWhen(!= '.')
@@ -62,17 +63,15 @@ advanceLocation'(lexeme, line, column) := (
 
 advanceLocation(location, lexeme) := (
     isLineComment(lexeme) /\ lexeme[2] = '*' ? (
-        (_, after) := lexeme.drop(3).splitWhen((!) <> isSpace)
+        (_, after) := lexeme.drop(3).splitWhen((!) <> isBlank)
         (file, _) := after.splitWhen(= '\n')
         Location(file, isNil(file) ? 0 || 1, 0)
     )
-    isBlockComment(lexeme) ? (
+    isBlockComment(lexeme) \/ isNewline(head(lexeme)) ? (
         (line, column) := lexeme.advanceLocation'(
             location.getLocationLine, location.getLocationColumn)
         Location(location.getLocationFile, line, column)
     )
-    head(lexeme) = '\n' ?
-        Location(location.getLocationFile, location.getLocationLine + 1, 1)
     Location(location.getLocationFile, location.getLocationLine,
         location.getLocationColumn + length(lexeme))
 )
@@ -95,7 +94,9 @@ showTag(tag) :=
     "'" ++ tag.getTagLexeme ++
     "' at " ++ showLocation(tag.getTagLocation)
 
-TokenCode ::= {Space, Symbolic, Numeric, Character, String, Comment, Invalid}
+TokenCode ::= {
+    Blank, Newline, Symbolic, Numeric, Character, String, Comment, Invalid
+}
 TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
 createToken(tag) := (
@@ -103,7 +104,8 @@ createToken(tag) := (
     isNil(lexeme) ? Token(tag, Symbolic)
     c := head(lexeme)
     isInvalid(c) ? Token(tag, Invalid)
-    isSpace(c) ? Token(tag, Space)
+    isBlank(c) ? Token(tag, Blank)
+    isNewline(c) ? Token(tag, Newline)
     c = '"' ? Token(tag, String)
     c = '\'' ? Token(tag, Character)
     isNumeric(lexeme) ? Token(tag, Numeric)
@@ -112,13 +114,14 @@ createToken(tag) := (
 )
 
 getTokenCodeNumber(tokenCode) := tokenCode.match(
-    Space -> 0;
-    Symbolic -> 1;
-    Numeric -> 2;
-    Character -> 3;
-    String -> 4;
-    Comment -> 5;
-    Invalid -> 6;
+    Blank -> 0;
+    Newline -> 1;
+    Symbolic -> 2;
+    Numeric -> 3;
+    Character -> 4;
+    String -> 5;
+    Comment -> 6;
+    Invalid -> 7;
 )
 
 isComment(token) := getTokenCodeNumber(getTokenCode(token)) =
@@ -132,7 +135,8 @@ START := Token(Tag("\0", Location("", 0, 0)), Symbolic)
 
 showToken'(token) := showTag(getTokenTag(token)) ++ " " ++
     getTokenCode(token).match(
-        Space -> "Space";
+        Blank -> "Blank";
+        Newline -> "Newline";
         Symbolic -> "Symbolic";
         Numeric -> "Numeric";
         Character -> "Character";
