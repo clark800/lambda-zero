@@ -93,7 +93,7 @@ static Node* evaluatePut(Closure* builtin, Node* left) {
         runtimeError("expected byte value in list returned from main", builtin);
     fputc((int)c, STDERR ? stderr : stdout);
     Tag tag = getTag(getTerm(builtin));
-    return newLambda(tag, newBlank(tag), newBlankReference(tag, 1));
+    return newLambda(tag, newUnderscore(tag, 0), newUnderscore(tag, 1));
 }
 
 static Node* evaluateGet(Closure* builtin, Node* left, Node* right) {

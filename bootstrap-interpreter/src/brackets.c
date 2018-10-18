@@ -122,7 +122,8 @@ void shiftOpen(Stack* stack, Node* open) {
 }
 
 void shiftOpenCurly(Stack* stack, Node* operator) {
-    if (!isThisLeaf(peek(stack, 0), "::="))
+    Node* top = peek(stack, 0);
+    if (!isThisLeaf(top, "::=") && !isThisLeaf(top, "\u2A74"))
         syntaxError("must appear on the right side of '::='", operator);
     shiftOpen(stack, operator);
 }

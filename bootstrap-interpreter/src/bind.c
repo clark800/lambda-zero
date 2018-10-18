@@ -21,8 +21,8 @@ static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
 }
 
 static bool isDefined(Node* parameter, Array* parameters) {
-    return isNatural(parameter) ||
-        (!isBlank(parameter) && findDebruijnIndex(parameter, parameters) != 0);
+    return isNatural(parameter) || (!isUnderscore(parameter) &&
+        findDebruijnIndex(parameter, parameters) != 0);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
@@ -44,7 +44,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
 
 static bool isDesugaredDefinition(Node* node) {
     return isApplication(node) && isLambda(getLeft(node)) &&
-        !isBlank(getParameter(getLeft(node)));
+        !isUnderscore(getParameter(getLeft(node)));
 }
 
 Array* bind(Hold* root) {

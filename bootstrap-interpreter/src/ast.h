@@ -50,7 +50,7 @@ static inline bool isGlobalReference(Node* node) {
 }
 
 static inline bool isEOF(Node* node) {return isThisLeaf(node, "\0");}
-static inline bool isBlank(Node* node) {return isThisLeaf(node, "_");}
+static inline bool isUnderscore(Node* node) {return isThisLeaf(node, "_");}
 
 static inline bool isUnused(Node* node) {
     return getLexeme(node).start[0] == '_';
@@ -77,9 +77,7 @@ static inline Node* newSymbol(Tag tag, void* rules) {
 
 static inline Node* newName(Tag tag) {return newSymbol(tag, NULL);}
 
-static inline Node* newBlank(Tag tag) {return newName(renameTag(tag, "_"));}
-
-static inline Node* newBlankReference(Tag tag, unsigned long long debruijn) {
+static inline Node* newUnderscore(Tag tag, unsigned long long debruijn) {
     return newLeaf(renameTag(tag, "_"), SYMBOL, (long long)debruijn, NULL);
 }
 
@@ -117,8 +115,9 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
 }
 
 static inline Node* newBoolean(Tag tag, bool value) {
-    return newLambda(tag, newBlank(tag), newLambda(tag, newBlank(tag),
-        value ? newBlankReference(tag, 1) : newBlankReference(tag, 2)));
+    Node* underscore = newUnderscore(tag, 0);
+    return newLambda(tag, underscore, newLambda(tag, underscore,
+        value ? newUnderscore(tag, 1) : newUnderscore(tag, 2)));
 }
 
 // ====================================
@@ -144,7 +143,7 @@ static inline Node* newPrinter(Tag tag) {
     Node* put = newBuiltin(renameTag(tag, "put"), PUT);
     Node* fold = newName(renameTag(tag, "fold"));
     Node* unit = newName(renameTag(tag, "()"));
-    Node* blank = newBlankReference(tag, 1);
-    return newLambda(tag, newBlank(tag), newApplication(tag,
-        newApplication(tag, newApplication(tag, fold, blank), put), unit));
+    Node* under = newUnderscore(tag, 1);
+    return newLambda(tag, newUnderscore(tag, 0), newApplication(tag,
+        newApplication(tag, newApplication(tag, fold, under), put), unit));
 }
