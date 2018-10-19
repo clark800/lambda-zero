@@ -1,8 +1,9 @@
+--* errors.zero
 
 recursionError(type, type', variables) :=
     error("Type error: recursive type at " ++
-        showLocation(getTag(getNode(type))) ++
-        " and " ++ showLocation(getTag(getNode(type'))) ++
+        showLocation(getLocation(getNode(type))) ++
+        " and " ++ showLocation(getLocation(getNode(type'))) ++
         ":\n" ++ showType(type) ++ " = " ++ showType(type') ++ "\n\n" ++
         showVariableMap(variables))
 
@@ -14,3 +15,5 @@ unificationError(originals, left, right) :=
         "\nwith\n" ++
         showTypeAndLocation(second(originals))
     )
+
+--*

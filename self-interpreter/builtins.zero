@@ -76,7 +76,8 @@ getBuiltin(builtin) := (
         ("<=", (2, makeComparisonBuiltin(<=))),
         (">=", (2, makeComparisonBuiltin(>=))),
         ("up", (1, makeNaturalBuiltin(upBuiltin))),
-        ("error", (1, closure -> error(extractString(getTerm(closure)))))
+        ("error", (1, closure -> error(extractString(getTerm(closure))))),
+        ("(undefined)", (0, closure -> undefined))
     ])
 
     builtins.lookup(getLexeme(builtin))

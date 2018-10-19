@@ -1,35 +1,40 @@
+--* show.zero
 
 getVariableName(index) := (
     characters := ['a', 'b', 'c', 'd']
     index < 4 ? [characters[index]]
-    getVariableName((index / 4) - 1) ++ [characters[index % 4]]
+    getVariableName((index // 4) - 1) ++ [characters[index % 4]]
 )
 
 showType(type) := (
     showType'(type') :=
         isFunctionType(type') ? "(" ++ showType(type') ++ ")" || showType(type')
-    arrowUTF8 := [226, 134, 146]
     isFreeType(type) ? "_"
-    isBottomType(type) ? "Bottom"
-    isIntegerType(type) ? [226, 132, 164]
-    isBooleanType(type) ? [240, 157, 148, 185]
-    isTypeVariable(type) ? getVariableName(getTypeCode(type))
-    isTupleType(type) ?
-        "(" ++ getComponentTypes(type).map(showType).joinWith("; ") ++ ")"
+    isBottomType(type) ? "⊥"
+    isNaturalType(type) ? "ℕ"
+    isBooleanType(type) ? "𝔹"
+    isTypeVariable(type) ? getVariableName(getTypeVariableIndex(type))
+    isTupleType(type) ? (
+        components := getComponentTypes(type)
+        size := length(components)
+        size = 2 ?
+            "(" ++ components.map(showType).joinWith(" × ") ++ ")"
+        "Tuple_" ++ showNatural(size) ++ "(" ++
+            components.map(showType).joinWith(", ") ++ ")"
+    )
     isMaybeType(type) ?
         "Maybe(" ++ showType(getComponentTypes(type)[0]) ++ ")"
     isListType(type) ? showType'(getComponentTypes(type)[0]) ++ "[]"
     isTreeType(type) ? "Tree(" ++ showType(getComponentTypes(type)[0]) ++ ")"
     isFunctionType(type) ? (
         components := getComponentTypes(type)
-        showType'(components[0]) ++ " " ++ arrowUTF8 ++ " " ++
-            showType(components[1])
+        showType'(components[0]) ++ " → " ++ showType(components[1])
     )
     undefined
 )
 
-showTypeAndLocation(type) := showType(type) ++ (isBlankNode(getNode(type)) ? ""
-    " at " ++ showLocation(getTag(getNode(type))))
+showTypeAndLocation(type) := showType(type) ++ (isNull(getNode(type)) ? ""
+    " at " ++ showLocation(getLocation(getNode(type))))
 
 showVariableMap(variables) :=
     variables.getElements.map((key, value) ->
@@ -51,9 +56,8 @@ makeRenaming(type) :=
 showTypeWithRenaming(type, renaming) := showType(type.rename(renaming))
 
 showUniversals(universals, renaming) := (
-    forallUTF8 := [226, 136, 128]
     universals.map(universal ->
-        forallUTF8 ++ showTypeWithRenaming(universal, renaming) ++ " ").join
+        "∀" ++ showTypeWithRenaming(universal, renaming) ++ " ").join
 )
 
 showScheme((universals, type)) := (
@@ -63,3 +67,5 @@ showScheme((universals, type)) := (
 
 showTyping((name, scheme)) := getLexeme(name) ++ " : " ++ showScheme(scheme)
 showTypings(typings) := typings.map(showTyping).joinWith("\n")
+
+--*

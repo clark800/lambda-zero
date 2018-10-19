@@ -1,12 +1,19 @@
+--* definitions.zero
 
 getDefinitionName(definition) := getParameter(getLeft(definition))
 getDefinitionValue(definition) := getRight(definition)
 getDefinitionScope(definition) := getBody(getLeft(definition))
 
-newDefinition(definition) :=
-    (getDefinitionName(definition), getDefinitionValue(definition))
+isDefinition(node) := isApplication(node) /\ isLambda(getLeft(node)) /\
+    (isThisLexeme(node, ":=") \/ isThisLexeme(node, "≔") \/
+     isThisLexeme(node, "::=") \/ isThisLexeme(node, "⩴"))
 
 getDefinitions(node) := (
-    !isDefinition(node) ? []
-    newDefinition(node) :: getDefinitions(getDefinitionScope(node))
+    isApplication(node) /\ isIdentity(getLeft(node)) ?
+        getDefinitions(getRight(node))
+    ! isDefinition(node) ? []
+    (getDefinitionName(node), getDefinitionValue(node)) ::
+        getDefinitions(getDefinitionScope(node))
 )
+
+--*
