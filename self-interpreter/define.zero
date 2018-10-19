@@ -65,7 +65,8 @@ isValidConstructorParameter(parameter) :=
     isApplication(parameter) /\ isApplication(getLeft(parameter)) /\
     isValidPattern(getRight(parameter)) /\
     isSymbol(getRight(getLeft(parameter))) /\
-    isThisSymbol(getLeft(getLeft(parameter)), ":")
+    (isThisSymbol(getLeft(getLeft(parameter)), ":") \/
+     isThisSymbol(getLeft(getLeft(parameter)), "∈"))
 
 newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
     ! isValidConstructorParameter(parameter) ?
