@@ -74,7 +74,8 @@ static bool isValidConstructorParameter(Node* parameter) {
     return isApplication(parameter) && isApplication(getLeft(parameter)) &&
         isValidPattern(getRight(parameter)) &&
         isSymbol(getRight(getLeft(parameter))) &&
-        isThisLeaf(getLeft(getLeft(parameter)), ":");
+        (isThisLeaf(getLeft(getLeft(parameter)), ":") ||
+         isThisLeaf(getLeft(getLeft(parameter)), "\u2208"));
 }
 
 static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,

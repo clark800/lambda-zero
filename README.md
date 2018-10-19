@@ -1,43 +1,45 @@
 # Introduction
 
-- Lambda Zero is a minimalist pure lazy functional programming language.
-- The language is the untyped lambda calculus plus integers, integer arithmetic,
-  and a few Haskell-inspired syntactic sugars evaluated by a Lazy Krivine
-  Machine.
-- Every Lambda Zero program is a single expression; there are no statements
-  or variables in the language.
-- The interpreter is less than 2000 lines of strict ANSI C99 and the binary is
-  just ~64KB dynamically linked and stripped.
-- The interpreter can also be built for Linux x86-64 without the C standard
-  library in which case it is less than 2500 lines of strict ANSI C99 and
-  generates a ~50KB statically linked stripped binary.
-- The interpreter includes reference-counting garbage collection on a free list
-  memory allocator, error messaging, and rudimental built-in debugging features.
+Lambda Zero is a minimalist pure lazy functional programming language featuring:
+* The Lambda Calculus (first class functions, closures, auto-currying, ...)
+* Lazy evaluation (infinite data structures, increased modularity, ...)
+* Algebraic data types (enumerations, tuples, lists, trees, records/structs,
+  maybe/optional types, checked exceptions, monads, ...)
+* Pattern matching (case expressions, tuple destructuring, ...)
+* Automatic garbage collection
+* Unicode support (UTF8 everywhere)
+* User-defined lexically-scoped operator fixity, associativity, precedence,
+  and semantics (even the space operator)
+* Uniform function call syntax (`x.f(y, z)` means `f(x, y, z)`)
+* Self-interpreter
+* Hindley-Milner type inference (implemented in Lambda Zero)
+
+And the whole language can be interpreted with just 2000 lines of C code!
 
 # Sample Code
 
 ### Hello World
 
-    main(input) := "hello world"
+    main(input) ≔ "hello world"
 
 ### Factorial
 
-    factorial := 0 -> 1; n @ up(n') -> n * factorial(n')
+    factorial ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ factorial(n′)
 
 ### Quicksort
 
-    sort := [] -> []; n :: ns -> sort(ns |: (<= n)) ++ [n] ++ sort(ns |: (> n))
+    sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
 
 ### Infinite list of natural numbers
 
-    iterate(f, x) := x :: iterate(f, f(x))
-    countFrom := iterate(up)
-    naturals := countFrom(0)
+    iterate(f, x) ≔ x ∷ iterate(f, f(x))
+    countFrom ≔ iterate(↑)
+    naturals ≔ countFrom(0)
 
 ### Infinite list of prime numbers
 
-    primes := (
-        filterPrime := [] -> []; n :: ns -> n :: filterPrime(ns |: (% n != 0))
+    primes ≔ (
+        filterPrime ≔ [] ↦ []; n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
         filterPrime(countFrom(2))
     )
 
@@ -97,7 +99,7 @@ The desugared language can be described by the grammar rules below
 grammar ignores some error cases):
 
     natural = [0-9]+
-    builtin = '+' | '-' | '*' | '/' | '%' | '=' | '!=' | '<' | '>' | '<=' | '>=' | 'error'
+    builtin = '+' | '-' | '*' | '//' | '%' | '=' | '!=' | '<' | '>' | '<=' | '>=' | 'up' | 'error'
     name = ("a token that is not a natural, builtin, delimiter, or arrow")
     expr = natural | builtin | name | (name -> expr) | (expr expr)
 
@@ -164,6 +166,7 @@ Make sure gcc and bash are installed and run the `make` script in the
 bootstrap-interpreter directory.
 
 # Running
+
 First `cd` to the bootstrap-interpreter directory.
 
     ./run SOURCEFILE
