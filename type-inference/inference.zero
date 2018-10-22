@@ -1,3 +1,4 @@
+--* inference.zero
 
 getFreeVariables(type, variables) := (
     isTypeVariable(type) ? (
@@ -23,20 +24,20 @@ substitute(type, variables) := (
     type.mapComponents(`substitute(variables))
 )
 
-// Robinson's Unification Algorithm
-// see Comparing Unification Algorithms in First-Order Theorem Proving
-// by Krystof Hoder and Andrei Voronkov
+-- Robinson's Unification Algorithm
+-- see Comparing Unification Algorithms in First-Order Theorem Proving
+-- by Krystof Hoder and Andrei Voronkov
 unify'(originals, variables, (left, right)) := (
-    isTypeVariable(left) /\ !left.isFree(variables) ?
+    isTypeVariable(left) /\ ! left.isFree(variables) ?
         unify'(originals, variables, (left.substitute(variables), right))
-    isTypeVariable(right) /\ !right.isFree(variables) ?
+    isTypeVariable(right) /\ ! right.isFree(variables) ?
         unify'(originals, variables, (left, right.substitute(variables)))
     isBottomType(left) \/ isBottomType(right) ? variables
     left =~= right ? variables
     isTypeVariable(left) ? variables.insert(left, right)
     isTypeVariable(right) ? variables.insert(right, left)
-    (getTypeCode(left) = getTypeCode(right) /\
-        length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
+    (getTypeCode(left) = getTypeCode(right) /\ getIndex(left) = getIndex(right)
+     /\ length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
     unificationError(originals.mapPair(`substitute(variables)),
@@ -46,12 +47,13 @@ unify'(originals, variables, (left, right)) := (
 unify(variables, types) := unify'(types, variables, types)
 
 unifyAll(variables, types) := (
-    isEmpty(types) ? variables
-    zip(repeat(types[0]), --types).cascade(unify, variables)
+    isNil(types) ? variables
+    zip(repeat(head(types)), tail(types)).cascade(unify, variables)
 )
 
 generalize(type, variables, oldVariables) := (
-    vs \\ vs' := vs | v -> !vs'.any((=~= v))
+    syntax(\\) := infix(17)
+    vs \\ vs' := vs |: (v -> ! vs'.any((=~= v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
         oldVariables.getAllFreeVariables(variables)
@@ -65,45 +67,16 @@ instantiate(scheme, variables, node) := (
     (type.rename(renaming).setNode(node), variables')
 )
 
-inferProjection'(root, node, variables, stack) := (
-    isReference(node) ? (
-        projectedType := stack[getDebruijnIndex(node)]
-        (newProjectionType(root, reverse(stack), projectedType), variables)
-    )
-    isLambda(node) ? (
-        (variable, variables') := variables.newTypeVariable(blank)
-        inferProjection'(root, getBody(node), variables', variable :: stack)
-    )
-    undefined
-)
+isRecursiveFunction(node) := false      -- todo: fix
 
-inferProjection(node, variables) :=
-    inferProjection'(node, getRight(getBody(node)), variables, [])
-
-inferList(node, stack, variables, infer) := (
-    elements := getListElements(node)
-    isEmpty(elements) ?
-        variables.newTypeVariable(blank).mapFirst(newListType(node))
-    arguments := zip(elements, iterate((undefined ::), undefined :: stack))
-    (types, variables') := arguments.foldMap(uncurry(infer), variables)
-    (newListType(node, types[0]), variables'.unifyAll(types))
-)
-
-inferTuple(node, stack, variables, infer) := (
-    (elementTypes, variables') :=
-        getTupleElements(node).foldMap(`infer(undefined :: stack), variables)
-    (newTupleType(node, elementTypes), variables')
-)
-
+-- stack is a list of type schemes for all the lambda-bound symbols in scope
+-- variables is a table that maps type variables to types (either type
+--   variables or concrete types); every type variable appears in variables
 infer(node, stack, variables) := (
-    isInteger(node) ? (newIntegerType(node), variables)
+    isNatural(node) ? (newNaturalType(node), variables)
     isBuiltin(node) ? (getBuiltinType(node), variables)
-    isStringLiteral(node) ? (newStringType(node), variables)
-    isList(node) ? inferList(node, stack, variables, infer)
-    isTuple(node) ? inferTuple(node, stack, variables, infer)
-    isProjection(node) ? inferProjection(node, variables)
-    isReference(node) ?
-        stack[getDebruijnIndex(node)].instantiate(variables, node)
+    isSymbol(node) ?
+        stack[getDebruijnIndex(node) - 1].instantiate(variables, node)
     isRecursiveFunction(node) ? (
         function := getBody(getRight(node))
         (functionType, variables') := variables.newTypeVariable(function)
@@ -127,7 +100,7 @@ infer(node, stack, variables) := (
         (rightType, variables') := getRight(node).infer(stack, variables)
         (leftType, variables'') := getLeft(node).infer(stack, variables')
         (returnType, variables''') := variables''.newTypeVariable(node)
-        functionType := newFunctionType(blank, rightType, returnType)
+        functionType := newFunctionType(NULL, rightType, returnType)
         (returnType, variables'''.unify((leftType, functionType)))
     )
     undefined
@@ -136,7 +109,7 @@ infer(node, stack, variables) := (
 inferType(stack, definition) := (
     (name, value) := definition
     knownTypeScheme := getKnownTypeScheme(name)
-    !isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
+    ! isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
     (type, variables') := infer(value, stack, empty)
     type.generalize(variables', empty) :: stack
 )
@@ -148,3 +121,5 @@ main(input) := (
     (names, _) := unzip(definitions)
     showTypings(zip(names, schemes))
 )
+
+--*

@@ -1,43 +1,56 @@
+undefined := error("")
+
 id(x) := x
 
 constant(x) := _ -> x
 
-true(t, f) := t
-false(t, f) := f
-first((x, y)) := x
-second((x, y)) := y
+f'(x, y) := y(x)
 
-f(x, y) := y(x)
+f''(x, y) := x(y)
 
-f'(x, y) := x(y)
+syntax(*) := infixL(18)
 
 g(x) := x * x
 
+syntax(>) := infix(13)
+
 h(x, y) := x > y
+
+Boolean ::= {false, true}
 
 v(x) := true
 
 if(c, a, b) := c(a, b)
 
+syntax(=) := infix(13)
+
 c(a) := if(a = 0, 1, a)
 
-p := (1, true, c(1))
+syntax(:) := infix(13)
+
+Pair(a, b) ::= {(first : a, second : b)}
+
+-- p := (1, true, c(1))
 
 q(x, y) := (x, y)
 
 q'(x, y) := first((x, y))
 
-list := [1 + 2, c(3), first(q(1, true)), f(2, c)]
+syntax(+) := infixL(16)
+
+syntax(::) := infixR(15)
+
+List(a) ::= {[], (head : a) :: (tail : List(a))}
+
+list := [1 + 2, c(3), first(q(1, true)), f'(2, c)]
 
 list' := [x -> x, y -> y, x -> y -> y]
 
-swap((x, y)) := (y, x)
+-- swap((x, y)) := (y, x)
 
-rot((w, x, y, z)) := (x, y, z, w)
+-- rot((w, x, y, z)) := (x, y, z, w)
 
-nothing := z -> f -> z
-
-just(x) := z -> f -> f(x)
+Maybe(a) ::= {nothing, just(_ : a)}
 
 maybe(mx, f, x) := mx(x, f)
 
@@ -47,13 +60,15 @@ string := "test"
 
 e := if(true, 1, error("..."))
 
-x :: xs := (x, xs)
-
-repeat(x) := x :: repeat(x)
+-- repeat(x) := x :: repeat(x)
 
 isNothing(mx) := maybe(mx, constant(false), true)
 
+{=
 r(x) := (
     (y, z) := r(x + 1)
     (x, y)
 )
+=}
+
+0

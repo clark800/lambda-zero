@@ -1,54 +1,60 @@
+--* types.zero
 
-newType(node, code, components) := newNode((node, code), components)
-getNode := first <> getData
-getTypeCode := second <> getData
+newType(node, code, index, components) := Node((node, code, index), components)
+getNode := first_3 <> getData
+getTypeCode := second_3 <> getData
+getIndex := third_3 <> getData
+getTypeVariableIndex := getIndex
 getComponentTypes := getChildren
-setNode(type, node) := newType(node, getTypeCode(type), getComponentTypes(type))
+setNode(type, node) :=
+    newType(node, getTypeCode(type), getIndex(type), getComponentTypes(type))
 
-newFreeType(node) := newType(node, -1, [])
-newBooleanType(node) := newType(node, -2, [])
-newIntegerType(node) := newType(node, -3, [])
-newFunctionType(node, left, right) := newType(node, -4, [left, right])
-newTupleType(node, types) := newType(node, -5, types)
-newListType(node, type) := newType(node, -6, [type])
-newTreeType(node, type) := newType(node, -7, [type])
-newMaybeType(node, type) := newType(node, -8, [type])
-newBottomType(node) := newType(node, -9, [])
+newFreeType(node) := newType(node, 1, 0, [])
+newBooleanType(node) := newType(node, 2, 0, [])
+newNaturalType(node) := newType(node, 3, 0, [])
+newFunctionType(node, left, right) := newType(node, 4, 0, [left, right])
+newTupleType(node, types) := newType(node, 5, 0, types)
+newListType(node, type) := newType(node, 6, 0, [type])
+newTreeType(node, type) := newType(node, 7, 0, [type])
+newMaybeType(node, type) := newType(node, 8, 0, [type])
+newBottomType(node) := newType(node, 9, 0, [])
 newTypeVariable(variables, node) := (
-    type := newType(node, #variables, [])
-    (type, variables.insert(type, newFreeType(blank)))
+    type := newType(node, 0, # variables, [])
+    (type, variables.insert(type, newFreeType(NULL)))
 )
 newTypeVariables(originals, variables) :=
-    originals.map(getNode).foldMap(`newTypeVariable, variables)
+    originals.map(getNode).cascadeMap(`newTypeVariable, variables)
 newProjectionType(node, elementTypes, returnType) :=
-    newFunctionType(node, newTupleType(blank, elementTypes), returnType)
-newStringType(node) := newListType(node, newIntegerType(blank))
+    newFunctionType(node, newTupleType(NULL, elementTypes), returnType)
+newStringType(node) := newListType(node, newNaturalType(NULL))
 newScheme(universals, type) := (universals, type)
 
-isTypeVariable(type) := getTypeCode(type) >= 0
-isFreeType(type) := getTypeCode(type) = -1
-isBooleanType(type) := getTypeCode(type) = -2
-isIntegerType(type) := getTypeCode(type) = -3
-isFunctionType(type) := getTypeCode(type) = -4
-isTupleType(type) := getTypeCode(type) = -5
-isListType(type) := getTypeCode(type) = -6
-isTreeType(type) := getTypeCode(type) = -7
-isMaybeType(type) := getTypeCode(type) = -8
-isBottomType(type) := getTypeCode(type) = -9
-isFree(type, variables) := !variables.hasKey(type) \/
+isTypeVariable(type) := getTypeCode(type) = 0
+isFreeType(type) := getTypeCode(type) = 1
+isBooleanType(type) := getTypeCode(type) = 2
+isNaturalType(type) := getTypeCode(type) = 3
+isFunctionType(type) := getTypeCode(type) = 4
+isTupleType(type) := getTypeCode(type) = 5
+isListType(type) := getTypeCode(type) = 6
+isTreeType(type) := getTypeCode(type) = 7
+isMaybeType(type) := getTypeCode(type) = 8
+isBottomType(type) := getTypeCode(type) = 9
+isFree(type, variables) := ! variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
-a =~= b := getTypeCode(a) = getTypeCode(b) /\
+
+syntax(=~=) := infix(13)
+a =~= b := getTypeCode(a) = getTypeCode(b) /\ getIndex(a) = getIndex(b) /\
     zip(getComponentTypes(a), getComponentTypes(b)).all(uncurry((=~=)))
-isBlankNode(node) :=
-    getLexeme(node) =*= "_" /\ getLine(node) = 0 /\ getColumn(node) = 0
 
 mapComponents(type, f) := newType(getNode(type), getTypeCode(type),
-    getComponentTypes(type).map(f))
+    getIndex(type), getComponentTypes(type).map(f))
 
-newVariableMap(mappings) := newTable((<=).on(getTypeCode), mappings)
+newVariableMap(mappings) := newTable((<=).on(getIndex), mappings)
 empty := newVariableMap([])
 
 rename(type, variables) := (
     isTypeVariable(type) ? variables.get(type, type)
     type.mapComponents(`rename(variables))
 )
+
+--*

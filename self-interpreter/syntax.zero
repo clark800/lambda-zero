@@ -91,8 +91,11 @@ reduceReserved(operator, _left, _right) :=
 reduceInvalid(operator, _left, _right) :=
     syntaxError("operator syntax undeclared", operator)
 
-reduceError(operator, _left, right) :=
-    newApplication(getTag(operator), convertOperator(getTag(operator)), right)
+reduceError(operator, _left, right) := (
+    tag := getTag(operator)
+    isThisSymbol(right, "[]") ? newBuiltin(renameTag(tag, "(undefined)"))
+    newApplication(tag, convertOperator(tag), right)
+)
 
 newOperator'(tag, precedence, fixity, associativity, shifter, reducer) :=
     newOperator(tag, Syntax(precedence, precedence, fixity, associativity,

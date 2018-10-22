@@ -1,17 +1,19 @@
+--* declarations.zero
 
 builtinTypes := (
-    (-->) := newFunctionType(blank)
-    bottom := newBottomType(blank)
-    boolean := newBooleanType(blank)
-    integer := newIntegerType(blank)
-    string := newListType(blank, integer)
-    arithmetic := integer --> (integer --> integer)
-    comparison := integer --> (integer --> boolean)
+    syntax(>->) := infixR(10)
+    (>->) := newFunctionType(NULL)
+    bottom := newBottomType(NULL)
+    boolean := newBooleanType(NULL)
+    natural := newNaturalType(NULL)
+    string := newListType(NULL, natural)
+    arithmetic := natural >-> natural >-> natural
+    comparison := natural >-> natural >-> boolean
     newDictionary([
         ("+", arithmetic),
         ("-", arithmetic),
         ("*", arithmetic),
-        ("/", arithmetic),
+        ("//", arithmetic),
         ("%", arithmetic),
         ("=", comparison),
         ("!=", comparison),
@@ -19,7 +21,9 @@ builtinTypes := (
         (">", comparison),
         ("<=", comparison),
         (">=", comparison),
-        ("error", string --> bottom)
+        ("up", natural >-> natural),
+        ("error", string >-> bottom),
+        ("(undefined)", bottom)
     ])
 )
 
@@ -27,29 +31,34 @@ getBuiltinType(node) :=
     builtinTypes.get(getLexeme(node), undefined).setNode(node)
 
 knownTypeSchemes := (
-    (-->) := newFunctionType(blank)
-    boolean := newBooleanType(blank)
-    (a, variables') := empty.newTypeVariable(blank)
-    (b, variables'') := variables'.newTypeVariable(blank)
-    aList := newListType(blank, a)
-    aMaybe := newMaybeType(blank, a)
-    aTree := newTreeType(blank, a)
-    aTreeList := newListType(blank, aTree)
+    syntax(>->) := infixR(10)
+    (>->) := newFunctionType(NULL)
+    boolean := newBooleanType(NULL)
+    (a, variables') := empty.newTypeVariable(NULL)
+    (b, variables'') := variables'.newTypeVariable(NULL)
+    aList := newListType(NULL, a)
+    aMaybe := newMaybeType(NULL, a)
+    aTree := newTreeType(NULL, a)
+    aTreeList := newListType(NULL, aTree)
+    abPair := newTupleType(NULL, [a, b])
     newDictionary([
         ("true", newScheme([], boolean)),
         ("false", newScheme([], boolean)),
-        ("if", newScheme([a], boolean --> (a --> (a --> a)))),
+        ("if", newScheme([a], boolean >-> a >-> a >-> a)),
+        (",", newScheme([a, b], a >-> b >-> abPair)),
+        ("first", newScheme([a, b], abPair >-> a)),
+        ("second", newScheme([a, b], abPair >-> b)),
         ("[]", newScheme([a], aList)),
-        ("::", newScheme([a], a --> (aList --> aList))),
-        ("head", newScheme([a], aList --> a)),
-        ("--", newScheme([a], aList --> aList)),
-        ("isEmpty", newScheme([a], aList --> boolean)),
+        ("::", newScheme([a], a >-> aList >-> aList)),
+        ("head", newScheme([a], aList >-> a)),
+        ("tail", newScheme([a], aList >-> aList)),
+        ("isEmpty", newScheme([a], aList >-> boolean)),
         ("nothing", newScheme([a], aMaybe)),
-        ("just", newScheme([a], a --> aMaybe)),
-        ("maybe", newScheme([a, b], aMaybe --> ((a --> b) --> (b --> b)))),
-        ("newNode", newScheme([a], a --> (aTreeList --> aTree))),
-        ("getData", newScheme([a], aTree --> a)),
-        ("getChildren", newScheme([a], aTree --> aTreeList))
+        ("just", newScheme([a], a >-> aMaybe)),
+        ("maybe", newScheme([a, b], aMaybe >-> (a >-> b) >-> b >-> b)),
+        ("newNode", newScheme([a], a >-> aTreeList >-> aTree)),
+        ("getData", newScheme([a], aTree >-> a)),
+        ("getChildren", newScheme([a], aTree >-> aTreeList))
     ])
 )
 
@@ -58,3 +67,5 @@ getKnownTypeScheme(name) := (
     (universals, type) := knownTypeSchemes.get(getLexeme(name), defaultScheme)
     (universals, type.setNode(name))
 )
+
+--*
