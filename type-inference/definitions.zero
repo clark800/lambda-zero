@@ -11,7 +11,7 @@ isDefinition(node) := isApplication(node) /\ isLambda(getLeft(node)) /\
 getDefinitions(node) := (
     isApplication(node) /\ isIdentity(getLeft(node)) ?
         getDefinitions(getRight(node))
-    ! isDefinition(node) ? []
+    not isDefinition(node) ? []
     (getDefinitionName(node), getDefinitionValue(node)) ::
         getDefinitions(getDefinitionScope(node))
 )

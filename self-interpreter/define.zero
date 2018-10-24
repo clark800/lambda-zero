@@ -20,7 +20,7 @@ hasRecursiveCalls(node, name) := (
 )
 
 transformRecursion(name, value) := (
-    ! isSymbol(name) \/ ! hasRecursiveCalls(value, name) ?
+    not isSymbol(name) \/ not hasRecursiveCalls(value, name) ?
         value
     tag := getTag(name)
     newApplication(tag, newYCombinator(tag),
@@ -29,13 +29,13 @@ transformRecursion(name, value) := (
 
 getNameAndValue(operator, left, right) := (
     isNull(right) ? undefined                   -- force syntax errors
-    ! isApplication(left) ? (left, right)
+    not isApplication(left) ? (left, right)
     getNameAndValue(operator, getLeft(left),
         reduceLambda(operator, getRight(left), right))
 )
 
 isTupleConstructor(node) := isSymbol(node) /\
-    ! isNil(getLexeme(node)) /\ getLexeme(node)[0] = ','
+    not isNil(getLexeme(node)) /\ getLexeme(node)[0] = ','
 
 isTuple(node) :=
     isApplication(node) ? isTuple(getLeft(node)) || isTupleConstructor(node)
@@ -57,7 +57,7 @@ reduceDefine(operator, left, right) := (
     isTuple(left) ?
         newDefinition(tag, left, getLeft(right), scope)
     isBuiltin(name) ? syntaxError("cannot define a builtin operator", name)
-    ! isSymbol(name) ? syntaxError("invalid left hand side", operator)
+    not isSymbol(name) ? syntaxError("invalid left hand side", operator)
     newDefinition(tag, name, transformRecursion(name, value), scope)
 )
 
@@ -69,7 +69,7 @@ isValidConstructorParameter(parameter) :=
      isThisSymbol(getLeft(getLeft(parameter)), "∈"))
 
 newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
-    ! isValidConstructorParameter(parameter) ?
+    not isValidConstructorParameter(parameter) ?
         syntaxError("invalid constructor parameter", parameter)
     name := getRight(getLeft(parameter))
     isUnused(name) ?
@@ -84,7 +84,7 @@ newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
 
 newConstructorDefinition(tag, n, (pattern, j), scope) := (
     name := getHead(pattern)
-    ! isSymbol(name) ?
+    not isSymbol(name) ?
         syntaxError("invalid constructor name", name)
     parameters := getArguments(pattern)
     m := length(parameters)
@@ -98,11 +98,11 @@ newConstructorDefinition(tag, n, (pattern, j), scope) := (
 )
 
 reduceADT(operator, left, right) := (
-    ! isValidPattern(left) ? syntaxError("invalid left hand side", operator)
-    ! isApplication(right) \/ ! isThisLexeme(right, "\n") ?
+    not isValidPattern(left) ? syntaxError("invalid left hand side", operator)
+    not isApplication(right) \/ not isThisLexeme(right, "\n") ?
         syntaxError("missing scope", operator)
     adt := getLeft(right)
-    ! isThisLexeme(adt, "{") /\ ! isThisLexeme(adt, "{}") ?
+    not isThisLexeme(adt, "{") /\ not isThisLexeme(adt, "{}") ?
         syntaxError("ADT required to right of", operator)
     tag := getTag(operator)
     undefined' := newName(renameTag(tag, "undefined"))

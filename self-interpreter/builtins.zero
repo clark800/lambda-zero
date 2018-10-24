@@ -42,7 +42,7 @@ getBuiltin(builtin) := (
     )
 
     multiplyBuiltin(left, right) := (
-        right != 0 /\ left > maxInteger // right ?
+        right =/= 0 /\ left > maxInteger // right ?
             runtimeError("overflow in", builtin)
         left * right
     )
@@ -70,7 +70,7 @@ getBuiltin(builtin) := (
         ("//", (2, makeNaturalBuiltin(divideBuiltin))),
         ("%", (2, makeNaturalBuiltin(moduloBuiltin))),
         ("=", (2, makeComparisonBuiltin(=))),
-        ("!=", (2, makeComparisonBuiltin(!=))),
+        ("=/=", (2, makeComparisonBuiltin(=/=))),
         ("<", (2, makeComparisonBuiltin(<))),
         (">", (2, makeComparisonBuiltin(>))),
         ("<=", (2, makeComparisonBuiltin(<=))),

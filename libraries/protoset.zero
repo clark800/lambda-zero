@@ -17,7 +17,7 @@ elicit(protoset, object) := (
 )
 
 object : protoset := isJust(protoset.elicit(object))
-object !: protoset := !(object : protoset)
+object /: protoset := not(object : protoset)
 
 mapElements(protoset, f) := (
     ((~<), elements) := protoset
@@ -38,7 +38,7 @@ add(protoset, object) := (
 remove(protoset, object) := (
     ((~<), elements) := protoset
     a ~ b := a ~< b /\ b ~< a
-    protoset.filterElements((!) <> (~ object))
+    protoset.filterElements((not) <> (~ object))
 )
 
 protoset U protoset' := (
@@ -49,6 +49,6 @@ protoset U protoset' := (
     (order, elements'[0] :: elements) U (order', tail(elements'))
 )
 
-protoset \ protoset' := protoset.filterElements((!: protoset'))
+protoset \ protoset' := protoset.filterElements((/: protoset'))
 
 --*

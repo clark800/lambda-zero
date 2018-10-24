@@ -13,7 +13,7 @@ parseEscapeCode(code, tag) := (
 
 parseQuotedCharacter(tag, string) := (
     c := head(string)
-    c != '\\' ?
+    c =/= '\\' ?
         newNatural(tag, c)
     isNil(tail(string)) ?
         error("Syntax error: missing end quote for " ++ showTag(tag))
@@ -22,7 +22,7 @@ parseQuotedCharacter(tag, string) := (
 
 splitStringLiteral(string) := (
     isNil(string) ? []
-    n := head(string) = '\\' /\ ! isNil(tail(string)) ? 2 || 1
+    n := head(string) = '\\' /\ not isNil(tail(string)) ? 2 || 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 )
 
@@ -51,7 +51,7 @@ parseCharacterLiteral(tag) := (
 
 parseNumericLiteral(tag) := (
     lexeme := getTagLexeme(tag)
-    lexeme.any((!) <> isDigit) ?
+    lexeme.any((not) <> isDigit) ?
         error("Syntax error: invalid token " ++
             showLexemeAndLocationLine(tag, "'"))
     maxNatural := "9223372036854775807"
@@ -83,12 +83,12 @@ parseToken(operators, token) := (
 shiftToken(state, token) := shift(state, parseToken(getOperators(state), token))
 
 parse(code, input) := (
-    tokens := lex(code ++ [0]) |: (!) <> isComment
+    tokens := lex(code ++ [0]) |: (not) <> isComment
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
     -- use "count" to force any syntaxErrors in the stack
-    stack.count((!) <> isEOF) = 0 ? syntaxError("no input", head(stack))
-    length(stack) != 1 ? error("parser error")
+    stack.count((not) <> isEOF) = 0 ? syntaxError("no input", head(stack))
+    length(stack) =/= 1 ? error("parser error")
     -- error(showAST(head(stack)))
     bind(head(stack))
 )

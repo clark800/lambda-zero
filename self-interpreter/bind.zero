@@ -1,13 +1,13 @@
 --* bind.zero
 
 isDefined(parameter, parameterNames) :=
-    isNatural(parameter) \/ (! isUnderscore(parameter) /\
+    isNatural(parameter) \/ (not isUnderscore(parameter) /\
         parameterNames.contains(getLexeme(parameter)))
 
 bind(root) := (
     bind'(node, parameterNames) := getNodeType(node).match(
         SYMBOL -> (
-            getDebruijnIndex(node) != 0 ? node
+            getDebruijnIndex(node) =/= 0 ? node
             isUnused(node) ? syntaxError(
                 "cannot reference a symbol starting with underscore", node)
             tag := getTag(node)

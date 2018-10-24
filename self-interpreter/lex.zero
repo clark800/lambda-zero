@@ -11,15 +11,15 @@ TagType ::= {Tag(getTagLexeme : List(Integer), getTagLocation : LocationType)}
 isLineComment(lexeme) := lexeme.startsWith("--")
 isBlockComment(lexeme) := lexeme.startsWith("{=")
 isNumeric(lexeme) := isDigit(head(lexeme)) \/
-    ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ ! isNil(tail(lexeme)) /\
+    ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ not isNil(tail(lexeme)) /\
       isDigit(head(tail(lexeme))))
 isNewline(c) := c = '\n' \/ c = '\r'
-isInvalid(c) := c != 0 /\ isControl(c) /\ ! isBlank(c) /\ ! isNewline(c)
+isInvalid(c) := c =/= 0 /\ isControl(c) /\ not isBlank(c) /\ not isNewline(c)
 isDelimiter(c) := " \t\n\r\0,;.`()[]{}@$\"".any((= c)) \/ isInvalid(c)
 
 splitQuoteCharacter(quote, ns) := (
     ns.isNil \/ head(ns) = quote \/ isNewline(head(ns)) ? ([], ns)
-    n := (head(ns) = '\\' /\ ! isNil(tail(ns))) ? 2 || 1
+    n := (head(ns) = '\\' /\ not isNil(tail(ns))) ? 2 || 1
     ns.splitAt(n)
 )
 
@@ -28,15 +28,15 @@ shiftSplit((a, b)) := isNil(b) ? (a, b) || (a ++ [head(b)], tail(b))
 splitQuote(ns) := (
     quote := head(ns)
     (a, b) := tail(ns).splitWith(splitQuoteCharacter(quote))
-    ! b.isNil /\ head(b) = quote ?
+    not b.isNil /\ head(b) = quote ?
         shiftSplit((quote :: a, b))
     (quote :: a, b)
 )
 
 splitNumeric(ns) := (
     (before, after) := ns.splitWhen(isDelimiter)
-    isNil(after) \/ isNil(tail(after)) \/ head(after) != '.' \/
-        ! isDigit(head(tail(after))) ? (before, after)
+    isNil(after) \/ isNil(tail(after)) \/ head(after) =/= '.' \/
+        not isDigit(head(tail(after))) ? (before, after)
     (before', after') := tail(after).splitWhen(isDelimiter)
     (before ++ [head(after)] ++ before', after')
 )
@@ -44,13 +44,13 @@ splitNumeric(ns) := (
 splitLexeme(ns) := (
     ns.isNil ? ([], [])
     c := head(ns)
-    c.isBlank ? ns.splitWhen((!) <> isBlank)
-    c.isNewline ? ns.splitWhen((!) <> isNewline)
+    c.isBlank ? ns.splitWhen((not) <> isBlank)
+    c.isNewline ? ns.splitWhen((not) <> isNewline)
     c.isQuote ? splitQuote(ns)
     ns.isLineComment ? ns.splitWhen(isNewline)
     ns.isBlockComment ? ns.splitOn("=}").shiftSplit.shiftSplit
     ns.isNumeric ? splitNumeric(ns)
-    c = '.' ? ns.splitWhen(!= '.')
+    c = '.' ? ns.splitWhen(=/= '.')
     c.isDelimiter ? ([head(ns)], tail(ns))
     ns.splitWhen(isDelimiter)
 )
@@ -63,7 +63,7 @@ advanceLocation'(lexeme, line, column) := (
 
 advanceLocation(location, lexeme) := (
     isLineComment(lexeme) /\ lexeme[2] = '*' ? (
-        (_, after) := lexeme.drop(3).splitWhen((!) <> isBlank)
+        (_, after) := lexeme.drop(3).splitWhen((not) <> isBlank)
         (file, _) := after.splitWhen(= '\n')
         Location(file, isNil(file) ? 0 || 1, 0)
     )

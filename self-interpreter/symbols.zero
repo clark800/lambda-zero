@@ -31,7 +31,7 @@ isOperator(node) := isJust(getMaybeData(node))
 reduceOperand(node, _left, _right) := node
 
 shiftOperand(State(stack, operators), node) := (
-    isNil(stack) \/ ! isOperator(head(stack)) ?
+    isNil(stack) \/ not isOperator(head(stack)) ?
         syntaxError("missing operator before", node)
     State(node :: stack, operators)
 )
@@ -42,7 +42,7 @@ getSyntax(node) := getMaybeData(node) ?!
 isSpecial(node) := getSpecial(getSyntax(node))
 
 propagateSection(operator, node, lexeme) := (
-    isSpecial(operator) \/ ! isApplication(node) ?
+    isSpecial(operator) \/ not isApplication(node) ?
         syntaxError("operator does not support sections", operator)
     newApplication(renameTag(getTag(node), lexeme),
         getLeft(node), getRight(node))
@@ -50,10 +50,10 @@ propagateSection(operator, node, lexeme) := (
 
 reduceOperator(operator, left, right) := (
     result := getReduce(getSyntax(operator))(operator, left, right)
-    ! isNull(left) /\ isSection(left) ?
+    not isNull(left) /\ isSection(left) ?
         propagateSection(operator, result,
-            ! isNull(right) /\ isSection(right) ? ".*." || ".*")
-    ! isNull(right) /\ isSection(right) ?
+            not isNull(right) /\ isSection(right) ? ".*." || ".*")
+    not isNull(right) /\ isSection(right) ?
         propagateSection(operator, result, "*.")
     result
 )
@@ -89,7 +89,7 @@ isHigherPrecedence(left, right) := (
             syntaxError("operator is non-associative", right)
 
     leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
-        leftSyntax.getAssociativity != rightSyntax.getAssociativity ?
+        leftSyntax.getAssociativity =/= rightSyntax.getAssociativity ?
             syntaxError("incompatible associativity", right)
 
     rightSyntax.getAssociativity = RIGHT ?
@@ -98,7 +98,7 @@ isHigherPrecedence(left, right) := (
 )
 
 shouldReduceTop(operator, State(stack, _operators)) :=
-    ! isOperator(stack[0]) /\ isHigherPrecedence(stack[1], operator)
+    not isOperator(stack[0]) /\ isHigherPrecedence(stack[1], operator)
 
 reduceLeft(state, operator) := reduceTop.while(shouldReduceTop(operator), state)
 

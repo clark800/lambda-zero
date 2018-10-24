@@ -18,7 +18,18 @@ shiftPrefix(state, operator) := (
     State(operator :: getStack(state'), getOperators(state'))
 )
 
-shiftPostfix(state, operator) := syntaxError("not implemented")
+shiftPostfix(state, operator) := (
+    stack := eraseWhitespace(getStack(state))
+    state' := reduceLeft(State(stack, getOperators(state)), operator)
+    stack' := getStack(state')
+    stack'' := not isSpecial(operator) /\ isOpenOperator(stack'[0]) ?
+        newName(renameTag(getTag(operator), ".*")) :: stack' || stack'
+    operand := stack''[0]
+    isOperator(operand) ?
+        syntaxError("missing left operand for", operator)
+    State(reduceOperator(operator, operand, NULL) :: tail(stack''),
+        getOperators(state))
+)
 
 shiftInfix(state, operator) := (
     stack := eraseWhitespace(getStack(state))
@@ -36,7 +47,7 @@ shiftInfix(state, operator) := (
             operator' := operators.parseSymbol(renameTag(tag, "(-)"))
             State(operator' :: stack', operators)
         )
-        ! isSpecial(operator) /\ isOpenOperator(top) ?
+        not isSpecial(operator) /\ isOpenOperator(top) ?
             State(operator :: renameNode(operator, ".*") :: stack', operators)
         syntaxError("missing left operand for", operator)
     )
@@ -61,7 +72,7 @@ addSyntax(operators, operator) := (
 )
 
 updateOperators(operators, top) := (
-    ! isIdentity(top) \/ ! isOperator(getParameter(top)) ? operators
+    not isIdentity(top) \/ not isOperator(getParameter(top)) ? operators
     declared := getParameter(top)
     operators' := operators.addSyntax(declared)
     p := getLeftPrecedence(getSyntax(declared))
@@ -103,7 +114,7 @@ newOperator'(tag, precedence, fixity, associativity, shifter, reducer) :=
 
 newSyntaxOperator(tag, precedence, fixity) := (
     getTagLexeme(tag) =*= "()" ? (
-        !(getLexeme(fixity) =*= "infixL") ?
+        not(getLexeme(fixity) =*= "infixL") ?
             syntaxError("syntax must be infixL", fixity)
         tag' := renameTag(tag, " ")
         newOperator'(tag', precedence, INFIX, LEFT, shiftSpace, reduceInfix)
@@ -123,12 +134,14 @@ newSyntaxOperator(tag, precedence, fixity) := (
 )
 
 reduceSyntax(node, left, right) := (
-    ! isApplication(left) ? syntaxError("invalid left operand", left)
+    not isApplication(left) ?
+        syntaxError("invalid left operand", left)
     name := getRight(left)
-    ! isSymbol(name) ? syntaxError("expected symbol operand to", getLeft(left))
+    not isSymbol(name) ?
+        syntaxError("expected symbol operand to", getLeft(left))
     getLexeme(name).any(= '_') ?
         syntaxError("invalid underscore in operator name", name)
-    ! isApplication(right) /\ ! isNatural(getRight(right)) ?
+    not isApplication(right) /\ not isNatural(getRight(right)) ?
         syntaxError("invalid syntax definition", node)
     precedence := getValue(getRight(right))
     precedence < 0 \/ precedence > 99 ?
