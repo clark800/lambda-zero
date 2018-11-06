@@ -5,8 +5,8 @@
 #include "lex.h"
 
 static bool isQuote(char c) {return c == '"' || c == '\'';}
-static bool isNewline(char c) {return c == '\n';}
-static bool isInvalid(char c) {return c > 0 && iscntrl(c) && !isNewline(c);}
+static bool isLineFeed(char c) {return c == '\n';}
+static bool isInvalid(char c) {return c > 0 && iscntrl(c) && !isLineFeed(c);}
 static bool isRepeatable(char c) {return c > 0 && strchr(" `.,;", c) != NULL;}
 
 static bool isDelimiter(char c) {
@@ -42,7 +42,7 @@ static const char* skipBlockComment(const char* s) {
 static const char* skipQuote(const char* s) {
     char quote = s[0];
     // assumption is that s points to the opening quotation mark
-    for (s += 1; s[0] != '\0' && !isNewline(s[0]); s += 1) {
+    for (s += 1; s[0] != '\0' && !isLineFeed(s[0]); s += 1) {
         if (s[0] == '\\' && s[1] != '\0')
             s += 1;     // skip character following slash
         else if (s[0] == quote)
@@ -58,9 +58,9 @@ static const char* skipNumeric(const char* s) {
 }
 
 static const char* skipLexeme(const char* s) {
-    if (isLineComment(s)) return skipUntil(s, isNewline);
+    if (isLineComment(s)) return skipUntil(s, isLineFeed);
     if (isBlockComment(s)) return skipBlockComment(s);
-    if (isNewline(s[0])) return skipRepeatable(s + 1, ' ');
+    if (isLineFeed(s[0])) return skipRepeatable(s + 1, ' ');
     if (isQuote(s[0])) return skipQuote(s);
     if (isNumeric(s)) return skipNumeric(s);
     if (!isDelimiter(s[0])) return skipUntil(s, isDelimiter);
@@ -76,13 +76,13 @@ static String getNextLexeme(Tag tag) {
 static Location advanceLocation(Tag tag) {
     if (isLineComment(tag.lexeme.start) && tag.lexeme.start[2] == '*') {
         const char* file = skipRepeatable(&(tag.lexeme.start[3]), ' ');
-        if (isNewline(file[0]) || file[0] == '\0')
+        if (isLineFeed(file[0]) || file[0] == '\0')
             return newLocation(NULL, 0, 0);
         return newLocation(file, 1, 0);
     }
     // must scan the whole lexeme for newlines because of block comments
     for (unsigned int i = 0; i < tag.lexeme.length; ++i)
-        tag.location = (tag.lexeme.start[i] == '\n') ?
+        tag.location = isLineFeed(tag.lexeme.start[i]) ?
             newLocation(tag.location.file, tag.location.line + 1, 1) :
             newLocation(tag.location.file,
                 tag.location.line, tag.location.column + 1);
@@ -95,8 +95,9 @@ Token lex(Token token) {
     Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
     char head = tag.lexeme.start[0];
+    char after = tag.lexeme.start[tag.lexeme.length];
     if (head == ' ') return (Token){tag, SPACE};
-    if (head == '\n') return (Token){tag, NEWLINE};
+    if (head == '\n') return (Token){tag, isLineFeed(after) ? VSPACE : NEWLINE};
     if (head == '\'') return (Token){tag, CHARACTER};
     if (head == '\"') return (Token){tag, STRING};
     if (isNumeric(tag.lexeme.start)) return (Token){tag, NUMERIC};

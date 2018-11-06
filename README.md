@@ -14,7 +14,7 @@ Lambda Zero is a minimalist pure lazy functional programming language with:
 * Hindley-Milner static type inference (implemented in Lambda Zero)
 * A self-interpreter
 
-And the whole language can be interpreted with just 2000 lines of C code!
+And the whole language can be interpreted with just over 2000 lines of C code!
 
 # Sample Code
 

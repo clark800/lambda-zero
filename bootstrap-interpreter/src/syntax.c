@@ -32,6 +32,15 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
+static Node* reduceNewline(Node* operator, Node* left, Node* right) {
+    Tag tag = getTag(left);
+    if (isDefinition(left) && isThisLexeme(left, ":="))
+        return applyDefinition(tag, getLeft(left), getRight(left), right);
+    if (isDefinition(left) && isThisLexeme(left, "::="))
+        return applyADTDefinition(tag, getLeft(left), getRight(left), right);
+    return reduceApply(operator, left, right);
+}
+
 static void shiftPrefix(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     push(stack, operator);
@@ -152,16 +161,16 @@ void initSymbols(void) {
     addBuiltinSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
     addBuiltinSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
     addBuiltinSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
-    addBuiltinSyntax("\n", 3, 3, INFIX, R, shiftWhitespace, reduceApply);
-    addBuiltinSyntax(":=", 3, 3, INFIX, R, shiftInfix, reduceDefine);
-    addBuiltinSyntax("\u2254", 3, 3, INFIX, R, shiftInfix, reduceDefine);
-    addBuiltinSyntax("::=", 3, 3, INFIX, R, shiftInfix, reduceADTDefinition);
-    addBuiltinSyntax("\u2A74", 3, 3, INFIX, R, shiftInfix, reduceADTDefinition);
-    addBuiltinSyntax("(:=)", 4, 4, INFIX, N, shiftInfix, reduceSyntax);
+    addBuiltinSyntax("\n", 3, 3, INFIX, R, shiftWhitespace, reduceNewline);
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
-    addBuiltinSyntax("->", 5, 5, INFIX, R, shiftInfix, reduceLambda);
-    addBuiltinSyntax("\u21A6", 5, 5, INFIX, R, shiftInfix, reduceLambda);
-    addBuiltinSyntax("@", 6, 6, INFIX, L, shiftInfix, reduceApply);
+    addBuiltinSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
+    addBuiltinSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
+    addBuiltinSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
+    addBuiltinSyntax("\u2A74", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
+    addBuiltinSyntax("(:=)", 5, 5, INFIX, N, shiftInfix, reduceSyntax);
+    addBuiltinSyntax("->", 6, 6, INFIX, R, shiftInfix, reduceLambda);
+    addBuiltinSyntax("\u21A6", 6, 6, INFIX, R, shiftInfix, reduceLambda);
+    addBuiltinSyntax("@", 7, 7, INFIX, L, shiftInfix, reduceApply);
     addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftWhitespace, reduceInvalid);

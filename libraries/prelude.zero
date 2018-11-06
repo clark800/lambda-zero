@@ -29,8 +29,8 @@ mirror(f)(x) ≔ f(x, x)         -- convert binary function to unary function
 
 -- boolean
 Boolean ⩴ {false, true}
-if(b, x, y) ≔ b.match(false ↦ y; true ↦ x)
-(?) ≔ if
+(if b)(x, y) ≔ b.match(false ↦ y; true ↦ x)
+(?) ≔ (if)
 ¬ b ≔ b ? false ‖ true
 (not) ≔ (¬)
 b ∧ c ≔ b ? c ‖ false
@@ -78,16 +78,16 @@ Z ⩴ {+(_ ∈ N), -(_ ∈ N)}
 Q ⩴ {(numerator ∈ Z) / (denominator ∈ Z)}
 positive(n) ≔ + n
 negative(n) ≔ - n
-negate ≔ + n ↦ - n; - n ↦ + n
-abs ≔ + n ↦ + n; - n ↦ + n
-abs′ ≔ + n ↦ n; - n ↦ n
+negate ≔ (+ n ↦ - n; - n ↦ + n)
+abs ≔ (+ n ↦ + n; - n ↦ + n)
+abs′ ≔ (+ n ↦ n; - n ↦ n)
 min(n, m) ≔ n ≤ m ? n ‖ m
 max(n, m) ≔ n ≥ m ? n ‖ m
 mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
-(!) ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!
+(!) ≔ (0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!)
 gcd(n, m) ≔ (m = 0) ? n ‖ gcd(m, n.mod(m))
 n ^ m ≔ m.match(
     0 ↦ 1;
@@ -112,8 +112,8 @@ uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
 -- maybe
 Maybe(a) ⩴ {nothing, just(thing ∈ a)}
-isNothing ≔ nothing ↦ true; just(_) ↦ false
-isJust ≔ nothing ↦ false; just(_) ↦ true
+isNothing ≔ (nothing ↦ true; just(_) ↦ false)
+isJust ≔ (nothing ↦ false; just(_) ↦ true)
 mx ⁇ f ≔ mx.match(nothing ↦ nothing; just(x) ↦ f(x))   -- maybe bind
 (??) ≔ (⁇)
 mx ⁈ d ≔ mx.match(nothing ↦ d; just(x) ↦ x)    -- just value or default
@@ -123,7 +123,7 @@ mx ⁈ d ≔ mx.match(nothing ↦ d; just(x) ↦ x)    -- just value or default
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 (::) ≔ (∷)
 prepend ≔ `(∷)
-isNil ≔ [] ↦ true; _ ∷ _ ↦ false     -- note: isEmpty is reserved for sets
+isNil ≔ ([] ↦ true; _ ∷ _ ↦ false)     -- note: isEmpty is reserved for sets
 fold(xs, f, z) ≔ xs.match([] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
 cascade(xs, f, z) ≔ xs.match([] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x)))
 xs ⧺ ys ≔ xs.fold((∷), ys)                   -- concatenate two lists
@@ -152,7 +152,7 @@ takeSafe(xs, n) ≔ n.match(0 ↦ just([]); ↑ n′ ↦
     xs.match([] ↦ nothing; x ∷ xs′ ↦ takeSafe(xs′, n′) ⁇ just ∘ (x ∷)))
 dropSafe(xs, n) ≔ n.match(0 ↦ xs; ↑ n′ ↦
     xs.match([] ↦ []; _ ∷ xs′ ↦ dropSafe(xs′, n′)))
-filter(xs, p) ≔ fold(xs, x ↦ xs′ ↦ if(p(x), x ∷ xs′, xs′), [])
+filter(xs, p) ≔ fold(xs, x ↦ xs′ ↦ (p(x) ? x ∷ xs′ || xs′), [])
 (¦) ≔ filter
 (|:) := (¦)
 map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          -- map function over list
@@ -165,8 +165,9 @@ zipWith(xs, f, ys) ≔ xs.match(
 )
 zip(xs, ys) ≔ zipWith(xs, pair, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
+pairs(xs) := zip(xs, tail(xs))
 interleave(xs, y) ≔ (
-    interleave′ ≔ [] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
+    interleave′ ≔ ([] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′))
     xs.match([] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′))
 )
 joinWith(xss, ys) ≔ join(interleave(xss, ys))
@@ -192,8 +193,8 @@ cycle(xs) ≔ xs ⧺ cycle(xs)                 -- infinitely cycle list
 -- integer list
 n ‥ m ≔ n > m ? [] ‖ n ∷ (n + 1 ‥ m)
 (..) := (‥)
-sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
-deduplicate ≔ [] ↦ []; n ∷ ns ↦ n ∷ deduplicate(ns ¦ (≠ n))
+sort ≔ ([] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n)))
+deduplicate ≔ ([] ↦ []; n ∷ ns ↦ n ∷ deduplicate(ns ¦ (≠ n)))
 deduplicateBy(xs, (≟)) ≔ xs.match(
     [] ↦ [];
     x ∷ xs′ ↦ x ∷ deduplicateBy(xs′ ¦ (¬) ∘ (≟ x), (≟))
@@ -207,7 +208,7 @@ maximum(ns) ≔ ns.reduce(max)
 countFrom ≔ iterate(↑)
 naturals ≔ countFrom(0)
 primes ≔ (
-    filterPrime ≔ [] ↦ []; n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
+    filterPrime ≔ ([] ↦ []; n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0)))
     filterPrime(countFrom(2))
 )
 fibonaccis ≔ (
@@ -310,7 +311,7 @@ showNatural(n) ≔ (
     n = 0 ? "0" ‖ reverse(showReversedNatural(n))
 )
 
-showSign ≔ + _ ↦ "+" ; - _ ↦ "-"
+showSign ≔ (+ _ ↦ "+" ; - _ ↦ "-")
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     -- todo: escape
 showPair(xsxs, showFirst, showSecond) ≔

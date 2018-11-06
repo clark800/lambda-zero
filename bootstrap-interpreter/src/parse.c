@@ -82,7 +82,6 @@ static Node* parseToken(Token token) {
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
             return NULL;
         case SPACE: return parseSymbol(renameTag(token.tag, " "));
-        case NEWLINE: return parseSymbol(renameTag(token.tag, "\n"));
         default: return parseSymbol(token.tag);
     }
 }
@@ -94,7 +93,7 @@ Program parse(const char* input) {
     push(stack, parseToken(start));
     for (Token token = lex(start); token.type != END; token = lex(token)) {
         debugParseState(token.tag, stack, TRACE_PARSING);
-        if (token.type != COMMENT) {
+        if (token.type != COMMENT && token.type != VSPACE) {
             Node* node = parseToken(token);
             shift(stack, node);
             release(hold(node));

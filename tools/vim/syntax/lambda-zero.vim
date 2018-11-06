@@ -10,6 +10,7 @@ syntax region lambdaZeroCharacter start=/'/ skip=/\\'/ end=/'/ oneline
 syntax match lambdaZeroLineComment "\(^\|\s\)--.*$"
 syntax region lambdaZeroBlockComment start=/{=/ end=/=}/
 syntax keyword lambdaZeroConstant true false
+syntax keyword lambdaZeroKeyword if
 
 highlight link lambdaZeroName Normal
 highlight link lambdaZeroOperator Operator
@@ -20,3 +21,4 @@ highlight link lambdaZeroString String
 highlight link lambdaZeroCharacter Character
 highlight link lambdaZeroLineComment Comment
 highlight link lambdaZeroBlockComment Comment
+highlight link lambdaZeroKeyword Keyword

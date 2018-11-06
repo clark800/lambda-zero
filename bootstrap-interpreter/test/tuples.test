@@ -27,10 +27,10 @@ f(x,((a,b),c)) := a * c - b\n f(0,((5,4),3))
 11
 ===============================================================================
 (a := 1, 2)
-Syntax error: missing scope ':=' at line 1 column 4
+Syntax error: missing scope for definition ':=' at line 1 column 4
 ===============================================================================
 (1, b := 2)
-Syntax error: missing scope ':=' at line 1 column 7
+Syntax error: missing scope for definition ':=' at line 1 column 7
 ===============================================================================
 (2, 2 +)
 Syntax error: operator does not support sections ',' at line 1 column 3

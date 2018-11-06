@@ -8,10 +8,11 @@
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     switch (getNodeType(node)) {
+        case DEFINITION:
         case APPLICATION:
             fputs("(", stream);
             serializeNode(getLeft(node), locals, globals, depth, stream);
-            fputs(" ", stream);
+            fputs(isDefinition(node) ? " := " : " ", stream);
             serializeNode(getRight(node), locals, globals, depth, stream);
             fputs(")", stream);
             break;
