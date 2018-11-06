@@ -31,7 +31,7 @@ Boolean ⩴ {false, true}
 if(b, x, y) ≔ b.match(false ↦ y; true ↦ x)
 (?) ≔ if
 ¬ b ≔ b ? false ‖ true
-(!) ≔ (¬)
+(not) ≔ (¬)
 b ∧ c ≔ b ? c ‖ false
 (/\) ≔ (∧)
 b ∨ c ≔ b ? true ‖ c
@@ -47,7 +47,7 @@ while(f, p, z) ≔ f.until((¬) ∘ p, z)
 
 -- math
 (↑) ≔ (up)
-(≠) ≔ (!=)
+(≠) ≔ (=/=)
 (≤) ≔ (<=)
 (≥) ≔ (>=)
 (⋅) := (*)
@@ -88,7 +88,7 @@ mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
-factorial ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ factorial(n′)
+(!) ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!
 gcd(n, m) ≔ (m = 0) ? n ‖ gcd(m, n.mod(m))
 n ^ m ≔ m.match(
     0 ↦ 1;

@@ -16,7 +16,7 @@ builtinTypes := (
         ("//", arithmetic),
         ("%", arithmetic),
         ("=", comparison),
-        ("!=", comparison),
+        ("=/=", comparison),
         ("<", comparison),
         (">", comparison),
         ("<=", comparison),

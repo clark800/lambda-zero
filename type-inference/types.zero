@@ -39,7 +39,7 @@ isListType(type) := getTypeCode(type) = 6
 isTreeType(type) := getTypeCode(type) = 7
 isMaybeType(type) := getTypeCode(type) = 8
 isBottomType(type) := getTypeCode(type) = 9
-isFree(type, variables) := ! variables.hasKey(type) \/
+isFree(type, variables) := not variables.hasKey(type) \/
     isFreeType(variables.get(type, undefined))
 
 syntax(=~=) := infix(13)

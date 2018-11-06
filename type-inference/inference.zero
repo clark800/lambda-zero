@@ -28,9 +28,9 @@ substitute(type, variables) := (
 -- see Comparing Unification Algorithms in First-Order Theorem Proving
 -- by Krystof Hoder and Andrei Voronkov
 unify'(originals, variables, (left, right)) := (
-    isTypeVariable(left) /\ ! left.isFree(variables) ?
+    isTypeVariable(left) /\ not left.isFree(variables) ?
         unify'(originals, variables, (left.substitute(variables), right))
-    isTypeVariable(right) /\ ! right.isFree(variables) ?
+    isTypeVariable(right) /\ not right.isFree(variables) ?
         unify'(originals, variables, (left, right.substitute(variables)))
     isBottomType(left) \/ isBottomType(right) ? variables
     left =~= right ? variables
@@ -53,7 +53,7 @@ unifyAll(variables, types) := (
 
 generalize(type, variables, oldVariables) := (
     syntax(\\) := infix(17)
-    vs \\ vs' := vs |: (v -> ! vs'.any((=~= v)))
+    vs \\ vs' := vs |: (v -> not vs'.any((=~= v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
         oldVariables.getAllFreeVariables(variables)
@@ -109,7 +109,7 @@ infer(node, stack, variables) := (
 inferType(stack, definition) := (
     (name, value) := definition
     knownTypeScheme := getKnownTypeScheme(name)
-    ! isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
+    not isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
     (type, variables') := infer(value, stack, empty)
     type.generalize(variables', empty) :: stack
 )

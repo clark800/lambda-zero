@@ -1,7 +1,7 @@
 --* patterns.zero
 
 getArguments(pattern) := (
-    ! isApplication(pattern) ? []
+    not isApplication(pattern) ? []
     getArguments(getLeft(pattern)) ++ [getRight(pattern)]
 )
 
@@ -57,8 +57,8 @@ getPatternExtension(function) := (
 )
 
 reducePatternLambda(operator, left, right) := (
-    ! isLambda(left) ? syntaxError("expected lambda to left of", operator)
-    ! isLambda(right) ? syntaxError("expected lambda to right of", operator)
+    not isLambda(left) ? syntaxError("expected lambda to left of", operator)
+    not isLambda(right) ? syntaxError("expected lambda to right of", operator)
     tag := getTag(operator)
     base := isStrictPatternLambda(left) ? getBody(left) ||
         newApplication(tag, newUnderscore(tag, 1), getPatternExtension(left))

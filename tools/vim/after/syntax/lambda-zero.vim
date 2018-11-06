@@ -2,63 +2,100 @@
 " if one operator is a substring of another, make sure the shortest comes
 " first
 
-syntax match zeroNiceOperator "!" conceal cchar=¬
-syntax match zeroNiceOperator "!!" conceal cchar=‼
 syntax match zeroNiceOperator "\*" conceal cchar=⋅
 syntax match zeroNiceOperator "\*\*" conceal cchar=×
 syntax match zeroNiceOperator "><" conceal cchar=⪤
+syntax match zeroNiceOperator "\*:\*" conceal cchar=⨰
 syntax match zeroNiceOperator ":" conceal cchar=∈
-syntax match zeroNiceOperator "!:" conceal cchar=∉
+syntax match zeroNiceOperator "/:" conceal cchar=∉
 syntax match zeroNiceOperator "::" conceal cchar=∷
 syntax match zeroNiceOperator "++" conceal cchar=⧺
+syntax match zeroNiceOperator "+=" conceal cchar=⧧
+syntax match zeroNiceOperator "+++" conceal cchar=⧻
 syntax match zeroNiceOperator "\.\." conceal cchar=‥
 syntax match zeroNiceOperator "\.\.\." conceal cchar=…
-syntax match zeroNiceOperator "##" conceal cchar=⩨
+syntax match zeroNiceOperator "##" conceal cchar=⨳
 syntax match zeroNiceOperator "&" conceal cchar=∩
+syntax match zeroNiceOperator "\<U\>" conceal cchar=⋃   " union
 syntax match zeroNiceOperator "\~\~" conceal cchar=≀
 syntax match zeroNiceOperator "+-" conceal cchar=±
 syntax match zeroNiceOperator "-+" conceal cchar=∓
 syntax match zeroNiceOperator "-+-" conceal cchar=⩱
 syntax match zeroNiceOperator "|:" conceal cchar=¦
+syntax match zeroNiceOperator "!!" conceal cchar=‼
 syntax match zeroNiceOperator "?!" conceal cchar=⁈
 syntax match zeroNiceOperator "??" conceal cchar=⁇
 syntax match zeroNiceOperator "//" conceal cchar=⫽
-syntax match zeroNiceOperator "-:" conceal cchar=∸      " bitwise not
-syntax match zeroNiceOperator ">:<" conceal cchar=⨰     " bitwise xor
+syntax match zeroNiceOperator ":-" conceal cchar=∸
+syntax match zeroNiceOperator "-:" conceal cchar=∹
+syntax match zeroNiceOperator "-:-" conceal cchar=⫬      " bitwise not
+syntax match zeroNiceOperator "||" conceal cchar=‖
 
 " comparison operators
-syntax match zeroNiceOperator "\~:" conceal cchar=∻     " or ⩪ ?
-syntax match zeroNiceOperator "!\~" conceal cchar=≁
+syntax match zeroNiceOperator "<:" conceal cchar=⊆
+syntax match zeroNiceOperator ":>" conceal cchar=⊇
+syntax match zeroNiceOperator "</:" conceal cchar=⊈
+syntax match zeroNiceOperator ":/>" conceal cchar=⊉
+syntax match zeroNiceOperator ":<" conceal cchar=⊂
+syntax match zeroNiceOperator ">:" conceal cchar=⊃
+syntax match zeroNiceOperator ":/<" conceal cchar=⊄
+syntax match zeroNiceOperator ">/:" conceal cchar=⊅
+syntax match zeroNiceOperator "<:<" conceal cchar=⪡     " bitwise shift left
+syntax match zeroNiceOperator ">:>" conceal cchar=⪢     " bitwise shift right
+syntax match zeroNiceOperator ">:<" conceal cchar=⩙     " bitwise xor
+
+syntax match zeroNiceOperator "/<" conceal cchar=≮
+syntax match zeroNiceOperator "/>" conceal cchar=≯
 syntax match zeroNiceOperator "<=" conceal cchar=≤
 syntax match zeroNiceOperator ">=" conceal cchar=≥
 syntax match zeroNiceOperator "=<" conceal cchar=≼
+"syntax match zeroNiceOperator "" conceal cchar=≽
+syntax match zeroNiceOperator "-<" conceal cchar=⋜
+syntax match zeroNiceOperator ">-" conceal cchar=⋝
 syntax match zeroNiceOperator "\~<" conceal cchar=≾
-syntax match zeroNiceOperator "<:" conceal cchar=⊆
-syntax match zeroNiceOperator ":>" conceal cchar=⊇
-syntax match zeroNiceOperator "<\*=" conceal cchar=⩿
-syntax match zeroNiceOperator "!<:" conceal cchar=⊈
-syntax match zeroNiceOperator "!:>" conceal cchar=⊉
-syntax match zeroNiceOperator "!=" conceal cchar=≠
-syntax match zeroNiceOperator "==" conceal cchar=≡
-syntax match zeroNiceOperator "!==" conceal cchar=≢
+syntax match zeroNiceOperator ">\~" conceal cchar=≿
+syntax match zeroNiceOperator "<\*=" conceal cchar=⩿   " string compare
+syntax match zeroNiceOperator ">\*=" conceal cchar=⪀   " string compare
+
+syntax match zeroNiceOperator "<|" conceal cchar=⊲
+syntax match zeroNiceOperator "|>" conceal cchar=⊳
+syntax match zeroNiceOperator "<||" conceal cchar=⧏
+syntax match zeroNiceOperator "||>" conceal cchar=⧐
+syntax match zeroNiceOperator "=<|" conceal cchar=⊴
+syntax match zeroNiceOperator "|>=" conceal cchar=⊵
+syntax match zeroNiceOperator "=/<|" conceal cchar=⋬
+syntax match zeroNiceOperator "|>/=" conceal cchar=⋭
+
+syntax match zeroNiceOperator "\~:" conceal cchar=∻     " or ⩪ ?
+syntax match zeroNiceOperator "/\~" conceal cchar=≁
+
 syntax match zeroNiceOperator ":=" conceal cchar=≔
 syntax match zeroNiceOperator "=:" conceal cchar=≕
 syntax match zeroNiceOperator "::=" conceal cchar=⩴
+syntax match zeroNiceOperator "=/=" conceal cchar=≠
 syntax match zeroNiceOperator "=:=" conceal cchar=≐
-syntax match zeroNiceOperator "=\~=" conceal cchar=≅
-syntax match zeroNiceOperator "!=\~=" conceal cchar=≇
-syntax match zeroNiceOperator "=\*=" conceal cchar=≛
+syntax match zeroNiceOperator "=::=" conceal cchar=⩷
+syntax match zeroNiceOperator "=\*=" conceal cchar=≛    " string equality
 syntax match zeroNiceOperator "=<>=" conceal cchar=≗
 syntax match zeroNiceOperator "=?=" conceal cchar=≟
+syntax match zeroNiceOperator "\~=" conceal cchar=≃
+syntax match zeroNiceOperator "/\~=" conceal cchar=≄
+syntax match zeroNiceOperator "=\~=" conceal cchar=≅
+syntax match zeroNiceOperator "/=\~=" conceal cchar=≇
+syntax match zeroNiceOperator "==" conceal cchar=≡
+syntax match zeroNiceOperator "/==" conceal cchar=≢
+syntax match zeroNiceOperator "===" conceal cchar=≣
+syntax match zeroNiceOperator "\~=\~" conceal cchar=≍
 
 " arrow operators
-syntax match zeroNiceOperator "<-" conceal cchar=↤
+"syntax match zeroNiceOperator "->" conceal cchar=→
+syntax match zeroNiceOperator "<-" conceal cchar=←
+"syntax match zeroNiceOperator "<->" conceal cchar=↔    " circled minus
 syntax match zeroNiceOperator "->" conceal cchar=↦
-syntax match zeroNiceOperator "<=>" conceal cchar=⇔
+"syntax match zeroNiceOperator "<-" conceal cchar=↤
+syntax match zeroNiceOperator ":->" conceal cchar=⧴
 syntax match zeroNiceOperator "=>" conceal cchar=⇒
-syntax match zeroNiceOperator "-->" conceal cchar=→
-syntax match zeroNiceOperator "<--" conceal cchar=←
-syntax match zeroNiceOperator "<-->" conceal cchar=↔
+"syntax match zeroNiceOperator "<=" conceal cchar=⇐     " less than or equal
 syntax match zeroNiceOperator "\~>" conceal cchar=↝
 syntax match zeroNiceOperator "<\~" conceal cchar=↜
 syntax match zeroNiceOperator ">->" conceal cchar=↣
@@ -69,32 +106,27 @@ syntax match zeroNiceOperator "->>" conceal cchar=↠
 syntax match zeroNiceOperator "<<-" conceal cchar=↞
 syntax match zeroNiceOperator "<<<" conceal cchar=⋘
 syntax match zeroNiceOperator ">>>" conceal cchar=⋙
-syntax match zeroNiceOperator "=>>" conceal cchar=⪢
-syntax match zeroNiceOperator "<<=" conceal cchar=⪡
+syntax match zeroNiceOperator "=>>" conceal cchar=⇉
+syntax match zeroNiceOperator "<<=" conceal cchar=⇇
+syntax match zeroNiceOperator "==>" conceal cchar=⇛
+syntax match zeroNiceOperator "<==" conceal cchar=⇚
+syntax match zeroNiceOperator "<==>" conceal cchar=⇔
 
 " wedge and triangle operators
-syntax match zeroNiceOperator "\\-/" conceal cchar=∀
 syntax match zeroNiceOperator "/\\" conceal cchar=∧
 syntax match zeroNiceOperator "\\/" conceal cchar=∨
 syntax match zeroNiceOperator "/|" conceal cchar=⩘
 syntax match zeroNiceOperator "|/" conceal cchar=⩗
 syntax match zeroNiceOperator "|\\" conceal cchar=◺
 syntax match zeroNiceOperator "\\|" conceal cchar=◹
-syntax match zeroNiceOperator "\\|/" conceal cchar=⩛
+syntax match zeroNiceOperator "\\|/" conceal cchar=⩛        " logical xor
 syntax match zeroNiceOperator "/|\\" conceal cchar=⩚
-syntax match zeroNiceOperator "/:\\" conceal cchar=⟑
-syntax match zeroNiceOperator "\\:/" conceal cchar=⟇
-syntax match zeroNiceOperator "<:<" conceal cchar=⋖
-syntax match zeroNiceOperator ">:>" conceal cchar=⋗
-syntax match zeroNiceOperator "/^\\" conceal cchar=⩓
-syntax match zeroNiceOperator "\\^/" conceal cchar=⩔
+syntax match zeroNiceOperator "/:\\" conceal cchar=⩓        " bitwise and
+syntax match zeroNiceOperator "\\:/" conceal cchar=⩔        " bitwise or
+syntax match zeroNiceOperator "/^\\" conceal cchar=⟁
 syntax match zeroNiceOperator "/+\\" conceal cchar=⨹
 syntax match zeroNiceOperator "/-\\" conceal cchar=⨺
 syntax match zeroNiceOperator "/\*\\" conceal cchar=⨻
-syntax match zeroNiceOperator "<|" conceal cchar=⊲
-syntax match zeroNiceOperator "|>" conceal cchar=⊳
-syntax match zeroNiceOperator "=<|" conceal cchar=⊴
-syntax match zeroNiceOperator "|>=" conceal cchar=⊵
 syntax match zeroNiceOperator "|><" conceal cchar=⋉
 syntax match zeroNiceOperator "><|" conceal cchar=⋊
 syntax match zeroNiceOperator "|><|" conceal cchar=⋈
@@ -103,25 +135,26 @@ syntax match zeroNiceOperator "|><|" conceal cchar=⋈
 syntax match zeroNiceOperator "<>" conceal cchar=∘
 syntax match zeroNiceOperator "<+>" conceal cchar=⊕
 syntax match zeroNiceOperator "<->" conceal cchar=⊖
-syntax match zeroNiceOperator "<\*>" conceal cchar=⊛
+syntax match zeroNiceOperator "<\*>" conceal cchar=⊙
 syntax match zeroNiceOperator "<\*\*>" conceal cchar=⊗
-syntax match zeroNiceOperator "<:>" conceal cchar=⊙
+syntax match zeroNiceOperator "<#>" conceal cchar=⊛
 syntax match zeroNiceOperator "</>" conceal cchar=⊘
 syntax match zeroNiceOperator "<\\>" conceal cchar=⦸
 syntax match zeroNiceOperator "<%>" conceal cchar=⦼
 syntax match zeroNiceOperator "<|>" conceal cchar=⦶
 syntax match zeroNiceOperator "<||>" conceal cchar=⦷
-syntax match zeroNiceOperator "<==>" conceal cchar=⊜  " conflict with arrow
+syntax match zeroNiceOperator "<=>" conceal cchar=⊜
 syntax match zeroNiceOperator "<<>" conceal cchar=⧀
 syntax match zeroNiceOperator "<>>" conceal cchar=⧁
 syntax match zeroNiceOperator "<<>>" conceal cchar=⦾
-syntax match zeroNiceOperator "<@>" conceal cchar=⦿
 syntax match zeroNiceOperator "<\\/>" conceal cchar=⎊
+"syntax match zeroNiceOperator "" conceal cchar=⦿       " looks like circled dot
 syntax match zeroNiceOperator "<^>" conceal cchar=⬦
-syntax match zeroNiceOperator "<^^>" conceal cchar=⟐
+syntax match zeroNiceOperator "<:>" conceal cchar=⟐
 
 " bar and turnstile operators (must come before boxed operators)
-syntax match zeroNiceOperator "||" conceal cchar=‖
+syntax match zeroNiceOperand "\<T\>" conceal cchar=⊤    " top
+syntax match zeroNiceOperator "_|_" conceal cchar=⊥
 syntax match zeroNiceOperator "|-" conceal cchar=⊢
 syntax match zeroNiceOperator "-|" conceal cchar=⊣
 syntax match zeroNiceOperator "||-" conceal cchar=⊩
@@ -136,14 +169,15 @@ syntax match zeroNiceOperator "=||=" conceal cchar=⟚
 syntax match zeroNiceOperator "|==|" conceal cchar=⧦
 
 " boxed operators
-syntax match zeroNiceOperator "|||" conceal cchar=⧠
-syntax match zeroNiceOperator "|&|" conceal cchar=⊓
+syntax match zeroNiceOperator "&&" conceal cchar=⊓
 syntax match zeroNiceOperator "|_|" conceal cchar=⊔
+syntax match zeroNiceOperator "|\~|" conceal cchar=⧠
 syntax match zeroNiceOperator "|+|" conceal cchar=⊞
 syntax match zeroNiceOperator "|-|" conceal cchar=⊟
-syntax match zeroNiceOperator "|\*|" conceal cchar=⧆
+syntax match zeroNiceOperator "|\*|" conceal cchar=⊡
 syntax match zeroNiceOperator "|\*\*|" conceal cchar=⊠
-syntax match zeroNiceOperator "|:|" conceal cchar=⊡
+syntax match zeroNiceOperator "|#|" conceal cchar=⧆
+syntax match zeroNiceOperator "|||" conceal cchar=◫
 syntax match zeroNiceOperator "|/|" conceal cchar=⍁
 syntax match zeroNiceOperator "|\\|" conceal cchar=⍂
 syntax match zeroNiceOperator "|<>|" conceal cchar=⧇
@@ -151,32 +185,34 @@ syntax match zeroNiceOperator "||||" conceal cchar=⧈
 syntax match zeroNiceOperator "|<|" conceal cchar=⍃
 syntax match zeroNiceOperator "|>|" conceal cchar=⍄
 syntax match zeroNiceOperator "|=|" conceal cchar=⌸
-syntax match zeroNiceOperator "|!=|" conceal cchar=⍯
+syntax match zeroNiceOperator "|=/=|" conceal cchar=⍯
 syntax match zeroNiceOperator "|/\\|" conceal cchar=⍓
 syntax match zeroNiceOperator "|\\/|" conceal cchar=⍌
 syntax match zeroNiceOperator "|<-|" conceal cchar=⍇
 syntax match zeroNiceOperator "|->|" conceal cchar=⍈
 syntax match zeroNiceOperator "|?|" conceal cchar=⍰
 syntax match zeroNiceOperator "|^|" conceal cchar=⌺
-syntax match zeroNiceOperator "|::|" conceal cchar=⍠
+syntax match zeroNiceOperator "|:|" conceal cchar=⍠
 
 " superscript operators
 syntax match zeroNiceOperator "\^\^" conceal cchar=°
 syntax match zeroNiceOperator "\^+" conceal cchar=⁺
 syntax match zeroNiceOperator "\^-" conceal cchar=⁻
 syntax match zeroNiceOperator "\^=" conceal cchar=⁼
-syntax match zeroNiceOperator "\^\*" conceal cchar=﹡
+"syntax match zeroNiceOperator "\^\*" conceal cchar=﹡ " avoid confusing with *
 
 " named operators
-syntax match zeroNiceOperator "\<U\>" conceal cchar=⋃
+syntax match zeroNiceOperator "\<contradiction\>" conceal cchar=※
+syntax match zeroNiceOperator "\<forall\>" conceal cchar=∀
+syntax match zeroNiceOperator "\<exists\>" conceal cchar=∃
+syntax match zeroNiceOperator "\<not\>" conceal cchar=¬
+syntax match zeroNiceOperator "\<power\>" conceal cchar=℘
 syntax match zeroNiceOperator "\<up\>" conceal cchar=↑
 syntax match zeroNiceOperator "\<down\>" conceal cchar=↓
 syntax match zeroNiceOperator "\<integral\>" conceal cchar=∫
 syntax match zeroNiceOperator "\<infinity\>" conceal cchar=∞
-syntax match zeroNiceOperator "\<powerSet\>" conceal cchar=℘
 syntax match zeroNiceOperator "\<sum\>" conceal cchar=∑
 syntax match zeroNiceOperator "\<product\>" conceal cchar=∏
-syntax match zeroNiceOperator "\<sqrt\>" conceal cchar=√
 syntax match zeroNiceOperator "\<partial\>" conceal cchar=∂
 syntax match zeroNiceOperator "\<grad\>" conceal cchar=𝛁
 syn match DivHead contained "di" conceal cchar=𝛁
@@ -189,32 +225,32 @@ syn match LapHead contained "lapla" conceal cchar=𝛁
 syn match LapTail contained "cian" conceal cchar=²
 syn match zeroNiceOperator "\<laplacian\>" contains=LapHead,LapTail
 
-syntax match zeroNiceOperand "\<A\>" conceal cchar=𝔸
-syntax match zeroNiceOperand "\<B\>" conceal cchar=𝔹
-syntax match zeroNiceOperand "\<C\>" conceal cchar=ℂ
-syntax match zeroNiceOperand "\<D\>" conceal cchar=𝔻
-syntax match zeroNiceOperand "\<E\>" conceal cchar=𝔼
-syntax match zeroNiceOperand "\<F\>" conceal cchar=𝔽
-syntax match zeroNiceOperand "\<G\>" conceal cchar=𝔾
-syntax match zeroNiceOperand "\<H\>" conceal cchar=ℍ
-syntax match zeroNiceOperand "\<I\>" conceal cchar=𝕀
-syntax match zeroNiceOperand "\<J\>" conceal cchar=𝕁
-syntax match zeroNiceOperand "\<K\>" conceal cchar=𝕂
-syntax match zeroNiceOperand "\<L\>" conceal cchar=𝕃
-syntax match zeroNiceOperand "\<M\>" conceal cchar=𝕄
-syntax match zeroNiceOperand "\<N\>" conceal cchar=ℕ
-syntax match zeroNiceOperand "\<O\>" conceal cchar=𝕆
-syntax match zeroNiceOperand "\<P\>" conceal cchar=ℙ
-syntax match zeroNiceOperand "\<Q\>" conceal cchar=ℚ
-syntax match zeroNiceOperand "\<R\>" conceal cchar=ℝ
-syntax match zeroNiceOperand "\<S\>" conceal cchar=𝕊
-syntax match zeroNiceOperand "\<T\>" conceal cchar=𝕋
-" syntax match zeroNiceOperand "\<U\>" conceal cchar=𝕌  " used for union
-syntax match zeroNiceOperand "\<V\>" conceal cchar=𝕍
-syntax match zeroNiceOperand "\<W\>" conceal cchar=𝕎
-syntax match zeroNiceOperand "\<X\>" conceal cchar=𝕏
-syntax match zeroNiceOperand "\<Y\>" conceal cchar=𝕐
-syntax match zeroNiceOperand "\<Z\>" conceal cchar=ℤ
+syntax match zeroNiceOperand "\<AA\>" conceal cchar=𝔸
+syntax match zeroNiceOperand "\<BB\>" conceal cchar=𝔹    " booleans
+syntax match zeroNiceOperand "\<CC\>" conceal cchar=ℂ    " complex
+syntax match zeroNiceOperand "\<DD\>" conceal cchar=𝔻    " decidable
+syntax match zeroNiceOperand "\<EE\>" conceal cchar=𝔼    " euclidean space
+syntax match zeroNiceOperand "\<FF\>" conceal cchar=𝔽    " field
+syntax match zeroNiceOperand "\<GG\>" conceal cchar=𝔾    " group
+syntax match zeroNiceOperand "\<HH\>" conceal cchar=ℍ    " quaternions
+syntax match zeroNiceOperand "\<II\>" conceal cchar=𝕀
+syntax match zeroNiceOperand "\<JJ\>" conceal cchar=𝕁
+syntax match zeroNiceOperand "\<KK\>" conceal cchar=𝕂
+syntax match zeroNiceOperand "\<LL\>" conceal cchar=𝕃
+syntax match zeroNiceOperand "\<MM\>" conceal cchar=𝕄    " minkowski space
+syntax match zeroNiceOperand "\<NN\>" conceal cchar=ℕ    " naturals
+syntax match zeroNiceOperand "\<OO\>" conceal cchar=𝕆    " octonions
+syntax match zeroNiceOperand "\<PP\>" conceal cchar=ℙ    " propositions
+syntax match zeroNiceOperand "\<QQ\>" conceal cchar=ℚ    " rationals (quotient)
+syntax match zeroNiceOperand "\<RR\>" conceal cchar=ℝ    " real numbers
+syntax match zeroNiceOperand "\<SS\>" conceal cchar=𝕊    " class of all sets
+syntax match zeroNiceOperand "\<TT\>" conceal cchar=𝕋    " alias for Top
+syntax match zeroNiceOperand "\<UU\>" conceal cchar=𝕌    " alias for Top
+syntax match zeroNiceOperand "\<VV\>" conceal cchar=𝕍    " vector space
+syntax match zeroNiceOperand "\<WW\>" conceal cchar=𝕎
+syntax match zeroNiceOperand "\<XX\>" conceal cchar=𝕏
+syntax match zeroNiceOperand "\<YY\>" conceal cchar=𝕐
+syntax match zeroNiceOperand "\<ZZ\>" conceal cchar=ℤ    " integers
 syntax match zeroNiceOperand "\<i\>" conceal cchar=ℹ
 
 " greek letters

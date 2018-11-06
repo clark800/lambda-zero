@@ -1,18 +1,18 @@
 # Introduction
 
-Lambda Zero is a minimalist pure lazy functional programming language featuring:
-* The Lambda Calculus (first class functions, closures, auto-currying, ...)
+Lambda Zero is a minimalist pure lazy functional programming language with:
+* All the standard Lambda Calculus features (first class functions, closures,
+    currying, recursion, nested function definitions, ...)
 * Lazy evaluation (infinite data structures, increased modularity, ...)
 * Algebraic data types (enumerations, tuples, lists, trees, records/structs,
-  maybe/optional types, checked exceptions, monads, ...)
+    maybe/optional types, checked exceptions, monads, ...)
 * Pattern matching (case expressions, tuple destructuring, ...)
 * Automatic garbage collection
-* Unicode support (UTF8 everywhere)
-* User-defined lexically-scoped operator fixity, associativity, precedence,
-  and semantics (even the space operator)
+* Unicode support (UTF8)
+* User-defined lexically-scoped operator syntax and semantics (even spaces)
 * Uniform function call syntax (`x.f(y, z)` means `f(x, y, z)`)
-* Self-interpreter
-* Hindley-Milner type inference (implemented in Lambda Zero)
+* Hindley-Milner static type inference (implemented in Lambda Zero)
+* A self-interpreter
 
 And the whole language can be interpreted with just 2000 lines of C code!
 
@@ -24,7 +24,7 @@ And the whole language can be interpreted with just 2000 lines of C code!
 
 ### Factorial
 
-    factorial ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ factorial(n′)
+    (!) ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!
 
 ### Quicksort
 
@@ -99,7 +99,7 @@ The desugared language can be described by the grammar rules below
 grammar ignores some error cases):
 
     natural = [0-9]+
-    builtin = '+' | '-' | '*' | '//' | '%' | '=' | '!=' | '<' | '>' | '<=' | '>=' | 'up' | 'error'
+    builtin = '+' | '-' | '*' | '//' | '%' | '=' | '=/=' | '<' | '>' | '<=' | '>=' | 'up' | 'error'
     name = ("a token that is not a natural, builtin, delimiter, or arrow")
     expr = natural | builtin | name | (name -> expr) | (expr expr)
 
