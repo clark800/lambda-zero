@@ -13,9 +13,10 @@ isBlockComment(lexeme) := lexeme.startsWith("{=")
 isNumeric(lexeme) := isDigit(head(lexeme)) \/
     ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ not isNil(tail(lexeme)) /\
       isDigit(head(tail(lexeme))))
-isNewline(c) := c = '\n' \/ c = '\r'
-isInvalid(c) := c =/= 0 /\ isControl(c) /\ not isBlank(c) /\ not isNewline(c)
-isDelimiter(c) := " \t\n\r\0,;.`()[]{}@$\"".any((= c)) \/ isInvalid(c)
+isNewline(c) := c = '\n'
+isInvalid(c) := c =/= 0 /\ isControl(c) /\ not isNewline(c)
+isDelimiter(c) := " `.,;@$()[]{}\"\n\0".any((= c)) \/ isInvalid(c)
+isRepeatable(c) := " `.,;".any(= c)
 
 splitQuoteCharacter(quote, ns) := (
     ns.isNil \/ head(ns) = quote \/ isNewline(head(ns)) ? ([], ns)
@@ -41,16 +42,20 @@ splitNumeric(ns) := (
     (before ++ [head(after)] ++ before', after')
 )
 
+splitNewline(ns) := (
+    (before, after) := tail(ns).splitWhen(=/= ' ')
+    (head(ns) :: before, after)
+)
+
 splitLexeme(ns) := (
     ns.isNil ? ([], [])
     c := head(ns)
-    c.isBlank ? ns.splitWhen((not) <> isBlank)
-    c.isNewline ? ns.splitWhen((not) <> isNewline)
+    c.isNewline ? splitNewline(ns)
     c.isQuote ? splitQuote(ns)
     ns.isLineComment ? ns.splitWhen(isNewline)
     ns.isBlockComment ? ns.splitOn("=}").shiftSplit.shiftSplit
     ns.isNumeric ? splitNumeric(ns)
-    c = '.' ? ns.splitWhen(=/= '.')
+    c.isRepeatable ? ns.splitWhen(=/= c)
     c.isDelimiter ? ([head(ns)], tail(ns))
     ns.splitWhen(isDelimiter)
 )
@@ -63,7 +68,7 @@ advanceLocation'(lexeme, line, column) := (
 
 advanceLocation(location, lexeme) := (
     isLineComment(lexeme) /\ lexeme[2] = '*' ? (
-        (_, after) := lexeme.drop(3).splitWhen((not) <> isBlank)
+        (_, after) := lexeme.drop(3).splitWhen(=/= ' ')
         (file, _) := after.splitWhen(= '\n')
         Location(file, isNil(file) ? 0 || 1, 0)
     )
@@ -95,7 +100,7 @@ showTag(tag) :=
     "' at " ++ showLocation(tag.getTagLocation)
 
 TokenCode ::= {
-    Blank, Newline, Symbolic, Numeric, Character, String, Comment, Invalid
+    Space, Newline, Symbolic, Numeric, Character, String, Comment, Invalid
 }
 TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
@@ -103,18 +108,18 @@ createToken(tag) := (
     lexeme := getTagLexeme(tag)
     isNil(lexeme) ? Token(tag, Symbolic)
     c := head(lexeme)
-    isInvalid(c) ? Token(tag, Invalid)
-    isBlank(c) ? Token(tag, Blank)
-    isNewline(c) ? Token(tag, Newline)
+    c = ' ' ? Token(tag, Space)
+    c = '\n' ? Token(tag, Newline)
     c = '"' ? Token(tag, String)
     c = '\'' ? Token(tag, Character)
     isNumeric(lexeme) ? Token(tag, Numeric)
     isLineComment(lexeme) \/ isBlockComment(lexeme) ? Token(tag, Comment)
+    isInvalid(c) ? Token(tag, Invalid)
     Token(tag, Symbolic)
 )
 
 getTokenCodeNumber(tokenCode) := tokenCode.match(
-    Blank -> 0;
+    Space -> 0;
     Newline -> 1;
     Symbolic -> 2;
     Numeric -> 3;
@@ -135,7 +140,7 @@ START := Token(Tag("\0", Location("", 0, 0)), Symbolic)
 
 showToken'(token) := showTag(getTokenTag(token)) ++ " " ++
     getTokenCode(token).match(
-        Blank -> "Blank";
+        Space -> "Space";
         Newline -> "Newline";
         Symbolic -> "Symbolic";
         Numeric -> "Numeric";

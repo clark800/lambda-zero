@@ -22,10 +22,10 @@ reduceLambda(operator, pattern, body) := (
                         getRight(pattern), body), getLeft(pattern)))
             arguments := getArguments(pattern)
             size := length(arguments)
-            blank := newUnderscore(tag, 1)
+            underscore := newUnderscore(tag, 1)
             function := arguments.fold(reduceLambda(tag), body)
             projectors := (0 .. size - 1).map(newProjector(tag, size))
-            projections := projectors.map(newApplication(tag, blank))
+            projections := projectors.map(newApplication(tag, underscore))
             application := projections.cascade(newApplication(tag), function)
             newLambda(getTag(operator), newUnderscore(tag, 0), application)
         );
