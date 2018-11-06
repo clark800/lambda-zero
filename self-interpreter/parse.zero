@@ -69,7 +69,7 @@ parseNumericLiteral(tag) := (
 parseToken(operators, token) := (
     tag := getTokenTag(token)
     getTokenCode(token).match(
-        Blank -> parseSymbol(operators, renameTag(tag, " "));
+        Space -> parseSymbol(operators, renameTag(tag, " "));
         Newline -> parseSymbol(operators, renameTag(tag, "\n"));
         Symbolic -> parseSymbol(operators, tag);
         Numeric -> parseNumericLiteral(tag);

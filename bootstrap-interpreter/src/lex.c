@@ -4,11 +4,14 @@
 #include "lib/tag.h"
 #include "lex.h"
 
-static bool isPeriod(char c) {return c == '.';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}
-static bool isBlank(char c) {return c == ' ' || c == '\t';}
-static bool isNewline(char c) {return c == '\n' || c == '\r';}
-static bool isNotNewline(char c) {return !isNewline(c);}
+static bool isNewline(char c) {return c == '\n';}
+static bool isInvalid(char c) {return c > 0 && iscntrl(c) && !isNewline(c);}
+static bool isRepeatable(char c) {return c > 0 && strchr(" `.,;", c) != NULL;}
+
+static bool isDelimiter(char c) {
+    return c == '\0' || isInvalid(c) || strchr(" `.,;@$()[]{}\"\n", c) != NULL;
+}
 
 static bool isLineComment(const char* s) {return s[0] == '-' && s[1] == '-';}
 static bool isBlockComment(const char* s) {return s[0] == '{' && s[1] == '=';}
@@ -21,17 +24,13 @@ static bool isNumeric(const char* s) {
     return (bool)isdigit(s[0] == '+' || s[0] == '-' ? s[1] : s[0]);
 }
 
-static bool isInvalid(char c) {
-    return c > 0 && iscntrl(c) && !isBlank(c) && !isNewline(c);
+static const char* skipRepeatable(const char* s, char c) {
+    for (; s[0] == c; ++s);
+    return s;
 }
 
-static bool isNotDelimiter(char c) {
-    return !(c == '\0' || isInvalid(c) ||
-        strchr("`.,;()[]{}@$\"\n\r\t ", c) != NULL);
-}
-
-static const char* skipWhile(const char* s, bool (*predicate)(char)) {
-    for (; s[0] != '\0' && predicate(s[0]); ++s);
+static const char* skipUntil(const char* s, bool (*predicate)(char)) {
+    for (; s[0] != '\0' && !predicate(s[0]); ++s);
     return s;
 }
 
@@ -53,20 +52,19 @@ static const char* skipQuote(const char* s) {
 }
 
 static const char* skipNumeric(const char* s) {
-    s = skipWhile(s, isNotDelimiter);
-    if (s[0] == '.' && isdigit(s[1])) s = skipWhile(++s, isNotDelimiter);
+    s = skipUntil(s, isDelimiter);
+    if (s[0] == '.' && isdigit(s[1])) s = skipUntil(++s, isDelimiter);
     return s;
 }
 
 static const char* skipLexeme(const char* s) {
-    if (isLineComment(s)) return skipWhile(s, isNotNewline);
+    if (isLineComment(s)) return skipUntil(s, isNewline);
     if (isBlockComment(s)) return skipBlockComment(s);
-    if (isBlank(s[0])) return skipWhile(s, isBlank);
-    if (isNewline(s[0])) return skipWhile(s, isNewline);
-    if (isPeriod(s[0])) return skipWhile(s, isPeriod);
+    if (isNewline(s[0])) return skipRepeatable(s + 1, ' ');
     if (isQuote(s[0])) return skipQuote(s);
     if (isNumeric(s)) return skipNumeric(s);
-    if (isNotDelimiter(s[0])) return skipWhile(s, isNotDelimiter);
+    if (!isDelimiter(s[0])) return skipUntil(s, isDelimiter);
+    if (isRepeatable(s[0])) return skipRepeatable(s, s[0]);
     return s[0] == '\0' ? s : s + 1;
 }
 
@@ -77,7 +75,7 @@ static String getNextLexeme(Tag tag) {
 
 static Location advanceLocation(Tag tag) {
     if (isLineComment(tag.lexeme.start) && tag.lexeme.start[2] == '*') {
-        const char* file = skipWhile(&(tag.lexeme.start[3]), isBlank);
+        const char* file = skipRepeatable(&(tag.lexeme.start[3]), ' ');
         if (isNewline(file[0]) || file[0] == '\0')
             return newLocation(NULL, 0, 0);
         return newLocation(file, 1, 0);
@@ -97,13 +95,13 @@ Token lex(Token token) {
     Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
     char head = tag.lexeme.start[0];
-    if (isInvalid(head)) return (Token){tag, INVALID};
-    if (isBlank(head)) return (Token){tag, BLANK};
-    if (isNewline(head)) return (Token){tag, NEWLINE};
+    if (head == ' ') return (Token){tag, SPACE};
+    if (head == '\n') return (Token){tag, NEWLINE};
     if (head == '\'') return (Token){tag, CHARACTER};
     if (head == '\"') return (Token){tag, STRING};
     if (isNumeric(tag.lexeme.start)) return (Token){tag, NUMERIC};
     if (isComment(tag.lexeme.start)) return (Token){tag, COMMENT};
+    if (isInvalid(head)) return (Token){tag, INVALID};
     return (Token){tag, SYMBOLIC};
 }
 

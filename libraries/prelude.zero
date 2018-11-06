@@ -21,6 +21,7 @@ f ‖ x ≔ f(x)                  -- low precedence application
 f ∘ g ≔ x ↦ f(g(x))          -- function composition
 (<>) ≔ (∘)
 `f(x, y) ≔ f(y, x)             -- flip order of first two arguments of function
+``f(x, y, z) := f(y, z, x)
 id(x) ≔ x                      -- identity function
 constant(x) ≔ _ ↦ x           -- return value does not depend on parameter
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) -- apply binary f with unary g applied first
@@ -36,12 +37,10 @@ b ∧ c ≔ b ? c ‖ false
 (/\) ≔ (∧)
 b ∨ c ≔ b ? true ‖ c
 (\/) ≔ (∨)
-b ⩛ c ≔ b ? ¬ c ‖ c
-(\|/) ≔ (⩛)
 b ⇒ c ≔ b ? c ‖ true
 (=>) ≔ (⇒)
 b ⇔ c ≔ b ? c ‖ ¬ c
-(<=>) ≔ (⇔)
+(<==>) ≔ (⇔)
 until(f, p, z) ≔ p(z) ? z ‖ f.until(p, f(z))
 while(f, p, z) ≔ f.until((¬) ∘ p, z)
 

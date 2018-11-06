@@ -10,14 +10,12 @@ syntax(⁇) ≔ infixL(8)
 syntax(>>) ≔ infixL(8)
 syntax(≫) ≔ infixL(8)
 
-syntax(<=>) ≔ infix(9)
+syntax(<==>) ≔ infix(9)
 syntax(⇔) ≔ infix(9)
 syntax(=>) ≔ infixR(10)
 syntax(⇒) ≔ infixR(10)
 syntax(\/) ≔ infixR(11)
 syntax(∨) ≔ infixR(11)
-syntax(\|/) ≔ infixR(11)
-syntax(⩛) ≔ infixR(11)
 syntax(/\) ≔ infixR(12)
 syntax(∧) ≔ infixR(12)
 
@@ -91,5 +89,6 @@ syntax(#) ≔ prefix(20)
 
 syntax(.) ≔ infixL(95)
 syntax(`) ≔ prefix(95)
+syntax(``) ≔ prefix(95)
 
 --*
