@@ -1,10 +1,10 @@
 --* inference.zero
 
 getFreeVariables(type, variables) := (
-    isTypeVariable(type) ? (
-        type.isFree(variables) ? [type]
+    if isTypeVariable(type)
+        if type.isFree(variables)
+            [type]
         getFreeVariables(variables.get(type, undefined), variables)
-    )
     join(getComponentTypes(type).map(`getFreeVariables(variables))).
         deduplicateBy((=~=))
 )
@@ -14,13 +14,14 @@ getAllFreeVariables(variables, variables') :=
         deduplicateBy((=~=))
 
 substitute(type, variables) := (
-    isTypeVariable(type) ? (
-        type.isFree(variables) ? type
+    if isTypeVariable(type)
+        if type.isFree(variables)
+            type
         type' := variables.get(type, undefined).setNode(getNode(type))
-        type'.getFreeVariables(empty).any((=~= type)) ?
+        if type'.getFreeVariables(empty).any((=~= type))
             recursionError(type, type, variables)
         type'.substitute(variables)
-    )
+
     type.mapComponents(`substitute(variables))
 )
 
@@ -28,16 +29,21 @@ substitute(type, variables) := (
 -- see Comparing Unification Algorithms in First-Order Theorem Proving
 -- by Krystof Hoder and Andrei Voronkov
 unify'(originals, variables, (left, right)) := (
-    isTypeVariable(left) /\ not left.isFree(variables) ?
+    if isTypeVariable(left) /\ not left.isFree(variables)
         unify'(originals, variables, (left.substitute(variables), right))
-    isTypeVariable(right) /\ not right.isFree(variables) ?
+    if isTypeVariable(right) /\ not right.isFree(variables)
         unify'(originals, variables, (left, right.substitute(variables)))
-    isBottomType(left) \/ isBottomType(right) ? variables
-    left =~= right ? variables
-    isTypeVariable(left) ? variables.insert(left, right)
-    isTypeVariable(right) ? variables.insert(right, left)
-    (getTypeCode(left) = getTypeCode(right) /\ getIndex(left) = getIndex(right)
-     /\ length(getComponentTypes(left)) = length(getComponentTypes(right))) ?
+    if isBottomType(left) \/ isBottomType(right)
+        variables
+    if left =~= right
+        variables
+    if isTypeVariable(left)
+        variables.insert(left, right)
+    if isTypeVariable(right)
+        variables.insert(right, left)
+    if (getTypeCode(left) = getTypeCode(right) /\
+        getIndex(left) = getIndex(right) /\
+        length(getComponentTypes(left)) = length(getComponentTypes(right)))
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
     unificationError(originals.mapPair(`substitute(variables)),
@@ -47,7 +53,8 @@ unify'(originals, variables, (left, right)) := (
 unify(variables, types) := unify'(types, variables, types)
 
 unifyAll(variables, types) := (
-    isNil(types) ? variables
+    if isNil(types)
+        variables
     zip(repeat(head(types)), tail(types)).cascade(unify, variables)
 )
 
@@ -73,43 +80,42 @@ isRecursiveFunction(node) := false      -- todo: fix
 -- variables is a table that maps type variables to types (either type
 --   variables or concrete types); every type variable appears in variables
 infer(node, stack, variables) := (
-    isNatural(node) ? (newNaturalType(node), variables)
-    isBuiltin(node) ? (getBuiltinType(node), variables)
-    isSymbol(node) ?
+    if isNatural(node)
+        (newNaturalType(node), variables)
+    if isBuiltin(node)
+        (getBuiltinType(node), variables)
+    if isSymbol(node)
         stack[getDebruijnIndex(node) - 1].instantiate(variables, node)
-    isRecursiveFunction(node) ? (
+    if isRecursiveFunction(node)
         function := getBody(getRight(node))
         (functionType, variables') := variables.newTypeVariable(function)
         stack' := newScheme([], functionType) :: stack
         (functionType', variables'') := function.infer(stack', variables')
         (functionType, variables''.unify((functionType', functionType)))
-    )
-    isLambda(node) ? (
+    if isLambda(node)
         parameter := getParameter(node)
         (parameterType, variables') := variables.newTypeVariable(parameter)
         stack' := newScheme([], parameterType) :: stack
         (bodyType, variables'') := getBody(node).infer(stack', variables')
         (newFunctionType(node, parameterType, bodyType), variables'')
-    )
-    isDefinition(node) ? (
+    if isDefinition(node)
         (valueType, variables') := getRight(node).infer(stack, variables)
         stack' := valueType.generalize(variables', variables) :: stack
         getDefinitionScope(node).infer(stack', variables')
-    )
-    isApplication(node) ? (
+    if isApplication(node)
         (rightType, variables') := getRight(node).infer(stack, variables)
         (leftType, variables'') := getLeft(node).infer(stack, variables')
         (returnType, variables''') := variables''.newTypeVariable(node)
         functionType := newFunctionType(NULL, rightType, returnType)
         (returnType, variables'''.unify((leftType, functionType)))
-    )
     undefined
 )
 
 inferType(stack, definition) := (
     (name, value) := definition
     knownTypeScheme := getKnownTypeScheme(name)
-    not isFreeType(second(knownTypeScheme)) ? knownTypeScheme :: stack
+    if not isFreeType(second(knownTypeScheme))
+        knownTypeScheme :: stack
     (type, variables') := infer(value, stack, empty)
     type.generalize(variables', empty) :: stack
 )

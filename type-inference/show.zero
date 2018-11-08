@@ -2,34 +2,40 @@
 
 getVariableName(index) := (
     characters := ['a', 'b', 'c', 'd']
-    index < 4 ? [characters[index]]
+    if index < 4
+        [characters[index]]
     getVariableName((index // 4) - 1) ++ [characters[index % 4]]
 )
 
 showType(type) := (
     showType'(type') :=
         isFunctionType(type') ? "(" ++ showType(type') ++ ")" || showType(type')
-    isFreeType(type) ? "_"
-    isBottomType(type) ? "⊥"
-    isNaturalType(type) ? "ℕ"
-    isBooleanType(type) ? "𝔹"
-    isTypeVariable(type) ? getVariableName(getTypeVariableIndex(type))
-    isTupleType(type) ? (
+    if isFreeType(type)
+        "_"
+    if isBottomType(type)
+        "⊥"
+    if isNaturalType(type)
+        "ℕ"
+    if isBooleanType(type)
+        "𝔹"
+    if isTypeVariable(type)
+        getVariableName(getTypeVariableIndex(type))
+    if isTupleType(type)
         components := getComponentTypes(type)
         size := length(components)
-        size = 2 ?
+        if size = 2
             "(" ++ components.map(showType).joinWith(" × ") ++ ")"
         "Tuple_" ++ showNatural(size) ++ "(" ++
             components.map(showType).joinWith(", ") ++ ")"
-    )
-    isMaybeType(type) ?
+    if isMaybeType(type)
         "Maybe(" ++ showType(getComponentTypes(type)[0]) ++ ")"
-    isListType(type) ? showType'(getComponentTypes(type)[0]) ++ "[]"
-    isTreeType(type) ? "Tree(" ++ showType(getComponentTypes(type)[0]) ++ ")"
-    isFunctionType(type) ? (
+    if isListType(type)
+        showType'(getComponentTypes(type)[0]) ++ "[]"
+    if isTreeType(type)
+        "Tree(" ++ showType(getComponentTypes(type)[0]) ++ ")"
+    if isFunctionType(type)
         components := getComponentTypes(type)
         showType'(components[0]) ++ " → " ++ showType(components[1])
-    )
     undefined
 )
 
@@ -42,11 +48,11 @@ showVariableMap(variables) :=
         "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
 
 addRenaming((renaming, variables), type) := (
-    isTypeVariable(type) ? (
-        renaming.hasKey(type) ? (renaming, variables)
+    if isTypeVariable(type)
+        if renaming.hasKey(type)
+            (renaming, variables)
         (type', variables') := variables.newTypeVariable(getNode(type))
         (renaming.insert(type, type'), variables')
-    )
     getComponentTypes(type).cascade(addRenaming, (renaming, variables))
 )
 
