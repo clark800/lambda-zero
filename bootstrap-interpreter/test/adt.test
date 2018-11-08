@@ -6,35 +6,35 @@ Syntax error: must appear on the right side of '::=' '{' at line 1 column 6
 Syntax error: invalid left hand side '::=' at line 1 column 5
 ===============================================================================
 A ::= {a}
-Syntax error: missing scope '::=' at line 1 column 3
+Syntax error: missing scope for definition '::=' at line 1 column 3
 ===============================================================================
-A ::= {a(b), c} \n 0
+A ::= {a(b), c}\n0
 Syntax error: invalid constructor parameter 'b' at line 1 column 10
 ===============================================================================
-A ::= {a := 0} \n 0
-Syntax error: missing scope ':=' at line 1 column 10
+A ::= {a := 0}\n0
+Syntax error: invalid constructor name ':=' at line 1 column 10
 ===============================================================================
-A ::= (a, b) \n 0
+A ::= (a, b)\n0
 Syntax error: ADT required to right of '::=' at line 1 column 3
 ===============================================================================
-A ::= {a, 2} \n 0
+A ::= {a, 2}\n0
 Syntax error: invalid constructor name '2' at line 1 column 11
 ===============================================================================
-A ::= {a(b), c} \n 0
+A ::= {a(b), c}\n0
 Syntax error: invalid constructor parameter 'b' at line 1 column 10
 ===============================================================================
-undefined := 9 \n A ::= {()} \n A
+undefined := 9\nA ::= {()}\nA
 9
 ===============================================================================
-undefined := 0 \n A ::= {()} \n A := 0 \n A
-Syntax error: symbol already defined 'A' at line 3 column 2
+undefined := 0\nA ::= {()}\nA := 0\nA
+Syntax error: symbol already defined 'A' at line 3 column 1
 ===============================================================================
-undefined := 0 \n A := 0 \n A ::= {()} \n A
-Syntax error: symbol already defined 'A' at line 3 column 2
+undefined := 0\nA := 0\nA ::= {()}\nA
+Syntax error: symbol already defined 'A' at line 3 column 1
 ===============================================================================
-syntax(:) := infix(20) \n undefined := 0 \n N ::= {z, s(_ : N)} \n z
+syntax(:) := infix(20)\nundefined := 0\nN ::= {z, s(_ : N)}\nz
 (_ -> (_ -> _))
 ===============================================================================
-syntax(:) := infix(20) \n undefined := 0 \n N ::= {z, s(_ : N)} \n s
+syntax(:) := infix(20)\nundefined := 0\nN ::= {z, s(_ : N)}\ns
 (_ -> (_ -> (_ -> (_ _))))
 ===============================================================================

@@ -70,7 +70,8 @@ parseToken(operators, token) := (
     tag := getTokenTag(token)
     getTokenCode(token).match(
         Space -> parseSymbol(operators, renameTag(tag, " "));
-        Newline -> parseSymbol(operators, renameTag(tag, "\n"));
+        VSpace -> error("internal error");
+        Newline -> parseSymbol(operators, tag);
         Symbolic -> parseSymbol(operators, tag);
         Numeric -> parseNumericLiteral(tag);
         Character -> parseCharacterLiteral(tag);
@@ -83,7 +84,7 @@ parseToken(operators, token) := (
 shiftToken(state, token) := shift(state, parseToken(getOperators(state), token))
 
 parse(code, input) := (
-    tokens := lex(code ++ [0]) |: (not) <> isComment
+    tokens := lex(code ++ [0]) |: (not) <> isElided
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
     -- use "count" to force any syntaxErrors in the stack

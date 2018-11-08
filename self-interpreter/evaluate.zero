@@ -19,6 +19,7 @@ evaluate(closure, stack) := (
         APPLICATION ->
             evaluate(Closure(getLeft(term), environment),
                      Closure(getRight(term), environment) :: stack);
+        DEFINITION -> runtimeError("definition", term);
         NATURAL -> stack.isNil ? closure ||
             evaluate(Closure(expandNatural(term), environment), stack);
         BUILTIN -> (

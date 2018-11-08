@@ -1,6 +1,6 @@
 --* builtins.zero
 
-getCharacter(node) := ( 
+getCharacter(node) := (
     isNatural(node) ? getValue(node)
     runtimeError("expected byte value in string at", node)
 )

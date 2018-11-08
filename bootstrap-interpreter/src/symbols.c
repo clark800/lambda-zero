@@ -52,7 +52,11 @@ void erase(Stack* stack, const char* lexeme) {
         release(pop(stack));
 }
 
-void eraseWhitespace(Stack* stack) {erase(stack, "\n"), erase(stack, " ");}
+void eraseWhitespace(Stack* stack) {
+    if (!isEmpty(stack) && isNewline(peek(stack, 0)))
+        release(pop(stack));
+    erase(stack, " ");
+}
 
 bool isSpecial(Node* node) {
     return isOperator(node) && ((Rules*)getRules(node))->special;
@@ -91,20 +95,25 @@ bool isHigherPrecedence(Node* left, Node* right) {
     assert(isOperator(left) && isOperator(right));
     if (isEOF(left))
         return false;
+
     Rules* leftRules = getRules(left);
     Rules* rightRules = getRules(right);
 
     if (leftRules->rightPrecedence == rightRules->leftPrecedence) {
-        const char* message = "operator is non-associative";
+        static const char* message = "operator is non-associative";
         syntaxErrorIf(leftRules->associativity == N, message, left);
         syntaxErrorIf(rightRules->associativity == N, message, right);
+
         if (leftRules->associativity != rightRules->associativity)
             syntaxError("incompatible associativity", right);
+
+        if (isNewline(left) && isNewline(right))
+            return getLexeme(left).length > getLexeme(right).length;
+
+        return leftRules->associativity == L;
     }
 
-    return rightRules->associativity == R ?
-        leftRules->rightPrecedence > rightRules->leftPrecedence :
-        leftRules->rightPrecedence >= rightRules->leftPrecedence;
+    return leftRules->rightPrecedence > rightRules->leftPrecedence;
 }
 
 static Rules* findRules(String lexeme) {
@@ -117,6 +126,8 @@ static Rules* findRules(String lexeme) {
 }
 
 Node* parseSymbol(Tag tag) {
+    if (isNewlineLexeme(tag.lexeme))
+        return newSymbol(tag, findRules(newString("\n", 1)));
     Rules* rules = findRules(tag.lexeme);
     if (rules == NULL && isThisString(tag.lexeme, " "))
         return newSymbol(tag, findRules(newString("( )", 3)));

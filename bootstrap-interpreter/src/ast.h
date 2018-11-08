@@ -1,4 +1,5 @@
-typedef enum {SYMBOL, LAMBDA, APPLICATION, NATURAL, BUILTIN} NodeType;
+typedef enum
+    {SYMBOL, LAMBDA, APPLICATION, DEFINITION, NATURAL, BUILTIN} NodeType;
 
 // ====================================
 // Functions to get a value from a node
@@ -32,6 +33,14 @@ static inline bool isThisLexeme(Node* node, const char* lexeme) {
     return isThisString(getLexeme(node), lexeme);
 }
 
+static inline bool isNewlineLexeme(String lexeme) {
+    return lexeme.length > 0 && lexeme.start[0] == '\n';
+}
+
+static inline bool isNewline(Node* node) {
+    return isLeaf(node) && isNewlineLexeme(getLexeme(node));
+}
+
 static inline bool isThisLeaf(Node* leaf, const char* lexeme) {
     return isLeaf(leaf) && isThisLexeme(leaf, lexeme);
 }
@@ -43,6 +52,10 @@ static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
 
 static inline bool isApplication(Node* node) {
     return getNodeType(node) == APPLICATION;
+}
+
+static inline bool isDefinition(Node* node) {
+    return getNodeType(node) == DEFINITION;
 }
 
 static inline bool isGlobalReference(Node* node) {
@@ -105,6 +118,10 @@ static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
 
 static inline Node* newApplication(Tag tag, Node* left, Node* right) {
     return newBranch(tag, APPLICATION, left, right);
+}
+
+static inline Node* newDefinition(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, DEFINITION, left, right);
 }
 
 static inline Node* newNil(Tag tag) {return newName(renameTag(tag, "[]"));}

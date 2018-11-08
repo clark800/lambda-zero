@@ -49,8 +49,8 @@ reduceParentheses(open, function, contents) := (
     contents' := isSection(contents) ? createSection(tag, contents) || contents
     not isNull(function) ? applyToCommaList(tag, function, contents')
     isCommaList(contents') ? newTuple(tag, contents')
-    isApplication(contents') ?
-        newApplication(tag, getLeft(contents'), getRight(contents'))
+    not isLeaf(contents') ?
+        contents'.setTag(tag)
     contents'
 )
 

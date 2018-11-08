@@ -65,7 +65,9 @@ shift(state, node) := getShift(getSyntax(node))(state, node)
 
 erase(stack, lexeme) := stack.dropIf(`isThisSymbol(lexeme))
 
-eraseWhitespace(stack) := erase(erase(stack, " "), "\n")
+eraseNewline(stack) := stack.dropIf(isNewline)
+
+eraseWhitespace(stack) := eraseNewline(erase(stack, " "))
 
 reduceTop(State(stack, operators)) := (
     getFixity(getSyntax(stack[1])) = PREFIX ?
@@ -80,21 +82,23 @@ isHigherPrecedence(left, right) := (
     leftSyntax := getSyntax(left)
     rightSyntax := getSyntax(right)
 
-    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
+    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence ? (
         leftSyntax.getAssociativity = NEITHER ?
             syntaxError("operator is non-associative", left)
 
-    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
         rightSyntax.getAssociativity = NEITHER ?
             syntaxError("operator is non-associative", right)
 
-    leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence /\
         leftSyntax.getAssociativity =/= rightSyntax.getAssociativity ?
             syntaxError("incompatible associativity", right)
 
-    rightSyntax.getAssociativity = RIGHT ?
-        leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
-    leftSyntax.getRightPrecedence >= rightSyntax.getLeftPrecedence
+        isNewline(left) /\ isNewline(right) ?
+            length(getLexeme(left)) > length(getLexeme(right))
+
+        leftSyntax.getAssociativity = LEFT
+    )
+
+    leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 )
 
 shouldReduceTop(operator, State(stack, _operators)) :=
@@ -114,6 +118,8 @@ lookupSyntax(operators, lexeme) := (
 
 parseSymbol(operators, tag) := (
     lexeme := getTagLexeme(tag)
+    isNewlineLexeme(lexeme) ?
+        newOperator(tag, operators.lookupSyntax("\n") ?! undefined)
     operators.lookupSyntax(lexeme) ?? just <> newOperator(tag) ?!
         (lexeme =*= " " ? (operators.lookupSyntax("( )") ??
             just <> newOperator(tag) ?! newName(tag)) || newName(tag))

@@ -57,7 +57,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
         return applyToCommaList(tag, function, contents);
     if (isCommaList(contents))
         return newTuple(open, contents);
-    if (isApplication(contents))
+    if (!isLeaf(contents))
         setTag(contents, tag);
     return contents;
 }

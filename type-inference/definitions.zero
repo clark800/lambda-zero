@@ -4,14 +4,14 @@ getDefinitionName(definition) := getParameter(getLeft(definition))
 getDefinitionValue(definition) := getRight(definition)
 getDefinitionScope(definition) := getBody(getLeft(definition))
 
-isDefinition(node) := isApplication(node) /\ isLambda(getLeft(node)) /\
+isDefinitionNode(node) := isApplication(node) /\ isLambda(getLeft(node)) /\
     (isThisLexeme(node, ":=") \/ isThisLexeme(node, "≔") \/
      isThisLexeme(node, "::=") \/ isThisLexeme(node, "⩴"))
 
 getDefinitions(node) := (
     isApplication(node) /\ isIdentity(getLeft(node)) ?
         getDefinitions(getRight(node))
-    not isDefinition(node) ? []
+    not isDefinitionNode(node) ? []
     (getDefinitionName(node), getDefinitionValue(node)) ::
         getDefinitions(getDefinitionScope(node))
 )

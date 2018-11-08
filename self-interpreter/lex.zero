@@ -13,13 +13,13 @@ isBlockComment(lexeme) := lexeme.startsWith("{=")
 isNumeric(lexeme) := isDigit(head(lexeme)) \/
     ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ not isNil(tail(lexeme)) /\
       isDigit(head(tail(lexeme))))
-isNewline(c) := c = '\n'
-isInvalid(c) := c =/= 0 /\ isControl(c) /\ not isNewline(c)
+isLineFeed(c) := c = '\n'
+isInvalid(c) := c =/= 0 /\ isControl(c) /\ not isLineFeed(c)
 isDelimiter(c) := " `.,;@$()[]{}\"\n\0".any((= c)) \/ isInvalid(c)
 isRepeatable(c) := " `.,;".any(= c)
 
 splitQuoteCharacter(quote, ns) := (
-    ns.isNil \/ head(ns) = quote \/ isNewline(head(ns)) ? ([], ns)
+    ns.isNil \/ head(ns) = quote \/ isLineFeed(head(ns)) ? ([], ns)
     n := (head(ns) = '\\' /\ not isNil(tail(ns))) ? 2 || 1
     ns.splitAt(n)
 )
@@ -50,9 +50,9 @@ splitNewline(ns) := (
 splitLexeme(ns) := (
     ns.isNil ? ([], [])
     c := head(ns)
-    c.isNewline ? splitNewline(ns)
+    c.isLineFeed ? splitNewline(ns)
     c.isQuote ? splitQuote(ns)
-    ns.isLineComment ? ns.splitWhen(isNewline)
+    ns.isLineComment ? ns.splitWhen(isLineFeed)
     ns.isBlockComment ? ns.splitOn("=}").shiftSplit.shiftSplit
     ns.isNumeric ? splitNumeric(ns)
     c.isRepeatable ? ns.splitWhen(=/= c)
@@ -62,17 +62,17 @@ splitLexeme(ns) := (
 
 advanceLocation'(lexeme, line, column) := (
     isNil(lexeme) ? (line, column)
-    head(lexeme) = '\n' ? tail(lexeme).advanceLocation'(line + 1, 1)
+    isLineFeed(head(lexeme)) ? tail(lexeme).advanceLocation'(line + 1, 1)
     tail(lexeme).advanceLocation'(line, column + 1)
 )
 
 advanceLocation(location, lexeme) := (
     isLineComment(lexeme) /\ lexeme[2] = '*' ? (
         (_, after) := lexeme.drop(3).splitWhen(=/= ' ')
-        (file, _) := after.splitWhen(= '\n')
+        (file, _) := after.splitWhen(isLineFeed)
         Location(file, isNil(file) ? 0 || 1, 0)
     )
-    isBlockComment(lexeme) \/ isNewline(head(lexeme)) ? (
+    isBlockComment(lexeme) \/ isLineFeed(head(lexeme)) ? (
         (line, column) := lexeme.advanceLocation'(
             location.getLocationLine, location.getLocationColumn)
         Location(location.getLocationFile, line, column)
@@ -100,16 +100,24 @@ showTag(tag) :=
     "' at " ++ showLocation(tag.getTagLocation)
 
 TokenCode ::= {
-    Space, Newline, Symbolic, Numeric, Character, String, Comment, Invalid
+    Space, VSpace, Newline, Symbolic, Numeric, Character, String,
+    Comment, Invalid
 }
 TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
-createToken(tag) := (
+createLineFeedToken(tag, nextTag) := (
+    nextLexeme := getTagLexeme(nextTag)
+    not isNil(nextLexeme) /\ head(nextLexeme) = '\n' ?
+        Token(tag, VSpace)
+    Token(tag, Newline)
+)
+
+createToken(tag, nextTag) := (
     lexeme := getTagLexeme(tag)
     isNil(lexeme) ? Token(tag, Symbolic)
     c := head(lexeme)
     c = ' ' ? Token(tag, Space)
-    c = '\n' ? Token(tag, Newline)
+    c = '\n' ? createLineFeedToken(tag, nextTag)
     c = '"' ? Token(tag, String)
     c = '\'' ? Token(tag, Character)
     isNumeric(lexeme) ? Token(tag, Numeric)
@@ -120,27 +128,33 @@ createToken(tag) := (
 
 getTokenCodeNumber(tokenCode) := tokenCode.match(
     Space -> 0;
-    Newline -> 1;
-    Symbolic -> 2;
-    Numeric -> 3;
-    Character -> 4;
-    String -> 5;
-    Comment -> 6;
-    Invalid -> 7;
+    VSpace -> 1;
+    Newline -> 2;
+    Symbolic -> 3;
+    Numeric -> 4;
+    Character -> 5;
+    String -> 6;
+    Comment -> 7;
+    Invalid -> 8;
 )
 
-isComment(token) := getTokenCodeNumber(getTokenCode(token)) =
-                   getTokenCodeNumber(Comment)
+isElided(token) := (
+    code := getTokenCodeNumber(getTokenCode(token))
+    code = getTokenCodeNumber(Comment) \/ code = getTokenCodeNumber(VSpace)
+)
 
 showToken(token) := token.getTokenTag.getTagLexeme
 
-lex(string) := scan(string).map(createToken)
+EOF_TAG := Tag("\0", Location("", 0, 0))
 
-START := Token(Tag("\0", Location("", 0, 0)), Symbolic)
+START := Token(EOF_TAG, Symbolic)
+
+lex(string) := pairs(scan(string) ++ [EOF_TAG]).map(uncurry(createToken))
 
 showToken'(token) := showTag(getTokenTag(token)) ++ " " ++
     getTokenCode(token).match(
         Space -> "Space";
+        VSpace -> "VSpace";
         Newline -> "Newline";
         Symbolic -> "Symbolic";
         Numeric -> "Numeric";

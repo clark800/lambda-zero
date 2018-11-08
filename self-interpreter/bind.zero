@@ -29,6 +29,7 @@ bind(root) := (
             newArgument := bind'(getRight(node), parameterNames)
             newApplication(getTag(node), newFunction, newArgument)
         );
+        DEFINITION -> syntaxError("missing scope for definition", node);
         NATURAL -> node;
         BUILTIN -> node;
     )

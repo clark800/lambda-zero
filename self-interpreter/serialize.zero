@@ -6,6 +6,8 @@ showAST(node) := getNodeType(node).match(
                showAST(getBody(node)) ++ ")";
     APPLICATION -> "(" ++ showAST(getLeft(node)) ++ " " ++
                showAST(getRight(node)) ++ ")";
+    DEFINITION -> "(" ++ showAST(getLeft(node)) ++ " := " ++
+               showAST(getRight(node)) ++ ")";
     NATURAL -> showNatural(getValue(node));
     BUILTIN -> "[" ++ showLexeme(node) ++ "]";
 )
@@ -26,6 +28,10 @@ serialize(closure) := (
                 ")";
             APPLICATION -> "(" ++
                 serialize'(Closure(getLeft(term), environment), depth) ++ " " ++
+                serialize'(Closure(getRight(term), environment), depth) ++ ")";
+            DEFINITION -> "(" ++
+                serialize'(Closure(getLeft(term), environment), depth) ++
+                " := " ++
                 serialize'(Closure(getRight(term), environment), depth) ++ ")";
             NATURAL -> showNatural(getValue(term));
             BUILTIN -> showLexeme(term)

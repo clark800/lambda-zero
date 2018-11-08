@@ -29,6 +29,7 @@ reduceLambda(operator, pattern, body) := (
             application := projections.cascade(newApplication(tag), function)
             newLambda(getTag(operator), newUnderscore(tag, 0), application)
         );
+        DEFINITION -> syntaxError("invalid parameter", pattern);
         NATURAL -> newLambda(getTag(operator), pattern, body);
         BUILTIN -> syntaxError("invalid parameter", pattern);
     )

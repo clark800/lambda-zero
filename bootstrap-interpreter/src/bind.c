@@ -39,6 +39,8 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
     } else if (isApplication(node)) {
         bindWith(getLeft(node), parameters, globals);
         bindWith(getRight(node), parameters, globals);
+    } else if (isDefinition(node)) {
+        syntaxError("missing scope for definition", node);
     }
 }
 
