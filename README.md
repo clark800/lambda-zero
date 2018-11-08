@@ -8,6 +8,7 @@ Lambda Zero is a minimalist pure lazy functional programming language with:
     maybe/optional types, checked exceptions, monads, ...)
 * Pattern matching (case expressions, tuple destructuring, ...)
 * Automatic garbage collection
+* Semantic whitespace
 * Unicode support (UTF8)
 * User-defined lexically-scoped operator syntax and semantics (even spaces)
 * Uniform function call syntax (`x.f(y, z)` means `f(x, y, z)`)

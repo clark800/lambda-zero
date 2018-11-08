@@ -15,9 +15,9 @@ reducePostfix(operator, left, _right) :=
 
 reduceNewline(operator, left, right) := (
     tag := getTag(left)
-    isDefinition(left) /\ isThisLexeme(left, ":=") ?
+    if isDefinition(left) /\ isThisLexeme(left, ":=")
         applyDefinition(tag, getLeft(left), getRight(left), right)
-    isDefinition(left) /\ isThisLexeme(left, "::=") ?
+    if isDefinition(left) /\ isThisLexeme(left, "::=")
         applyADTDefinition(tag, getLeft(left), getRight(left), right)
     reduceApply(operator, left, right)
 )
@@ -34,7 +34,7 @@ shiftPostfix(state, operator) := (
     stack'' := not isSpecial(operator) /\ isOpenOperator(stack'[0]) ?
         newName(renameTag(getTag(operator), ".*")) :: stack' || stack'
     operand := stack''[0]
-    isOperator(operand) ?
+    if isOperator(operand)
         syntaxError("missing left operand for", operator)
     State(reduceOperator(operator, operand, NULL) :: tail(stack''),
         getOperators(state))
@@ -47,52 +47,48 @@ shiftInfix(state, operator) := (
     operators := getOperators(state')
     top := head(stack')
     tag := getTag(operator)
-    isOperator(top) ? (
-        isThisSymbol(operator, "+") ? (
+    if isOperator(top)
+        if isThisSymbol(operator, "+")
             operator' := operators.parseSymbol(renameTag(tag, "(+)"))
             State(operator' :: stack', operators)
-        )
-        isThisSymbol(operator, "-") ? (
+        if isThisSymbol(operator, "-")
             operator' := operators.parseSymbol(renameTag(tag, "(-)"))
             State(operator' :: stack', operators)
-        )
-        not isSpecial(operator) /\ isOpenOperator(top) ?
+        if not isSpecial(operator) /\ isOpenOperator(top)
             State(operator :: renameNode(operator, ".*") :: stack', operators)
         syntaxError("missing left operand for", operator)
-    )
-    (getLexeme(operator) =*= ":=" \/ getLexeme(operator) =*= "≔") /\
-            getLexeme(top) =*= "syntax" ? (
+    if (getLexeme(operator) =*= ":=" \/ getLexeme(operator) =*= "≔") /\
+            getLexeme(top) =*= "syntax"
         operator' := operators.parseSymbol(renameTag(tag, "(:=)"))
         State(operator' :: stack', operators)
-    )
     State(operator :: stack', operators)
 )
 
 shiftSpace(state, operator) := (
     state' := reduceLeft(state, operator)
-    isOperator(head(getStack(state'))) ? state'
+    if isOperator(head(getStack(state')))
+        state'
     State(operator :: getStack(state'), getOperators(state'))
 )
 
 addSyntax(operators, operator) := (
-    operators.map(first).any(=*= getLexeme(operator)) ?
+    if operators.map(first).any(=*= getLexeme(operator))
         syntaxError("syntax already defined", operator)
     (getLexeme(operator), getSyntax(operator)) :: operators
 )
 
 updateOperators(operators, top) := (
-    not isIdentity(top) \/ not isOperator(getParameter(top)) ? operators
+    if not isIdentity(top) \/ not isOperator(getParameter(top))
+        operators
     declared := getParameter(top)
     operators' := operators.addSyntax(declared)
     p := getLeftPrecedence(getSyntax(declared))
-    isThisSymbol(declared, "+") ? (
+    if isThisSymbol(declared, "+")
         s := Syntax(p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix)
         ("(+)", s) :: operators'
-    )
-    isThisSymbol(declared, "-") ? (
+    if isThisSymbol(declared, "-")
         s := Syntax(p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix)
         ("(-)", s) :: operators'
-    )
     operators'
 )
 
@@ -101,7 +97,8 @@ shiftNewline(state, operator) := (
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     top := head(getStack(state'))
     operators := updateOperators(getOperators(state'), top)
-    isOperator(top) ? State(getStack(state'), operators)
+    if isOperator(top)
+        State(getStack(state'), operators)
     State(operator :: getStack(state'), operators)
 )
 
@@ -113,7 +110,8 @@ reduceInvalid(operator, _left, _right) :=
 
 reduceError(operator, _left, right) := (
     tag := getTag(operator)
-    isThisSymbol(right, "[]") ? newBuiltin(renameTag(tag, "(undefined)"))
+    if isThisSymbol(right, "[]")
+        newBuiltin(renameTag(tag, "(undefined)"))
     newApplication(tag, convertOperator(tag), right)
 )
 
@@ -122,38 +120,37 @@ newOperator'(tag, precedence, fixity, associativity, shifter, reducer) :=
         false, shifter, reducer))
 
 newSyntaxOperator(tag, precedence, fixity) := (
-    getTagLexeme(tag) =*= "()" ? (
-        not(getLexeme(fixity) =*= "infixL") ?
+    if getTagLexeme(tag) =*= "()"
+        if not(getLexeme(fixity) =*= "infixL")
             syntaxError("syntax must be infixL", fixity)
         tag' := renameTag(tag, " ")
         newOperator'(tag', precedence, INFIX, LEFT, shiftSpace, reduceInfix)
-    )
-    getLexeme(fixity) =*= "infix" ?
+    if getLexeme(fixity) =*= "infix"
         newOperator'(tag, precedence, INFIX, NEITHER, shiftInfix, reduceInfix)
-    getLexeme(fixity) =*= "infixL" ?
+    if getLexeme(fixity) =*= "infixL"
         newOperator'(tag, precedence, INFIX, LEFT, shiftInfix, reduceInfix)
-    getLexeme(fixity) =*= "infixR" ?
+    if getLexeme(fixity) =*= "infixR"
         newOperator'(tag, precedence, INFIX, RIGHT, shiftInfix, reduceInfix)
-    getLexeme(fixity) =*= "prefix" ?
+    if getLexeme(fixity) =*= "prefix"
         newOperator'(tag, precedence, PREFIX, LEFT, shiftPrefix, reducePrefix)
-    getLexeme(fixity) =*= "postfix" ?
+    if getLexeme(fixity) =*= "postfix"
         newOperator'(tag, precedence, POSTFIX, LEFT,
             shiftPostfix, reducePostfix)
     syntaxError("invalid fixity", fixity)
 )
 
 reduceSyntax(node, left, right) := (
-    not isApplication(left) ?
+    if not isApplication(left)
         syntaxError("invalid left operand", left)
     name := getRight(left)
-    not isSymbol(name) ?
+    if not isSymbol(name)
         syntaxError("expected symbol operand to", getLeft(left))
-    getLexeme(name).any(= '_') ?
+    if getLexeme(name).any(= '_')
         syntaxError("invalid underscore in operator name", name)
-    not isApplication(right) /\ not isNatural(getRight(right)) ?
+    if not isApplication(right) /\ not isNatural(getRight(right))
         syntaxError("invalid syntax definition", node)
     precedence := getValue(getRight(right))
-    precedence < 0 \/ precedence > 99 ?
+    if precedence < 0 \/ precedence > 99
         syntaxError("invalid precedence", getRight(right))
     fixity := getLeft(right)
     operator := newSyntaxOperator(getTag(name), precedence, fixity)

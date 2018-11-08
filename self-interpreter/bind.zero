@@ -7,9 +7,11 @@ isDefined(parameter, parameterNames) :=
 bind(root) := (
     bind'(node, parameterNames) := getNodeType(node).match(
         SYMBOL -> (
-            getDebruijnIndex(node) =/= 0 ? node
-            isUnused(node) ? syntaxError(
-                "cannot reference a symbol starting with underscore", node)
+            if getDebruijnIndex(node) =/= 0
+                node
+            if isUnused(node)
+                syntaxError(
+                    "cannot reference a symbol starting with underscore", node)
             tag := getTag(node)
             lexeme := getLexeme(node)
             newReference(getTag(node), 1 + (
@@ -18,7 +20,7 @@ bind(root) := (
         );
         LAMBDA -> (
             parameter := getParameter(node)
-            isDefined(parameter, parameterNames) ?
+            if isDefined(parameter, parameterNames)
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(parameter)
             newBody := bind'(getBody(node), parameterName :: parameterNames)

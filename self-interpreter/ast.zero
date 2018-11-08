@@ -108,7 +108,7 @@ renameNode(node, lexeme) := newName(renameTag(getTag(node), lexeme))
 convertOperator(tag) := (
     builtins := ["+", "-", "*", "//", "%", "=", "=/=", "<", ">",
         "<=", ">=", "up", "error"]
-    isJust(builtins.find(=*= getTagLexeme(tag))) ?
+    if isJust(builtins.find(=*= getTagLexeme(tag)))
         newBuiltin(tag)
     newName(tag)
 )

@@ -1,7 +1,8 @@
 --* builtins.zero
 
 getCharacter(node) := (
-    isNatural(node) ? getValue(node)
+    if isNatural(node)
+        getValue(node)
     runtimeError("expected byte value in string at", node)
 )
 
@@ -16,7 +17,8 @@ getBuiltin(builtin) := (
     maxInteger := 9223372036854775807
 
     getNatural(term) := (
-        isNatural(term) ? getValue(term)
+        if isNatural(term)
+            getValue(term)
         runtimeError("expected natural argument to", builtin)
     )
 
@@ -30,35 +32,37 @@ getBuiltin(builtin) := (
         Closure(newBoolean(getTag(builtin), f.compute(left, right)), [])
 
     addBuiltin(left, right) := (
-        left > maxInteger - right ?
+        if left > maxInteger - right
             runtimeError("overflow in", builtin)
         left + right
     )
 
     subtractBuiltin(left, right) := (
-        right > left ?
+        if right > left
             runtimeError("underflow in", builtin)
         left - right
     )
 
     multiplyBuiltin(left, right) := (
-        right =/= 0 /\ left > maxInteger // right ?
+        if right =/= 0 /\ left > maxInteger // right
             runtimeError("overflow in", builtin)
         left * right
     )
 
     divideBuiltin(left, right) := (
-        right = 0 ? runtimeError("divide by zero in", builtin)
+        if right = 0
+            runtimeError("divide by zero in", builtin)
         left // right
     )
 
     moduloBuiltin(left, right) := (
-        right = 0 ? left
+        if right = 0
+            left
         left % right
     )
 
     upBuiltin(left, right) := (
-        left >= maxInteger ?
+        if left >= maxInteger
             runtimeError("overflow in", builtin)
         left + 1
     )
