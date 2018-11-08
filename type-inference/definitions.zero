@@ -9,9 +9,10 @@ isDefinitionNode(node) := isApplication(node) /\ isLambda(getLeft(node)) /\
      isThisLexeme(node, "::=") \/ isThisLexeme(node, "⩴"))
 
 getDefinitions(node) := (
-    isApplication(node) /\ isIdentity(getLeft(node)) ?
+    if isApplication(node) /\ isIdentity(getLeft(node))
         getDefinitions(getRight(node))
-    not isDefinitionNode(node) ? []
+    if not isDefinitionNode(node)
+        []
     (getDefinitionName(node), getDefinitionValue(node)) ::
         getDefinitions(getDefinitionScope(node))
 )

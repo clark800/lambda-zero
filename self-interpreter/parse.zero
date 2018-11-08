@@ -13,9 +13,9 @@ parseEscapeCode(code, tag) := (
 
 parseQuotedCharacter(tag, string) := (
     c := head(string)
-    c =/= '\\' ?
+    if c =/= '\\'
         newNatural(tag, c)
-    isNil(tail(string)) ?
+    if isNil(tail(string))
         error("Syntax error: missing end quote for " ++ showTag(tag))
     newNatural(tag, parseEscapeCode(head(tail(string)), tag))
 )
@@ -45,22 +45,23 @@ parseStringLiteral(tag) := buildStringLiteral(tag, getQuotedCharacters(tag))
 
 parseCharacterLiteral(tag) := (
     characters := getQuotedCharacters(tag)
-    (characters.length = 1)? head(characters)
+    if characters.length = 1
+        head(characters)
     error("Syntax error: invalid character literal " ++ showTag(tag))
 )
 
 parseNumericLiteral(tag) := (
     lexeme := getTagLexeme(tag)
-    lexeme.any((not) <> isDigit) ?
+    if lexeme.any((not) <> isDigit)
         error("Syntax error: invalid token " ++
             showLexemeAndLocationLine(tag, "'"))
     maxNatural := "9223372036854775807"
     natural := lexeme.dropWhile((= '0'))
-    natural.length > maxNatural.length ?
+    if natural.length > maxNatural.length
         error("Syntax error: magnitude of natural is too large " ++
             showLexemeAndLocationLine(tag, "'"))
-    natural.length = maxNatural.length /\
-        zipWith(natural, (>), maxNatural).any(id) ?
+    if natural.length = maxNatural.length /\
+            zipWith(natural, (>), maxNatural).any(id)
         error("Syntax error: magnitude of natural is too large " ++
             showLexemeAndLocationLine(tag, "'"))
     newNatural(tag, parseNatural(lexeme, 10))
@@ -88,7 +89,8 @@ parse(code, input) := (
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
     -- use "count" to force any syntaxErrors in the stack
-    stack.count((not) <> isEOF) = 0 ? syntaxError("no input", head(stack))
+    if stack.count((not) <> isEOF) = 0
+        syntaxError("no input", head(stack))
     length(stack) =/= 1 ? error("parser error")
     -- error(showAST(head(stack)))
     bind(head(stack))

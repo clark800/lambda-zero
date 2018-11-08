@@ -26,12 +26,11 @@ main(input) := (
     ast := parse(code, input')
     closure := execute(ast)
     term := getTerm(closure)
-    isLambda(term) /\ isThisSymbol(getParameter(term), "input") ? (
+    if isLambda(term) /\ isThisSymbol(getParameter(term), "input")
         -- todo: construct input
         string := newName(renameTag(getTag(term), "[]"))
         stack := [Closure(string, [])]
         extractOutputString(evaluate(closure, stack))
-    )
     serialize(closure)
 )
 

@@ -19,7 +19,8 @@ isDelimiter(c) := " `.,;@$()[]{}\"\n\0".any((= c)) \/ isInvalid(c)
 isRepeatable(c) := " `.,;".any(= c)
 
 splitQuoteCharacter(quote, ns) := (
-    ns.isNil \/ head(ns) = quote \/ isLineFeed(head(ns)) ? ([], ns)
+    if ns.isNil \/ head(ns) = quote \/ isLineFeed(head(ns))
+        ([], ns)
     n := (head(ns) = '\\' /\ not isNil(tail(ns))) ? 2 || 1
     ns.splitAt(n)
 )
@@ -29,15 +30,16 @@ shiftSplit((a, b)) := isNil(b) ? (a, b) || (a ++ [head(b)], tail(b))
 splitQuote(ns) := (
     quote := head(ns)
     (a, b) := tail(ns).splitWith(splitQuoteCharacter(quote))
-    not b.isNil /\ head(b) = quote ?
+    if not b.isNil /\ head(b) = quote
         shiftSplit((quote :: a, b))
     (quote :: a, b)
 )
 
 splitNumeric(ns) := (
     (before, after) := ns.splitWhen(isDelimiter)
-    isNil(after) \/ isNil(tail(after)) \/ head(after) =/= '.' \/
-        not isDigit(head(tail(after))) ? (before, after)
+    if isNil(after) \/ isNil(tail(after)) \/ head(after) =/= '.' \/
+            not isDigit(head(tail(after)))
+        (before, after)
     (before', after') := tail(after).splitWhen(isDelimiter)
     (before ++ [head(after)] ++ before', after')
 )
@@ -67,16 +69,14 @@ advanceLocation'(lexeme, line, column) := (
 )
 
 advanceLocation(location, lexeme) := (
-    isLineComment(lexeme) /\ lexeme[2] = '*' ? (
+    if isLineComment(lexeme) /\ lexeme[2] = '*'
         (_, after) := lexeme.drop(3).splitWhen(=/= ' ')
         (file, _) := after.splitWhen(isLineFeed)
         Location(file, isNil(file) ? 0 || 1, 0)
-    )
-    isBlockComment(lexeme) \/ isLineFeed(head(lexeme)) ? (
+    if isBlockComment(lexeme) \/ isLineFeed(head(lexeme))
         (line, column) := lexeme.advanceLocation'(
             location.getLocationLine, location.getLocationColumn)
         Location(location.getLocationFile, line, column)
-    )
     Location(location.getLocationFile, location.getLocationLine,
         location.getLocationColumn + length(lexeme))
 )
@@ -107,7 +107,7 @@ TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
 createLineFeedToken(tag, nextTag) := (
     nextLexeme := getTagLexeme(nextTag)
-    not isNil(nextLexeme) /\ head(nextLexeme) = '\n' ?
+    if not isNil(nextLexeme) /\ head(nextLexeme) = '\n'
         Token(tag, VSpace)
     Token(tag, Newline)
 )

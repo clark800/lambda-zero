@@ -19,7 +19,7 @@ serialize(closure) := (
         getNodeType(term).match(
             SYMBOL -> (
                 debruijn := getDebruijnIndex(term)
-                debruijn > depth ?
+                if debruijn > depth
                     serialize'(environment[debruijn - depth - 1], 0)
                 showLexeme(term)
             );

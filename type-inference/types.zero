@@ -53,7 +53,8 @@ newVariableMap(mappings) := newTable((<=).on(getIndex), mappings)
 empty := newVariableMap([])
 
 rename(type, variables) := (
-    isTypeVariable(type) ? variables.get(type, type)
+    if isTypeVariable(type)
+        variables.get(type, type)
     type.mapComponents(`rename(variables))
 )
 

@@ -4,14 +4,14 @@ applyDefinition(tag, name, value, scope) :=
     newApplication(tag, reduceLambda(name, name, scope), value)
 
 hasRecursiveCalls(node, name) := (
-    isLeaf(node) ?
+    if isLeaf(node)
         getLexeme(node) =*= getLexeme(name)
     hasRecursiveCalls(getLeft(node), name) \/
         hasRecursiveCalls(getRight(node), name)
 )
 
 transformRecursion(name, value) := (
-    not isSymbol(name) \/ not hasRecursiveCalls(value, name) ?
+    if not isSymbol(name) \/ not hasRecursiveCalls(value, name)
         value
     tag := getTag(name)
     newApplication(tag, newYCombinator(tag),
@@ -19,8 +19,10 @@ transformRecursion(name, value) := (
 )
 
 getNameAndValue(operator, left, right) := (
-    isNull(right) ? undefined                   -- force syntax errors
-    not isApplication(left) ? (left, right)
+    if isNull(right)
+        undefined                   -- force syntax errors
+    if not isApplication(left)
+        (left, right)
     getNameAndValue(operator, getLeft(left),
         reduceLambda(operator, getRight(left), right))
 )
@@ -28,17 +30,22 @@ getNameAndValue(operator, left, right) := (
 isTupleConstructor(node) := isSymbol(node) /\
     not isNil(getLexeme(node)) /\ getLexeme(node)[0] = ','
 
-isTuple(node) :=
-    isApplication(node) ? isTuple(getLeft(node)) || isTupleConstructor(node)
+isTuple(node) := (
+    if isApplication(node)
+        isTuple(getLeft(node))
+    isTupleConstructor(node)
+)
 
 reduceDefine(operator, left, right) := (
     tag := renameTag(getTag(operator), ":=")
-    isTuple(left) ?
+    if isTuple(left)
         newDefinition(tag, left, right)
     (name, value) := getNameAndValue(operator, left, right)
-    isBuiltin(name) ? syntaxError("cannot define a builtin operator", name)
-    not isSymbol(name) ? syntaxError("invalid left hand side", operator)
-    isThisSymbol(name, "main") ?
+    if isBuiltin(name)
+        syntaxError("cannot define a builtin operator", name)
+    if not isSymbol(name)
+        syntaxError("invalid left hand side", operator)
+    if isThisSymbol(name, "main")
         applyDefinition(getTag(name), name, value, name)
     newDefinition(tag, name, transformRecursion(name, value))
 )
@@ -51,10 +58,10 @@ isValidConstructorParameter(parameter) :=
      isThisSymbol(getLeft(getLeft(parameter)), "∈"))
 
 newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
-    not isValidConstructorParameter(parameter) ?
+    if not isValidConstructorParameter(parameter)
         syntaxError("invalid constructor parameter", parameter)
     name := getRight(getLeft(parameter))
-    isUnused(name) ?
+    if isUnused(name)
         scope
     projector := newProjector(tag, m, k)
     undefined' := newName(renameTag(tag, "undefined"))
@@ -66,7 +73,7 @@ newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
 
 newConstructorDefinition(tag, n, (pattern, j), scope) := (
     name := getHead(pattern)
-    not isSymbol(name) ?
+    if not isSymbol(name)
         syntaxError("invalid constructor name", name)
     parameters := getArguments(pattern)
     m := length(parameters)
@@ -81,8 +88,9 @@ newConstructorDefinition(tag, n, (pattern, j), scope) := (
 
 reduceADT(operator, left, right) := (
     tag := renameTag(getTag(operator), "::=")
-    not isValidPattern(left) ? syntaxError("invalid left hand side", operator)
-    not isThisLexeme(right, "{") /\ not isThisLexeme(right, "{}") ?
+    if not isValidPattern(left)
+        syntaxError("invalid left hand side", operator)
+    if not isThisLexeme(right, "{") /\ not isThisLexeme(right, "{}")
         syntaxError("ADT required to right of", operator)
     newDefinition(tag, left, right)
 )

@@ -3,13 +3,15 @@
 isCommaList(node) := isApplication(node) /\ getLexeme(node) =*= ","
 
 applyToCommaList(tag, base, arguments) := (
-    not isCommaList(arguments) ? newApplication(tag, base, arguments)
+    if not isCommaList(arguments)
+        newApplication(tag, base, arguments)
     newApplication(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments))
 )
 
 getCommaListSize(commaList) := (
-    not isCommaList(commaList) ? 1
+    if not isCommaList(commaList)
+        1
     getCommaListSize(getLeft(commaList)) + 1
 )
 
@@ -21,7 +23,8 @@ newTuple(tag, commaList) := (
 )
 
 getCommaListElements(commaList) := (
-    not isCommaList(commaList) ? [commaList]
+    if not isCommaList(commaList)
+        [commaList]
     getCommaListElements(getLeft(commaList)) ++ [getRight(commaList)]
 )
 
@@ -31,63 +34,75 @@ newSection(tag, name, body) :=
     newLambda(tag, newName(renameTag(tag, name)), body)
 
 createSection(tag, contents) := (
-    isThisLexeme(contents, ".*.") ?
+    if isThisLexeme(contents, ".*.")
         newSection(tag, ".*", newSection(tag, "*.", contents))
-    isLeaf(getLeft(contents)) ?
+    if isLeaf(getLeft(contents))
         getLeft(contents)       -- parenthesized postfix operator
     newSection(tag, getLexeme(contents), contents)
 )
 
 reduceParentheses(open, function, contents) := (
-    not isThisSymbol(open, "(") ? syntaxError("missing close for", open)
+    if not isThisSymbol(open, "(")
+        syntaxError("missing close for", open)
     tag := getTag(open)
-    isNull(contents) ? (
+    if isNull(contents)
         unit := newName(renameTag(tag, "()"))
-        isNull(function) ? unit
+        if isNull(function)
+            unit
         newApplication(tag, function, unit)
-    )
     contents' := isSection(contents) ? createSection(tag, contents) || contents
-    not isNull(function) ? applyToCommaList(tag, function, contents')
-    isCommaList(contents') ? newTuple(tag, contents')
-    not isLeaf(contents') ?
+    if not isNull(function)
+        applyToCommaList(tag, function, contents')
+    if isCommaList(contents')
+        newTuple(tag, contents')
+    if not isLeaf(contents')
         contents'.setTag(tag)
     contents'
 )
 
 createList(tag, commaList, list) := (
-    not isCommaList(commaList) ? prependList(tag, commaList, list)
+    if not isCommaList(commaList)
+        prependList(tag, commaList, list)
     createList(tag, getLeft(commaList),
         prependList(tag, getRight(commaList), list))
 )
 
 reduceSquare(open, left, contents) := (
-    not isThisSymbol(open, "[") ? syntaxError("missing close for", open)
+    if not isThisSymbol(open, "[")
+        syntaxError("missing close for", open)
     tag := getTag(open)
-    isNull(contents) ? (
-        isNull(left) ? newNil(tag)
+    if isNull(contents)
+        if isNull(left)
+            newNil(tag)
         syntaxError("missing argument to", open)
-    )
-    isSection(contents) ? syntaxError("invalid section", open)
-    not isNull(left) ? (
+    if isSection(contents)
+        syntaxError("invalid section", open)
+    if not isNull(left)
         n := getCommaListSize(contents)
         constructor := newName(renameTag(tag, repeat('[').take(n)))
         applyToCommaList(tag, newApplication(tag, constructor, left), contents)
-    )
     createList(tag, contents, newNil(tag))
 )
 
 reduceCurly(open, left, patterns) := (
-    not isNull(left) ? syntaxError("missing space before", open)
-    not isThisSymbol(open, "{") ? syntaxError("missing close for", open)
-    isNull(patterns) ? newName(renameTag(getTag(open), "{}"))
-    isSection(patterns) ? syntaxError("invalid section", open)
+    if not isNull(left)
+        syntaxError("missing space before", open)
+    if not isThisSymbol(open, "{")
+        syntaxError("missing close for", open)
+    if isNull(patterns)
+        newName(renameTag(getTag(open), "{}"))
+    if isSection(patterns)
+        syntaxError("invalid section", open)
     newTuple(getTag(open), patterns)
 )
 
 reduceEOF(open, left, contents) := (
-    not isNull(left) ? syntaxError("invalid syntax", open)
-    not isEOF(open) ? syntaxError("missing close for", open)
-    isCommaList(contents) ? syntaxError("comma not inside brackets", contents)
+    if not isNull(left)
+        syntaxError("invalid syntax", open)
+    if not isEOF(open)
+        syntaxError("missing close for", open)
+    if isCommaList(contents)
+        syntaxError("comma not inside brackets", contents)
     contents
 )
 
@@ -98,7 +113,7 @@ shiftOpen(state, open) := (
 
 shiftOpenCurly(state, open) := (
     top := head(getStack(state))
-    not isThisSymbol(top, "::=") /\ not isThisSymbol(top, "⩴") ?
+    if not isThisSymbol(top, "::=") /\ not isThisSymbol(top, "⩴")
         syntaxError("must appear on the right side of '::='", open)
     shiftOpen(state, open)
 )
@@ -107,7 +122,7 @@ isOpenOperator(operator) := isOperator(operator) /\
     getFixity(getSyntax(operator)) = OPENFIX
 
 pushBracket(stack, open, close, contents) := (
-    isEOF(open) \/ isOperator(stack[0]) ?
+    if isEOF(open) \/ isOperator(stack[0])
         reduceBracket(open, close, NULL, contents) :: stack
     reduceBracket(open, close, stack[0], contents) :: tail(stack)
 )
@@ -118,37 +133,36 @@ endScope(operators) := operators.dropWhile((not) <> isMarker).tail
 
 shiftClose'(state, close) := (
     stack := getStack(state)
-    isEOF(stack[0]) ? syntaxError("missing open for", close)
-    isOpenOperator(stack[0]) ? (
+    if isEOF(stack[0])
+        syntaxError("missing open for", close)
+    if isOpenOperator(stack[0])
         stack' := pushBracket(tail(stack), stack[0], close, NULL)
         State(stack', endScope(getOperators(state)))
-    )
-    isEOF(stack[1]) /\ not isEOF(close) ? syntaxError("missing open for", close)
-    isOperator(stack[0]) ? syntaxError("missing right operand for", stack[0])
+    if isEOF(stack[1]) /\ not isEOF(close)
+        syntaxError("missing open for", close)
+    if isOperator(stack[0])
+        syntaxError("missing right operand for", stack[0])
     stack' := pushBracket(stack.drop(2), stack[1], close, stack[0])
     State(stack', endScope(getOperators(state)))
 )
 
 preReduce(stack) := (
     top := head(stack)
-    isOperator(top) /\ not isSpecial(top) ? (
-        isThisSymbol(stack[1], ".*") ?
+    if isOperator(top) /\ not isSpecial(top)
+        if isThisSymbol(stack[1], ".*")
             -- bracketed infix operator
             convertOperator(getTag(top)) :: tail(tail(stack))
-        isOpenOperator(stack[1]) ? (
+        if isOpenOperator(stack[1])
             -- bracketed prefix operators
-            isThisSymbol(top, "(+)") ?
+            if isThisSymbol(top, "(+)")
                 convertOperator(renameTag(getTag(top), "+")) :: tail(stack)
-            isThisSymbol(top, "(-)") ?
+            if isThisSymbol(top, "(-)")
                 convertOperator(renameTag(getTag(top), "-")) :: tail(stack)
             convertOperator(getTag(top)) :: tail(stack)
-        )
         fixity := getFixity(getSyntax(top))
-        fixity = INFIX \/ fixity = PREFIX ?
-            -- section
-            newName(renameTag(getTag(top), "*.")) :: stack
+        if fixity = INFIX \/ fixity = PREFIX
+            newName(renameTag(getTag(top), "*.")) :: stack  -- section
         stack
-    )
     stack
 )
 

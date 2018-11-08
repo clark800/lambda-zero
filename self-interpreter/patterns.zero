@@ -16,7 +16,7 @@ reduceLambda(operator, pattern, body) := (
         LAMBDA -> syntaxError("invalid parameter", pattern);
         APPLICATION -> (
             tag := getTag(operator)
-            isThisLexeme(pattern, "@") ?
+            if isThisLexeme(pattern, "@")
                 reduceLambda(pattern, getLeft(pattern),
                     newApplication(tag, reduceLambda(operator,
                         getRight(pattern), body), getLeft(pattern)))
@@ -46,20 +46,23 @@ isLazyPatternLambda(function) :=
     isUnderscore(getLeft(getRight(getBody(function))))
 
 getPatternExtension(function) := (
-    isThisLexeme(function, "@") ? (
+    if isThisLexeme(function, "@")
         tag := getTag(function)
         extension := getPatternExtension(getLeft(getBody(function)))
         newApplication(tag, newLambda(tag, getParameter(function), extension),
             newUnderscore(tag, 1))
-    )
-    isStrictPatternLambda(function) ? getRight(getBody(function))
-    isLazyPatternLambda(function) ? getHead(getBody(function))
+    if isStrictPatternLambda(function)
+        getRight(getBody(function))
+    if isLazyPatternLambda(function)
+        getHead(getBody(function))
     getBody(function)
 )
 
 reducePatternLambda(operator, left, right) := (
-    not isLambda(left) ? syntaxError("expected lambda to left of", operator)
-    not isLambda(right) ? syntaxError("expected lambda to right of", operator)
+    if not isLambda(left)
+        syntaxError("expected lambda to left of", operator)
+    if not isLambda(right)
+        syntaxError("expected lambda to right of", operator)
     tag := getTag(operator)
     base := isStrictPatternLambda(left) ? getBody(left) ||
         newApplication(tag, newUnderscore(tag, 1), getPatternExtension(left))

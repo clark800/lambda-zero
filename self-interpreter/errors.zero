@@ -2,8 +2,10 @@
 
 showTagLexeme(tag) := (
     lexeme := getTagLexeme(tag)
-    lexeme.isNil \/ lexeme[0] = 0 ? "\\0"
-    lexeme[0] = '\n' ? "\\n"
+    if lexeme.isNil \/ lexeme[0] = 0
+        "\\0"
+    if lexeme[0] = '\n'
+        "\\n"
     lexeme
 )
 
