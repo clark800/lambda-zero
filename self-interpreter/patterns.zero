@@ -1,16 +1,15 @@
 --* patterns.zero
 
-getArguments(pattern) := (
-    not isApplication(pattern) ? []
+define getArguments(pattern)
+    if not isApplication(pattern)
+        []
     getArguments(getLeft(pattern)) ++ [getRight(pattern)]
-)
 
-newProjector(tag, size, index) := (
+define newProjector(tag, size, index)
     reference := newUnderscore(tag, size - index)
     ((newLambda(tag, newUnderscore(tag, 0))) ^^ size)(reference)
-)
 
-reduceLambda(operator, pattern, body) := (
+define reduceLambda(operator, pattern, body)
     getNodeType(pattern).match(
         SYMBOL -> newLambda(getTag(operator), pattern, body);
         LAMBDA -> syntaxError("invalid parameter", pattern);
@@ -33,19 +32,21 @@ reduceLambda(operator, pattern, body) := (
         NATURAL -> newLambda(getTag(operator), pattern, body);
         BUILTIN -> syntaxError("invalid parameter", pattern);
     )
-)
 
-getHead(node) := isApplication(node) ? getHead(getLeft(node)) || node
+define getHead(node)
+    isApplication(node) ? getHead(getLeft(node)) || node
 
-isStrictPatternLambda(function) := isUnderscore(getParameter(function)) /\
+define isStrictPatternLambda(function)
+    isUnderscore(getParameter(function)) and
     isUnderscore(getHead(getBody(function)))
 
-isLazyPatternLambda(function) :=
-    isUnderscore(getParameter(function)) /\ isApplication(getBody(function)) /\
-    isApplication(getRight(getBody(function))) /\
+define isLazyPatternLambda(function)
+    isUnderscore(getParameter(function)) and
+    isApplication(getBody(function)) and
+    isApplication(getRight(getBody(function))) and
     isUnderscore(getLeft(getRight(getBody(function))))
 
-getPatternExtension(function) := (
+define getPatternExtension(function)
     if isThisLexeme(function, "@")
         tag := getTag(function)
         extension := getPatternExtension(getLeft(getBody(function)))
@@ -56,9 +57,8 @@ getPatternExtension(function) := (
     if isLazyPatternLambda(function)
         getHead(getBody(function))
     getBody(function)
-)
 
-reducePatternLambda(operator, left, right) := (
+define reducePatternLambda(operator, left, right)
     if not isLambda(left)
         syntaxError("expected lambda to left of", operator)
     if not isLambda(right)
@@ -68,6 +68,5 @@ reducePatternLambda(operator, left, right) := (
         newApplication(tag, newUnderscore(tag, 1), getPatternExtension(left))
     newLambda(tag, newUnderscore(tag, 0),
         newApplication(tag, base, getPatternExtension(right)))
-)
 
 --*

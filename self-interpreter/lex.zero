@@ -10,46 +10,46 @@ TagType ::= {Tag(getTagLexeme : List(Integer), getTagLocation : LocationType)}
 
 isLineComment(lexeme) := lexeme.startsWith("--")
 isBlockComment(lexeme) := lexeme.startsWith("{=")
-isNumeric(lexeme) := isDigit(head(lexeme)) \/
-    ((head(lexeme) = '+' \/ head(lexeme) = '-') /\ not isNil(tail(lexeme)) /\
-      isDigit(head(tail(lexeme))))
 isLineFeed(c) := c = '\n'
-isInvalid(c) := c =/= 0 /\ isControl(c) /\ not isLineFeed(c)
-isDelimiter(c) := " `.,;@$()[]{}\"\n\0".any((= c)) \/ isInvalid(c)
+isInvalid(c) := c =/= 0 and isControl(c) and not isLineFeed(c)
+isDelimiter(c) := " `.,;@$()[]{}\"\n\0".any((= c)) or isInvalid(c)
 isRepeatable(c) := " `.,;".any(= c)
 
-splitQuoteCharacter(quote, ns) := (
-    if ns.isNil \/ head(ns) = quote \/ isLineFeed(head(ns))
+define isNumeric(lexeme)
+    isDigit(head(lexeme)) or ((head(lexeme) = '+' or head(lexeme) = '-') and
+        not isNil(tail(lexeme)) and isDigit(head(tail(lexeme))))
+
+define splitQuoteCharacter(quote, ns)
+    if ns.isNil or head(ns) = quote or isLineFeed(head(ns))
         ([], ns)
-    n := (head(ns) = '\\' /\ not isNil(tail(ns))) ? 2 || 1
+    n := (head(ns) = '\\' and not isNil(tail(ns))) ? 2 || 1
     ns.splitAt(n)
-)
 
-shiftSplit((a, b)) := isNil(b) ? (a, b) || (a ++ [head(b)], tail(b))
+define shiftSplit((a, b))
+    if isNil(b)
+        (a, b)
+    (a ++ [head(b)], tail(b))
 
-splitQuote(ns) := (
+define splitQuote(ns)
     quote := head(ns)
     (a, b) := tail(ns).splitWith(splitQuoteCharacter(quote))
-    if not b.isNil /\ head(b) = quote
+    if not b.isNil and head(b) = quote
         shiftSplit((quote :: a, b))
     (quote :: a, b)
-)
 
-splitNumeric(ns) := (
+define splitNumeric(ns)
     (before, after) := ns.splitWhen(isDelimiter)
-    if isNil(after) \/ isNil(tail(after)) \/ head(after) =/= '.' \/
+    if isNil(after) or isNil(tail(after)) or head(after) =/= '.' or
             not isDigit(head(tail(after)))
         (before, after)
     (before', after') := tail(after).splitWhen(isDelimiter)
     (before ++ [head(after)] ++ before', after')
-)
 
-splitNewline(ns) := (
+define splitNewline(ns)
     (before, after) := tail(ns).splitWhen(=/= ' ')
     (head(ns) :: before, after)
-)
 
-splitLexeme(ns) := (
+define splitLexeme(ns)
     ns.isNil ? ([], [])
     c := head(ns)
     c.isLineFeed ? splitNewline(ns)
@@ -60,44 +60,41 @@ splitLexeme(ns) := (
     c.isRepeatable ? ns.splitWhen(=/= c)
     c.isDelimiter ? ([head(ns)], tail(ns))
     ns.splitWhen(isDelimiter)
-)
 
-advanceLocation'(lexeme, line, column) := (
+define advanceLocation'(lexeme, line, column)
     isNil(lexeme) ? (line, column)
     isLineFeed(head(lexeme)) ? tail(lexeme).advanceLocation'(line + 1, 1)
     tail(lexeme).advanceLocation'(line, column + 1)
-)
 
-advanceLocation(location, lexeme) := (
-    if isLineComment(lexeme) /\ lexeme[2] = '*'
+define advanceLocation(location, lexeme)
+    if isLineComment(lexeme) and lexeme[2] = '*'
         (_, after) := lexeme.drop(3).splitWhen(=/= ' ')
         (file, _) := after.splitWhen(isLineFeed)
         Location(file, isNil(file) ? 0 || 1, 0)
-    if isBlockComment(lexeme) \/ isLineFeed(head(lexeme))
+    if isBlockComment(lexeme) or isLineFeed(head(lexeme))
         (line, column) := lexeme.advanceLocation'(
             location.getLocationLine, location.getLocationColumn)
         Location(location.getLocationFile, line, column)
     Location(location.getLocationFile, location.getLocationLine,
         location.getLocationColumn + length(lexeme))
-)
 
-splitLexemes(string, splitter, location) := (
-    string.isNil ? []
+define splitLexemes(string, splitter, location)
+    if string.isNil
+        []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
     Tag(lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
-)
 
-scan(string) := string.splitLexemes(splitLexeme, Location("", 1, 1))
+define scan(string)
+    string.splitLexemes(splitLexeme, Location("", 1, 1))
 
-showLocation(location) :=
+define showLocation(location)
     (location.getLocationFile.isNil ? "" || location.getLocationFile ++ " ") ++
     "line " ++ showNatural(location.getLocationLine) ++
     " column " ++ showNatural(location.getLocationColumn)
 
-showTag(tag) :=
-    "'" ++ tag.getTagLexeme ++
-    "' at " ++ showLocation(tag.getTagLocation)
+define showTag(tag)
+    "'" ++ tag.getTagLexeme ++ "' at " ++ showLocation(tag.getTagLocation)
 
 TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
@@ -105,14 +102,13 @@ TokenCode ::= {
 }
 TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
-createLineFeedToken(tag, nextTag) := (
+define createLineFeedToken(tag, nextTag)
     nextLexeme := getTagLexeme(nextTag)
-    if not isNil(nextLexeme) /\ head(nextLexeme) = '\n'
+    if not isNil(nextLexeme) and head(nextLexeme) = '\n'
         Token(tag, VSpace)
     Token(tag, Newline)
-)
 
-createToken(tag, nextTag) := (
+define createToken(tag, nextTag)
     lexeme := getTagLexeme(tag)
     isNil(lexeme) ? Token(tag, Symbolic)
     c := head(lexeme)
@@ -121,37 +117,41 @@ createToken(tag, nextTag) := (
     c = '"' ? Token(tag, String)
     c = '\'' ? Token(tag, Character)
     isNumeric(lexeme) ? Token(tag, Numeric)
-    isLineComment(lexeme) \/ isBlockComment(lexeme) ? Token(tag, Comment)
+    isLineComment(lexeme) or isBlockComment(lexeme) ? Token(tag, Comment)
     isInvalid(c) ? Token(tag, Invalid)
     Token(tag, Symbolic)
-)
 
-getTokenCodeNumber(tokenCode) := tokenCode.match(
-    Space -> 0;
-    VSpace -> 1;
-    Newline -> 2;
-    Symbolic -> 3;
-    Numeric -> 4;
-    Character -> 5;
-    String -> 6;
-    Comment -> 7;
-    Invalid -> 8;
-)
+define getTokenCodeNumber(tokenCode)
+    tokenCode.match(
+        Space -> 0;
+        VSpace -> 1;
+        Newline -> 2;
+        Symbolic -> 3;
+        Numeric -> 4;
+        Character -> 5;
+        String -> 6;
+        Comment -> 7;
+        Invalid -> 8;
+    )
 
-isElided(token) := (
+define isElided(token)
     code := getTokenCodeNumber(getTokenCode(token))
-    code = getTokenCodeNumber(Comment) \/ code = getTokenCodeNumber(VSpace)
-)
+    code = getTokenCodeNumber(Comment) or code = getTokenCodeNumber(VSpace)
 
-showToken(token) := token.getTokenTag.getTagLexeme
+define showToken(token)
+    token.getTokenTag.getTagLexeme
 
-EOF_TAG := Tag("\0", Location("", 0, 0))
+define EOF_TAG
+    Tag("\0", Location("", 0, 0))
 
-START := Token(EOF_TAG, Symbolic)
+define START
+    Token(EOF_TAG, Symbolic)
 
-lex(string) := pairs(scan(string) ++ [EOF_TAG]).map(uncurry(createToken))
+define lex(string)
+    pairs(scan(string) ++ [EOF_TAG]).map(uncurry(createToken))
 
-showToken'(token) := showTag(getTokenTag(token)) ++ " " ++
+define showToken'(token)
+    showTag(getTokenTag(token)) ++ " " ++
     getTokenCode(token).match(
         Space -> "Space";
         VSpace -> "VSpace";

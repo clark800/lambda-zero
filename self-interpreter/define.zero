@@ -1,42 +1,38 @@
 --* define.zero
 
-applyDefinition(tag, name, value, scope) :=
+define applyDefinition(tag, name, value, scope)
     newApplication(tag, reduceLambda(name, name, scope), value)
 
-hasRecursiveCalls(node, name) := (
+define hasRecursiveCalls(node, name)
     if isLeaf(node)
         getLexeme(node) =*= getLexeme(name)
-    hasRecursiveCalls(getLeft(node), name) \/
+    hasRecursiveCalls(getLeft(node), name) or
         hasRecursiveCalls(getRight(node), name)
-)
 
-transformRecursion(name, value) := (
-    if not isSymbol(name) \/ not hasRecursiveCalls(value, name)
+define transformRecursion(name, value)
+    if not isSymbol(name) or not hasRecursiveCalls(value, name)
         value
     tag := getTag(name)
     newApplication(tag, newYCombinator(tag),
         newLambda(tag, newName(tag), value))
-)
 
-getNameAndValue(operator, left, right) := (
+define getNameAndValue(operator, left, right)
     if isNull(right)
         undefined                   -- force syntax errors
     if not isApplication(left)
         (left, right)
     getNameAndValue(operator, getLeft(left),
         reduceLambda(operator, getRight(left), right))
-)
 
-isTupleConstructor(node) := isSymbol(node) /\
-    not isNil(getLexeme(node)) /\ getLexeme(node)[0] = ','
+define isTupleConstructor(node)
+    isSymbol(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
 
-isTuple(node) := (
+define isTuple(node)
     if isApplication(node)
         isTuple(getLeft(node))
     isTupleConstructor(node)
-)
 
-reduceDefine(operator, left, right) := (
+define reduceDefine(operator, left, right)
     tag := renameTag(getTag(operator), ":=")
     if isTuple(left)
         newDefinition(tag, left, right)
@@ -48,16 +44,15 @@ reduceDefine(operator, left, right) := (
     if isThisSymbol(name, "main")
         applyDefinition(getTag(name), name, value, name)
     newDefinition(tag, name, transformRecursion(name, value))
-)
 
-isValidConstructorParameter(parameter) :=
-    isApplication(parameter) /\ isApplication(getLeft(parameter)) /\
-    isValidPattern(getRight(parameter)) /\
-    isSymbol(getRight(getLeft(parameter))) /\
-    (isThisSymbol(getLeft(getLeft(parameter)), ":") \/
+define isValidConstructorParameter(parameter)
+    isApplication(parameter) and isApplication(getLeft(parameter)) and
+    isValidPattern(getRight(parameter)) and
+    isSymbol(getRight(getLeft(parameter))) and
+    (isThisSymbol(getLeft(getLeft(parameter)), ":") or
      isThisSymbol(getLeft(getLeft(parameter)), "∈"))
 
-newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
+define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
     if not isValidConstructorParameter(parameter)
         syntaxError("invalid constructor parameter", parameter)
     name := getRight(getLeft(parameter))
@@ -69,9 +64,8 @@ newGetterDefinition(tag, n, j, m, (parameter, k), scope) := (
     getter := newLambda(tag, newUnderscore(tag, 0),
         arguments.cascade(newApplication(tag), newUnderscore(tag, 1)))
     applyDefinition(tag, name, getter, scope)
-)
 
-newConstructorDefinition(tag, n, (pattern, j), scope) := (
+define newConstructorDefinition(tag, n, (pattern, j), scope)
     name := getHead(pattern)
     if not isSymbol(name)
         syntaxError("invalid constructor name", name)
@@ -84,23 +78,20 @@ newConstructorDefinition(tag, n, (pattern, j), scope) := (
     body := arguments.cascade(newApplication(tag), base)
     constructor := ((newLambda(tag, newUnderscore(tag, 0)))^^(n + m))(body)
     applyDefinition(tag, name, constructor, scope')
-)
 
-reduceADT(operator, left, right) := (
+define reduceADT(operator, left, right)
     tag := renameTag(getTag(operator), "::=")
     if not isValidPattern(left)
         syntaxError("invalid left hand side", operator)
-    if not isThisLexeme(right, "{") /\ not isThisLexeme(right, "{}")
+    if not isThisLexeme(right, "{") and not isThisLexeme(right, "{}")
         syntaxError("ADT required to right of", operator)
     newDefinition(tag, left, right)
-)
 
-applyADTDefinition(tag, left, right, scope) := (
+define applyADTDefinition(tag, left, right, scope)
     undefined' := newName(renameTag(tag, "undefined"))
     scope' := applyDefinition(tag, getHead(left), undefined', scope)
     constructors := getArguments(right)
     n := length(constructors)
     zip(constructors, naturals).fold(newConstructorDefinition(tag, n), scope')
-)
 
 --*

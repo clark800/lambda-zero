@@ -1,14 +1,14 @@
 --* interpret.zero
 
-execute(ast) := evaluate(Closure(ast, []), [])
+define execute(ast)
+    evaluate(Closure(ast, []), [])
 
-splitCodeAndInput(input) := (
+define splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
     input' := afterCode.isNil ? [] || tail(afterCode)
     (code, input')
-)
 
-extractOutputString(closure) := (
+define extractOutputString(closure)
     -- term is (z -> p -> z) or (z -> p -> ((p c) cs))
     body := getBody(getBody(getTerm(closure)))
     isSymbol(body) ? []
@@ -19,20 +19,18 @@ extractOutputString(closure) := (
     character := getCharacter(getTerm(evaluate(characterClosure, [])))
     remaining := evaluate(Closure(getRight(body), environment'), [])
     character :: extractOutputString(remaining)
-)
 
-main(input) := (
+define main(input)
     (code, input') := splitCodeAndInput(input)
     ast := parse(code, input')
     closure := execute(ast)
     term := getTerm(closure)
-    if isLambda(term) /\ isThisSymbol(getParameter(term), "input")
+    if isLambda(term) and isThisSymbol(getParameter(term), "input")
         -- todo: construct input
         string := newName(renameTag(getTag(term), "[]"))
         stack := [Closure(string, [])]
         extractOutputString(evaluate(closure, stack))
     serialize(closure)
-)
 
 --main(input) := lex(input).map(showToken).joinWith("\n")
 --main(input) := showAST(parse(input, ""))

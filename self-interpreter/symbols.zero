@@ -26,58 +26,62 @@ StateType ::= {State(
     getOperators : List(Pair(List(N), SyntaxType))
 )}
 
-isOperator(node) := isJust(getMaybeData(node))
+define isOperator(node)
+    isJust(getMaybeData(node))
 
-reduceOperand(node, _left, _right) := node
+define reduceOperand(node, _left, _right)
+    node
 
-shiftOperand(State(stack, operators), node) := (
-    if isNil(stack) \/ not isOperator(head(stack))
+define shiftOperand(State(stack, operators), node)
+    if isNil(stack) or not isOperator(head(stack))
         syntaxError("missing operator before", node)
     State(node :: stack, operators)
-)
 
-getSyntax(node) := getMaybeData(node) ?!
-    Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand)
+define getSyntax(node)
+    getMaybeData(node) ?!
+        Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand)
 
-isSpecial(node) := getSpecial(getSyntax(node))
+define isSpecial(node)
+    getSpecial(getSyntax(node))
 
-propagateSection(operator, node, lexeme) := (
-    if isSpecial(operator) \/ not isApplication(node)
+define propagateSection(operator, node, lexeme)
+    if isSpecial(operator) or not isApplication(node)
         syntaxError("operator does not support sections", operator)
     newApplication(renameTag(getTag(node), lexeme),
         getLeft(node), getRight(node))
-)
 
-reduceOperator(operator, left, right) := (
+define reduceOperator(operator, left, right)
     result := getReduce(getSyntax(operator))(operator, left, right)
-    if not isNull(left) /\ isSection(left)
+    if not isNull(left) and isSection(left)
         propagateSection(operator, result,
-            not isNull(right) /\ isSection(right) ? ".*." || ".*")
-    if not isNull(right) /\ isSection(right)
+            not isNull(right) and isSection(right) ? ".*." || ".*")
+    if not isNull(right) and isSection(right)
         propagateSection(operator, result, "*.")
     result
-)
 
-reduceBracket(open, close, left, right) :=
+define reduceBracket(open, close, left, right)
     getReduce(getSyntax(close))(open, left, right)
 
-shift(state, node) := getShift(getSyntax(node))(state, node)
+define shift(state, node)
+    getShift(getSyntax(node))(state, node)
 
-erase(stack, lexeme) := stack.dropIf(`isThisSymbol(lexeme))
+define erase(stack, lexeme)
+    stack.dropIf(`isThisSymbol(lexeme))
 
-eraseNewline(stack) := stack.dropIf(isNewline)
+define eraseNewline(stack)
+    stack.dropIf(isNewline)
 
-eraseWhitespace(stack) := eraseNewline(erase(stack, " "))
+define eraseWhitespace(stack)
+    eraseNewline(erase(stack, " "))
 
-reduceTop(State(stack, operators)) := (
+define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
             reduceOperator(stack[1], NULL, stack[0]))
     shift(State(stack.drop(3), operators),
         reduceOperator(stack[1], stack[2], stack[0]))
-)
 
-isHigherPrecedence(left, right) := (
+define isHigherPrecedence(left, right)
     if isEOF(left)
         false
 
@@ -94,38 +98,36 @@ isHigherPrecedence(left, right) := (
         if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
             syntaxError("incompatible associativity", right)
 
-        if isNewline(left) /\ isNewline(right)
+        if isNewline(left) and isNewline(right)
             length(getLexeme(left)) > length(getLexeme(right))
 
         leftSyntax.getAssociativity = LEFT
 
     leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
-)
 
-shouldReduceTop(operator, State(stack, _operators)) :=
-    not isOperator(stack[0]) /\ isHigherPrecedence(stack[1], operator)
+define shouldReduceTop(operator, State(stack, _operators))
+    not isOperator(stack[0]) and isHigherPrecedence(stack[1], operator)
 
-reduceLeft(state, operator) := reduceTop.while(shouldReduceTop(operator), state)
+define reduceLeft(state, operator)
+    reduceTop.while(shouldReduceTop(operator), state)
 
-MARKER := ("\0\0",
-    Syntax(0, 0, NOFIX, NEITHER, true, shiftOperand, reduceOperand))
+define MARKER
+    ("\0\0", Syntax(0, 0, NOFIX, NEITHER, true, shiftOperand, reduceOperand))
 
-lookupSyntax(operators, lexeme) := (
+define lookupSyntax(operators, lexeme)
     if isNil(operators)
         nothing
     (lexeme', syntax') := head(operators)
     if lexeme =*= lexeme'
         just(syntax')
     lookupSyntax(tail(operators), lexeme)
-)
 
-parseSymbol(operators, tag) := (
+define parseSymbol(operators, tag)
     lexeme := getTagLexeme(tag)
     if isNewlineLexeme(lexeme)
         newOperator(tag, operators.lookupSyntax("\n") ?! undefined)
     operators.lookupSyntax(lexeme) ?? just <> newOperator(tag) ?!
         (lexeme =*= " " ? (operators.lookupSyntax("( )") ??
             just <> newOperator(tag) ?! newName(tag)) || newName(tag))
-)
 
 --*

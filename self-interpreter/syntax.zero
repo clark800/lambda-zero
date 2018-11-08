@@ -1,46 +1,45 @@
 --* syntax.zero
 
-reduceApply(operator, left, right) :=
+define reduceApply(operator, left, right)
     newApplication(getTag(operator), left, right)
 
-reduceInfix(operator, left, right) :=
+define reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
         convertOperator(getTag(operator)), left), right)
 
-reducePrefix(operator, _left, right) :=
+define reducePrefix(operator, _left, right)
     reduceApply(operator, convertOperator(getTag(operator)), right)
 
-reducePostfix(operator, left, _right) :=
+define reducePostfix(operator, left, _right)
     reduceApply(operator, convertOperator(getTag(operator)), left)
 
-reduceNewline(operator, left, right) := (
+define reduceNewline(operator, left, right)
     tag := getTag(left)
-    if isDefinition(left) /\ isThisLexeme(left, ":=")
+    if isDefinition(left) and isThisLexeme(left, ":=")
         applyDefinition(tag, getLeft(left), getRight(left), right)
-    if isDefinition(left) /\ isThisLexeme(left, "::=")
+    if isDefinition(left) and isThisLexeme(left, "::=")
         applyADTDefinition(tag, getLeft(left), getRight(left), right)
+    if isApplication(left) and isThisLexeme(left, "define")
+        reduceDefine(getLeft(left), getRight(left), right)
     reduceApply(operator, left, right)
-)
 
-shiftPrefix(state, operator) := (
+define shiftPrefix(state, operator)
     state' := reduceLeft(state, operator)
     State(operator :: getStack(state'), getOperators(state'))
-)
 
-shiftPostfix(state, operator) := (
+define shiftPostfix(state, operator)
     stack := eraseWhitespace(getStack(state))
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
-    stack'' := not isSpecial(operator) /\ isOpenOperator(stack'[0]) ?
+    stack'' := not isSpecial(operator) and isOpenOperator(stack'[0]) ?
         newName(renameTag(getTag(operator), ".*")) :: stack' || stack'
     operand := stack''[0]
     if isOperator(operand)
         syntaxError("missing left operand for", operator)
     State(reduceOperator(operator, operand, NULL) :: tail(stack''),
         getOperators(state))
-)
 
-shiftInfix(state, operator) := (
+define shiftInfix(state, operator)
     stack := eraseWhitespace(getStack(state))
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
@@ -54,31 +53,28 @@ shiftInfix(state, operator) := (
         if isThisSymbol(operator, "-")
             operator' := operators.parseSymbol(renameTag(tag, "(-)"))
             State(operator' :: stack', operators)
-        if not isSpecial(operator) /\ isOpenOperator(top)
+        if not isSpecial(operator) and isOpenOperator(top)
             State(operator :: renameNode(operator, ".*") :: stack', operators)
         syntaxError("missing left operand for", operator)
-    if (getLexeme(operator) =*= ":=" \/ getLexeme(operator) =*= "≔") /\
+    if (getLexeme(operator) =*= ":=" or getLexeme(operator) =*= "≔") and
             getLexeme(top) =*= "syntax"
         operator' := operators.parseSymbol(renameTag(tag, "(:=)"))
         State(operator' :: stack', operators)
     State(operator :: stack', operators)
-)
 
-shiftSpace(state, operator) := (
+define shiftSpace(state, operator)
     state' := reduceLeft(state, operator)
     if isOperator(head(getStack(state')))
         state'
     State(operator :: getStack(state'), getOperators(state'))
-)
 
-addSyntax(operators, operator) := (
+define addSyntax(operators, operator)
     if operators.map(first).any(=*= getLexeme(operator))
         syntaxError("syntax already defined", operator)
     (getLexeme(operator), getSyntax(operator)) :: operators
-)
 
-updateOperators(operators, top) := (
-    if not isIdentity(top) \/ not isOperator(getParameter(top))
+define updateOperators(operators, top)
+    if not isIdentity(top) or not isOperator(getParameter(top))
         operators
     declared := getParameter(top)
     operators' := operators.addSyntax(declared)
@@ -90,9 +86,8 @@ updateOperators(operators, top) := (
         s := Syntax(p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix)
         ("(-)", s) :: operators'
     operators'
-)
 
-shiftNewline(state, operator) := (
+define shiftNewline(state, operator)
     stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     top := head(getStack(state'))
@@ -100,26 +95,24 @@ shiftNewline(state, operator) := (
     if isOperator(top)
         State(getStack(state'), operators)
     State(operator :: getStack(state'), operators)
-)
 
-reduceReserved(operator, _left, _right) :=
+define reduceReserved(operator, _left, _right)
     syntaxError("reserved operator", operator)
 
-reduceInvalid(operator, _left, _right) :=
+define reduceInvalid(operator, _left, _right)
     syntaxError("operator syntax undeclared", operator)
 
-reduceError(operator, _left, right) := (
+define reduceError(operator, _left, right)
     tag := getTag(operator)
     if isThisSymbol(right, "[]")
         newBuiltin(renameTag(tag, "(undefined)"))
     newApplication(tag, convertOperator(tag), right)
-)
 
-newOperator'(tag, precedence, fixity, associativity, shifter, reducer) :=
+define newOperator'(tag, precedence, fixity, associativity, shifter, reducer)
     newOperator(tag, Syntax(precedence, precedence, fixity, associativity,
         false, shifter, reducer))
 
-newSyntaxOperator(tag, precedence, fixity) := (
+define newSyntaxOperator(tag, precedence, fixity)
     if getTagLexeme(tag) =*= "()"
         if not(getLexeme(fixity) =*= "infixL")
             syntaxError("syntax must be infixL", fixity)
@@ -137,9 +130,8 @@ newSyntaxOperator(tag, precedence, fixity) := (
         newOperator'(tag, precedence, POSTFIX, LEFT,
             shiftPostfix, reducePostfix)
     syntaxError("invalid fixity", fixity)
-)
 
-reduceSyntax(node, left, right) := (
+define reduceSyntax(node, left, right)
     if not isApplication(left)
         syntaxError("invalid left operand", left)
     name := getRight(left)
@@ -147,15 +139,14 @@ reduceSyntax(node, left, right) := (
         syntaxError("expected symbol operand to", getLeft(left))
     if getLexeme(name).any(= '_')
         syntaxError("invalid underscore in operator name", name)
-    if not isApplication(right) /\ not isNatural(getRight(right))
+    if not isApplication(right) and not isNatural(getRight(right))
         syntaxError("invalid syntax definition", node)
     precedence := getValue(getRight(right))
-    if precedence < 0 \/ precedence > 99
+    if precedence < 0 or precedence > 99
         syntaxError("invalid precedence", getRight(right))
     fixity := getLeft(right)
     operator := newSyntaxOperator(getTag(name), precedence, fixity)
     newLambda(getTag(node), operator, operator)
-)
 
 OPERATORS := [
     ("\0", Syntax(0, 0, CLOSEFIX, RIGHT, true, shiftClose, reduceEOF)),
@@ -169,6 +160,7 @@ OPERATORS := [
     (",", Syntax(2, 2, INFIX, LEFT, true, shiftInfix, reduceApply)),
     ("\n", Syntax(3, 3, INFIX, RIGHT, true, shiftNewline, reduceNewline)),
     (";", Syntax(4, 4, INFIX, LEFT, true, shiftInfix, reducePatternLambda)),
+    ("define", Syntax(5, 5, PREFIX, NEITHER, true, shiftPrefix, reducePrefix)),
     (":=", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceDefine)),
     ("≔", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceDefine)),
     ("::=", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceADT)),

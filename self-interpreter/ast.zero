@@ -60,57 +60,60 @@ getColumn(node) := getLocationColumn(getLocation(node))
 
 NULL := newName(Tag("\0\0", Location("", 0, 0)))
 isThisLexeme(node, lexeme) := getLexeme(node) =*= lexeme
-isThisSymbol(node, lexeme) := isSymbol(node) /\ isThisLexeme(node, lexeme)
+isThisSymbol(node, lexeme) := isSymbol(node) and isThisLexeme(node, lexeme)
 isNull(node) := isThisSymbol(node, "\0\0")
 isEOF(node) := isThisSymbol(node, "\0")
 isUnderscore(node) := isThisSymbol(node, "_")
-isUnused(node) := isSymbol(node) /\ head(getLexeme(node)) = '_'
+isUnused(node) := isSymbol(node) and head(getLexeme(node)) = '_'
 isNewlineLexeme(lexeme) := lexeme.startsWith("\n")
-isNewline(node) := isSymbol(node) /\ isNewlineLexeme(getLexeme(node))
+isNewline(node) := isSymbol(node) and isNewlineLexeme(getLexeme(node))
 
-isIdentity(node) := isLambda(node) /\ isSymbol(getBody(node)) /\
+isIdentity(node) := isLambda(node) and isSymbol(getBody(node)) and
     getLexeme(getParameter(node)) =*= getLexeme(getBody(node))
 
-isSection(node) := isThisLexeme(node, ".*.") \/
-    isThisLexeme(node, ".*") \/ isThisLexeme(node, "*.")
+define isSection(node)
+    isThisLexeme(node, ".*.") or
+        isThisLexeme(node, ".*") or isThisLexeme(node, "*.")
 
-newUnderscore(tag, debruijn) :=
+define newUnderscore(tag, debruijn)
     newReference(Tag("_", getTagLocation(tag)), debruijn)
 
-newYCombinator(tag) := (
+define newYCombinator(tag)
     x := newUnderscore(tag, 1)
     y := newUnderscore(tag, 2)
     yxx := newApplication(tag, y, newApplication(tag, x, x))
     xyxx := newLambda(tag, newUnderscore(tag, 0), yxx)
     newLambda(tag, newUnderscore(tag, 0), newApplication(tag, xyxx, xyxx))
-)
 
-newBoolean(tag, b) := newLambda(tag, newUnderscore(tag, 0),
-    newLambda(tag, newUnderscore(tag, 0), newUnderscore(tag, b ? 1 || 2)))
+define newBoolean(tag, b)
+    newLambda(tag, newUnderscore(tag, 0), newLambda(tag, newUnderscore(tag, 0),
+        newUnderscore(tag, b ? 1 || 2)))
 
-newNil(tag) := newName(Tag("[]", getTagLocation(tag)))
+define newNil(tag)
+    newName(Tag("[]", getTagLocation(tag)))
 
-prependList(tag, item, list) := (
+define prependList(tag, item, list)
     name := newName(Tag("::", getTagLocation(tag)))
     newApplication(tag, newApplication(tag, name, item), list)
-)
 
-isValidPattern(node) := isSymbol(node) \/ (isApplication(node) /\
-    isValidPattern(getLeft(node)) /\ isValidPattern(getRight(node)))
+define isValidPattern(node)
+    isSymbol(node) or (isApplication(node) and
+        isValidPattern(getLeft(node)) and isValidPattern(getRight(node)))
 
-setTag(Node(ASTData(tag, nodeType, maybeData, value), children), tag') :=
+define setTag(Node(ASTData(tag, nodeType, maybeData, value), children), tag')
     Node(ASTData(tag', nodeType, maybeData, value), children)
 
-renameTag(tag, lexeme) := Tag(lexeme, getTagLocation(tag))
+define renameTag(tag, lexeme)
+    Tag(lexeme, getTagLocation(tag))
 
-renameNode(node, lexeme) := newName(renameTag(getTag(node), lexeme))
+define renameNode(node, lexeme)
+    newName(renameTag(getTag(node), lexeme))
 
-convertOperator(tag) := (
+define convertOperator(tag)
     builtins := ["+", "-", "*", "//", "%", "=", "=/=", "<", ">",
         "<=", ">=", "up", "error"]
     if isJust(builtins.find(=*= getTagLexeme(tag)))
         newBuiltin(tag)
     newName(tag)
-)
 
 --*

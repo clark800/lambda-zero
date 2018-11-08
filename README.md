@@ -25,11 +25,11 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Factorial
 
-    (!) ≔ 0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!
+    (!) ≔ (0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!)
 
 ### Quicksort
 
-    sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
+    sort ≔ ([] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n)))
 
 ### Infinite list of natural numbers
 
@@ -39,10 +39,9 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Infinite list of prime numbers
 
-    primes ≔ (
-        filterPrime ≔ [] ↦ []; n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
+    define primes
+        filterPrime ≔ ([] ↦ []; n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0)))
         filterPrime(countFrom(2))
-    )
 
 # Motivation
 

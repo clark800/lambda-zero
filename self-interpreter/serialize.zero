@@ -1,19 +1,20 @@
 --* serialize.zero
 
-showAST(node) := getNodeType(node).match(
-    SYMBOL -> showLexeme(node);
-    LAMBDA -> "(" ++ showLexeme(getParameter(node)) ++ " -> " ++
-               showAST(getBody(node)) ++ ")";
-    APPLICATION -> "(" ++ showAST(getLeft(node)) ++ " " ++
-               showAST(getRight(node)) ++ ")";
-    DEFINITION -> "(" ++ showAST(getLeft(node)) ++ " := " ++
-               showAST(getRight(node)) ++ ")";
-    NATURAL -> showNatural(getValue(node));
-    BUILTIN -> "[" ++ showLexeme(node) ++ "]";
-)
+define showAST(node)
+    getNodeType(node).match(
+        SYMBOL -> showLexeme(node);
+        LAMBDA -> "(" ++ showLexeme(getParameter(node)) ++ " -> " ++
+                   showAST(getBody(node)) ++ ")";
+        APPLICATION -> "(" ++ showAST(getLeft(node)) ++ " " ++
+                   showAST(getRight(node)) ++ ")";
+        DEFINITION -> "(" ++ showAST(getLeft(node)) ++ " := " ++
+                   showAST(getRight(node)) ++ ")";
+        NATURAL -> showNatural(getValue(node));
+        BUILTIN -> "[" ++ showLexeme(node) ++ "]";
+    )
 
-serialize(closure) := (
-    serialize'(closure', depth) := (
+define serialize(closure)
+    define serialize'(closure', depth)
         term := getTerm(closure')
         environment := getEnvironment(closure')
         getNodeType(term).match(
@@ -36,12 +37,11 @@ serialize(closure) := (
             NATURAL -> showNatural(getValue(term));
             BUILTIN -> showLexeme(term)
         )
-    )
+
     result := serialize'(closure, 0)
     -- ensure that full serialization succeeds before returning anything
     -- or else lazy output will show part of the serailization even if
     -- an error occurs during parsing
     result.length = 0 ? "" || result
-)
 
 --*

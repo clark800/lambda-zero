@@ -1,71 +1,64 @@
 --* builtins.zero
 
-getCharacter(node) := (
+define getCharacter(node)
     if isNatural(node)
         getValue(node)
     runtimeError("expected byte value in string at", node)
-)
 
-getFirstCharacter(node) :=
+define getFirstCharacter(node)
     getCharacter(getRight(getLeft(getBody(getBody(node)))))
 
 -- todo: this only works for literal strings
-extractString(astString) := getFirstCharacter(astString) ::
-    extractString(getRight(getBody(getBody(astString))))
+define extractString(astString)
+    getFirstCharacter(astString) ::
+        extractString(getRight(getBody(getBody(astString))))
 
-getBuiltin(builtin) := (
+define getBuiltin(builtin)
     maxInteger := 9223372036854775807
 
-    getNatural(term) := (
+    define getNatural(term)
         if isNatural(term)
             getValue(term)
         runtimeError("expected natural argument to", builtin)
-    )
 
-    compute(f, left, right) :=
+    define compute(f, left, right)
         f(getNatural(getTerm(left)), getNatural(getTerm(right)))
 
-    makeNaturalBuiltin(f, left, right) :=
+    define makeNaturalBuiltin(f, left, right)
         Closure(newNatural(getTag(builtin), f.compute(left, right)), [])
 
-    makeComparisonBuiltin(f, left, right) :=
+    define makeComparisonBuiltin(f, left, right)
         Closure(newBoolean(getTag(builtin), f.compute(left, right)), [])
 
-    addBuiltin(left, right) := (
+    define addBuiltin(left, right)
         if left > maxInteger - right
             runtimeError("overflow in", builtin)
         left + right
-    )
 
-    subtractBuiltin(left, right) := (
+    define subtractBuiltin(left, right)
         if right > left
             runtimeError("underflow in", builtin)
         left - right
-    )
 
-    multiplyBuiltin(left, right) := (
-        if right =/= 0 /\ left > maxInteger // right
+    define multiplyBuiltin(left, right)
+        if right =/= 0 and left > maxInteger // right
             runtimeError("overflow in", builtin)
         left * right
-    )
 
-    divideBuiltin(left, right) := (
+    define divideBuiltin(left, right)
         if right = 0
             runtimeError("divide by zero in", builtin)
         left // right
-    )
 
-    moduloBuiltin(left, right) := (
+    define moduloBuiltin(left, right)
         if right = 0
             left
         left % right
-    )
 
-    upBuiltin(left, right) := (
+    define upBuiltin(left, right)
         if left >= maxInteger
             runtimeError("overflow in", builtin)
         left + 1
-    )
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),
@@ -85,6 +78,5 @@ getBuiltin(builtin) := (
     ])
 
     builtins.lookup(getLexeme(builtin))
-)
 
 --*
