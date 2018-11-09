@@ -1,27 +1,30 @@
 --* errors.zero
 
-showTagLexeme(tag) := (
+define showTagLexeme(tag)
     lexeme := getTagLexeme(tag)
-    if lexeme.isNil \/ lexeme[0] = 0
+    if lexeme.isNil or lexeme[0] = 0
         "\\0"
     if lexeme[0] = '\n'
         "\\n"
     lexeme
-)
 
-showLexeme(node) := showTagLexeme(getTag(node))
+define showLexeme(node)
+    showTagLexeme(getTag(node))
 
-showLexemeAndLocationLine(tag, quote) :=
+define showLexemeAndLocationLine(tag, quote)
     quote ++ showTagLexeme(tag) ++ quote ++
         " at " ++ showLocation(getTagLocation(tag)) ++ "\n"
 
-showErrorLocation(node) := showLexemeAndLocationLine(getTag(node), "'")
+define showErrorLocation(node)
+    showLexemeAndLocationLine(getTag(node), "'")
 
-nodeError(title, message, node) :=
+define nodeError(title, message, node)
     error(title ++ message ++ " " ++ showErrorLocation(node))
 
-syntaxError(message, node) := nodeError("Syntax error: ", message, node)
+define syntaxError(message, node)
+    nodeError("Syntax error: ", message, node)
 
-runtimeError(message, node) := nodeError("\nRuntime error: ", message, node)
+define runtimeError(message, node)
+    nodeError("\nRuntime error: ", message, node)
 
 --*

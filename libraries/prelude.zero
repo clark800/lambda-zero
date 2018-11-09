@@ -35,8 +35,10 @@ Boolean ⩴ {false, true}
 (not) ≔ (¬)
 b ∧ c ≔ b ? c ‖ false
 (/\) ≔ (∧)
+(and) := (∧)
 b ∨ c ≔ b ? true ‖ c
 (\/) ≔ (∨)
+(or) := (∨)
 b ⇒ c ≔ b ? c ‖ true
 (=>) ≔ (⇒)
 b ⇔ c ≔ b ? c ‖ ¬ c

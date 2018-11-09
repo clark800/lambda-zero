@@ -1,7 +1,8 @@
 --* declarations.zero
 
-builtinTypes := (
-    syntax(>->) := infixR(10)
+syntax(>->) := infixR(10)
+
+define builtinTypes
     (>->) := newFunctionType(NULL)
     bottom := newBottomType(NULL)
     boolean := newBooleanType(NULL)
@@ -25,13 +26,11 @@ builtinTypes := (
         ("error", string >-> bottom),
         ("(undefined)", bottom)
     ])
-)
 
-getBuiltinType(node) :=
+define getBuiltinType(node)
     builtinTypes.get(getLexeme(node), undefined).setNode(node)
 
-knownTypeSchemes := (
-    syntax(>->) := infixR(10)
+define knownTypeSchemes
     (>->) := newFunctionType(NULL)
     boolean := newBooleanType(NULL)
     (a, variables') := empty.newTypeVariable(NULL)
@@ -60,12 +59,10 @@ knownTypeSchemes := (
         ("getData", newScheme([a], aTree >-> a)),
         ("getChildren", newScheme([a], aTree >-> aTreeList))
     ])
-)
 
-getKnownTypeScheme(name) := (
+define getKnownTypeScheme(name)
     defaultScheme := newScheme([], newFreeType(name))
     (universals, type) := knownTypeSchemes.get(getLexeme(name), defaultScheme)
     (universals, type.setNode(name))
-)
 
 --*

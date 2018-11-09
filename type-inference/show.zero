@@ -1,14 +1,13 @@
 --* show.zero
 
-getVariableName(index) := (
+define getVariableName(index)
     characters := ['a', 'b', 'c', 'd']
     if index < 4
         [characters[index]]
     getVariableName((index // 4) - 1) ++ [characters[index % 4]]
-)
 
-showType(type) := (
-    showType'(type') :=
+define showType(type)
+    define showType'(type')
         isFunctionType(type') ? "(" ++ showType(type') ++ ")" || showType(type')
     if isFreeType(type)
         "_"
@@ -37,41 +36,42 @@ showType(type) := (
         components := getComponentTypes(type)
         showType'(components[0]) ++ " → " ++ showType(components[1])
     undefined
-)
 
-showTypeAndLocation(type) := showType(type) ++ (isNull(getNode(type)) ? ""
-    " at " ++ showLocation(getLocation(getNode(type))))
+define showTypeAndLocation(type)
+    showType(type) ++ (isNull(getNode(type)) ?
+        "" || " at " ++ showLocation(getLocation(getNode(type))))
 
-showVariableMap(variables) :=
+define showVariableMap(variables)
     variables.getElements.map((key, value) ->
         showAST(getNode(key)) ++ " = " ++ showAST(getNode(value)) ++
         "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
 
-addRenaming((renaming, variables), type) := (
+define addRenaming((renaming, variables), type)
     if isTypeVariable(type)
         if renaming.hasKey(type)
             (renaming, variables)
         (type', variables') := variables.newTypeVariable(getNode(type))
         (renaming.insert(type, type'), variables')
     getComponentTypes(type).cascade(addRenaming, (renaming, variables))
-)
 
-makeRenaming(type) :=
+define makeRenaming(type)
     first(addRenaming((empty, empty), type))
 
-showTypeWithRenaming(type, renaming) := showType(type.rename(renaming))
+define showTypeWithRenaming(type, renaming)
+    showType(type.rename(renaming))
 
-showUniversals(universals, renaming) := (
+define showUniversals(universals, renaming)
     universals.map(universal ->
         "∀" ++ showTypeWithRenaming(universal, renaming) ++ " ").join
-)
 
-showScheme((universals, type)) := (
+define showScheme((universals, type))
     renaming := makeRenaming(type)
     showUniversals(universals, renaming) ++ showTypeWithRenaming(type, renaming)
-)
 
-showTyping((name, scheme)) := getLexeme(name) ++ " : " ++ showScheme(scheme)
-showTypings(typings) := typings.map(showTyping).joinWith("\n")
+define showTyping((name, scheme))
+    getLexeme(name) ++ " : " ++ showScheme(scheme)
+
+define showTypings(typings)
+    typings.map(showTyping).joinWith("\n")
 
 --*

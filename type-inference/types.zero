@@ -6,7 +6,7 @@ getTypeCode := second_3 <> getData
 getIndex := third_3 <> getData
 getTypeVariableIndex := getIndex
 getComponentTypes := getChildren
-setNode(type, node) :=
+define setNode(type, node)
     newType(node, getTypeCode(type), getIndex(type), getComponentTypes(type))
 
 newFreeType(node) := newType(node, 1, 0, [])
@@ -18,10 +18,9 @@ newListType(node, type) := newType(node, 6, 0, [type])
 newTreeType(node, type) := newType(node, 7, 0, [type])
 newMaybeType(node, type) := newType(node, 8, 0, [type])
 newBottomType(node) := newType(node, 9, 0, [])
-newTypeVariable(variables, node) := (
+define newTypeVariable(variables, node)
     type := newType(node, 0, # variables, [])
     (type, variables.insert(type, newFreeType(NULL)))
-)
 newTypeVariables(originals, variables) :=
     originals.map(getNode).cascadeMap(`newTypeVariable, variables)
 newProjectionType(node, elementTypes, returnType) :=
@@ -39,11 +38,11 @@ isListType(type) := getTypeCode(type) = 6
 isTreeType(type) := getTypeCode(type) = 7
 isMaybeType(type) := getTypeCode(type) = 8
 isBottomType(type) := getTypeCode(type) = 9
-isFree(type, variables) := not variables.hasKey(type) \/
+isFree(type, variables) := not variables.hasKey(type) or
     isFreeType(variables.get(type, undefined))
 
 syntax(=~=) := infix(13)
-a =~= b := getTypeCode(a) = getTypeCode(b) /\ getIndex(a) = getIndex(b) /\
+a =~= b := getTypeCode(a) = getTypeCode(b) and getIndex(a) = getIndex(b) and
     zip(getComponentTypes(a), getComponentTypes(b)).all(uncurry((=~=)))
 
 mapComponents(type, f) := newType(getNode(type), getTypeCode(type),
@@ -52,10 +51,9 @@ mapComponents(type, f) := newType(getNode(type), getTypeCode(type),
 newVariableMap(mappings) := newTable((<=).on(getIndex), mappings)
 empty := newVariableMap([])
 
-rename(type, variables) := (
+define rename(type, variables)
     if isTypeVariable(type)
         variables.get(type, type)
     type.mapComponents(`rename(variables))
-)
 
 --*

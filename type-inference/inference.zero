@@ -1,19 +1,18 @@
 --* inference.zero
 
-getFreeVariables(type, variables) := (
+define getFreeVariables(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             [type]
         getFreeVariables(variables.get(type, undefined), variables)
     join(getComponentTypes(type).map(`getFreeVariables(variables))).
         deduplicateBy((=~=))
-)
 
-getAllFreeVariables(variables, variables') :=
+define getAllFreeVariables(variables, variables')
     join(variables.getKeys.map(`getFreeVariables(variables'))).
         deduplicateBy((=~=))
 
-substitute(type, variables) := (
+define substitute(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             type
@@ -23,17 +22,16 @@ substitute(type, variables) := (
         type'.substitute(variables)
 
     type.mapComponents(`substitute(variables))
-)
 
 -- Robinson's Unification Algorithm
 -- see Comparing Unification Algorithms in First-Order Theorem Proving
 -- by Krystof Hoder and Andrei Voronkov
-unify'(originals, variables, (left, right)) := (
-    if isTypeVariable(left) /\ not left.isFree(variables)
+define unify'(originals, variables, (left, right))
+    if isTypeVariable(left) and not left.isFree(variables)
         unify'(originals, variables, (left.substitute(variables), right))
-    if isTypeVariable(right) /\ not right.isFree(variables)
+    if isTypeVariable(right) and not right.isFree(variables)
         unify'(originals, variables, (left, right.substitute(variables)))
-    if isBottomType(left) \/ isBottomType(right)
+    if isBottomType(left) or isBottomType(right)
         variables
     if left =~= right
         variables
@@ -41,45 +39,43 @@ unify'(originals, variables, (left, right)) := (
         variables.insert(left, right)
     if isTypeVariable(right)
         variables.insert(right, left)
-    if (getTypeCode(left) = getTypeCode(right) /\
-        getIndex(left) = getIndex(right) /\
+    if (getTypeCode(left) = getTypeCode(right) and
+        getIndex(left) = getIndex(right) and
         length(getComponentTypes(left)) = length(getComponentTypes(right)))
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
     unificationError(originals.mapPair(`substitute(variables)),
         left.substitute(variables), right.substitute(variables))
-)
 
-unify(variables, types) := unify'(types, variables, types)
+define unify(variables, types)
+    unify'(types, variables, types)
 
-unifyAll(variables, types) := (
+define unifyAll(variables, types)
     if isNil(types)
         variables
     zip(repeat(head(types)), tail(types)).cascade(unify, variables)
-)
 
-generalize(type, variables, oldVariables) := (
+define generalize(type, variables, oldVariables)
     syntax(\\) := infix(17)
     vs \\ vs' := vs |: (v -> not vs'.any((=~= v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
         oldVariables.getAllFreeVariables(variables)
     newScheme(universals, type')
-)
 
-instantiate(scheme, variables, node) := (
+define instantiate(scheme, variables, node)
     (universals, type) := scheme
     (freshVariables, variables') := newTypeVariables(universals, variables)
     renaming := newVariableMap(zip(universals, freshVariables))
     (type.rename(renaming).setNode(node), variables')
-)
 
-isRecursiveFunction(node) := false      -- todo: fix
+define isRecursiveFunction(node)
+    false      -- todo: fix
 
 -- stack is a list of type schemes for all the lambda-bound symbols in scope
 -- variables is a table that maps type variables to types (either type
 --   variables or concrete types); every type variable appears in variables
-infer(node, stack, variables) := (
+define infer(node, stack, variables)
     if isNatural(node)
         (newNaturalType(node), variables)
     if isBuiltin(node)
@@ -109,23 +105,20 @@ infer(node, stack, variables) := (
         functionType := newFunctionType(NULL, rightType, returnType)
         (returnType, variables'''.unify((leftType, functionType)))
     undefined
-)
 
-inferType(stack, definition) := (
+define inferType(stack, definition)
     (name, value) := definition
     knownTypeScheme := getKnownTypeScheme(name)
     if not isFreeType(second(knownTypeScheme))
         knownTypeScheme :: stack
     (type, variables') := infer(value, stack, empty)
     type.generalize(variables', empty) :: stack
-)
 
-main(input) := (
+define main(input)
     node := parse(input, "")
     definitions := getDefinitions(node)
     schemes := reverse(definitions.cascade(inferType, []))
     (names, _) := unzip(definitions)
     showTypings(zip(names, schemes))
-)
 
 --*

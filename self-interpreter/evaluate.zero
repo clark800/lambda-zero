@@ -1,15 +1,14 @@
 --* evaluate.zero
 
-expandNatural(natural) := (
+define expandNatural(natural)
     n := getValue(natural)
     tag := getTag(natural)
     underscore := newUnderscore(tag, 0)
     body := n = 0 ? newUnderscore(tag, 2) ||
         newApplication(tag, newUnderscore(tag, 1), newNatural(tag, n - 1))
     newLambda(tag, underscore, newLambda(tag, underscore, body))
-)
 
-evaluate(closure, stack) := (
+define evaluate(closure, stack)
     (term, environment) := (getTerm(closure), getEnvironment(closure))
     getNodeType(term).match(
         SYMBOL -> evaluate(environment[getDebruijnIndex(term) - 1], stack);
@@ -30,6 +29,5 @@ evaluate(closure, stack) := (
             evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
         )
     )
-)
 
 --*

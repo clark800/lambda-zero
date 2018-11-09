@@ -1,13 +1,13 @@
 --* errors.zero
 
-recursionError(type, type', variables) :=
+define recursionError(type, type', variables)
     error("Type error: recursive type at " ++
         showLocation(getLocation(getNode(type))) ++
         " and " ++ showLocation(getLocation(getNode(type'))) ++
         ":\n" ++ showType(type) ++ " = " ++ showType(type') ++ "\n\n" ++
         showVariableMap(variables))
 
-unificationError(originals, left, right) :=
+define unificationError(originals, left, right)
     error("Type error: Can't unify\n" ++
         showType(left) ++ "\nwith\n" ++ showType(right) ++
         "\nwhile trying to unify\n" ++

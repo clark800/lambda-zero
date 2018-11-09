@@ -38,6 +38,8 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return applyDefinition(tag, getLeft(left), getRight(left), right);
     if (isDefinition(left) && isThisLexeme(left, "::="))
         return applyADTDefinition(tag, getLeft(left), getRight(left), right);
+    if (isApplication(left) && isThisLexeme(left, "define"))
+        return reduceDefine(getLeft(left), getRight(left), right);
     return reduceApply(operator, left, right);
 }
 
@@ -163,6 +165,7 @@ void initSymbols(void) {
     addBuiltinSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
     addBuiltinSyntax("\n", 3, 3, INFIX, R, shiftWhitespace, reduceNewline);
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
+    addBuiltinSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
     addBuiltinSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
     addBuiltinSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
