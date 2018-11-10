@@ -45,7 +45,7 @@ Syntax error: magnitude of natural is too large '9223372036854775808' at line 1 
 Syntax error: missing close for '(' at line 1 column 5
 ===============================================================================
 %
-Syntax error: missing right operand for '%' at line 1 column 1
+Syntax error: missing left operand for '%' at line 1 column 1
 ===============================================================================
 (+)
 \nRuntime error: missing argument to '+' at line 1 column 2
@@ -86,8 +86,8 @@ Syntax error: operator is non-associative '<=' at line 1 column 3
 (zero -> 0; up(n) -> 1)(5)
 1
 ===============================================================================
-1 \n + 2
-3
+1 \n * 2
+Syntax error: missing left operand for '*' at line 2 column 2
 ===============================================================================
 (//)(10, 2)
 5
