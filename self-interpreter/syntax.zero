@@ -28,7 +28,7 @@ define shiftPrefix(state, operator)
     State(operator :: getStack(state'), getOperators(state'))
 
 define shiftPostfix(state, operator)
-    stack := eraseWhitespace(getStack(state))
+    stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
     stack'' := not isSpecial(operator) and isOpenOperator(stack'[0]) ?
@@ -40,7 +40,7 @@ define shiftPostfix(state, operator)
         getOperators(state))
 
 define shiftInfix(state, operator)
-    stack := eraseWhitespace(getStack(state))
+    stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
     operators := getOperators(state')
