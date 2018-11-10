@@ -59,6 +59,3 @@ Syntax error: missing left operand for '->' at line 1 column 2
 (x ->)
 Syntax error: missing right operand for '->' at line 1 column 4
 ===============================================================================
-x ->{=1234=}x
-(x -> x)
-==========================================================================
