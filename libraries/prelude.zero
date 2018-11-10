@@ -1,15 +1,5 @@
 --* prelude.zero
-{= naming conventions
-x, y, z unspecified type
-f, g, h function type
-n, m, k integer type
-b, c    boolean type
-p, q    boolean-valued function
-mx      maybe of x
-xs      list of x
-xy      pair of x and y =}
 
--- undefined
 undefined ≔ error("")
 Void ⩴ {}
 
@@ -54,27 +44,26 @@ while(f, p, z) ≔ f.until((¬) ∘ p, z)
 (⋅) := (*)
 (⫽) ≔ (//)
 
-{= builtins
-N ⩴ {0, ↑(↓ ∈ N)}
-(=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
-      ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
-(≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true);
-      ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
-(<) ≔ 0 ↦ (0 ↦ false; ↑ _↦ true);
-      ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
-(>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false);
-      ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
-(≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true);
-      ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
-(≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
-      ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
-(+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
-(-) ≔ 0 ↦ (0 ↦ 0; ↑ m ↦ undefined);
-      ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
-(⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
-n ⫽ m ≔ m = 0 ? undefined ‖ n < m ? 0 ‖ ↑((n - m) ⫽ m)
-n % m ≔ m = 0 ? n ‖ n < m ? n ‖ (n - m) % m
-=}
+-- builtins
+-- N ⩴ {0, ↑(↓ ∈ N)}
+-- (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
+--       ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
+-- (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true);
+--       ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
+-- (<) ≔ 0 ↦ (0 ↦ false; ↑ _↦ true);
+--       ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
+-- (>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false);
+--       ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
+-- (≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true);
+--       ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
+-- (≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
+--       ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
+-- (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
+-- (-) ≔ 0 ↦ (0 ↦ 0; ↑ m ↦ undefined);
+--       ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
+-- (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
+-- n ⫽ m ≔ m = 0 ? undefined ‖ n < m ? 0 ‖ ↑((n - m) ⫽ m)
+-- n % m ≔ m = 0 ? n ‖ n < m ? n ‖ (n - m) % m
 
 Z ⩴ {+(_ ∈ N), -(_ ∈ N)}
 Q ⩴ {(numerator ∈ Z) / (denominator ∈ Z)}

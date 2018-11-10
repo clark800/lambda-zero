@@ -13,12 +13,7 @@ static bool isDelimiter(char c) {
     return c == '\0' || isInvalid(c) || strchr(" `.,;@$()[]{}\"\n", c) != NULL;
 }
 
-static bool isLineComment(const char* s) {return s[0] == '-' && s[1] == '-';}
-static bool isBlockComment(const char* s) {return s[0] == '{' && s[1] == '=';}
-
-static bool isComment(const char* s) {
-    return isLineComment(s) || isBlockComment(s);
-}
+static bool isComment(const char* s) {return s[0] == '-' && s[1] == '-';}
 
 static bool isNumeric(const char* s) {
     return (bool)isdigit(s[0] == '+' || s[0] == '-' ? s[1] : s[0]);
@@ -34,34 +29,25 @@ static const char* skipUntil(const char* s, bool (*predicate)(char)) {
     return s;
 }
 
-static const char* skipBlockComment(const char* s) {
-    for (s += 2; s[0] != '\0' && (s[0] != '=' || s[1] != '}'); ++s);
-    return s[0] == '\0' ? s : s + 2;
-}
-
-static const char* skipQuote(const char* s) {
-    char quote = s[0];
+static const char* skipQuote(const char* s, char end) {
     // assumption is that s points to the opening quotation mark
-    for (s += 1; s[0] != '\0' && !isLineFeed(s[0]); s += 1) {
+    for (s += 1; s[0] != '\0' && !isLineFeed(s[0]) && s[0] != end; s += 1)
         if (s[0] == '\\' && s[1] != '\0')
             s += 1;     // skip character following slash
-        else if (s[0] == quote)
-            return s + 1;
-    }
-    return s;
+    return s[0] == end ? s + 1 : s;
 }
 
 static const char* skipNumeric(const char* s) {
     s = skipUntil(s, isDelimiter);
-    if (s[0] == '.' && isdigit(s[1])) s = skipUntil(++s, isDelimiter);
+    if (s[0] == '.' && isdigit(s[1]))
+        s = skipUntil(++s, isDelimiter);
     return s;
 }
 
 static const char* skipLexeme(const char* s) {
-    if (isLineComment(s)) return skipUntil(s, isLineFeed);
-    if (isBlockComment(s)) return skipBlockComment(s);
+    if (isComment(s)) return skipUntil(s, isLineFeed);
     if (isLineFeed(s[0])) return skipRepeatable(s + 1, ' ');
-    if (isQuote(s[0])) return skipQuote(s);
+    if (isQuote(s[0])) return skipQuote(s, s[0]);
     if (isNumeric(s)) return skipNumeric(s);
     if (!isDelimiter(s[0])) return skipUntil(s, isDelimiter);
     if (isRepeatable(s[0])) return skipRepeatable(s, s[0]);
@@ -74,19 +60,16 @@ static String getNextLexeme(Tag tag) {
 }
 
 static Location advanceLocation(Tag tag) {
-    if (isLineComment(tag.lexeme.start) && tag.lexeme.start[2] == '*') {
+    if (isComment(tag.lexeme.start) && tag.lexeme.start[2] == '*') {
         const char* file = skipRepeatable(&(tag.lexeme.start[3]), ' ');
         if (isLineFeed(file[0]) || file[0] == '\0')
             return newLocation(NULL, 0, 0);
         return newLocation(file, 1, 0);
     }
-    // must scan the whole lexeme for newlines because of block comments
-    for (unsigned int i = 0; i < tag.lexeme.length; ++i)
-        tag.location = isLineFeed(tag.lexeme.start[i]) ?
-            newLocation(tag.location.file, tag.location.line + 1, 1) :
-            newLocation(tag.location.file,
-                tag.location.line, tag.location.column + 1);
-    return tag.location;
+    Location loc = tag.location;
+    if (isLineFeed(tag.lexeme.start[0]))
+        return newLocation(loc.file, loc.line + 1, tag.lexeme.length);
+    return newLocation(loc.file, loc.line, loc.column + tag.lexeme.length);
 }
 
 Token lex(Token token) {
@@ -94,15 +77,16 @@ Token lex(Token token) {
         return (Token){token.tag, END};
     Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
 
-    char head = tag.lexeme.start[0];
-    char after = tag.lexeme.start[tag.lexeme.length];
-    if (head == ' ') return (Token){tag, SPACE};
-    if (head == '\n') return (Token){tag, isLineFeed(after) ? VSPACE : NEWLINE};
-    if (head == '\'') return (Token){tag, CHARACTER};
-    if (head == '\"') return (Token){tag, STRING};
-    if (isNumeric(tag.lexeme.start)) return (Token){tag, NUMERIC};
-    if (isComment(tag.lexeme.start)) return (Token){tag, COMMENT};
-    if (isInvalid(head)) return (Token){tag, INVALID};
+    const char *start = tag.lexeme.start;
+    const char *next = start + tag.lexeme.length;
+    if (start[0] == ' ') return (Token){tag, SPACE};
+    if (start[0] == '\n') return (Token){tag, next[0] == '\0' ||
+        isLineFeed(next[0]) || isComment(next) ? VSPACE : NEWLINE};
+    if (start[0] == '\'') return (Token){tag, CHARACTER};
+    if (start[0] == '\"') return (Token){tag, STRING};
+    if (isNumeric(start)) return (Token){tag, NUMERIC};
+    if (isComment(start)) return (Token){tag, COMMENT};
+    if (isInvalid(start[0])) return (Token){tag, INVALID};
     return (Token){tag, SYMBOLIC};
 }
 
