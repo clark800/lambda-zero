@@ -56,10 +56,6 @@ define shiftInfix(state, operator)
         if not isSpecial(operator) and isOpenOperator(top)
             State(operator :: renameNode(operator, ".*") :: stack', operators)
         syntaxError("missing left operand for", operator)
-    if (getLexeme(operator) =*= ":=" or getLexeme(operator) =*= "≔") and
-            getLexeme(top) =*= "syntax"
-        operator' := operators.parseSymbol(renameTag(tag, "(:=)"))
-        State(operator' :: stack', operators)
     State(operator :: stack', operators)
 
 define shiftSpace(state, operator)
@@ -148,6 +144,11 @@ define reduceSyntax(node, left, right)
     operator := newSyntaxOperator(getTag(name), precedence, fixity)
     newLambda(getTag(node), operator, operator)
 
+define reduceColonEquals(operator, left, right)
+    if isThisLexeme(left, "syntax")
+        reduceSyntax(operator, left, right)
+    reduceDefine(operator, left, right)
+
 OPERATORS := [
     ("\0", Syntax(0, 0, CLOSEFIX, RIGHT, true, shiftClose, reduceEOF)),
     ("(", Syntax(90, 0, OPENFIX, RIGHT, true, shiftOpen, reduceUnmatched)),
@@ -161,11 +162,10 @@ OPERATORS := [
     ("\n", Syntax(3, 3, INFIX, RIGHT, true, shiftNewline, reduceNewline)),
     (";", Syntax(4, 4, INFIX, LEFT, true, shiftInfix, reducePatternLambda)),
     ("define", Syntax(5, 5, PREFIX, NEITHER, true, shiftPrefix, reducePrefix)),
-    (":=", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceDefine)),
-    ("≔", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceDefine)),
+    (":=", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceColonEquals)),
+    ("≔", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceColonEquals)),
     ("::=", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceADT)),
     ("⩴", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceADT)),
-    ("(:=)", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceSyntax)),
     ("->", Syntax(6, 6, INFIX, RIGHT, true, shiftInfix, reduceLambda)),
     ("↦", Syntax(6, 6, INFIX, RIGHT, true, shiftInfix, reduceLambda)),
     ("@", Syntax(7, 7, INFIX, LEFT, true, shiftInfix, reduceApply)),
