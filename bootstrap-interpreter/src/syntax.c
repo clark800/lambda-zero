@@ -32,17 +32,6 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
-static Node* reduceNewline(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(left);
-    if (isDefinition(left) && isThisLexeme(left, ":="))
-        return applyDefinition(tag, getLeft(left), getRight(left), right);
-    if (isDefinition(left) && isThisLexeme(left, "::="))
-        return applyADTDefinition(tag, getLeft(left), getRight(left), right);
-    if (isApplication(left) && isThisLexeme(left, "define"))
-        return reduceDefine(getLeft(left), getRight(left), right);
-    return reduceApply(operator, left, right);
-}
-
 static void shiftPrefix(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     push(stack, operator);
@@ -60,9 +49,6 @@ static void shiftInfix(Stack* stack, Node* operator) {
             push(stack, newName(renameTag(getTag(operator), ".*")));
         else syntaxError("missing left operand for", operator);
     }
-    if ((isThisLeaf(operator, ":=") || isThisLeaf(operator, "\u2254")) &&
-            isThisLexeme(peek(stack, 0), "syntax"))
-        operator = parseSymbol(renameTag(getTag(operator), "(:=)"));
     push(stack, operator);
 }
 
@@ -153,6 +139,23 @@ static Node* reduceSyntax(Node* operator, Node* left, Node* right) {
     return newLambda(getTag(operator), newName(tag), newName(tag));
 }
 
+Node* reduceColonEquals(Node* operator, Node* left, Node* right) {
+    if (isThisLexeme(left, "syntax"))
+        return reduceSyntax(operator, left, right);
+    return reduceDefine(operator, left, right);
+}
+
+static Node* reduceNewline(Node* operator, Node* left, Node* right) {
+    Tag tag = getTag(left);
+    if (isDefinition(left) && isThisLexeme(left, ":="))
+        return applyDefinition(tag, getLeft(left), getRight(left), right);
+    if (isDefinition(left) && isThisLexeme(left, "::="))
+        return applyADTDefinition(tag, getLeft(left), getRight(left), right);
+    if (isApplication(left) && isThisLexeme(left, "define"))
+        return reduceDefine(getLeft(left), getRight(left), right);
+    return reduceApply(operator, left, right);
+}
+
 void initSymbols(void) {
     addBuiltinSyntax("\0", 0, 0, CLOSEFIX, R, shiftClose, reduceEOF);
     addBuiltinSyntax("(", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
@@ -166,11 +169,10 @@ void initSymbols(void) {
     addBuiltinSyntax("\n", 3, 3, INFIX, R, shiftWhitespace, reduceNewline);
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
     addBuiltinSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
-    addBuiltinSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
-    addBuiltinSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
+    addBuiltinSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceColonEquals);
+    addBuiltinSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceColonEquals);
     addBuiltinSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
     addBuiltinSyntax("\u2A74", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    addBuiltinSyntax("(:=)", 5, 5, INFIX, N, shiftInfix, reduceSyntax);
     addBuiltinSyntax("->", 6, 6, INFIX, R, shiftInfix, reduceLambda);
     addBuiltinSyntax("\u21A6", 6, 6, INFIX, R, shiftInfix, reduceLambda);
     addBuiltinSyntax("@", 7, 7, INFIX, L, shiftInfix, reduceApply);

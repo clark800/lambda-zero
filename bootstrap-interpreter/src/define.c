@@ -5,6 +5,34 @@
 
 bool isIO = false;
 
+Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
+    // simple case: ((name = value) scope) ==> ((\name scope) value)
+    return newApplication(tag, reduceLambda(left, left, scope), right);
+}
+
+static Node* newChurchPair(Tag tag, Node* left, Node* right) {
+    return newLambda(tag, newUnderscore(tag, 0), newApplication(tag,
+        newApplication(tag, newUnderscore(tag, 1), left), right));
+}
+
+static Node* newMainCall(Node* name) {
+    isIO = true;
+    Tag tag = getTag(name);
+    Node* print = newPrinter(tag);
+    Node* get = newBuiltin(renameTag(tag, "get"), GET);
+    Node* get0 = newApplication(tag, get, newNatural(tag, 0));
+    Node* operators = newChurchPair(tag,
+        newName(renameTag(tag, "[]")), newName(renameTag(tag, "::")));
+    Node* input = newApplication(tag, get0, operators);
+    return newApplication(tag, print, newApplication(tag, name, input));
+}
+
+static bool isTuple(Node* node) {
+    // a tuple is a spine of applications headed by a symbol starting with comma
+    return isApplication(node) ? isTuple(getLeft(node)) :
+        (isSymbol(node) && getLexeme(node).start[0] == ',');
+}
+
 static bool hasRecursiveCalls(Node* node, Node* name) {
     if (!isLeaf(node))
         return hasRecursiveCalls(getLeft(node), name)
@@ -30,15 +58,17 @@ static Node* transformRecursion(Node* name, Node* value) {
     return newApplication(tag, yCombinator, newLambda(tag, name, value));
 }
 
-static bool isTuple(Node* node) {
-    // a tuple is a spine of applications headed by a symbol starting with comma
-    return isApplication(node) ? isTuple(getLeft(node)) :
-        (isSymbol(node) && getLexeme(node).start[0] == ',');
-}
-
-Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
-    // simple case: ((name = value) scope) ==> ((\name scope) value)
-    return newApplication(tag, reduceLambda(left, left, scope), right);
+Node* reduceDefine(Node* operator, Node* left, Node* right) {
+    Tag tag = renameTag(getTag(operator), ":=");
+    if (isTuple(left))
+        return newDefinition(tag, left, right);
+    for (; isApplication(left); left = getLeft(left))
+        right = reduceLambda(operator, getRight(left), right);
+    syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
+    syntaxErrorIf(!isSymbol(left), "invalid left hand side", operator);
+    if (isThisLeaf(left, "main"))
+        return applyDefinition(getTag(left), left, right, newMainCall(left));
+    return newDefinition(tag, left, transformRecursion(left, right));
 }
 
 static inline bool isValidPattern(Node* node) {
@@ -120,34 +150,4 @@ Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
     if (!isThisLexeme(right, "{") && !isThisLexeme(right, "{}"))
         syntaxError("ADT required to right of", operator);
     return newDefinition(tag, left, right);
-}
-
-static Node* newChurchPair(Tag tag, Node* left, Node* right) {
-    return newLambda(tag, newUnderscore(tag, 0), newApplication(tag,
-        newApplication(tag, newUnderscore(tag, 1), left), right));
-}
-
-static Node* newMainCall(Node* name) {
-    isIO = true;
-    Tag tag = getTag(name);
-    Node* print = newPrinter(tag);
-    Node* get = newBuiltin(renameTag(tag, "get"), GET);
-    Node* get0 = newApplication(tag, get, newNatural(tag, 0));
-    Node* operators = newChurchPair(tag,
-        newName(renameTag(tag, "[]")), newName(renameTag(tag, "::")));
-    Node* input = newApplication(tag, get0, operators);
-    return newApplication(tag, print, newApplication(tag, name, input));
-}
-
-Node* reduceDefine(Node* operator, Node* left, Node* right) {
-    Tag tag = renameTag(getTag(operator), ":=");
-    if (isTuple(left))
-        return newDefinition(tag, left, right);
-    for (; isApplication(left); left = getLeft(left))
-        right = reduceLambda(operator, getRight(left), right);
-    syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
-    syntaxErrorIf(!isSymbol(left), "invalid left hand side", operator);
-    if (isThisLeaf(left, "main"))
-        return applyDefinition(getTag(left), left, right, newMainCall(left));
-    return newDefinition(tag, left, transformRecursion(left, right));
 }
