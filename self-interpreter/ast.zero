@@ -10,9 +10,9 @@ newBranch(tag, nodeType, children) :=
 
 isLeaf(node) := isNil(getChildren(node))
 
-newSymbol(tag, maybeData, debruijn) := newLeaf(tag, SYMBOL, maybeData, debruijn)
-newOperator(tag, syntax') := newSymbol(tag, just(syntax'), 0)
-newReference(tag, debruijn) := newSymbol(tag, nothing, debruijn)
+newSymbol(tag, value, maybeData) := newLeaf(tag, SYMBOL, maybeData, value)
+newOperator(tag, value, syntax') := newSymbol(tag, value, just(syntax'))
+newReference(tag, debruijn) := newSymbol(tag, debruijn, nothing)
 newName(tag) := newReference(tag, 0)
 newLambda(tag, parameter, body) := newBranch(tag, LAMBDA, [parameter, body])
 newApplication(tag, left, right) := newBranch(tag, APPLICATION, [left, right])

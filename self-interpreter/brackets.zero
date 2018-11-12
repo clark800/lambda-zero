@@ -156,7 +156,7 @@ define preReduce(stack)
     stack
 
 define shiftClose(state, close)
-    stack := erase(eraseWhitespace(getStack(state)), ";")
+    stack := erase(erase(erase(getStack(state), " "), "\n"), ";")
     stack' := isEOF(close) ? stack || preReduce(stack)
     state' := reduceLeft(State(stack', getOperators(state)), close)
     shiftClose'(state', close)

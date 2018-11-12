@@ -129,7 +129,8 @@ void shiftOpenCurly(Stack* stack, Node* operator) {
 }
 
 void shiftClose(Stack* stack, Node* close) {
-    eraseWhitespace(stack);
+    erase(stack, " ");
+    erase(stack, "\n");
     erase(stack, ";");
 
     Node* top = peek(stack, 0);
