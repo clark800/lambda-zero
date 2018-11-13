@@ -67,10 +67,11 @@ define parseNumericLiteral(tag)
 define parseToken(operators, token)
     tag := getTokenTag(token)
     getTokenCode(token).match(
-        Space -> parseSymbol(operators, renameTag(tag, " "));
+        Space -> parseSymbol(operators, renameTag(tag, " "), 0);
         VSpace -> error("internal error");
-        Newline -> parseSymbol(operators, tag);
-        Symbolic -> parseSymbol(operators, tag);
+        Newline -> parseSymbol(operators, renameTag(tag, "\n"),
+            length(getTagLexeme(tag)) - 1);
+        Symbolic -> parseSymbol(operators, tag, 0);
         Numeric -> parseNumericLiteral(tag);
         Character -> parseCharacterLiteral(tag);
         String -> parseStringLiteral(tag);

@@ -9,7 +9,8 @@ CLOSEFIX := 5
 
 LEFT := 0
 RIGHT := 1
-NEITHER := 2
+RIGHTVALUE := 2
+NEITHER := 3
 
 SyntaxType ::= {Syntax(
     getLeftPrecedence : Natural,
@@ -68,12 +69,6 @@ define shift(state, node)
 define erase(stack, lexeme)
     stack.dropIf(`isThisSymbol(lexeme))
 
-define eraseNewline(stack)
-    stack.dropIf(isNewline)
-
-define eraseWhitespace(stack)
-    eraseNewline(erase(stack, " "))
-
 define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
@@ -98,8 +93,8 @@ define isHigherPrecedence(left, right)
         if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
             syntaxError("incompatible associativity", right)
 
-        if isNewline(left) and isNewline(right)
-            length(getLexeme(left)) > length(getLexeme(right))
+        if leftSyntax.getAssociativity = RIGHTVALUE
+            getValue(left) > getValue(right)
 
         leftSyntax.getAssociativity = LEFT
 
@@ -122,12 +117,10 @@ define lookupSyntax(operators, lexeme)
         just(syntax')
     lookupSyntax(tail(operators), lexeme)
 
-define parseSymbol(operators, tag)
+define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
-    if isNewlineLexeme(lexeme)
-        newOperator(tag, operators.lookupSyntax("\n") ?! undefined)
-    operators.lookupSyntax(lexeme) ?? just <> newOperator(tag) ?!
+    operators.lookupSyntax(lexeme) ?? just <> newOperator(tag, value) ?!
         (lexeme =*= " " ? (operators.lookupSyntax("( )") ??
-            just <> newOperator(tag) ?! newName(tag)) || newName(tag))
+            just <> newOperator(tag, value) ?! newName(tag)) || newName(tag))
 
 --*

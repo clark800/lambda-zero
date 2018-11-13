@@ -33,14 +33,6 @@ static inline bool isThisLexeme(Node* node, const char* lexeme) {
     return isThisString(getLexeme(node), lexeme);
 }
 
-static inline bool isNewlineLexeme(String lexeme) {
-    return lexeme.length > 0 && lexeme.start[0] == '\n';
-}
-
-static inline bool isNewline(Node* node) {
-    return isLeaf(node) && isNewlineLexeme(getLexeme(node));
-}
-
 static inline bool isThisLeaf(Node* leaf, const char* lexeme) {
     return isLeaf(leaf) && isThisLexeme(leaf, lexeme);
 }
@@ -84,14 +76,14 @@ static inline bool isSection(Node* node) {
 // ================================
 
 
-static inline Node* newSymbol(Tag tag, void* rules) {
-    return newLeaf(tag, SYMBOL, 0, rules);
+static inline Node* newSymbol(Tag tag, long long value, void* rules) {
+    return newLeaf(tag, SYMBOL, value, rules);
 }
 
-static inline Node* newName(Tag tag) {return newSymbol(tag, NULL);}
+static inline Node* newName(Tag tag) {return newSymbol(tag, 0, NULL);}
 
 static inline Node* newUnderscore(Tag tag, unsigned long long debruijn) {
-    return newLeaf(renameTag(tag, "_"), SYMBOL, (long long)debruijn, NULL);
+    return newSymbol(renameTag(tag, "_"), (long long)debruijn, NULL);
 }
 
 static inline Node* newNatural(Tag tag, long long n) {

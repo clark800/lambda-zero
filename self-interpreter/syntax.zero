@@ -48,10 +48,10 @@ define shiftInfix(state, operator)
     tag := getTag(operator)
     if isOperator(top)
         if isThisSymbol(operator, "+")
-            operator' := operators.parseSymbol(renameTag(tag, "(+)"))
+            operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
             State(operator' :: stack', operators)
         if isThisSymbol(operator, "-")
-            operator' := operators.parseSymbol(renameTag(tag, "(-)"))
+            operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
             State(operator' :: stack', operators)
         if not isSpecial(operator) and isOpenOperator(top)
             State(operator :: renameNode(operator, ".*") :: stack', operators)
@@ -105,7 +105,7 @@ define reduceError(operator, _left, right)
     newApplication(tag, convertOperator(tag), right)
 
 define newOperator'(tag, precedence, fixity, associativity, shifter, reducer)
-    newOperator(tag, Syntax(precedence, precedence, fixity, associativity,
+    newOperator(tag, 0, Syntax(precedence, precedence, fixity, associativity,
         false, shifter, reducer))
 
 define newSyntaxOperator(tag, precedence, fixity)
@@ -159,7 +159,7 @@ OPERATORS := [
     ("}", Syntax(0, 90, CLOSEFIX, RIGHT, true, shiftClose, reduceCurly)),
     ("|", Syntax(1, 1, INFIX, NEITHER, true, shiftInfix, reduceReserved)),
     (",", Syntax(2, 2, INFIX, LEFT, true, shiftInfix, reduceApply)),
-    ("\n", Syntax(3, 3, INFIX, RIGHT, true, shiftNewline, reduceNewline)),
+    ("\n", Syntax(3, 3, INFIX, RIGHTVALUE, true, shiftNewline, reduceNewline)),
     (";", Syntax(4, 4, INFIX, LEFT, true, shiftInfix, reducePatternLambda)),
     ("define", Syntax(5, 5, PREFIX, NEITHER, true, shiftPrefix, reducePrefix)),
     (":=", Syntax(5, 5, INFIX, NEITHER, true, shiftInfix, reduceColonEquals)),

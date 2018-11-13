@@ -42,9 +42,9 @@ static void shiftInfix(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
         if (isThisLeaf(operator, "+"))
-            operator = parseSymbol(renameTag(getTag(operator), "(+)"));
+            operator = parseSymbol(renameTag(getTag(operator), "(+)"), 0);
         else if (isThisLeaf(operator, "-"))
-            operator = parseSymbol(renameTag(getTag(operator), "(-)"));
+            operator = parseSymbol(renameTag(getTag(operator), "(-)"), 0);
         else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
             push(stack, newName(renameTag(getTag(operator), ".*")));
         else syntaxError("missing left operand for", operator);
@@ -166,7 +166,7 @@ void initSymbols(void) {
     addBuiltinSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
     addBuiltinSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
     addBuiltinSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
-    addBuiltinSyntax("\n", 3, 3, INFIX, R, shiftWhitespace, reduceNewline);
+    addBuiltinSyntax("\n", 3, 3, INFIX, RV, shiftWhitespace, reduceNewline);
     addBuiltinSyntax(";", 4, 4, INFIX, L, shiftInfix, reducePatternLambda);
     addBuiltinSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceColonEquals);

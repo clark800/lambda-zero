@@ -52,12 +52,6 @@ void erase(Stack* stack, const char* lexeme) {
         release(pop(stack));
 }
 
-void eraseWhitespace(Stack* stack) {
-    if (!isEmpty(stack) && isNewline(peek(stack, 0)))
-        release(pop(stack));
-    erase(stack, " ");
-}
-
 bool isSpecial(Node* node) {
     return isOperator(node) && ((Rules*)getRules(node))->special;
 }
@@ -107,8 +101,8 @@ bool isHigherPrecedence(Node* left, Node* right) {
         if (leftRules->associativity != rightRules->associativity)
             syntaxError("incompatible associativity", right);
 
-        if (isNewline(left) && isNewline(right))
-            return getLexeme(left).length > getLexeme(right).length;
+        if (leftRules->associativity == RV)
+            return getValue(left) > getValue(right);
 
         return leftRules->associativity == L;
     }
@@ -125,13 +119,11 @@ static Rules* findRules(String lexeme) {
     return NULL;
 }
 
-Node* parseSymbol(Tag tag) {
-    if (isNewlineLexeme(tag.lexeme))
-        return newSymbol(tag, findRules(newString("\n", 1)));
+Node* parseSymbol(Tag tag, long long value) {
     Rules* rules = findRules(tag.lexeme);
     if (rules == NULL && isThisString(tag.lexeme, " "))
-        return newSymbol(tag, findRules(newString("( )", 3)));
-    return newSymbol(tag, rules);
+        return newSymbol(tag, value, findRules(newString("( )", 3)));
+    return newSymbol(tag, value, rules);
 }
 
 static void reduceTop(Stack* stack) {
