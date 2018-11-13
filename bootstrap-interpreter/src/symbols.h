@@ -20,5 +20,3 @@ void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
 void addSyntax(Tag tag, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*));
-void addScopeMarker(void);
-void endScope(void);

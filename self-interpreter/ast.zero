@@ -65,8 +65,6 @@ isNull(node) := isThisSymbol(node, "\0\0")
 isEOF(node) := isThisSymbol(node, "\0")
 isUnderscore(node) := isThisSymbol(node, "_")
 isUnused(node) := isSymbol(node) and head(getLexeme(node)) = '_'
-isNewlineLexeme(lexeme) := lexeme.startsWith("\n")
-isNewline(node) := isSymbol(node) and isNewlineLexeme(getLexeme(node))
 
 isIdentity(node) := isLambda(node) and isSymbol(getBody(node)) and
     getLexeme(getParameter(node)) =*= getLexeme(getBody(node))

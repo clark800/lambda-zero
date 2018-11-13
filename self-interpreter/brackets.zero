@@ -100,7 +100,7 @@ define reduceEOF(open, left, contents)
 
 define shiftOpen(state, open)
     state' := reduceLeft(state, open)
-    State(open :: getStack(state'), MARKER :: getOperators(state'))
+    State(open :: getStack(state'), getOperators(state'))
 
 define shiftOpenCurly(state, open)
     top := head(getStack(state))
@@ -116,25 +116,19 @@ define pushBracket(stack, open, close, contents)
         reduceBracket(open, close, NULL, contents) :: stack
     reduceBracket(open, close, stack[0], contents) :: tail(stack)
 
-define isMarker(entry)
-    first(entry) =*= "\0\0"
-
-define endScope(operators)
-    operators.dropWhile((not) <> isMarker).tail
-
 define shiftClose'(state, close)
     stack := getStack(state)
     if isEOF(stack[0])
         syntaxError("missing open for", close)
     if isOpenOperator(stack[0])
         stack' := pushBracket(tail(stack), stack[0], close, NULL)
-        State(stack', endScope(getOperators(state)))
+        State(stack', getOperators(state))
     if isEOF(stack[1]) and not isEOF(close)
         syntaxError("missing open for", close)
     if isOperator(stack[0])
         syntaxError("missing right operand for", stack[0])
     stack' := pushBracket(stack.drop(2), stack[1], close, stack[0])
-    State(stack', endScope(getOperators(state)))
+    State(stack', getOperators(state))
 
 define preReduce(stack)
     top := head(stack)

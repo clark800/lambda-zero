@@ -7,7 +7,7 @@
 #include "errors.h"
 #include "symbols.h"
 
-static Array* RULES = NULL;
+static Array* RULES = NULL;     // note: this never gets free'd
 
 typedef struct {
     String lexeme;
@@ -126,10 +126,18 @@ Node* parseSymbol(Tag tag, long long value) {
     return newSymbol(tag, value, rules);
 }
 
+bool isSyntaxDeclarationMarker(Node* node) {
+    return isLambda(node) && isThisLexeme(node, "syntax");
+}
+
 static void reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
     Hold* left = getFixity(getNode(operator)) == INFIX ? pop(stack) : NULL;
+    // if a syntax declaration marker is about to be an argument to a reducer
+    // then the scope of the syntax declaration has ended
+    if (left != NULL && isSyntaxDeclarationMarker(getNode(left)))
+        unappend(RULES);
     shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
     release(operator);
@@ -166,16 +174,4 @@ void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
     appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
         associativity, special, shifter, reducer});
-}
-
-void addScopeMarker(void) {
-    addBuiltinSyntax("\0", 0, 0, NOFIX, N, NULL, NULL);
-}
-
-void endScope(void) {
-    while (((Rules*)elementAt(RULES, length(RULES) - 1))->lexeme.start[0] != 0)
-        unappend(RULES);
-    unappend(RULES);
-    if (length(RULES) == 0)
-        deleteArray(RULES);
 }

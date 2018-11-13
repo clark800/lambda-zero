@@ -69,11 +69,16 @@ define shift(state, node)
 define erase(stack, lexeme)
     stack.dropIf(`isThisSymbol(lexeme))
 
+define isSyntaxDeclarationMarker(node)
+    isLambda(node) and isThisLexeme(node, "syntax")
+
 define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
             reduceOperator(stack[1], NULL, stack[0]))
-    shift(State(stack.drop(3), operators),
+    operators' := isSyntaxDeclarationMarker(stack[2]) ?
+        tail(operators) || operators
+    shift(State(stack.drop(3), operators'),
         reduceOperator(stack[1], stack[2], stack[0]))
 
 define isHigherPrecedence(left, right)
@@ -105,9 +110,6 @@ define shouldReduceTop(operator, State(stack, _operators))
 
 define reduceLeft(state, operator)
     reduceTop.while(shouldReduceTop(operator), state)
-
-define MARKER
-    ("\0\0", Syntax(0, 0, NOFIX, NEITHER, true, shiftOperand, reduceOperand))
 
 define lookupSyntax(operators, lexeme)
     if isNil(operators)

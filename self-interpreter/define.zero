@@ -34,7 +34,7 @@ define isTuple(node)
 
 define reduceDefine(operator, left, right)
     tag := renameTag(getTag(operator), ":=")
-    if isTuple(left)
+    if isThisLexeme(left, "syntax") or isTuple(left)
         newDefinition(tag, left, right)
     (name, value) := getNameAndValue(operator, left, right)
     if isBuiltin(name)
