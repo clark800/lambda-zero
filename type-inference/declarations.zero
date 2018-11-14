@@ -1,8 +1,7 @@
 --* declarations.zero
 
-syntax(>->) := infixR(10)
-
 define builtinTypes
+    syntax(>->) := infixR(10)
     (>->) := newFunctionType(NULL)
     bottom := newBottomType(NULL)
     boolean := newBooleanType(NULL)
@@ -31,6 +30,7 @@ define getBuiltinType(node)
     builtinTypes.get(getLexeme(node), undefined).setNode(node)
 
 define knownTypeSchemes
+    syntax(>->) := infixR(10)
     (>->) := newFunctionType(NULL)
     boolean := newBooleanType(NULL)
     (a, variables') := empty.newTypeVariable(NULL)

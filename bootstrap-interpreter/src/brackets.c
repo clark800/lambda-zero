@@ -118,7 +118,6 @@ void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
 void shiftOpen(Stack* stack, Node* open) {
     reduceLeft(stack, open);
     push(stack, open);
-    addScopeMarker();
 }
 
 void shiftOpenCurly(Stack* stack, Node* operator) {
@@ -170,5 +169,4 @@ void shiftClose(Stack* stack, Node* close) {
         release(open);
     }
     release(contents);
-    endScope();
 }
