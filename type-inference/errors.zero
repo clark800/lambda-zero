@@ -1,4 +1,4 @@
---* errors.zero
+#* errors.zero
 
 define recursionError(type, type', variables)
     error("Type error: recursive type at " ++
@@ -16,4 +16,4 @@ define unificationError(originals, left, right)
         showTypeAndLocation(second(originals))
     )
 
---*
+#*

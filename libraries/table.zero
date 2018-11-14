@@ -1,4 +1,4 @@
---* table.zero
+#* table.zero
 
 newTable((=<), entries) := newProtoset((=<).on(first), entries)
 lookup(table, key) := table.elicit((key, undefined)) ?? just <> second
@@ -13,6 +13,7 @@ mapValues(table, f) := table.mapElements((key, value) -> (key, f(value)))
 
 newDictionary := newTable((<*=))
 newRegistry(items) := newTable((<=), zip(naturals, items))
-register(registry, item) := (# registry, registry.insert(# registry, item))
+register(registry, item) :=
+    (cardinality(registry), registry.insert(cardinality(registry), item))
 
---*
+#*

@@ -1,4 +1,4 @@
---* symbols.zero
+#* symbols.zero
 
 NOFIX := 0
 PREFIX := 1
@@ -125,4 +125,4 @@ define parseSymbol(operators, tag, value)
         (lexeme =*= " " ? (operators.lookupSyntax("( )") ??
             just <> newOperator(tag, value) ?! newName(tag)) || newName(tag))
 
---*
+#*

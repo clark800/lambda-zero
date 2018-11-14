@@ -1,4 +1,4 @@
---* types.zero
+#* types.zero
 
 newType(node, code, index, components) := Node((node, code, index), components)
 getNode := first_3 <> getData
@@ -19,7 +19,7 @@ newTreeType(node, type) := newType(node, 7, 0, [type])
 newMaybeType(node, type) := newType(node, 8, 0, [type])
 newBottomType(node) := newType(node, 9, 0, [])
 define newTypeVariable(variables, node)
-    type := newType(node, 0, # variables, [])
+    type := newType(node, 0, cardinality(variables), [])
     (type, variables.insert(type, newFreeType(NULL)))
 newTypeVariables(originals, variables) :=
     originals.map(getNode).cascadeMap(`newTypeVariable, variables)
@@ -56,4 +56,4 @@ define rename(type, variables)
         variables.get(type, type)
     type.mapComponents(`rename(variables))
 
---*
+#*

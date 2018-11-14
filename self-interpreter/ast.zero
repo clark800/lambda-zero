@@ -1,4 +1,4 @@
---* ast.zero
+#* ast.zero
 
 NodeType ::= {SYMBOL, LAMBDA, APPLICATION, DEFINITION, NATURAL, BUILTIN}
 ASTDataType ::= {ASTData(_ : Tag, _ : NodeType, _ : Maybe(_), _ : Integer)}
@@ -114,4 +114,4 @@ define convertOperator(tag)
         newBuiltin(tag)
     newName(tag)
 
---*
+#*

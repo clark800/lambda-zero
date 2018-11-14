@@ -1,4 +1,4 @@
---* parse.zero
+#* parse.zero
 
 define parseEscapeCode(code, tag)
     code = '0' ? '\0'
@@ -86,12 +86,12 @@ define parse(code, input)
     tokens := lex(code ++ [0]) |: (not) <> isElided
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
-    -- use "count" to force any syntaxErrors in the stack
+    # use "count" to force any syntaxErrors in the stack
     if stack.count((not) <> isEOF) = 0
         syntaxError("no input", head(stack))
     if length(stack) =/= 1
         error("parser error")
-    -- error(showAST(head(stack)))
+    # error(showAST(head(stack)))
     bind(head(stack))
 
---*
+#*

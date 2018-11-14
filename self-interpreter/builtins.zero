@@ -1,4 +1,4 @@
---* builtins.zero
+#* builtins.zero
 
 define getCharacter(node)
     if isNatural(node)
@@ -8,7 +8,7 @@ define getCharacter(node)
 define getFirstCharacter(node)
     getCharacter(getRight(getLeft(getBody(getBody(node)))))
 
--- todo: this only works for literal strings
+# todo: this only works for literal strings
 define extractString(astString)
     getFirstCharacter(astString) ::
         extractString(getRight(getBody(getBody(astString))))
@@ -79,4 +79,4 @@ define getBuiltin(builtin)
 
     builtins.lookup(getLexeme(builtin))
 
---*
+#*

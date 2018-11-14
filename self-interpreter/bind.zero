@@ -1,4 +1,4 @@
---* bind.zero
+#* bind.zero
 
 define isDefined(parameter, parameterNames)
     isNatural(parameter) or (not isUnderscore(parameter) and
@@ -39,4 +39,4 @@ define bind(root)
         )
     bind'(root, [])
 
---*
+#*

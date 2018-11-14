@@ -1,4 +1,4 @@
---* serialize.zero
+#* serialize.zero
 
 define showAST(node)
     getNodeType(node).match(
@@ -39,9 +39,9 @@ define serialize(closure)
         )
 
     result := serialize'(closure, 0)
-    -- ensure that full serialization succeeds before returning anything
-    -- or else lazy output will show part of the serailization even if
-    -- an error occurs during parsing
+    # ensure that full serialization succeeds before returning anything
+    # or else lazy output will show part of the serailization even if
+    # an error occurs during parsing
     result.length = 0 ? "" || result
 
---*
+#*

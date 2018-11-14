@@ -1,11 +1,11 @@
---* protoset.zero
--- todo: store size in data structure for constant time cardinality
--- totally preordered set (total proset)
+#* protoset.zero
+# todo: store size in data structure for constant time cardinality
+# totally preordered set (total proset)
 
 newProtoset((~<), elements) := ((~<), elements)
 
 getElements := second
-(#) := length <> getElements
+cardinality := length <> getElements
 
 elicit(protoset, object) := (
     ((~<), elements) := protoset
@@ -51,4 +51,4 @@ protoset U protoset' := (
 
 protoset \ protoset' := protoset.filterElements((/: protoset'))
 
---*
+#*

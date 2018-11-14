@@ -1,4 +1,4 @@
---* declarations.zero
+#* declarations.zero
 
 define builtinTypes
     syntax(>->) := infixR(10)
@@ -65,4 +65,4 @@ define getKnownTypeScheme(name)
     (universals, type) := knownTypeSchemes.get(getLexeme(name), defaultScheme)
     (universals, type.setNode(name))
 
---*
+#*

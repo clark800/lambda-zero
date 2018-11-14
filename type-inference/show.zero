@@ -1,4 +1,4 @@
---* show.zero
+#* show.zero
 
 define getVariableName(index)
     characters := ['a', 'b', 'c', 'd']
@@ -74,4 +74,4 @@ define showTyping((name, scheme))
 define showTypings(typings)
     typings.map(showTyping).joinWith("\n")
 
---*
+#*

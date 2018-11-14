@@ -1,4 +1,4 @@
---* interpret.zero
+#* interpret.zero
 
 define execute(ast)
     evaluate(Closure(ast, []), [])
@@ -9,7 +9,7 @@ define splitCodeAndInput(input)
     (code, input')
 
 define extractOutputString(closure)
-    -- term is (z -> p -> z) or (z -> p -> ((p c) cs))
+    # term is (z -> p -> z) or (z -> p -> ((p c) cs))
     body := getBody(getBody(getTerm(closure)))
     isSymbol(body) ? []
     dummy := Closure(NULL, [])
@@ -26,13 +26,13 @@ define main(input)
     closure := execute(ast)
     term := getTerm(closure)
     if isLambda(term) and isThisSymbol(getParameter(term), "input")
-        -- todo: construct input
+        # todo: construct input
         string := newName(renameTag(getTag(term), "[]"))
         stack := [Closure(string, [])]
         extractOutputString(evaluate(closure, stack))
     serialize(closure)
 
---main(input) := lex(input).map(showToken).joinWith("\n")
---main(input) := showAST(parse(input, ""))
+#main(input) := lex(input).map(showToken).joinWith("\n")
+#main(input) := showAST(parse(input, ""))
 
---*
+#*
