@@ -5,9 +5,14 @@
 
 bool isIO = false;
 
+Node* getHead(Node* node) {
+    for (; isApplication(node); node = getLeft(node));
+    return node;
+}
+
 Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    return newApplication(tag, reduceLambda(left, left, scope), right);
+    return newApplication(tag, newPatternLambda(tag, left, scope), right);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -63,7 +68,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     if (isThisLexeme(left, "syntax") || isTuple(left))
         return newDefinition(tag, left, right);
     for (; isApplication(left); left = getLeft(left))
-        right = reduceLambda(operator, getRight(left), right);
+        right = newPatternLambda(tag, getRight(left), right);
     syntaxErrorIf(isBuiltin(left), "cannot define a builtin operator", left);
     syntaxErrorIf(!isSymbol(left), "invalid left hand side", operator);
     if (isThisLeaf(left, "main"))

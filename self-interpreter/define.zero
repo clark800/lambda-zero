@@ -1,7 +1,10 @@
 #* define.zero
 
+define getHead(node)
+    isApplication(node) ? getHead(getLeft(node)) || node
+
 define applyDefinition(tag, name, value, scope)
-    newApplication(tag, reduceLambda(name, name, scope), value)
+    newApplication(tag, newPatternLambda(tag, name, scope), value)
 
 define hasRecursiveCalls(node, name)
     if isLeaf(node)
@@ -16,14 +19,6 @@ define transformRecursion(name, value)
     newApplication(tag, newYCombinator(tag),
         newLambda(tag, newName(tag), value))
 
-define getNameAndValue(operator, left, right)
-    if isNull(right)
-        undefined                   # force syntax errors
-    if not isApplication(left)
-        (left, right)
-    getNameAndValue(operator, getLeft(left),
-        reduceLambda(operator, getRight(left), right))
-
 define isTupleConstructor(node)
     isSymbol(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
 
@@ -36,7 +31,7 @@ define reduceDefine(operator, left, right)
     tag := renameTag(getTag(operator), ":=")
     if isThisLexeme(left, "syntax") or isTuple(left)
         newDefinition(tag, left, right)
-    (name, value) := getNameAndValue(operator, left, right)
+    (name, value) := getNameAndValue(tag, left, right)
     if isBuiltin(name)
         syntaxError("cannot define a builtin operator", name)
     if not isSymbol(name)

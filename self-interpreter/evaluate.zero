@@ -8,26 +8,31 @@ define expandNatural(natural)
         newApplication(tag, newUnderscore(tag, 1), newNatural(tag, n - 1))
     newLambda(tag, underscore, newLambda(tag, underscore, body))
 
+
 define evaluate(closure, stack)
     (term, environment) := (getTerm(closure), getEnvironment(closure))
-    getNodeType(term).match(
-        SYMBOL -> evaluate(environment[getDebruijnIndex(term) - 1], stack);
-        LAMBDA -> stack.isNil ? closure ||
+    match getNodeType(term)
+        case SYMBOL
+            evaluate(environment[getDebruijnIndex(term) - 1], stack)
+        case LAMBDA
+            if stack.isNil
+                closure
             evaluate(Closure(getBody(term), stack[0] :: environment),
-                tail(stack));
-        APPLICATION ->
+                tail(stack))
+        case APPLICATION
             evaluate(Closure(getLeft(term), environment),
-                     Closure(getRight(term), environment) :: stack);
-        DEFINITION -> runtimeError("definition", term);
-        NATURAL -> stack.isNil ? closure ||
-            evaluate(Closure(expandNatural(term), environment), stack);
-        BUILTIN -> (
+                     Closure(getRight(term), environment) :: stack)
+        case DEFINITION
+            runtimeError("definition", term)
+        case NATURAL
+            if stack.isNil
+                closure
+            evaluate(Closure(expandNatural(term), environment), stack)
+        case BUILTIN
             (arity, builtin) := getBuiltin(term) ?! undefined
             arguments := (stack.takeSafe(arity) ?!
                 runtimeError("missing argument to", term)).map(`evaluate([]))
             right := arity > 1 ? arguments[1] || Closure(NULL, [])
             evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
-        )
-    )
 
 #*

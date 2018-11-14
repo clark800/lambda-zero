@@ -2,6 +2,10 @@
 #include "ast.h"
 #include "errors.h"
 
+bool isCase(Node* node) {
+    return isLambda(node) && isThisLexeme(node, "case");
+}
+
 unsigned int getArgumentCount(Node* application) {
     unsigned int i = 0;
     for (Node* n = application; isApplication(n); ++i)
@@ -16,84 +20,58 @@ Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
     return projector;
 }
 
-Node* reduceLambda(Node* operator, Node* left, Node* right) {
-    // lazy pattern matching
-    Tag tag = getTag(operator);
+Node* newPatternLambda(Tag tag, Node* left, Node* right) {
     if (isValidParameter(left))
         return newLambda(tag, left, right);
     syntaxErrorIf(!isApplication(left), "invalid parameter", left);
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
     if (isThisLexeme(left, "@"))
-        return reduceLambda(left, getLeft(left), newApplication(tag,
-            reduceLambda(operator, getRight(left), right), getLeft(left)));
+        return newPatternLambda(tag, getLeft(left), newApplication(tag,
+            newPatternLambda(tag, getRight(left), right), getLeft(left)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     Node* body = right;
     for (Node* items = left; isApplication(items); items = getLeft(items))
-        body = reduceLambda(operator, getRight(items), body);
+        body = newPatternLambda(tag, getRight(items), body);
     for (unsigned int i = 0, size = getArgumentCount(left); i < size; ++i)
         body = newApplication(tag, body, newApplication(tag,
             newUnderscore(tag, 1), newProjector(tag, size, i)));
     return newLambda(tag, newUnderscore(tag, 0), body);
 }
 
-/*
-Node* newStrictDestructuringLambda(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(operator);
-    if (isSymbol(left))
-        return newLambda(tag, left, right);
-    syntaxErrorIf(!isApplication(left), "invalid parameter", left);
-    // example: (x, y) -> body ---> _ -> _ (x -> y -> body)
-    for (; isApplication(left); left = getLeft(left))
-        right = newStrictDestructuringLambda(operator, getRight(left), right);
-    // discard left, which is the value constructor
-    return newLambda(tag, newUnderscore(tag, 0),
-        newApplication(tag, newUnderscore(tag, 1), right));
-}
-*/
-
-Node* getHead(Node* node) {
-    for (; isApplication(node); node = getLeft(node));
-    return node;
+bool isAsPattern(Node* node) {
+    return isApplication(node) && isThisLexeme(node, "@");
 }
 
-static bool isStrictPatternLambda(Node* lambda) {
-    return isUnderscore(getParameter(lambda)) &&
-        isUnderscore(getHead(getBody(lambda)));
+Node* newCase(Tag tag, Node* left, Node* right) {
+    // strict pattern matching
+    // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
+    Node* body = right;
+    Node* items = isAsPattern(left) ? getRight(left) : left;
+    for (; isApplication(items); items = getLeft(items))
+        body = newPatternLambda(tag, getRight(items), body);
+    if (isAsPattern(left))
+        // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
+        body = newApplication(tag, newPatternLambda(tag, getLeft(left), body),
+            newUnderscore(tag, 1));
+    // discard left, which is now just the constructor
+    Node* parameter = newUnderscore(tag, 0);
+    Node* reference = newUnderscore(tag, 1);
+    return newLambda(tag, parameter, newApplication(tag, reference, body));
 }
 
-static bool isLazyPatternLambda(Node* lambda) {
-    return isUnderscore(getParameter(lambda)) &&
-        isApplication(getBody(lambda)) &&
-        isApplication(getRight(getBody(lambda))) &&
-        isUnderscore(getLeft(getRight(getBody(lambda))));
+static Node* mergeCaseBodies(Tag tag, Node* left, Node* right) {
+    if (!isApplication(right))
+        return left;
+    Node* merged = mergeCaseBodies(tag, left, getLeft(right));
+    return newApplication(tag, merged, getRight(right));
 }
 
-static Node* getPatternExtension(Node* lambda) {
-    if (isThisLexeme(lambda, "@")) {
-        Tag tag = getTag(lambda);
-        Node* extension = getPatternExtension(getLeft(getBody(lambda)));
-        return newApplication(tag, newLambda(tag,
-            getParameter(lambda), extension), newUnderscore(tag, 1));
-    }
-    if (isStrictPatternLambda(lambda))
-        return getRight(getBody(lambda));
-    if (isLazyPatternLambda(lambda))
-        return getHead(getBody(lambda));
-    return getBody(lambda);
-}
-
-Node* reducePatternLambda(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isLambda(left), "expected lambda to left of", operator);
-    syntaxErrorIf(!isLambda(right), "expected lambda to right of", operator);
-    Tag tag = getTag(operator);
-    // example: z -> 0; up(n) -> n  ~>  _ -> _ 0 (n -> n)
-    // example: z -> 0; n' @ up(n) -> n  ~>
-    //          z -> 0; (n' -> ((up(n) -> n) n'))  ~>
-    //          _ -> _ 0 ((n' -> (n -> n)) _)
-    Node* base = isStrictPatternLambda(left) ? getBody(left) : newApplication(
-        tag, newUnderscore(tag, 1), getPatternExtension(left));
-    return newLambda(tag, newUnderscore(tag, 0),
-        newApplication(tag, base, getPatternExtension(right)));
+Node* combineCases(Tag tag, Node* left, Node* right) {
+    // left == c1(a1) -> b1     -->   _ -> _ (a1 -> b1)
+    // right == c2(a2) -> b2    -->   _ -> _ (a2 -> b2)
+    // result == _ -> _ (a1 -> b1) (a2 -> b2)
+    Node* body = mergeCaseBodies(tag, getBody(left), getBody(right));
+    return newLambda(tag, newUnderscore(tag, 0), body);
 }
