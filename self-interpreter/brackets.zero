@@ -1,4 +1,4 @@
---* brackets.zero
+#* brackets.zero
 
 define isCommaList(node)
     isApplication(node) and getLexeme(node) =*= ","
@@ -35,7 +35,7 @@ define createSection(tag, contents)
     if isThisLexeme(contents, ".*.")
         newSection(tag, ".*", newSection(tag, "*.", contents))
     if isLeaf(getLeft(contents))
-        getLeft(contents)       -- parenthesized postfix operator
+        getLeft(contents)       # parenthesized postfix operator
     newSection(tag, getLexeme(contents), contents)
 
 define reduceParentheses(open, function, contents)
@@ -134,10 +134,10 @@ define preReduce(stack)
     top := head(stack)
     if isOperator(top) and not isSpecial(top)
         if isThisSymbol(stack[1], ".*")
-            -- bracketed infix operator
+            # bracketed infix operator
             convertOperator(getTag(top)) :: tail(tail(stack))
         if isOpenOperator(stack[1])
-            -- bracketed prefix operators
+            # bracketed prefix operators
             if isThisSymbol(top, "(+)")
                 convertOperator(renameTag(getTag(top), "+")) :: tail(stack)
             if isThisSymbol(top, "(-)")
@@ -145,7 +145,7 @@ define preReduce(stack)
             convertOperator(getTag(top)) :: tail(stack)
         fixity := getFixity(getSyntax(top))
         if fixity = INFIX or fixity = PREFIX
-            newName(renameTag(getTag(top), "*.")) :: stack  -- section
+            newName(renameTag(getTag(top), "*.")) :: stack  # section
         stack
     stack
 
@@ -155,4 +155,4 @@ define shiftClose(state, close)
     state' := reduceLeft(State(stack', getOperators(state)), close)
     shiftClose'(state', close)
 
---*
+#*

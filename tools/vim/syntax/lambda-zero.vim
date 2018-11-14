@@ -7,8 +7,7 @@ syntax match lambdaZeroOperator "[^a-zA-Z0-9_'" ()\[\]{},;.`@$]\+"
 syntax match lambdaZeroInteger "\<\d\+"
 syntax region lambdaZeroString start=/"/ skip=/\\"/ end=/"/ oneline
 syntax region lambdaZeroCharacter start=/'/ skip=/\\'/ end=/'/ oneline
-syntax match lambdaZeroLineComment "\(^\|\s\)--.*$"
-syntax region lambdaZeroBlockComment start=/{=/ end=/=}/
+syntax match lambdaZeroLineComment "#.*$"
 syntax keyword lambdaZeroConstant true false
 syntax keyword lambdaZeroKeyword not and or if define
 
@@ -20,5 +19,4 @@ highlight link lambdaZeroConstant Constant
 highlight link lambdaZeroString String
 highlight link lambdaZeroCharacter Character
 highlight link lambdaZeroLineComment Comment
-highlight link lambdaZeroBlockComment Comment
 highlight link lambdaZeroKeyword Keyword

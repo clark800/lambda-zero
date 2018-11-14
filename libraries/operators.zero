@@ -1,4 +1,4 @@
---* operators.zero
+#* operators.zero
 
 syntax(||) ≔ infixR(7)
 syntax(‖) ≔ infixR(7)
@@ -88,10 +88,9 @@ syntax(not) ≔ prefix(20)
 syntax(¬) ≔ prefix(20)
 syntax(up) ≔ prefix(20)
 syntax(↑) ≔ prefix(20)
-syntax(#) ≔ prefix(20)
 
 syntax(.) ≔ infixL(95)
 syntax(`) ≔ prefix(95)
 syntax(``) ≔ prefix(95)
 
---*
+#*

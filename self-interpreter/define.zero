@@ -1,4 +1,4 @@
---* define.zero
+#* define.zero
 
 define applyDefinition(tag, name, value, scope)
     newApplication(tag, reduceLambda(name, name, scope), value)
@@ -18,7 +18,7 @@ define transformRecursion(name, value)
 
 define getNameAndValue(operator, left, right)
     if isNull(right)
-        undefined                   -- force syntax errors
+        undefined                   # force syntax errors
     if not isApplication(left)
         (left, right)
     getNameAndValue(operator, getLeft(left),
@@ -94,4 +94,4 @@ define applyADTDefinition(tag, left, right, scope)
     n := length(constructors)
     zip(constructors, naturals).fold(newConstructorDefinition(tag, n), scope')
 
---*
+#*

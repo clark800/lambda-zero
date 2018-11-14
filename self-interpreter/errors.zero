@@ -1,4 +1,4 @@
---* errors.zero
+#* errors.zero
 
 define showTagLexeme(tag)
     lexeme := getTagLexeme(tag)
@@ -27,4 +27,4 @@ define syntaxError(message, node)
 define runtimeError(message, node)
     nodeError("\nRuntime error: ", message, node)
 
---*
+#*

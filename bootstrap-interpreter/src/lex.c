@@ -4,16 +4,15 @@
 #include "lib/tag.h"
 #include "lex.h"
 
+static bool isComment(char c) {return c == '#';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}
 static bool isLineFeed(char c) {return c == '\n';}
 static bool isInvalid(char c) {return c > 0 && iscntrl(c) && !isLineFeed(c);}
 static bool isRepeatable(char c) {return c > 0 && strchr(" `.,;", c) != NULL;}
 
 static bool isDelimiter(char c) {
-    return c == '\0' || isInvalid(c) || strchr(" `.,;@$()[]{}\"\n", c) != NULL;
+    return c == '\0' || isInvalid(c) || strchr(" `.,;@#$()[]{}\"\n", c) != NULL;
 }
-
-static bool isComment(const char* s) {return s[0] == '-' && s[1] == '-';}
 
 static bool isNumeric(const char* s) {
     return (bool)isdigit(s[0] == '+' || s[0] == '-' ? s[1] : s[0]);
@@ -45,7 +44,7 @@ static const char* skipNumeric(const char* s) {
 }
 
 static const char* skipLexeme(const char* s) {
-    if (isComment(s)) return skipUntil(s, isLineFeed);
+    if (isComment(s[0])) return skipUntil(s, isLineFeed);
     if (isLineFeed(s[0])) return skipRepeatable(s + 1, ' ');
     if (isQuote(s[0])) return skipQuote(s, s[0]);
     if (isNumeric(s)) return skipNumeric(s);
@@ -60,8 +59,8 @@ static String getNextLexeme(Tag tag) {
 }
 
 static Location advanceLocation(Tag tag) {
-    if (isComment(tag.lexeme.start) && tag.lexeme.start[2] == '*') {
-        const char* file = skipRepeatable(&(tag.lexeme.start[3]), ' ');
+    if (isComment(tag.lexeme.start[0]) && tag.lexeme.start[1] == '*') {
+        const char* file = skipRepeatable(&(tag.lexeme.start[2]), ' ');
         if (isLineFeed(file[0]) || file[0] == '\0')
             return newLocation(NULL, 0, 0);
         return newLocation(file, 1, 0);
@@ -81,11 +80,11 @@ Token lex(Token token) {
     const char *next = start + tag.lexeme.length;
     if (start[0] == ' ') return (Token){tag, SPACE};
     if (start[0] == '\n') return (Token){tag, next[0] == '\0' ||
-        isLineFeed(next[0]) || isComment(next) ? VSPACE : NEWLINE};
+        isLineFeed(next[0]) || isComment(next[0]) ? VSPACE : NEWLINE};
     if (start[0] == '\'') return (Token){tag, CHARACTER};
     if (start[0] == '\"') return (Token){tag, STRING};
     if (isNumeric(start)) return (Token){tag, NUMERIC};
-    if (isComment(start)) return (Token){tag, COMMENT};
+    if (isComment(start[0])) return (Token){tag, COMMENT};
     if (isInvalid(start[0])) return (Token){tag, INVALID};
     return (Token){tag, SYMBOLIC};
 }

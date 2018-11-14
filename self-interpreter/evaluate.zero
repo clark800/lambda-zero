@@ -1,4 +1,4 @@
---* evaluate.zero
+#* evaluate.zero
 
 define expandNatural(natural)
     n := getValue(natural)
@@ -30,4 +30,4 @@ define evaluate(closure, stack)
         )
     )
 
---*
+#*

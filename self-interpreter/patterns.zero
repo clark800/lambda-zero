@@ -1,4 +1,4 @@
---* patterns.zero
+#* patterns.zero
 
 define getArguments(pattern)
     if not isApplication(pattern)
@@ -69,4 +69,4 @@ define reducePatternLambda(operator, left, right)
     newLambda(tag, newUnderscore(tag, 0),
         newApplication(tag, base, getPatternExtension(right)))
 
---*
+#*

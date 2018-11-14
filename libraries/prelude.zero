@@ -1,23 +1,23 @@
---* prelude.zero
+#* prelude.zero
 
 undefined ≔ error("")
 Void ⩴ {}
 
--- function
-x.f ≔ f(x)                     -- uniform function call syntax
+# function
+x.f ≔ f(x)                     # uniform function call syntax
 match ≔ (.)
-f ‖ x ≔ f(x)                  -- low precedence application
+f ‖ x ≔ f(x)                  # low precedence application
 (||) ≔ (‖)
-f ∘ g ≔ x ↦ f(g(x))          -- function composition
+f ∘ g ≔ x ↦ f(g(x))          # function composition
 (<>) ≔ (∘)
-`f(x, y) ≔ f(y, x)             -- flip order of first two arguments of function
+`f(x, y) ≔ f(y, x)             # flip order of first two arguments of function
 ``f(x, y, z) := f(y, z, x)
-id(x) ≔ x                      -- identity function
-constant(x) ≔ _ ↦ x           -- return value does not depend on parameter
-on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) -- apply binary f with unary g applied first
-mirror(f)(x) ≔ f(x, x)         -- convert binary function to unary function
+id(x) ≔ x                      # identity function
+constant(x) ≔ _ ↦ x           # return value does not depend on parameter
+on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
+mirror(f)(x) ≔ f(x, x)         # convert binary function to unary function
 
--- boolean
+# boolean
 Boolean ⩴ {false, true}
 (if b)(x, y) ≔ b.match(false ↦ y; true ↦ x)
 (?) ≔ (if)
@@ -36,7 +36,7 @@ b ⇔ c ≔ b ? c ‖ ¬ c
 until(f, p, z) ≔ p(z) ? z ‖ f.until(p, f(z))
 while(f, p, z) ≔ f.until((¬) ∘ p, z)
 
--- math
+# math
 (↑) ≔ (up)
 (≠) ≔ (=/=)
 (≤) ≔ (<=)
@@ -44,26 +44,26 @@ while(f, p, z) ≔ f.until((¬) ∘ p, z)
 (⋅) := (*)
 (⫽) ≔ (//)
 
--- builtins
--- N ⩴ {0, ↑(↓ ∈ N)}
--- (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
---       ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
--- (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true);
---       ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
--- (<) ≔ 0 ↦ (0 ↦ false; ↑ _↦ true);
---       ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
--- (>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false);
---       ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
--- (≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true);
---       ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
--- (≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
---       ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
--- (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
--- (-) ≔ 0 ↦ (0 ↦ 0; ↑ m ↦ undefined);
---       ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
--- (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
--- n ⫽ m ≔ m = 0 ? undefined ‖ n < m ? 0 ‖ ↑((n - m) ⫽ m)
--- n % m ≔ m = 0 ? n ‖ n < m ? n ‖ (n - m) % m
+# builtins
+# N ⩴ {0, ↑(↓ ∈ N)}
+# (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
+#       ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
+# (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true);
+#       ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
+# (<) ≔ 0 ↦ (0 ↦ false; ↑ _↦ true);
+#       ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
+# (>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false);
+#       ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
+# (≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true);
+#       ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
+# (≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
+#       ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
+# (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
+# (-) ≔ 0 ↦ (0 ↦ 0; ↑ m ↦ undefined);
+#       ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
+# (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
+# n ⫽ m ≔ m = 0 ? undefined ‖ n < m ? 0 ‖ ↑((n - m) ⫽ m)
+# n % m ≔ m = 0 ? n ‖ n < m ? n ‖ (n - m) % m
 
 Z ⩴ {+(_ ∈ N), -(_ ∈ N)}
 Q ⩴ {(numerator ∈ Z) / (denominator ∈ Z)}
@@ -87,7 +87,7 @@ n ^ m ≔ m.match(
 f ° n ≔ n.match(0 ↦ id; ↑ n′ ↦ f ∘ f ° n′)
 (^^) ≔ (°)
 
--- tuple
+# tuple
 Unit ⩴ {()}
 Pair(a, b) ⩴ {(first ∈ a, second ∈ b)}
 Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
@@ -101,32 +101,32 @@ mapPair(xx, f) ≔ (f(first(xx)), f(second(xx)))
 curry(f) ≔ x ↦ y ↦ f((x, y))
 uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
--- maybe
+# maybe
 Maybe(a) ⩴ {nothing, just(thing ∈ a)}
 isNothing ≔ (nothing ↦ true; just(_) ↦ false)
 isJust ≔ (nothing ↦ false; just(_) ↦ true)
-mx ⁇ f ≔ mx.match(nothing ↦ nothing; just(x) ↦ f(x))   -- maybe bind
+mx ⁇ f ≔ mx.match(nothing ↦ nothing; just(x) ↦ f(x))   # maybe bind
 (??) ≔ (⁇)
-mx ⁈ d ≔ mx.match(nothing ↦ d; just(x) ↦ x)    -- just value or default
+mx ⁈ d ≔ mx.match(nothing ↦ d; just(x) ↦ x)    # just value or default
 (?!) ≔ (⁈)
 
--- list
+# list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 (::) ≔ (∷)
 prepend ≔ `(∷)
-isNil ≔ ([] ↦ true; _ ∷ _ ↦ false)     -- note: isEmpty is reserved for sets
+isNil ≔ ([] ↦ true; _ ∷ _ ↦ false)     # note: isEmpty is reserved for sets
 fold(xs, f, z) ≔ xs.match([] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
 cascade(xs, f, z) ≔ xs.match([] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x)))
-xs ⧺ ys ≔ xs.fold((∷), ys)                   -- concatenate two lists
+xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
 (++) ≔ (⧺)
-join(xss) ≔ xss.fold((⧺), [])            -- concatenate list of lists
-length(xs) ≔ xs.fold(constant(↑), 0)         -- get length of list
+join(xss) ≔ xss.fold((⧺), [])            # concatenate list of lists
+length(xs) ≔ xs.fold(constant(↑), 0)         # get length of list
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(xs, n) ≔ (tail ° n)(xs)            -- drop n elements from front of list
+drop(xs, n) ≔ (tail ° n)(xs)            # drop n elements from front of list
 take(xs, n) ≔ n.match(0 ↦ []; ↑ n′ ↦ head(xs) ∷ tail(xs).take(n′))
-xs[n] ≔ head(xs.drop(n))          -- get element of list at index
+xs[n] ≔ head(xs.drop(n))          # get element of list at index
 xs[start, end] ≔ xs.drop(start).take(end - start)
-last(xs) ≔ tail.until(isNil ∘ tail, xs).head    -- get last element of list
+last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
 dropLast(xs) ≔ isNil(xs) ∨ isNil(tail(xs)) ? [] ‖ head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
 
@@ -146,7 +146,7 @@ dropSafe(xs, n) ≔ n.match(0 ↦ xs; ↑ n′ ↦
 filter(xs, p) ≔ fold(xs, x ↦ xs′ ↦ (p(x) ? x ∷ xs′ || xs′), [])
 (¦) ≔ filter
 (|:) := (¦)
-map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          -- map function over list
+map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          # map function over list
 zipWith(xs, f, ys) ≔ xs.match(
     [] ↦ [];
     x ∷ xs′ ↦ ys.match(
@@ -163,25 +163,25 @@ interleave(xs, y) ≔ (
 )
 joinWith(xss, ys) ≔ join(interleave(xss, ys))
 bisect(xs, p) ≔ (xs ¦ p, xs ¦ (¬) ∘ p)
-any(xs, p) ≔ xs.map(p).fold((∨), false)     -- test if any element satisfies p
-all(xs, p) ≔ xs.map(p).fold((∧), true)      -- test if all elements satisfy p
+any(xs, p) ≔ xs.map(p).fold((∨), false)     # test if any element satisfies p
+all(xs, p) ≔ xs.map(p).fold((∧), true)      # test if all elements satisfy p
 count(xs, p) ≔ length(xs ¦ p)
 find(xs, p) ≔ xs.match(
     [] ↦ nothing;
     x ∷ xs′ ↦ p(x) ? just(x) ‖ xs′.find(p)
 )
 
--- cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
+# cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
 
--- generic list constructors
-iterate(f, x) ≔ x ∷ iterate(f, f(x))       -- iteratively apply f
-repeat(x) ≔ x ∷ repeat(x)                  -- infinitely repeat one element
-replicate(x, n) ≔ ((x ∷) ° n)([])         -- replicate one element n times
-cycle(xs) ≔ xs ⧺ cycle(xs)                 -- infinitely cycle list
+# generic list constructors
+iterate(f, x) ≔ x ∷ iterate(f, f(x))       # iteratively apply f
+repeat(x) ≔ x ∷ repeat(x)                  # infinitely repeat one element
+replicate(x, n) ≔ ((x ∷) ° n)([])         # replicate one element n times
+cycle(xs) ≔ xs ⧺ cycle(xs)                 # infinitely cycle list
 
--- integer list
+# integer list
 n ‥ m ≔ n > m ? [] ‖ n ∷ (n + 1 ‥ m)
 (..) := (‥)
 sort ≔ ([] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n)))
@@ -207,8 +207,8 @@ fibonaccis ≔ (
     f(0, 1)
 )
 
--- string
-xs ≛ ys ≔ xs.match(        -- string equality
+# string
+xs ≛ ys ≔ xs.match(        # string equality
     [] ↦ isNil(ys);
     x ∷ xs′ ↦ ys.match(
         [] ↦ false;
@@ -217,7 +217,7 @@ xs ≛ ys ≔ xs.match(        -- string equality
 )
 (=*=) := (≛)
 
-ns ⩿ ms ≔ ns.match(      -- string comparison
+ns ⩿ ms ≔ ns.match(      # string comparison
     [] ↦ true;
     n ∷ ns′ ↦ ms.match(
         [] ↦ false;
@@ -280,7 +280,7 @@ partitionOn(ns, delimiter) ≔ ns.partition(
 words(ns) ≔ (ns.partitionOn(" ") ¦ (¬) ∘ isNil)
 lines(ns) ≔ ns.partitionOn("\n")
 
--- ASCII character classes
+# ASCII character classes
 isUppercase(n) ≔ n ≥ 'A' ∧ n ≤ 'Z'
 isLowercase(n) ≔ n ≥ 'a' ∧ n ≤ 'z'
 isDigit(n) ≔ n ≥ '0' ∧ n ≤ '9'
@@ -294,7 +294,7 @@ isPrintable(n) ≔ n < 127 ∧ ¬ isControl(n)
 isGraphical(n) ≔ isPrintable(n) ∧ ¬ isBlank(n)
 isPunctuation(n) ≔ isGraphical(n) ∧ ¬ isAlphanumeric(n)
 
--- serialization
+# serialization
 showBoolean(b) ≔ b ? "true" ‖ "false"
 showNatural(n) ≔ (
     showReversedNatural(m) ≔ m = 0 ? [] ‖
@@ -304,12 +304,12 @@ showNatural(n) ≔ (
 
 showSign ≔ (+ _ ↦ "+" ; - _ ↦ "-")
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
-showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     -- todo: escape
+showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
 showPair(xsxs, showFirst, showSecond) ≔
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
 showList(xs, showElement) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
--- parsing
+# parsing
 parseDigit(digit, base) ≔
     isDigit(digit) ∧ digit - '0' < base ? digit - '0' ‖
     error("Invalid digit in base " ⧺ showInteger(base) ⧺ ": " ⧺ [digit])
@@ -318,10 +318,10 @@ parseNatural(string, base) ≔
 parseInteger(string, base) ≔ string.head = '-' ?
     - parseNatural(tail(string), base) ‖ + parseNatural(string, base)
 
--- trees
+# trees
 Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
 
--- repl
+# repl
 repl(in, prompt, f) ≔ prompt ⧺ in.lines.map(f).joinWith("\n" ⧺ prompt)
 
---*
+#*

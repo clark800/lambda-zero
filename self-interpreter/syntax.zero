@@ -1,4 +1,4 @@
---* syntax.zero
+#* syntax.zero
 
 define reduceApply(operator, left, right)
     newApplication(getTag(operator), left, right)
@@ -167,4 +167,4 @@ OPERATORS := [
     ("$", Syntax(99, 99, PREFIX, LEFT, true, shiftPrefix, reduceReserved))
 ]
 
---*
+#*

@@ -1,4 +1,4 @@
---* lex.zero
+#* lex.zero
 
 LocationType ::= {Location(
     getLocationFile : List(Integer),
@@ -8,10 +8,10 @@ LocationType ::= {Location(
 
 TagType ::= {Tag(getTagLexeme : List(Integer), getTagLocation : LocationType)}
 
-isComment(lexeme) := lexeme.startsWith("--")
+isComment(c) := c = '#'
 isLineFeed(c) := c = '\n'
 isInvalid(c) := c =/= 0 and isControl(c) and not isLineFeed(c)
-isDelimiter(c) := " `.,;@$()[]{}\"\n\0".any((= c)) or isInvalid(c)
+isDelimiter(c) := " `.,;@#$()[]{}\"\n\0".any((= c)) or isInvalid(c)
 isRepeatable(c) := " `.,;".any(= c)
 
 define isNumeric(lexeme)
@@ -53,15 +53,15 @@ define splitLexeme(ns)
     c := head(ns)
     c.isLineFeed ? splitNewline(ns)
     c.isQuote ? splitQuote(ns)
-    ns.isComment ? ns.splitWhen(isLineFeed)
+    c.isComment ? ns.splitWhen(isLineFeed)
     ns.isNumeric ? splitNumeric(ns)
     c.isRepeatable ? ns.splitWhen(=/= c)
     c.isDelimiter ? ([head(ns)], tail(ns))
     ns.splitWhen(isDelimiter)
 
 define advanceLocation(location, lexeme)
-    if isComment(lexeme) and lexeme[2] = '*'
-        (_, after) := lexeme.drop(3).splitWhen(=/= ' ')
+    if isComment(lexeme[0]) and lexeme[1] = '*'
+        (_, after) := lexeme.drop(2).splitWhen(=/= ' ')
         (file, _) := after.splitWhen(isLineFeed)
         Location(file, isNil(file) ? 0 || 1, 0)
     file := getLocationFile(location)
@@ -97,7 +97,8 @@ TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
 define createLineFeedToken(tag, nextTag)
     nextLexeme := getTagLexeme(nextTag)
-    if isNil(nextLexeme) or head(nextLexeme).isLineFeed or isComment(nextLexeme)
+    if isNil(nextLexeme) or
+            head(nextLexeme).isLineFeed or isComment(head(nextLexeme))
         Token(tag, VSpace)
     Token(tag, Newline)
 
@@ -110,7 +111,7 @@ define createToken(tag, nextTag)
     c = '"' ? Token(tag, String)
     c = '\'' ? Token(tag, Character)
     isNumeric(lexeme) ? Token(tag, Numeric)
-    isComment(lexeme) ? Token(tag, Comment)
+    isComment(c) ? Token(tag, Comment)
     isInvalid(c) ? Token(tag, Invalid)
     Token(tag, Symbolic)
 
@@ -157,7 +158,7 @@ define showToken'(token)
         Invalid -> "Invalid";
     )
 
---main(input) := scan(input).map(showTag).joinWith("\n")
---main(input) := lex(input).map(showToken').joinWith("\n")
+#main(input) := scan(input).map(showTag).joinWith("\n")
+#main(input) := lex(input).map(showToken').joinWith("\n")
 
---*
+#*
