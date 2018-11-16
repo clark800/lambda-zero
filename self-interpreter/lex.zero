@@ -21,7 +21,7 @@ define isNumeric(lexeme)
 define splitQuoteCharacter(quote, ns)
     if ns.isNil or head(ns) = quote or isLineFeed(head(ns))
         ([], ns)
-    n := (head(ns) = '\\' and not isNil(tail(ns))) ? 2 || 1
+    n := if head(ns) = '\\' and not isNil(tail(ns)) then 2 else 1
     ns.splitAt(n)
 
 define shiftSplit((a, b))
@@ -49,21 +49,21 @@ define splitNewline(ns)
     (head(ns) :: before, after)
 
 define splitLexeme(ns)
-    ns.isNil ? ([], [])
+    if ns.isNil then ([], [])
     c := head(ns)
-    c.isLineFeed ? splitNewline(ns)
-    c.isQuote ? splitQuote(ns)
-    c.isComment ? ns.splitWhen(isLineFeed)
-    ns.isNumeric ? splitNumeric(ns)
-    c.isRepeatable ? ns.splitWhen(=/= c)
-    c.isDelimiter ? ([head(ns)], tail(ns))
+    if c.isLineFeed then splitNewline(ns)
+    if c.isQuote then splitQuote(ns)
+    if c.isComment then ns.splitWhen(isLineFeed)
+    if ns.isNumeric then splitNumeric(ns)
+    if c.isRepeatable then ns.splitWhen(=/= c)
+    if c.isDelimiter then ([head(ns)], tail(ns))
     ns.splitWhen(isDelimiter)
 
 define advanceLocation(location, lexeme)
     if isComment(lexeme[0]) and lexeme[1] = '*'
         (_, after) := lexeme.drop(2).splitWhen(=/= ' ')
         (file, _) := after.splitWhen(isLineFeed)
-        Location(file, isNil(file) ? 0 || 1, 0)
+        Location(file, if isNil(file) then 0 else 1, 0)
     file := getLocationFile(location)
     line := getLocationLine(location)
     column := getLocationColumn(location)
@@ -82,7 +82,8 @@ define scan(string)
     string.splitLexemes(splitLexeme, Location("", 1, 1))
 
 define showLocation(location)
-    (location.getLocationFile.isNil ? "" || location.getLocationFile ++ " ") ++
+    (if location.getLocationFile.isNil then "" else
+        location.getLocationFile ++ " ") ++
     "line " ++ showNatural(location.getLocationLine) ++
     " column " ++ showNatural(location.getLocationColumn)
 
@@ -104,15 +105,15 @@ define createLineFeedToken(tag, nextTag)
 
 define createToken(tag, nextTag)
     lexeme := getTagLexeme(tag)
-    isNil(lexeme) ? Token(tag, Symbolic)
+    if isNil(lexeme) then Token(tag, Symbolic)
     c := head(lexeme)
-    c = ' ' ? Token(tag, Space)
-    c = '\n' ? createLineFeedToken(tag, nextTag)
-    c = '"' ? Token(tag, String)
-    c = '\'' ? Token(tag, Character)
-    isNumeric(lexeme) ? Token(tag, Numeric)
-    isComment(c) ? Token(tag, Comment)
-    isInvalid(c) ? Token(tag, Invalid)
+    if c = ' ' then Token(tag, Space)
+    if c = '\n' then createLineFeedToken(tag, nextTag)
+    if c = '"' then Token(tag, String)
+    if c = '\'' then Token(tag, Character)
+    if isNumeric(lexeme) then Token(tag, Numeric)
+    if isComment(c) then Token(tag, Comment)
+    if isInvalid(c) then Token(tag, Invalid)
     Token(tag, Symbolic)
 
 define getTokenCodeNumber(tokenCode)

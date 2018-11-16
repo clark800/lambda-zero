@@ -65,7 +65,7 @@ static Node* transformRecursion(Node* name, Node* value) {
 
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
     Tag tag = renameTag(getTag(operator), ":=");
-    if (isThisLexeme(left, "syntax") || isTuple(left))
+    if (isThisLexeme(left, "syntax") || isTuple(left) || isAsPattern(left))
         return newDefinition(tag, left, right);
     for (; isApplication(left); left = getLeft(left))
         right = newPatternLambda(tag, getRight(left), right);

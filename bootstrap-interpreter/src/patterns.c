@@ -40,10 +40,6 @@ Node* newPatternLambda(Tag tag, Node* left, Node* right) {
     return newLambda(tag, newUnderscore(tag, 0), body);
 }
 
-bool isAsPattern(Node* node) {
-    return isApplication(node) && isThisLexeme(node, "@");
-}
-
 Node* newCase(Tag tag, Node* left, Node* right) {
     // strict pattern matching
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)

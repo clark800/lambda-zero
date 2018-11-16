@@ -1,7 +1,7 @@
 #* define.zero
 
 define getHead(node)
-    isApplication(node) ? getHead(getLeft(node)) || node
+    if isApplication(node) then getHead(getLeft(node)) else node
 
 define applyDefinition(tag, name, value, scope)
     newApplication(tag, newPatternLambda(tag, name, scope), value)
@@ -55,7 +55,7 @@ define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
         scope
     projector := newProjector(tag, m, k)
     undefined' := newName(renameTag(tag, "undefined"))
-    arguments := (0 .. n - 1).map(q -> q = j ? projector || undefined)
+    arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
     getter := newLambda(tag, newUnderscore(tag, 0),
         arguments.cascade(newApplication(tag), newUnderscore(tag, 1)))
     applyDefinition(tag, name, getter, scope)

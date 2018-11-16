@@ -100,15 +100,23 @@ static Node* defineSyntax(Node* definition, Node* left, Node* right) {
     syntaxErrorIf(!isLeaf(name), "expected symbol operand to", getLeft(left));
     if (contains(getLexeme(name), '_'))
        syntaxError("invalid underscore in operator name", name);
-    if (!isApplication(right) || !isNatural(getRight(right)))
+    if (!isApplication(right))
+        syntaxError("invalid syntax definition", definition);
+
+    Tag tag = getTag(name);
+    Node* fixity = getLeft(right);
+    if (isThisLeaf(fixity, "mixfix")) {
+        addMixfixSyntax(tag, getRight(right), shiftInfix);
+        return newLambda(getTag(left), newName(tag), newName(tag));
+    }
+
+    if (!isNatural(getRight(right)))
         syntaxError("invalid syntax definition", definition);
     long long precedence = getValue(getRight(right));
     if (precedence < 0 || precedence > 99)
         syntaxError("invalid precedence", getRight(right));
     Precedence p = (Precedence)precedence;
-    Node* fixity = getLeft(right);
 
-    Tag tag = getTag(name);
     if (isThisLeaf(name, "()")) {
         tag = renameTag(tag, " ");
         if (!isThisLeaf(fixity, "infixL"))

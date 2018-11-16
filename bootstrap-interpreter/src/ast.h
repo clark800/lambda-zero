@@ -71,6 +71,10 @@ static inline bool isSection(Node* node) {
         isThisLexeme(node, ".*") || isThisLexeme(node, "*.");
 }
 
+static inline bool isAsPattern(Node* node) {
+    return isApplication(node) && isThisLexeme(node, "@");
+}
+
 // ================================
 // Functions to construct new nodes
 // ================================

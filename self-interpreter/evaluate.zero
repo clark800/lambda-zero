@@ -4,7 +4,7 @@ define expandNatural(natural)
     n := getValue(natural)
     tag := getTag(natural)
     underscore := newUnderscore(tag, 0)
-    body := n = 0 ? newUnderscore(tag, 2) ||
+    body := if n = 0 then newUnderscore(tag, 2) else
         newApplication(tag, newUnderscore(tag, 1), newNatural(tag, n - 1))
     newLambda(tag, underscore, newLambda(tag, underscore, body))
 
@@ -32,7 +32,7 @@ define evaluate(closure, stack)
             (arity, builtin) := getBuiltin(term) ?! undefined
             arguments := (stack.takeSafe(arity) ?!
                 runtimeError("missing argument to", term)).map(`evaluate([]))
-            right := arity > 1 ? arguments[1] || Closure(NULL, [])
+            right := if arity > 1 then arguments[1] else Closure(NULL, [])
             evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
 
 #*

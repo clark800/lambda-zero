@@ -47,7 +47,8 @@ define reduceParentheses(open, function, contents)
         if isNull(function)
             unit
         newApplication(tag, function, unit)
-    contents' := isSection(contents) ? createSection(tag, contents) || contents
+    contents' := if isSection(contents) then
+        createSection(tag, contents) else contents
     if not isNull(function)
         applyToCommaList(tag, function, contents')
     if isCommaList(contents')
@@ -151,7 +152,7 @@ define preReduce(stack)
 
 define shiftClose(state, close)
     stack := erase(erase(erase(getStack(state), " "), "\n"), ";")
-    stack' := isEOF(close) ? stack || preReduce(stack)
+    stack' := if isEOF(close) then stack else preReduce(stack)
     state' := reduceLeft(State(stack', getOperators(state)), close)
     shiftClose'(state', close)
 

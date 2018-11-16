@@ -18,6 +18,7 @@ syntax match zeroNiceOperator "\*\*\*" conceal cchar=⨳
 syntax match zeroNiceOperator "&" conceal cchar=∩
 syntax match zeroNiceOperator "\<U\>" conceal cchar=⋃   " union
 syntax match zeroNiceOperator "\~\~" conceal cchar=≀
+syntax match zeroNiceOperator "--" conceal cchar=¬
 syntax match zeroNiceOperator "+-" conceal cchar=±
 syntax match zeroNiceOperator "-+" conceal cchar=∓
 syntax match zeroNiceOperator "-+-" conceal cchar=⩱
@@ -205,7 +206,6 @@ syntax match zeroNiceOperator "\^=" conceal cchar=⁼
 syntax match zeroNiceOperator "\<contradiction\>" conceal cchar=※
 syntax match zeroNiceOperator "\<forall\>" conceal cchar=∀
 syntax match zeroNiceOperator "\<exists\>" conceal cchar=∃
-"syntax match zeroNiceOperator "\<not\>" conceal cchar=¬
 syntax match zeroNiceOperator "\<power\>" conceal cchar=℘
 syntax match zeroNiceOperator "\<up\>" conceal cchar=↑
 syntax match zeroNiceOperator "\<down\>" conceal cchar=↓

@@ -9,15 +9,16 @@ cardinality := length <> getElements
 
 elicit(protoset, object) := (
     ((~<), elements) := protoset
-    elements.isNil ? nothing
+    if elements.isNil
+        nothing
     element := elements[0]
-    object ~< element /\ element ~< object ?
+    if object ~< element /\ element ~< object
         just(element)
     ((~<), tail(elements)).elicit(object)
 )
 
 object : protoset := isJust(protoset.elicit(object))
-object /: protoset := not(object : protoset)
+object /: protoset := not object : protoset
 
 mapElements(protoset, f) := (
     ((~<), elements) := protoset
@@ -30,7 +31,8 @@ filterElements(protoset, p) := (
 )
 
 add(protoset, object) := (
-    object : protoset ? protoset
+    if object : protoset
+        protoset
     ((~<), elements) := protoset
     ((~<), object :: elements)
 )
@@ -43,12 +45,14 @@ remove(protoset, object) := (
 
 protoset U protoset' := (
     (order', elements') := protoset'
-    elements'.isNil ? protoset
-    elements'[0] : protoset ? protoset U (order', tail(elements'))
+    if elements'.isNil
+        protoset
+    if elements'[0] : protoset
+        protoset U (order', tail(elements'))
     (order, elements) := protoset
     (order, elements'[0] :: elements) U (order', tail(elements'))
 )
 
-protoset \ protoset' := protoset.filterElements((/: protoset'))
+protoset \ protoset' := protoset.filterElements(/: protoset')
 
 #*

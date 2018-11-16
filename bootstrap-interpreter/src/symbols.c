@@ -10,7 +10,7 @@
 static Array* RULES = NULL;     // note: this never gets free'd
 
 typedef struct {
-    String lexeme;
+    String lexeme, prior;
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
     Associativity associativity;
@@ -32,7 +32,7 @@ static Node* reduceOperand(Node* operand, Node* left, Node* right) {
 
 static inline Rules* getRules(Node* node) {
     static Rules operand =
-        {{"", 0}, 0, 0, NOFIX, N, false, shiftOperand, reduceOperand};
+        {{"", 0}, {"", 0}, 0, 0, NOFIX, N, false, shiftOperand, reduceOperand};
     if (!isSymbol(node))
         return &operand;
     Rules* rules = (Rules*)getData(node);
@@ -157,12 +157,12 @@ static void appendSyntax(Rules rules) {
     append(RULES, new);
 }
 
-void addSyntax(Tag tag, Precedence leftPrecedence,
-        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
+void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
+        Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
-    appendSyntax((Rules){tag.lexeme, leftPrecedence, rightPrecedence, fixity,
-        associativity, false, shifter, reducer});
+    appendSyntax((Rules){tag.lexeme, {"", 0}, leftPrecedence, rightPrecedence,
+        fixity, associativity, false, shifter, reducer});
 }
 
 void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
@@ -172,6 +172,22 @@ void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
         RULES = newArray(1024);
     bool special = strncmp(symbol, "(+)", 4) && strncmp(symbol, "(-)", 4);
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
-    appendSyntax((Rules){lexeme, leftPrecedence, rightPrecedence, fixity,
-        associativity, special, shifter, reducer});
+    appendSyntax((Rules){lexeme, {"", 0}, leftPrecedence, rightPrecedence,
+        fixity, associativity, special, shifter, reducer});
+}
+
+static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
+    String prior = getRules(operator)->prior;
+    if (!isApplication(left) || !isSameString(getLexeme(left), prior))
+        syntaxError("mixfix syntax error", operator);
+    return newApplication(getTag(operator), left, right);
+}
+
+void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
+    tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
+    Rules* rules = findRules(getLexeme(prior));
+    syntaxErrorIf(rules == NULL, "syntax not defined", prior);
+    Precedence p = rules->rightPrecedence;
+    appendSyntax((Rules){tag.lexeme, getLexeme(prior), p, p, INFIX, L, true,
+        shifter, reduceMixfix});
 }
