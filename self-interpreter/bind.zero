@@ -6,8 +6,8 @@ define isDefined(parameter, parameterNames)
 
 define bind(root)
     define bind'(node, parameterNames)
-        getNodeType(node).match(
-            SYMBOL -> (
+        match getNodeType(node)
+            case SYMBOL
                 if getDebruijnIndex(node) =/= 0
                     node
                 if isUnused(node)
@@ -19,24 +19,23 @@ define bind(root)
                 newReference(getTag(node), 1 + (
                     parameterNames.indexOf(lexeme) ?!
                     syntaxError("undefined symbol", node)))
-            );
-            LAMBDA -> (
+            case LAMBDA
                 parameter := getParameter(node)
                 if isDefined(parameter, parameterNames)
                     syntaxError("symbol already defined", parameter)
                 parameterName := getLexeme(parameter)
                 newBody := bind'(getBody(node), parameterName :: parameterNames)
                 newLambda(getTag(node), parameter, newBody)
-            );
-            APPLICATION -> (
+            case APPLICATION
                 newFunction := bind'(getLeft(node), parameterNames)
                 newArgument := bind'(getRight(node), parameterNames)
                 newApplication(getTag(node), newFunction, newArgument)
-            );
-            DEFINITION -> syntaxError("missing scope for definition", node);
-            NATURAL -> node;
-            BUILTIN -> node;
-        )
+            case DEFINITION
+                syntaxError("missing scope for definition", node)
+            case NATURAL
+                node
+            case BUILTIN
+                node
     bind'(root, [])
 
 #*

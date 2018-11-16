@@ -66,18 +66,17 @@ define parseNumericLiteral(tag)
 
 define parseToken(operators, token)
     tag := getTokenTag(token)
-    getTokenCode(token).match(
-        Space -> parseSymbol(operators, renameTag(tag, " "), 0);
-        VSpace -> error("internal error");
-        Newline -> parseSymbol(operators, renameTag(tag, "\n"),
-            length(getTagLexeme(tag)) - 1);
-        Symbolic -> parseSymbol(operators, tag, 0);
-        Numeric -> parseNumericLiteral(tag);
-        Character -> parseCharacterLiteral(tag);
-        String -> parseStringLiteral(tag);
-        Comment -> error("internal error");
-        Invalid -> syntaxError("invalid character", newName(tag));
-    )
+    match getTokenCode(token)
+        case Space -> parseSymbol(operators, renameTag(tag, " "), 0)
+        case VSpace -> error("internal error")
+        case Newline -> parseSymbol(operators, renameTag(tag, "\n"),
+            length(getTagLexeme(tag)) - 1)
+        case Symbolic -> parseSymbol(operators, tag, 0)
+        case Numeric -> parseNumericLiteral(tag)
+        case Character -> parseCharacterLiteral(tag)
+        case String -> parseStringLiteral(tag)
+        case Comment -> error("internal error")
+        case Invalid -> syntaxError("invalid character", newName(tag))
 
 define shiftToken(state, token)
     shift(state, parseToken(getOperators(state), token))

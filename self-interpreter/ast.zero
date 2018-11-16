@@ -31,14 +31,13 @@ getRight(node) := head(tail(getChildren(node)))
 getParameter(node) := getLeft(node)
 getBody(node) := getRight(node)
 
-getNodeTypeCode(nodeType) := nodeType.match(
-    SYMBOL -> 0;
-    LAMBDA -> 1;
-    APPLICATION -> 2;
-    DEFINITION -> 3;
-    NATURAL -> 4;
-    BUILTIN -> 5;
-)
+define getNodeTypeCode
+    case SYMBOL -> 0
+    case LAMBDA -> 1
+    case APPLICATION -> 2
+    case DEFINITION -> 3
+    case NATURAL -> 4
+    case BUILTIN -> 5
 
 isNodeType(node, nodeType) :=
     getNodeTypeCode(getNodeType(node)) = getNodeTypeCode(nodeType)

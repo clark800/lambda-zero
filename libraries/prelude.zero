@@ -5,7 +5,7 @@ Void ⩴ {}
 
 # function
 x.f ≔ f(x)                     # uniform function call syntax
-match ≔ (.)
+(match) ≔ (.)
 f ‖ x ≔ f(x)                  # low precedence application
 (||) ≔ (‖)
 f ∘ g ≔ x ↦ f(g(x))          # function composition
@@ -19,7 +19,7 @@ mirror(f)(x) ≔ f(x, x)         # convert binary function to unary function
 
 # boolean
 Boolean ⩴ {false, true}
-(if b)(x, y) ≔ b.match(false ↦ y; true ↦ x)
+(if b)(x, y) ≔ b.(case false ↦ y; case true ↦ x)
 (?) ≔ (if)
 ¬ b ≔ b ? false ‖ true
 (not) ≔ (¬)
@@ -46,22 +46,22 @@ while(f, p, z) ≔ f.until((¬) ∘ p, z)
 
 # builtins
 # N ⩴ {0, ↑(↓ ∈ N)}
-# (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
-#       ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
-# (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true);
-#       ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
-# (<) ≔ 0 ↦ (0 ↦ false; ↑ _↦ true);
-#       ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
-# (>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false);
-#       ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
-# (≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true);
-#       ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
-# (≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false);
-#       ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
-# (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
-# (-) ≔ 0 ↦ (0 ↦ 0; ↑ m ↦ undefined);
-#       ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
-# (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
+# (=) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
+#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n = m)
+# (≠) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ true);
+#       case ↑ _ ↦ (case 0 ↦ true; case ↑ m ↦ n ≠ m)
+# (<) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _↦ true);
+#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n < m)
+# (>) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ false);
+#       case ↑ n ↦ (case 0 ↦ true; case ↑ m ↦ n > m)
+# (≤) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ true);
+#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n ≤ m)
+# (≥) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
+#       case ↑ n ↦ (case 0 ↦ true; case ↑ m ↦ n ≥ m)
+# (+) ≔ case 0 ↦ m ↦ m; case ↑ n ↦ m ↦ ↑(n + m)
+# (-) ≔ case 0 ↦ (case 0 ↦ 0; case ↑ m ↦ undefined);
+#       case ↑ n ↦ (case 0 ↦ ↑ n; case ↑ m ↦ n - m)
+# (⋅) ≔ case 0 ↦ _ ↦ 0; case ↑ n ↦ m ↦ m + n ⋅ m
 # n ⫽ m ≔ m = 0 ? undefined ‖ n < m ? 0 ‖ ↑((n - m) ⫽ m)
 # n % m ≔ m = 0 ? n ‖ n < m ? n ‖ (n - m) % m
 
@@ -69,30 +69,34 @@ Z ⩴ {+(_ ∈ N), -(_ ∈ N)}
 Q ⩴ {(numerator ∈ Z) / (denominator ∈ Z)}
 positive(n) ≔ + n
 negative(n) ≔ - n
-negate ≔ (+ n ↦ - n; - n ↦ + n)
-abs ≔ (+ n ↦ + n; - n ↦ + n)
-abs′ ≔ (+ n ↦ n; - n ↦ n)
+negate ≔ (case + n ↦ - n; case - n ↦ + n)
+abs ≔ (case + n ↦ + n; case - n ↦ + n)
+abs′ ≔ (case + n ↦ n; case - n ↦ n)
 min(n, m) ≔ n ≤ m ? n ‖ m
 max(n, m) ≔ n ≥ m ? n ‖ m
 mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
-(!) ≔ (0 ↦ 1; n @ ↑(n′) ↦ n ⋅ (n′)!)
+(!) ≔ (case 0 ↦ 1; case n @ ↑(n′) ↦ n ⋅ (n′)!)
 gcd(n, m) ≔ (m = 0) ? n ‖ gcd(m, n.mod(m))
-n ^ m ≔ m.match(
-    0 ↦ 1;
-    ↑ m′ ↦ isEven(m) ? (⋅).mirror(n ^ (m ⫽ 2)) ‖ n ⋅ n ^ m′
-)
-f ° n ≔ n.match(0 ↦ id; ↑ n′ ↦ f ∘ f ° n′)
+
+define n ^ m
+    match m
+        case 0 ↦ 1
+        case ↑ m′
+            if isEven(m)
+                (⋅).mirror(n ^ (m ⫽ 2))
+            n ⋅ n ^ m′
+
+f ° n ≔ n.(case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′)
 (^^) ≔ (°)
 
 # tuple
 Unit ⩴ {()}
 Pair(a, b) ⩴ {(first ∈ a, second ∈ b)}
 Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
-Quadruple(a, b, c, d) ⩴
-    {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fouth_4 ∈ d)}
+Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth_4 ∈ d)}
 pair(a, b) ≔ (a, b)
 swap((x, y)) ≔ (y, x)
 mapFirst(xy, f) ≔ (f(first(xy)), second(xy))
@@ -103,73 +107,96 @@ uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
 # maybe
 Maybe(a) ⩴ {nothing, just(thing ∈ a)}
-isNothing ≔ (nothing ↦ true; just(_) ↦ false)
-isJust ≔ (nothing ↦ false; just(_) ↦ true)
-mx ⁇ f ≔ mx.match(nothing ↦ nothing; just(x) ↦ f(x))   # maybe bind
+isNothing ≔ (case nothing ↦ true; case just(_) ↦ false)
+isJust ≔ (case nothing ↦ false; case just(_) ↦ true)
+mx ⁇ f ≔ mx.(case nothing ↦ nothing; case just(x) ↦ f(x))   # maybe bind
 (??) ≔ (⁇)
-mx ⁈ d ≔ mx.match(nothing ↦ d; just(x) ↦ x)    # just value or default
+mx ⁈ d ≔ mx.(case nothing ↦ d; case just(x) ↦ x)    # just value or default
 (?!) ≔ (⁈)
 
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 (::) ≔ (∷)
 prepend ≔ `(∷)
-isNil ≔ ([] ↦ true; _ ∷ _ ↦ false)     # note: isEmpty is reserved for sets
-fold(xs, f, z) ≔ xs.match([] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
-cascade(xs, f, z) ≔ xs.match([] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x)))
+isNil ≔ (case [] ↦ true; case _ ∷ _ ↦ false)    # note: isEmpty is for sets
+fold(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
+cascade(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ cascade(xs′, f, f(z, x)))
 xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
 (++) ≔ (⧺)
 join(xss) ≔ xss.fold((⧺), [])            # concatenate list of lists
 length(xs) ≔ xs.fold(constant(↑), 0)         # get length of list
 reverse(xs) ≔ xs.cascade(`(∷), [])
 drop(xs, n) ≔ (tail ° n)(xs)            # drop n elements from front of list
-take(xs, n) ≔ n.match(0 ↦ []; ↑ n′ ↦ head(xs) ∷ tail(xs).take(n′))
+take(xs, n) ≔ n.(case 0 ↦ []; case ↑ n′ ↦ head(xs) ∷ tail(xs).take(n′))
 xs[n] ≔ head(xs.drop(n))          # get element of list at index
 xs[start, end] ≔ xs.drop(start).take(end - start)
 last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
 dropLast(xs) ≔ isNil(xs) ∨ isNil(tail(xs)) ? [] ‖ head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
 
-dropIf(ns, p) ≔ ns.match([] ↦ []; n ∷ ns′ ↦ p(n) ? ns′ ‖ ns)
-takeWhile(xs, p) ≔ xs.match(
-    [] ↦ [];
-    x ∷ xs′ ↦ p(x) ? x ∷ takeWhile(xs′, p) ‖ []
-)
-dropWhile(xs, p) ≔ xs.match(
-    [] ↦ [];
-    x ∷ xs′ ↦ p(x) ? dropWhile(xs′, p) ‖ xs
-)
-takeSafe(xs, n) ≔ n.match(0 ↦ just([]); ↑ n′ ↦
-    xs.match([] ↦ nothing; x ∷ xs′ ↦ takeSafe(xs′, n′) ⁇ just ∘ (x ∷)))
-dropSafe(xs, n) ≔ n.match(0 ↦ xs; ↑ n′ ↦
-    xs.match([] ↦ []; _ ∷ xs′ ↦ dropSafe(xs′, n′)))
+dropIf(ns, p) ≔ ns.(case [] ↦ []; case n ∷ ns′ ↦ p(n) ? ns′ ‖ ns)
+
+define takeWhile(xs, p)
+    match xs
+        case [] ↦ []
+        case x ∷ xs′ ↦ p(x) ? x ∷ takeWhile(xs′, p) ‖ []
+
+define dropWhile(xs, p)
+    match xs
+        case [] ↦ []
+        case x ∷ xs′ ↦ p(x) ? dropWhile(xs′, p) ‖ xs
+
+define takeSafe(xs, n)
+    match n
+        case 0 ↦ just([])
+        case ↑ n′
+            match xs
+                case [] ↦ nothing
+                case x ∷ xs′ ↦ takeSafe(xs′, n′) ⁇ just ∘ (x ∷)
+
+define dropSafe(xs, n)
+    match n
+        case 0 ↦ xs
+        case ↑ n′
+            match xs
+                case [] ↦ []
+                case _ ∷ xs′ ↦ dropSafe(xs′, n′)
+
 filter(xs, p) ≔ fold(xs, x ↦ xs′ ↦ (p(x) ? x ∷ xs′ || xs′), [])
 (¦) ≔ filter
 (|:) := (¦)
 map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          # map function over list
-zipWith(xs, f, ys) ≔ xs.match(
-    [] ↦ [];
-    x ∷ xs′ ↦ ys.match(
-        [] ↦ [];
-        y ∷ ys′ ↦ f(x, y) ∷ zipWith(xs′, f, ys′)
-    )
-)
+
+define zipWith(xs, f, ys)
+    match xs
+        case [] ↦ []
+        case x ∷ xs′
+            match ys
+                case [] ↦ []
+                case y ∷ ys′ ↦ f(x, y) ∷ zipWith(xs′, f, ys′)
+
 zip(xs, ys) ≔ zipWith(xs, pair, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
 pairs(xs) := zip(xs, tail(xs))
-interleave(xs, y) ≔ (
-    interleave′ ≔ ([] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′))
-    xs.match([] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′))
-)
+
+define interleave(xs, y)
+    define interleave′
+        case [] ↦ []
+        case x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
+    match xs
+        case [] ↦ []
+        case x ∷ xs′ ↦ x ∷ interleave′(xs′)
+
 joinWith(xss, ys) ≔ join(interleave(xss, ys))
 bisect(xs, p) ≔ (xs ¦ p, xs ¦ (¬) ∘ p)
 any(xs, p) ≔ xs.map(p).fold((∨), false)     # test if any element satisfies p
 all(xs, p) ≔ xs.map(p).fold((∧), true)      # test if all elements satisfy p
 count(xs, p) ≔ length(xs ¦ p)
-find(xs, p) ≔ xs.match(
-    [] ↦ nothing;
-    x ∷ xs′ ↦ p(x) ? just(x) ‖ xs′.find(p)
-)
+
+define find(xs, p)
+    match xs
+        case [] ↦ nothing
+        case x ∷ xs′ ↦ p(x) ? just(x) ‖ xs′.find(p)
 
 # cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
@@ -184,12 +211,20 @@ cycle(xs) ≔ xs ⧺ cycle(xs)                 # infinitely cycle list
 # integer list
 n ‥ m ≔ n > m ? [] ‖ n ∷ (n + 1 ‥ m)
 (..) := (‥)
-sort ≔ ([] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n)))
-deduplicate ≔ ([] ↦ []; n ∷ ns ↦ n ∷ deduplicate(ns ¦ (≠ n)))
-deduplicateBy(xs, (≟)) ≔ xs.match(
-    [] ↦ [];
-    x ∷ xs′ ↦ x ∷ deduplicateBy(xs′ ¦ (¬) ∘ (≟ x), (≟))
-)
+
+define sort
+    case [] ↦ []
+    case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
+
+define deduplicate
+    case [] ↦ []
+    case n ∷ ns ↦ n ∷ deduplicate(ns ¦ (≠ n))
+
+define deduplicateBy(xs, (≟))
+    match xs
+        case [] ↦ []
+        case x ∷ xs′ ↦ x ∷ deduplicateBy(xs′ ¦ (¬) ∘ (≟ x), (≟))
+
 ∑(ns) ≔ ns.cascade((+), 0)
 sum := ∑
 ∏(ns) ≔ ns.cascade((⋅), 1)
@@ -198,78 +233,80 @@ minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
 countFrom ≔ iterate(↑)
 naturals ≔ countFrom(0)
-primes ≔ (
-    filterPrime ≔ ([] ↦ []; n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0)))
+
+define primes
+    define filterPrime
+        case [] ↦ []
+        case n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
     filterPrime(countFrom(2))
-)
-fibonaccis ≔ (
+
+define fibonaccis
     f(m, n) ≔ m ∷ f(n, m + n)
     f(0, 1)
-)
 
 # string
-xs ≛ ys ≔ xs.match(        # string equality
-    [] ↦ isNil(ys);
-    x ∷ xs′ ↦ ys.match(
-        [] ↦ false;
-        y ∷ ys′ ↦ x = y ∧ xs′ ≛ ys′
-    )
-)
+define xs ≛ ys              # string equality
+    match xs
+        case [] ↦ isNil(ys)
+        case x ∷ xs′
+            match ys
+                case [] ↦ false
+                case y ∷ ys′ ↦ x = y ∧ xs′ ≛ ys′
 (=*=) := (≛)
 
-ns ⩿ ms ≔ ns.match(      # string comparison
-    [] ↦ true;
-    n ∷ ns′ ↦ ms.match(
-        [] ↦ false;
-        m ∷ ms′ ↦ n < m ∨ n = m ∧ ns′ ⩿ ms′
-    )
-)
+define ns ⩿ ms      # string comparison
+    match ns
+        case [] ↦ true
+        case n ∷ ns′
+            match ms
+                case [] ↦ false
+                case m ∷ ms′ ↦ n < m ∨ n = m ∧ ns′ ⩿ ms′
 (<*=) := (⩿)
 
-indexOf(nss, key) ≔ (
-    indexOf′(list, depth) ≔ (
-        isNil(list) ? nothing
-        list[0] ≛ key ? just(depth)
+define indexOf(nss, key)
+    define indexOf′(list, depth)
+        if isNil(list)
+            nothing
+        if list[0] ≛ key
+            just(depth)
         indexOf′(tail(list), depth + 1)
-    )
     indexOf′(nss, 0)
-)
 
 contains(nss, key) ≔ isJust(nss.indexOf(key))
 
-startsWith(ns, ks) ≔ ks.match(
-    [] ↦ true;
-    k ∷ ks′ ↦ ns.match(
-        [] ↦ false;
-        n ∷ ns′ ↦ n = k ∧ startsWith(ns′, ks′)
-    )
-)
+define startsWith(ns, ks)
+    match ks
+        case [] ↦ true
+        case k ∷ ks′
+            match ns
+                case [] ↦ false
+                case n ∷ ns′ ↦ n = k ∧ startsWith(ns′, ks′)
 
-split(ns, p) ≔ ns.match(
-    [] ↦ ([], []);
-    n ∷ ns′ ↦ (
-        p(ns) ? ([], ns)
-        (before, after) ≔ ns′.split(p)
-        (n ∷ before, after)
-    )
-)
+define split(ns, p)
+    match ns
+        case [] ↦ ([], [])
+        case n ∷ ns′
+            if p(ns)
+                ([], ns)
+            (before, after) ≔ ns′.split(p)
+            (n ∷ before, after)
 
 splitAt(xs, n) ≔ (xs.take(n), xs.drop(n))
 splitWhen(ns, p) ≔ ns.split(p ∘ head)
 splitOn(ns, delimiter) ≔ ns.split(`startsWith(delimiter))
 
-splitWith(ns, splitter) ≔ (
+define splitWith(ns, splitter)
     (before, after) ≔ splitter(ns)
-    before.isNil ? ([], ns)
+    if before.isNil
+        ([], ns)
     (before′, after′) ≔ after.splitWith(splitter)
     (before ⧺ before′, after′)
-)
 
-partition(ns, splitter) ≔ (
-    ns.isNil ? []
+define partition(ns, splitter)
+    if ns.isNil
+        []
     (before, after) ≔ splitter(ns)
     before ∷ partition(after, splitter)
-)
 
 dropPrefix(ns, prefix) ≔ ns.startsWith(prefix) ? ns.drop(length(prefix)) ‖ ns
 
@@ -296,16 +333,16 @@ isPunctuation(n) ≔ isGraphical(n) ∧ ¬ isAlphanumeric(n)
 
 # serialization
 showBoolean(b) ≔ b ? "true" ‖ "false"
-showNatural(n) ≔ (
-    showReversedNatural(m) ≔ m = 0 ? [] ‖
-        ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
-    n = 0 ? "0" ‖ reverse(showReversedNatural(n))
-)
 
-showSign ≔ (+ _ ↦ "+" ; - _ ↦ "-")
+define showNatural(n)
+    define showReversedNatural(m)
+        m = 0 ? [] ‖ ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
+    n = 0 ? "0" ‖ reverse(showReversedNatural(n))
+
+showSign ≔ (case + _ ↦ "+" ; case - _ ↦ "-")
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
-showPair(xsxs, showFirst, showSecond) ≔
+define showPair(xsxs, showFirst, showSecond)
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
 showList(xs, showElement) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 

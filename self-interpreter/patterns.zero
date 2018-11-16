@@ -1,72 +1,80 @@
 #* patterns.zero
 
+define isCase(node)
+    isLambda(node) and isThisLexeme(node, "case")
+
+
 define getArguments(pattern)
     if not isApplication(pattern)
         []
     getArguments(getLeft(pattern)) ++ [getRight(pattern)]
 
+
 define newProjector(tag, size, index)
     reference := newUnderscore(tag, size - index)
     ((newLambda(tag, newUnderscore(tag, 0))) ^^ size)(reference)
 
-define reduceLambda(operator, pattern, body)
-    getNodeType(pattern).match(
-        SYMBOL -> newLambda(getTag(operator), pattern, body);
-        LAMBDA -> syntaxError("invalid parameter", pattern);
-        APPLICATION -> (
-            tag := getTag(operator)
+
+define newPatternLambda(tag, pattern, body)
+    match getNodeType(pattern)
+        case SYMBOL -> newLambda(tag, pattern, body)
+        case LAMBDA -> syntaxError("invalid parameter", pattern)
+        case APPLICATION
             if isThisLexeme(pattern, "@")
-                reduceLambda(pattern, getLeft(pattern),
-                    newApplication(tag, reduceLambda(operator,
+                newPatternLambda(tag, getLeft(pattern),
+                    newApplication(tag, newPatternLambda(tag,
                         getRight(pattern), body), getLeft(pattern)))
             arguments := getArguments(pattern)
             size := length(arguments)
             underscore := newUnderscore(tag, 1)
-            function := arguments.fold(reduceLambda(tag), body)
+            function := arguments.fold(newPatternLambda(tag), body)
             projectors := (0 .. size - 1).map(newProjector(tag, size))
             projections := projectors.map(newApplication(tag, underscore))
             application := projections.cascade(newApplication(tag), function)
-            newLambda(getTag(operator), newUnderscore(tag, 0), application)
-        );
-        DEFINITION -> syntaxError("invalid parameter", pattern);
-        NATURAL -> newLambda(getTag(operator), pattern, body);
-        BUILTIN -> syntaxError("invalid parameter", pattern);
-    )
+            newLambda(tag, newUnderscore(tag, 0), application)
+        case DEFINITION -> syntaxError("invalid parameter", pattern)
+        case NATURAL -> newLambda(tag, pattern, body)
+        case BUILTIN -> syntaxError("invalid parameter", pattern)
 
-define getHead(node)
-    isApplication(node) ? getHead(getLeft(node)) || node
 
-define isStrictPatternLambda(function)
-    isUnderscore(getParameter(function)) and
-    isUnderscore(getHead(getBody(function)))
+define isAsPattern(node)
+    isApplication(node) and isThisLexeme(node, "@")
 
-define isLazyPatternLambda(function)
-    isUnderscore(getParameter(function)) and
-    isApplication(getBody(function)) and
-    isApplication(getRight(getBody(function))) and
-    isUnderscore(getLeft(getRight(getBody(function))))
 
-define getPatternExtension(function)
-    if isThisLexeme(function, "@")
-        tag := getTag(function)
-        extension := getPatternExtension(getLeft(getBody(function)))
-        newApplication(tag, newLambda(tag, getParameter(function), extension),
-            newUnderscore(tag, 1))
-    if isStrictPatternLambda(function)
-        getRight(getBody(function))
-    if isLazyPatternLambda(function)
-        getHead(getBody(function))
-    getBody(function)
+define getNameAndValue(tag, left, right)
+    if isNull(right)
+        undefined                   # force syntax errors
+    if not isApplication(left)
+        (left, right)
+    getNameAndValue(tag, getLeft(left),
+        newPatternLambda(tag, getRight(left), right))
 
-define reducePatternLambda(operator, left, right)
-    if not isLambda(left)
-        syntaxError("expected lambda to left of", operator)
-    if not isLambda(right)
-        syntaxError("expected lambda to right of", operator)
-    tag := getTag(operator)
-    base := isStrictPatternLambda(left) ? getBody(left) ||
-        newApplication(tag, newUnderscore(tag, 1), getPatternExtension(left))
-    newLambda(tag, newUnderscore(tag, 0),
-        newApplication(tag, base, getPatternExtension(right)))
+
+define newCaseArgument(tag, left, right)
+    pattern := isAsPattern(left) ? getRight(left) || left
+    (_, right') := getNameAndValue(tag, pattern, right)
+    if not isAsPattern(left)
+        right'
+    wrapper := newPatternLambda(tag, getLeft(left), right')
+    newApplication(tag, wrapper, newUnderscore(tag, 1))
+
+
+define newCase(tag, left, right)
+    argument := newCaseArgument(tag, left, right)
+    parameter := newUnderscore(tag, 0)
+    reference := newUnderscore(tag, 1)
+    newLambda(tag, parameter, newApplication(tag, reference, argument))
+
+
+define mergeCaseBodies(tag, left, right)
+    if not isApplication(right)
+        left
+    merged := mergeCaseBodies(tag, left, getLeft(right))
+    newApplication(tag, merged, getRight(right))
+
+
+define combineCases(tag, left, right)
+    body := mergeCaseBodies(tag, getBody(left), getBody(right))
+    newLambda(tag, newUnderscore(tag, 0), body)
 
 #*
