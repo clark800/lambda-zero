@@ -5,13 +5,14 @@ define execute(ast)
 
 define splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
-    input' := afterCode.isNil ? [] || tail(afterCode)
+    input' := if afterCode.isNil then [] else tail(afterCode)
     (code, input')
 
 define extractOutputString(closure)
     # term is (z -> p -> z) or (z -> p -> ((p c) cs))
     body := getBody(getBody(getTerm(closure)))
-    isSymbol(body) ? []
+    if isSymbol(body)
+        []
     dummy := Closure(NULL, [])
     environment' := dummy :: dummy :: getEnvironment(closure)
     characterTerm := getRight(getLeft(body))

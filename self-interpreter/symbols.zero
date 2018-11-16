@@ -17,9 +17,10 @@ SyntaxType ::= {Syntax(
     getRightPrecedence : Natural,
     getFixity : Natural,
     getAssociativity : Natural,
-    getSpecial : B,
+    getSpecial : Boolean,
     getShift : _,
-    getReduce : _
+    getReduce : _,
+    getPrior : List(Natural)
 )}
 
 StateType ::= {State(
@@ -40,7 +41,7 @@ define shiftOperand(State(stack, operators), node)
 
 define getSyntax(node)
     getMaybeData(node) ?!
-        Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand)
+        Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand, "")
 
 define isSpecial(node)
     getSpecial(getSyntax(node))
@@ -55,7 +56,7 @@ define reduceOperator(operator, left, right)
     result := getReduce(getSyntax(operator))(operator, left, right)
     if not isNull(left) and isSection(left)
         propagateSection(operator, result,
-            not isNull(right) and isSection(right) ? ".*." || ".*")
+            if not isNull(right) and isSection(right) then ".*." else ".*")
     if not isNull(right) and isSection(right)
         propagateSection(operator, result, "*.")
     result
@@ -76,8 +77,8 @@ define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
             reduceOperator(stack[1], NULL, stack[0]))
-    operators' := isSyntaxDeclarationMarker(stack[2]) ?
-        tail(operators) || operators
+    operators' := if isSyntaxDeclarationMarker(stack[2]) then
+        tail(operators) else operators
     shift(State(stack.drop(3), operators'),
         reduceOperator(stack[1], stack[2], stack[0]))
 
@@ -122,7 +123,7 @@ define lookupSyntax(operators, lexeme)
 define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
     operators.lookupSyntax(lexeme) ?? just <> newOperator(tag, value) ?!
-        (lexeme =*= " " ? (operators.lookupSyntax("( )") ??
-            just <> newOperator(tag, value) ?! newName(tag)) || newName(tag))
+        (if lexeme =*= " " then operators.lookupSyntax("( )") ??
+            just <> newOperator(tag, value) ?! newName(tag) else newName(tag))
 
 #*

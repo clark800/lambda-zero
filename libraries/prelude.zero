@@ -20,20 +20,15 @@ mirror(f)(x) ≔ f(x, x)         # convert binary function to unary function
 # boolean
 Boolean ⩴ {false, true}
 (if b)(x, y) ≔ b.(case false ↦ y; case true ↦ x)
-(?) ≔ (if)
-¬ b ≔ b ? false ‖ true
+¬ b ≔ if b then false else true
 (not) ≔ (¬)
-b ∧ c ≔ b ? c ‖ false
+b ∧ c ≔ if b then c else false
 (/\) ≔ (∧)
 (and) := (∧)
-b ∨ c ≔ b ? true ‖ c
+b ∨ c ≔ if b then true else c
 (\/) ≔ (∨)
 (or) := (∨)
-b ⇒ c ≔ b ? c ‖ true
-(=>) ≔ (⇒)
-b ⇔ c ≔ b ? c ‖ ¬ c
-(<==>) ≔ (⇔)
-until(f, p, z) ≔ p(z) ? z ‖ f.until(p, f(z))
+until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
 while(f, p, z) ≔ f.until((¬) ∘ p, z)
 
 # math
@@ -62,8 +57,8 @@ while(f, p, z) ≔ f.until((¬) ∘ p, z)
 # (-) ≔ case 0 ↦ (case 0 ↦ 0; case ↑ m ↦ undefined);
 #       case ↑ n ↦ (case 0 ↦ ↑ n; case ↑ m ↦ n - m)
 # (⋅) ≔ case 0 ↦ _ ↦ 0; case ↑ n ↦ m ↦ m + n ⋅ m
-# n ⫽ m ≔ m = 0 ? undefined ‖ n < m ? 0 ‖ ↑((n - m) ⫽ m)
-# n % m ≔ m = 0 ? n ‖ n < m ? n ‖ (n - m) % m
+# n ⫽ m ≔ if m = 0 then undefined else (if n < m then 0 else ↑((n - m) ⫽ m))
+# n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 Z ⩴ {+(_ ∈ N), -(_ ∈ N)}
 Q ⩴ {(numerator ∈ Z) / (denominator ∈ Z)}
@@ -72,14 +67,14 @@ negative(n) ≔ - n
 negate ≔ (case + n ↦ - n; case - n ↦ + n)
 abs ≔ (case + n ↦ + n; case - n ↦ + n)
 abs′ ≔ (case + n ↦ n; case - n ↦ n)
-min(n, m) ≔ n ≤ m ? n ‖ m
-max(n, m) ≔ n ≥ m ? n ‖ m
+min(n, m) ≔ if n ≤ m then n else m
+max(n, m) ≔ if n ≥ m then n else m
 mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
 (!) ≔ (case 0 ↦ 1; case n @ ↑(n′) ↦ n ⋅ (n′)!)
-gcd(n, m) ≔ (m = 0) ? n ‖ gcd(m, n.mod(m))
+gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
 
 define n ^ m
     match m
@@ -131,20 +126,24 @@ take(xs, n) ≔ n.(case 0 ↦ []; case ↑ n′ ↦ head(xs) ∷ tail(xs).take(n
 xs[n] ≔ head(xs.drop(n))          # get element of list at index
 xs[start, end] ≔ xs.drop(start).take(end - start)
 last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
-dropLast(xs) ≔ isNil(xs) ∨ isNil(tail(xs)) ? [] ‖ head(xs) ∷ dropLast(tail(xs))
+dropLast(xs) ≔ if isNil(xs) ∨ isNil(tail(xs)) then [] else
+    head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
 
-dropIf(ns, p) ≔ ns.(case [] ↦ []; case n ∷ ns′ ↦ p(n) ? ns′ ‖ ns)
+define dropIf(ns, p)
+    match ns
+        case [] ↦ []
+        case n ∷ ns′ ↦ if p(n) then ns′ else ns
 
 define takeWhile(xs, p)
     match xs
         case [] ↦ []
-        case x ∷ xs′ ↦ p(x) ? x ∷ takeWhile(xs′, p) ‖ []
+        case x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(xs′, p) else []
 
 define dropWhile(xs, p)
     match xs
         case [] ↦ []
-        case x ∷ xs′ ↦ p(x) ? dropWhile(xs′, p) ‖ xs
+        case x ∷ xs′ ↦ if p(x) then dropWhile(xs′, p) else xs
 
 define takeSafe(xs, n)
     match n
@@ -162,7 +161,7 @@ define dropSafe(xs, n)
                 case [] ↦ []
                 case _ ∷ xs′ ↦ dropSafe(xs′, n′)
 
-filter(xs, p) ≔ fold(xs, x ↦ xs′ ↦ (p(x) ? x ∷ xs′ || xs′), [])
+filter(xs, p) ≔ fold(xs, x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
 (¦) ≔ filter
 (|:) := (¦)
 map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          # map function over list
@@ -196,7 +195,7 @@ count(xs, p) ≔ length(xs ¦ p)
 define find(xs, p)
     match xs
         case [] ↦ nothing
-        case x ∷ xs′ ↦ p(x) ? just(x) ‖ xs′.find(p)
+        case x ∷ xs′ ↦ if p(x) then just(x) else xs′.find(p)
 
 # cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
@@ -209,7 +208,7 @@ replicate(x, n) ≔ ((x ∷) ° n)([])         # replicate one element n times
 cycle(xs) ≔ xs ⧺ cycle(xs)                 # infinitely cycle list
 
 # integer list
-n ‥ m ≔ n > m ? [] ‖ n ∷ (n + 1 ‥ m)
+n ‥ m ≔ if n > m then [] else n ∷ (n + 1 ‥ m)
 (..) := (‥)
 
 define sort
@@ -308,7 +307,8 @@ define partition(ns, splitter)
     (before, after) ≔ splitter(ns)
     before ∷ partition(after, splitter)
 
-dropPrefix(ns, prefix) ≔ ns.startsWith(prefix) ? ns.drop(length(prefix)) ‖ ns
+dropPrefix(ns, prefix) ≔ if ns.startsWith(prefix) then
+    ns.drop(length(prefix)) else ns
 
 partitionBy(ns, p) ≔ ns.partition(`splitWhen(p) ∘ `dropIf(p))
 partitionOn(ns, delimiter) ≔ ns.partition(
@@ -332,12 +332,12 @@ isGraphical(n) ≔ isPrintable(n) ∧ ¬ isBlank(n)
 isPunctuation(n) ≔ isGraphical(n) ∧ ¬ isAlphanumeric(n)
 
 # serialization
-showBoolean(b) ≔ b ? "true" ‖ "false"
+showBoolean(b) ≔ if b then "true" else "false"
 
 define showNatural(n)
     define showReversedNatural(m)
-        m = 0 ? [] ‖ ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
-    n = 0 ? "0" ‖ reverse(showReversedNatural(n))
+        if m = 0 then [] else ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
+    if n = 0 then "0" else reverse(showReversedNatural(n))
 
 showSign ≔ (case + _ ↦ "+" ; case - _ ↦ "-")
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
@@ -348,12 +348,12 @@ showList(xs, showElement) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 # parsing
 parseDigit(digit, base) ≔
-    isDigit(digit) ∧ digit - '0' < base ? digit - '0' ‖
+    if isDigit(digit) ∧ digit - '0' < base then digit - '0' else
     error("Invalid digit in base " ⧺ showInteger(base) ⧺ ": " ⧺ [digit])
 parseNatural(string, base) ≔
     string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(d, base), 0)
-parseInteger(string, base) ≔ string.head = '-' ?
-    - parseNatural(tail(string), base) ‖ + parseNatural(string, base)
+parseInteger(string, base) ≔ if string.head = '-' then
+    - parseNatural(tail(string), base) else + parseNatural(string, base)
 
 # trees
 Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}

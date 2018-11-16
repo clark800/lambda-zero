@@ -84,7 +84,7 @@ define newYCombinator(tag)
 
 define newBoolean(tag, b)
     newLambda(tag, newUnderscore(tag, 0), newLambda(tag, newUnderscore(tag, 0),
-        newUnderscore(tag, b ? 1 || 2)))
+        newUnderscore(tag, if b then 1 else 2)))
 
 define newNil(tag)
     newName(Tag("[]", getTagLocation(tag)))

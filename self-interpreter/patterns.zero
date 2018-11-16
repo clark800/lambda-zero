@@ -51,7 +51,7 @@ define getNameAndValue(tag, left, right)
 
 
 define newCaseArgument(tag, left, right)
-    pattern := isAsPattern(left) ? getRight(left) || left
+    pattern := if isAsPattern(left) then getRight(left) else left
     (_, right') := getNameAndValue(tag, pattern, right)
     if not isAsPattern(left)
         right'

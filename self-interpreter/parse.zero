@@ -1,13 +1,13 @@
 #* parse.zero
 
 define parseEscapeCode(code, tag)
-    code = '0' ? '\0'
-    code = 'n' ? '\n'
-    code = 't' ? '\t'
-    code = 'r' ? '\r'
-    code = '\\' ? '\\'
-    code = '\"' ? '\"'
-    code = '\'' ? '\''
+    if code = '0' then '\0'
+    if code = 'n' then '\n'
+    if code = 't' then '\t'
+    if code = 'r' then '\r'
+    if code = '\\' then '\\'
+    if code = '\"' then '\"'
+    if code = '\'' then '\''
     error("Syntax error: invalid escape sequence in " ++ showTag(tag))
 
 define parseQuotedCharacter(tag, string)
@@ -21,7 +21,7 @@ define parseQuotedCharacter(tag, string)
 define splitStringLiteral(string)
     if isNil(string)
         []
-    n := head(string) = '\\' and not isNil(tail(string)) ? 2 || 1
+    n := if head(string) = '\\' and not isNil(tail(string)) then 2 else 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 
 define buildStringLiteral(tag, characters)

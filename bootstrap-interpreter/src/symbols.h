@@ -17,6 +17,7 @@ Node* parseSymbol(Tag tag, long long value);
 void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
     Precedence rightPrecedence, Fixity fixity, Associativity associativity,
     void (*shift)(Stack*, Node*), Node* (*reduce)(Node*, Node*, Node*));
-void addSyntax(Tag tag, Precedence leftPrecedence,
-        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*));
+void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
+    Fixity fixity, Associativity associativity, void (*shifter)(Stack*, Node*),
+    Node* (*reducer)(Node*, Node*, Node*));
+void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*));
