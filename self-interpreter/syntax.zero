@@ -132,7 +132,7 @@ define reduceMixfix(operator, left, right)
 
 define newMixfixOperator(operators, tag, prior)
     precedence := getRightPrecedence(
-        lookupSyntax(operators, getLexeme(prior)) ?!
+        lookupSyntax(operators, getLexeme(prior)) ??
             syntaxError("syntax not defined", prior))
     newOperator(tag, 0, Syntax(precedence, precedence, INFIX, LEFT, true,
         shiftInfix, reduceMixfix, getLexeme(prior)))

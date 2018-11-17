@@ -40,7 +40,7 @@ define shiftOperand(State(stack, operators), node)
     State(node :: stack, operators)
 
 define getSyntax(node)
-    getMaybeData(node) ?!
+    getMaybeData(node) ??
         Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand, "")
 
 define isSpecial(node)
@@ -122,8 +122,9 @@ define lookupSyntax(operators, lexeme)
 
 define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme) ?? just <> newOperator(tag, value) ?!
-        (if lexeme =*= " " then operators.lookupSyntax("( )") ??
-            just <> newOperator(tag, value) ?! newName(tag) else newName(tag))
+    operators.lookupSyntax(lexeme).mapJust(newOperator(tag, value)) ??
+        (if lexeme =*= " " then
+            operators.lookupSyntax("( )").mapJust(newOperator(tag, value)) ??
+            newName(tag) else newName(tag))
 
 #*
