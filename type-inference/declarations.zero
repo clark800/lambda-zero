@@ -2,11 +2,11 @@
 
 define builtinTypes
     syntax(>->) := infixR(10)
-    (>->) := newFunctionType(NULL)
-    bottom := newBottomType(NULL)
-    boolean := newBooleanType(NULL)
-    natural := newNaturalType(NULL)
-    string := newListType(NULL, natural)
+    (>->) := newFunctionType(noTerm)
+    bottom := newBottomType(noTerm)
+    boolean := newBooleanType(noTerm)
+    natural := newNaturalType(noTerm)
+    string := newListType(noTerm, natural)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -26,20 +26,20 @@ define builtinTypes
         ("(undefined)", bottom)
     ])
 
-define getBuiltinType(node)
-    builtinTypes.get(getLexeme(node), undefined).setNode(node)
+define getBuiltinType(term)
+    builtinTypes.get(getTagLexeme(getTermTag(term)), undefined).setSource(term)
 
 define knownTypeSchemes
     syntax(>->) := infixR(10)
-    (>->) := newFunctionType(NULL)
-    boolean := newBooleanType(NULL)
-    (a, variables') := empty.newTypeVariable(NULL)
-    (b, variables'') := variables'.newTypeVariable(NULL)
-    aList := newListType(NULL, a)
-    aMaybe := newMaybeType(NULL, a)
-    aTree := newTreeType(NULL, a)
-    aTreeList := newListType(NULL, aTree)
-    abPair := newTupleType(NULL, [a, b])
+    (>->) := newFunctionType(noTerm)
+    boolean := newBooleanType(noTerm)
+    (a, variables') := empty.newTypeVariable(noTerm)
+    (b, variables'') := variables'.newTypeVariable(noTerm)
+    aList := newListType(noTerm, a)
+    aMaybe := newMaybeType(noTerm, a)
+    aTree := newTreeType(noTerm, a)
+    aTreeList := newListType(noTerm, aTree)
+    abPair := newTupleType(noTerm, [a, b])
     newDictionary([
         ("true", newScheme([], boolean)),
         ("false", newScheme([], boolean)),
@@ -60,9 +60,9 @@ define knownTypeSchemes
         ("getChildren", newScheme([a], aTree >-> aTreeList))
     ])
 
-define getKnownTypeScheme(name)
-    defaultScheme := newScheme([], newFreeType(name))
-    (universals, type) := knownTypeSchemes.get(getLexeme(name), defaultScheme)
-    (universals, type.setNode(name))
+define getKnownTypeScheme(name, source)
+    defaultScheme := newScheme([], newFreeType(source))
+    (universals, type) := knownTypeSchemes.get(name, defaultScheme)
+    (universals, type.setSource(source))
 
 #*

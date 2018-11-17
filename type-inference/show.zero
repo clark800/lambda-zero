@@ -38,20 +38,25 @@ define showType(type)
         showType'(components[0]) ++ " → " ++ showType(components[1])
     undefined
 
+
+define showTypeLocation(type)
+    showLocation(getTagLocation(getTermTag(getSource(type))))
+
+
 define showTypeAndLocation(type)
-    showType(type) ++ (if isNull(getNode(type)) then
-        "" else " at " ++ showLocation(getLocation(getNode(type))))
+    showType(type) ++ (if isNoTerm(getSource(type)) then "" else
+        " at " ++ showTypeLocation(type))
 
 define showVariableMap(variables)
     variables.getElements.map((key, value) ->
-        showAST(getNode(key)) ++ " = " ++ showAST(getNode(value)) ++
+        showAST(getSource(key)) ++ " = " ++ showAST(getSource(value)) ++
         "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
     if isTypeVariable(type)
         if renaming.hasKey(type)
             (renaming, variables)
-        (type', variables') := variables.newTypeVariable(getNode(type))
+        (type', variables') := variables.newTypeVariable(getSource(type))
         (renaming.insert(type, type'), variables')
     getComponentTypes(type).cascade(addRenaming, (renaming, variables))
 
@@ -69,8 +74,8 @@ define showScheme((universals, type))
     renaming := makeRenaming(type)
     showUniversals(universals, renaming) ++ showTypeWithRenaming(type, renaming)
 
-define showTyping((name, scheme))
-    getLexeme(name) ++ " : " ++ showScheme(scheme)
+define showTyping((tag, scheme))
+    getTagLexeme(tag) ++ " : " ++ showScheme(scheme)
 
 define showTypings(typings)
     typings.map(showTyping).joinWith("\n")

@@ -1,31 +1,43 @@
 #* types.zero
 
-newType(node, code, index, components) := Node((node, code, index), components)
-getNode := first_3 <> getData
+# note: types contain source terms so that we have the ability to serialize the
+# whole source term if there is a type error
+newType(source, code, index, components) :=
+    Node((source, code, index), components)
+getSource := first_3 <> getData
 getTypeCode := second_3 <> getData
 getIndex := third_3 <> getData
 getTypeVariableIndex := getIndex
 getComponentTypes := getChildren
-define setNode(type, node)
-    newType(node, getTypeCode(type), getIndex(type), getComponentTypes(type))
+define setSource(type, source)
+    newType(source, getTypeCode(type), getIndex(type), getComponentTypes(type))
 
-newFreeType(node) := newType(node, 1, 0, [])
-newBooleanType(node) := newType(node, 2, 0, [])
-newNaturalType(node) := newType(node, 3, 0, [])
-newFunctionType(node, left, right) := newType(node, 4, 0, [left, right])
-newTupleType(node, types) := newType(node, 5, 0, types)
-newListType(node, type) := newType(node, 6, 0, [type])
-newTreeType(node, type) := newType(node, 7, 0, [type])
-newMaybeType(node, type) := newType(node, 8, 0, [type])
-newBottomType(node) := newType(node, 9, 0, [])
-define newTypeVariable(variables, node)
-    type := newType(node, 0, cardinality(variables), [])
-    (type, variables.insert(type, newFreeType(NULL)))
+noTerm := Reference(noTag, 0)
+
+define isNoTerm
+    case Reference(_, debruijn) -> debruijn = 0
+    case Function(_, _) -> false
+    case Application(_, _) -> false
+    case Natural(_, _) -> false
+    case Optimization(_) -> false
+
+newFreeType(source) := newType(source, 1, 0, [])
+newBooleanType(source) := newType(source, 2, 0, [])
+newNaturalType(source) := newType(source, 3, 0, [])
+newFunctionType(source, left, right) := newType(source, 4, 0, [left, right])
+newTupleType(source, types) := newType(source, 5, 0, types)
+newListType(source, type) := newType(source, 6, 0, [type])
+newTreeType(source, type) := newType(source, 7, 0, [type])
+newMaybeType(source, type) := newType(source, 8, 0, [type])
+newBottomType(source) := newType(source, 9, 0, [])
+define newTypeVariable(variables, source)
+    type := newType(source, 0, cardinality(variables), [])
+    (type, variables.insert(type, newFreeType(noTerm)))
 newTypeVariables(originals, variables) :=
-    originals.map(getNode).cascadeMap(`newTypeVariable, variables)
-newProjectionType(node, elementTypes, returnType) :=
-    newFunctionType(node, newTupleType(NULL, elementTypes), returnType)
-newStringType(node) := newListType(node, newNaturalType(NULL))
+    originals.map(getSource).cascadeMap(`newTypeVariable, variables)
+newProjectionType(source, elementTypes, returnType) :=
+    newFunctionType(source, newTupleType(noTerm, elementTypes), returnType)
+newStringType(source) := newListType(source, newNaturalType(noTerm))
 newScheme(universals, type) := (universals, type)
 
 isTypeVariable(type) := getTypeCode(type) = 0
@@ -45,7 +57,7 @@ syntax(=~=) := infix(13)
 a =~= b := getTypeCode(a) = getTypeCode(b) and getIndex(a) = getIndex(b) and
     zip(getComponentTypes(a), getComponentTypes(b)).all(uncurry((=~=)))
 
-mapComponents(type, f) := newType(getNode(type), getTypeCode(type),
+mapComponents(type, f) := newType(getSource(type), getTypeCode(type),
     getIndex(type), getComponentTypes(type).map(f))
 
 newVariableMap(mappings) := newTable((<=).on(getIndex), mappings)

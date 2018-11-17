@@ -87,8 +87,14 @@ define showLocation(location)
     "line " ++ showNatural(location.getLocationLine) ++
     " column " ++ showNatural(location.getLocationColumn)
 
-define showTag(tag)
+define showFullTag(tag)
     "'" ++ tag.getTagLexeme ++ "' at " ++ showLocation(tag.getTagLocation)
+
+define showTag(Tag(lexeme, _))
+    if lexeme.isNil or head(lexeme) = 0 then "\\0"
+    if head(lexeme) = '\n' then "\\n"
+    lexeme
+
 
 TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
@@ -133,19 +139,19 @@ define isElided(token)
     code = getTokenCodeNumber(Comment) or code = getTokenCodeNumber(VSpace)
 
 define showToken(token)
-    token.getTokenTag.getTagLexeme
+    showTag(getTokenTag(token))
 
-define eofTag
-    Tag("\0", Location("", 0, 0))
+define noTag
+    Tag("", Location("", 0, 0))
 
 define START
-    Token(eofTag, Symbolic)
+    Token(Tag("\0", Location("", 0, 0)), Symbolic)
 
 define lex(string)
-    pairs(scan(string) ++ [eofTag]).map(uncurry(createToken))
+    pairs(scan(string) ++ [noTag]).map(uncurry(createToken))
 
-define showToken'(token)
-    showTag(getTokenTag(token)) ++ " " ++ (
+define showFullToken(token)
+    showFullTag(getTokenTag(token)) ++ " " ++ (
         match getTokenCode(token)
             case Space -> "Space"
             case VSpace -> "VSpace"
@@ -159,6 +165,6 @@ define showToken'(token)
     )
 
 #main(input) := scan(input).map(showTag).joinWith("\n")
-#main(input) := lex(input).map(showToken').joinWith("\n")
+#main(input) := lex(input).map(showFullToken).joinWith("\n")
 
 #*

@@ -1,57 +1,42 @@
 #* builtins.zero
 
-define getCharacter(node)
-    if isNatural(node)
-        getValue(node)
-    runtimeError("expected byte value in string at", node)
-
-define getFirstCharacter(node)
-    getCharacter(getRight(getLeft(getBody(getBody(node)))))
-
-# todo: this only works for literal strings
-define extractString(astString)
-    getFirstCharacter(astString) ::
-        extractString(getRight(getBody(getBody(astString))))
-
-define newBoolean(tag, b)
-    newLambda(tag, newUnderscore(tag, 0), newLambda(tag, newUnderscore(tag, 0),
-        newUnderscore(tag, if b then 1 else 2)))
-
-define getBuiltin(builtin)
+define getBuiltin(evaluateClosure, tag)
+    tag' := renameTag(tag, "_")
     maxInteger := 9223372036854775807
 
     define getNatural(term)
-        if isNatural(term)
-            getValue(term)
-        runtimeError("expected natural argument to", builtin)
+        maybeNatural(term) ? runtimeError("expected natural argument to", tag)
 
     define compute(f, left, right)
         f(getNatural(getTerm(left)), getNatural(getTerm(right)))
 
     define makeNaturalBuiltin(f, left, right)
-        Closure(newNatural(getTag(builtin), f.compute(left, right)), [])
+        Closure(Natural(tag', f.compute(left, right)), [])
+
+    define newBoolean(b)
+        Function(tag', Function(tag', Reference(tag', if b then 1 else 2)))
 
     define makeComparisonBuiltin(f, left, right)
-        Closure(newBoolean(getTag(builtin), f.compute(left, right)), [])
+        Closure(newBoolean(f.compute(left, right)), [])
 
     define addBuiltin(left, right)
         if left > maxInteger - right
-            runtimeError("overflow in", builtin)
+            runtimeError("overflow in", tag)
         left + right
 
     define subtractBuiltin(left, right)
         if right > left
-            runtimeError("underflow in", builtin)
+            runtimeError("underflow in", tag)
         left - right
 
     define multiplyBuiltin(left, right)
         if right =/= 0 and left > maxInteger // right
-            runtimeError("overflow in", builtin)
+            runtimeError("overflow in", tag)
         left * right
 
     define divideBuiltin(left, right)
         if right = 0
-            runtimeError("divide by zero in", builtin)
+            runtimeError("divide by zero in", tag)
         left // right
 
     define moduloBuiltin(left, right)
@@ -61,8 +46,13 @@ define getBuiltin(builtin)
 
     define upBuiltin(left, right)
         if left >= maxInteger
-            runtimeError("overflow in", builtin)
+            runtimeError("overflow in", tag)
         left + 1
+
+    define errorBuiltin(closure)
+        message := serializeString(evaluateClosure, closure) ?
+            runtimeError("expected string argument to", tag)
+        error(message)
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),
@@ -77,10 +67,10 @@ define getBuiltin(builtin)
         ("<=", (2, makeComparisonBuiltin(<=))),
         (">=", (2, makeComparisonBuiltin(>=))),
         ("up", (1, makeNaturalBuiltin(upBuiltin))),
-        ("error", (1, closure -> error(extractString(getTerm(closure))))),
+        ("error", (1, errorBuiltin)),
         ("(undefined)", (0, closure -> undefined))
     ])
 
-    builtins.lookup(getLexeme(builtin))
+    builtins.lookup(getTagLexeme(tag))
 
 #*

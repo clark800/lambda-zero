@@ -25,7 +25,6 @@ getNodeType(Node(ASTData(_, nodeType, _, _), _)) := nodeType
 getMaybeData(Node(ASTData(_, _, maybeData, _), _)) := maybeData
 getValue(Node(ASTData(_, _, _, value), _)) := value
 
-getDebruijnIndex(node) := getValue(node)
 getLeft(node) := head(getChildren(node))
 getRight(node) := head(tail(getChildren(node)))
 getParameter(node) := getLeft(node)
@@ -48,10 +47,6 @@ isDefinition(node) := isNodeType(node, DEFINITION)
 isNatural(node) := isNodeType(node, NATURAL)
 isBuiltin(node) := isNodeType(node, BUILTIN)
 
-Closure(term, environment) := Node(term, environment)
-getTerm := getData
-getEnvironment := getChildren
-
 getLexeme(node) := getTagLexeme(getTag(node))
 getLocation(node) := getTagLocation(getTag(node))
 getLine(node) := getLocationLine(getLocation(node))
@@ -64,9 +59,6 @@ isNull(node) := isThisSymbol(node, "\0\0")
 isEOF(node) := isThisSymbol(node, "\0")
 isUnderscore(node) := isThisSymbol(node, "_")
 isUnused(node) := isSymbol(node) and head(getLexeme(node)) = '_'
-
-isIdentity(node) := isLambda(node) and isSymbol(getBody(node)) and
-    getLexeme(getParameter(node)) =*= getLexeme(getBody(node))
 
 define isSection(node)
     isThisLexeme(node, ".*.") or
@@ -101,5 +93,20 @@ define convertOperator(tag)
     if bool(builtins.find(=*= getTagLexeme(tag)))
         newBuiltin(tag)
     newName(tag)
+
+define showLexeme(node)
+    showTag(getTag(node))
+
+define showAST(node)
+    match getNodeType(node)
+        case SYMBOL -> showLexeme(node)
+        case LAMBDA -> "(" ++ showLexeme(getParameter(node)) ++ " -> " ++
+                   showAST(getBody(node)) ++ ")"
+        case APPLICATION -> "(" ++ showAST(getLeft(node)) ++ " " ++
+                   showAST(getRight(node)) ++ ")"
+        case DEFINITION -> "(" ++ showAST(getLeft(node)) ++ " := " ++
+                   showAST(getRight(node)) ++ ")"
+        case NATURAL -> showNatural(getValue(node))
+        case BUILTIN -> "[" ++ showLexeme(node) ++ "]"
 
 #*

@@ -1,39 +1,47 @@
 #* interpret.zero
 
-define execute(ast)
-    evaluate(Closure(ast, []), [])
-
 define splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
     input' := if afterCode.isNil then [] else tail(afterCode)
     (code, input')
 
-define extractOutputString(closure)
-    # term is (z -> p -> z) or (z -> p -> ((p c) cs))
-    body := getBody(getBody(getTerm(closure)))
-    if isSymbol(body)
-        []
-    dummy := Closure(NULL, [])
-    environment' := dummy :: dummy :: getEnvironment(closure)
-    characterTerm := getRight(getLeft(body))
-    characterClosure := Closure(characterTerm, environment')
-    character := getCharacter(getTerm(evaluate(characterClosure, [])))
-    remaining := evaluate(Closure(getRight(body), environment'), [])
-    character :: extractOutputString(remaining)
+
+define isMain(term)
+    # todo: detect the name "main" rather than parameter name "input"
+    match term
+        case Reference(_, _) -> false
+        case Function(tag, _) -> getTagLexeme(tag) =*= "input"
+        case Application(_, _) -> false
+        case Natural(_, _) -> false
+        case Optimization(_, _) -> false
+
+
+define newNilTerm(tag)
+    Function(tag, Function(tag, Reference(tag, 2)))
+
+
+define constructString(tag, string)
+    # todo: implement this
+    newNilTerm(renameTag(tag, "_"))
+
+
+define evaluateMain(Closure(main, environment), input)
+    # todo: use tag for "input" parameter to main
+    tag := getTermTag(main)
+    term := Application(main, constructString(tag, input))
+    serializeString(evaluateClosure, Closure(term, environment)) ?
+        runtimeError("expected string from", tag)
+
 
 define main(input)
     (code, input') := splitCodeAndInput(input)
-    ast := parse(code, input')
-    closure := execute(ast)
-    term := getTerm(closure)
-    if isLambda(term) and isThisSymbol(getParameter(term), "input")
-        # todo: construct input
-        string := newName(renameTag(getTag(term), "[]"))
-        stack := [Closure(string, [])]
-        extractOutputString(evaluate(closure, stack))
+    closure := evaluateTerm(parse(code))
+    if isMain(getTerm(closure))
+        evaluateMain(closure, input')
     serialize(closure)
 
+
 #main(input) := lex(input).map(showToken).joinWith("\n")
-#main(input) := showAST(parse(input, ""))
+#main(input) := showAST(parse(input))
 
 #*
