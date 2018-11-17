@@ -29,8 +29,8 @@ define evaluate(closure, stack)
                 closure
             evaluate(Closure(expandNatural(term), environment), stack)
         case BUILTIN
-            (arity, builtin) := getBuiltin(term) ?? undefined
-            arguments := (stack.takeSafe(arity) ??
+            (arity, builtin) := try getBuiltin(term) except undefined
+            arguments := (try stack.takeSafe(arity) except
                 runtimeError("missing argument to", term)).map(`evaluate([]))
             right := if arity > 1 then arguments[1] else Closure(NULL, [])
             evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
