@@ -7,6 +7,8 @@ Void ⩴ {}
 x.f ≔ f(x)                     # uniform function call syntax
 (match) ≔ (.)
 f ‖ x ≔ f(x)                  # low precedence application
+(catch) := (‖)
+(except) := a ↦ b ↦ a(_ ↦ b)
 f ∘ g ≔ x ↦ f(g(x))          # function composition
 `f(x, y) ≔ f(y, x)             # flip order of first two arguments of function
 ``f(x, y, z) := f(y, z, x)
@@ -18,6 +20,8 @@ mirror(f)(x) ≔ f(x, x)         # convert binary function to unary function
 # boolean
 Boolean ⩴ {false, true}
 (if b)(x, y) ≔ b.(case false ↦ y; case true ↦ x)
+(then) := (‖)
+(else) := (‖)
 not b ≔ if b then false else true
 b and c ≔ if b then c else false
 b or c ≔ if b then true else c
@@ -376,7 +380,6 @@ product := ∏
 (=*=) := (≛)
 (<*=) := (⩿)
 (return) := Right
-(fail) := Left
-(with) := constant
+(throw) := Left
 
 #*

@@ -206,11 +206,10 @@ void initSymbols(void) {
     addBuiltinSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
     addBuiltinSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
     addBuiltinSyntax("\u2A74", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    addBuiltinSyntax("->", 6, 6, INFIX, R, shiftInfix, reduceArrow);
-    addBuiltinSyntax("\u21A6", 6, 6, INFIX, R, shiftInfix, reduceArrow);
-    addBuiltinSyntax("case", 7, 7, PREFIX, N, shiftPrefix, reducePrefix);
-    addBuiltinSyntax("try", 7, 7, PREFIX, L, shiftPrefix, reduceTry);
-    addBuiltinSyntax("to", 8, 8, INFIX, R, shiftInfix, reduceArrow);
+    addBuiltinSyntax("try", 6, 6, PREFIX, L, shiftPrefix, reduceTry);
+    addBuiltinSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
+    addBuiltinSyntax("\u21A6", 7, 7, INFIX, R, shiftInfix, reduceArrow);
+    addBuiltinSyntax("case", 8, 8, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceApply);
     addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);

@@ -129,14 +129,14 @@ define reduceMixfix(operator, left, right)
     prior := getPrior(getSyntax(operator))
     if not isApplication(left) or not getLexeme(left) =*= prior
         syntaxError("mixfix syntax error", operator)
-    reduceApply(operator, left, right)
+    reduceInfix(operator, left, right)
 
 
 define newMixfixOperator(operators, tag, prior)
     precedence := getRightPrecedence(
-        try lookupSyntax(operators, getLexeme(prior)) recover with
+        try lookupSyntax(operators, getLexeme(prior)) except
             syntaxError("syntax not defined", prior))
-    newOperator(tag, 0, Syntax(precedence, precedence, INFIX, LEFT, true,
+    newOperator(tag, 0, Syntax(precedence, precedence, INFIX, LEFT, false,
         shiftInfix, reduceMixfix, getLexeme(prior)))
 
 
@@ -220,11 +220,10 @@ OPERATORS := [
     ("≔", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceDefine)),
     ("::=", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADT)),
     ("⩴", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADT)),
-    ("->", coreSyntax(6, 6, INFIX, RIGHT, shiftInfix, reduceArrow)),
-    ("↦", coreSyntax(6, 6, INFIX, RIGHT, shiftInfix, reduceArrow)),
-    ("case", coreSyntax(7, 7, PREFIX, NEITHER, shiftPrefix, reducePrefix)),
-    ("try", coreSyntax(7, 7, PREFIX, LEFT, shiftPrefix, reduceTry)),
-    ("to", coreSyntax(8, 8, INFIX, RIGHT, shiftInfix, reduceArrow)),
+    ("try", coreSyntax(6, 6, PREFIX, LEFT, shiftPrefix, reduceTry)),
+    ("->", coreSyntax(7, 7, INFIX, RIGHT, shiftInfix, reduceArrow)),
+    ("↦", coreSyntax(7, 7, INFIX, RIGHT, shiftInfix, reduceArrow)),
+    ("case", coreSyntax(8, 8, PREFIX, NEITHER, shiftPrefix, reducePrefix)),
     ("@", coreSyntax(9, 9, INFIX, NEITHER, shiftInfix, reduceApply)),
     ("syntax", coreSyntax(90, 90, PREFIX, LEFT, shiftPrefix, reducePrefix)),
     ("error", coreSyntax(90, 90, PREFIX, LEFT, shiftPrefix, reduceError)),

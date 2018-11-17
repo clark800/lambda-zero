@@ -177,10 +177,12 @@ void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
 }
 
 static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
+    Tag tag = getTag(operator);
     String prior = getRules(operator)->prior;
     if (!isApplication(left) || !isSameString(getLexeme(left), prior))
         syntaxError("mixfix syntax error", operator);
-    return newApplication(getTag(operator), left, right);
+    return newApplication(tag, newApplication(tag,
+        convertOperator(tag), left), right);
 }
 
 void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
@@ -188,6 +190,6 @@ void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
     Rules* rules = findRules(getLexeme(prior));
     syntaxErrorIf(rules == NULL, "syntax not defined", prior);
     Precedence p = rules->rightPrecedence;
-    appendSyntax((Rules){tag.lexeme, getLexeme(prior), p, p, INFIX, L, true,
+    appendSyntax((Rules){tag.lexeme, getLexeme(prior), p, p, INFIX, L, false,
         shifter, reduceMixfix});
 }
