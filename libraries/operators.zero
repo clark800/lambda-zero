@@ -2,6 +2,8 @@
 
 syntax(||) ≔ infixR(10)
 syntax(‖) ≔ infixR(10)
+syntax(return) := prefix(11)
+syntax(throw) := prefix(11)
 syntax(match) ≔ prefix(11)
 syntax(if) ≔ prefix(12)
 syntax(then) := mixfix(if _)

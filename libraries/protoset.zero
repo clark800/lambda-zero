@@ -10,14 +10,14 @@ cardinality := length <> getElements
 elicit(protoset, object) := (
     ((~<), elements) := protoset
     if elements.isNil
-        nothing
+        Left()
     element := elements[0]
     if object ~< element /\ element ~< object
-        just(element)
+        Right(element)
     ((~<), tail(elements)).elicit(object)
 )
 
-object : protoset := isJust(protoset.elicit(object))
+object : protoset := isRight(protoset.elicit(object))
 object /: protoset := not object : protoset
 
 mapElements(protoset, f) := (
