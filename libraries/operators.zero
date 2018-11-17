@@ -1,6 +1,7 @@
 #* operators.zero
 
-syntax(except) := mixfix(try _)
+syntax(recover) := mixfix(try _)
+syntax(with) := prefix(10)
 
 syntax(||) ≔ infixR(10)
 syntax(‖) ≔ infixR(10)
@@ -12,6 +13,8 @@ syntax(then) := mixfix(if _)
 syntax(else) := mixfix(if _ then _)
 
 syntax(?) ≔ infixL(14)
+syntax(?!) ≔ infixL(14)
+syntax(⁈) ≔ infixL(14)
 syntax(??) ≔ infixL(14)
 syntax(⁇) ≔ infixL(14)
 
