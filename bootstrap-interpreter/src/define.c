@@ -17,8 +17,8 @@ Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> b ? (a -> c) --> (((?) b) (a -> c))
-    return newApplication(tag, newApplication(tag, newName(renameTag(tag, "?")),
-             right), newPatternLambda(tag, left, scope));
+    return newApplication(tag, newApplication(tag, newName(
+        renameTag(tag, "??")), right), newPatternLambda(tag, left, scope));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -71,7 +71,7 @@ static Node* transformRecursion(Node* name, Node* value) {
 
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
     Tag tag = renameTag(getTag(operator), ":=");
-    if (isThisLexeme(left, "try")) {
+    if (isApplication(left) && isThisLexeme(left, "try")) {
         tag = renameTag(tag, "try");
         left = getRight(left);
     }

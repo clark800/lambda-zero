@@ -134,7 +134,7 @@ define reduceMixfix(operator, left, right)
 
 define newMixfixOperator(operators, tag, prior)
     precedence := getRightPrecedence(
-        try lookupSyntax(operators, getLexeme(prior)) except
+        lookupSyntax(operators, getLexeme(prior)) ?
             syntaxError("syntax not defined", prior))
     newOperator(tag, 0, Syntax(precedence, precedence, INFIX, LEFT, false,
         shiftInfix, reduceMixfix, getLexeme(prior)))
@@ -193,10 +193,6 @@ define shiftNewline(state, operator)
     State(operator :: stack', operators')
 
 
-define reduceTry(operator, _left, right)
-    reduceApply(operator, newName(renameTag(getTag(operator), "?!")), right)
-
-
 define coreSyntax(leftPrecedence, rightPrecedence, fixity, associativity,
         shifter, reducer)
     Syntax(leftPrecedence, rightPrecedence, fixity, associativity, true,
@@ -220,7 +216,7 @@ OPERATORS := [
     ("≔", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceDefine)),
     ("::=", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADT)),
     ("⩴", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADT)),
-    ("try", coreSyntax(6, 6, PREFIX, LEFT, shiftPrefix, reduceTry)),
+    # reserve precedence 6 for "try"
     ("->", coreSyntax(7, 7, INFIX, RIGHT, shiftInfix, reduceArrow)),
     ("↦", coreSyntax(7, 7, INFIX, RIGHT, shiftInfix, reduceArrow)),
     ("case", coreSyntax(8, 8, PREFIX, NEITHER, shiftPrefix, reducePrefix)),

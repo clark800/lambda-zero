@@ -7,7 +7,7 @@ define applyDefinition(tag, left, right, scope)
     newApplication(tag, newPatternLambda(tag, left, scope), right)
 
 define applyTryDefinition(tag, left, right, scope)
-    newApplication(tag, newApplication(tag, newName(renameTag(tag, "?")),
+    newApplication(tag, newApplication(tag, newName(renameTag(tag, "??")),
         right), newPatternLambda(tag, left, scope))
 
 define hasRecursiveCalls(node, name)
@@ -45,7 +45,7 @@ define reduceDefine'(tag, operator, left, right)
 
 define reduceDefine(operator, left, right)
     tag := getTag(operator)
-    if isThisLexeme(left, "try")
+    if isApplication(left) and isThisLexeme(left, "try")
         reduceDefine'(renameTag(tag, "try"), operator, getRight(left), right)
     reduceDefine'(renameTag(tag, ":="), operator, left, right)
 

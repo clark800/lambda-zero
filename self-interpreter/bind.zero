@@ -17,7 +17,7 @@ define bind(root)
                 tag := getTag(node)
                 lexeme := getLexeme(node)
                 newReference(getTag(node), 1 + (
-                    try parameterNames.indexOf(lexeme) except
+                    parameterNames.indexOf(lexeme) ?
                         syntaxError("undefined symbol", node)))
             case LAMBDA
                 parameter := getParameter(node)
