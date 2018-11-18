@@ -40,13 +40,21 @@ Node* newPatternLambda(Tag tag, Node* left, Node* right) {
     return newLambda(tag, newUnderscore(tag, 0), body);
 }
 
+Node* newCasePatternLambda(Tag tag, Node* pattern, Node* body) {
+    // Unit is a special case because it's the only type where you know
+    // the exact form of any instance of the type, so you can actually
+    // pattern match against a value instead of a variable
+    pattern = isThisLeaf(pattern, "()") ? newUnderscore(tag, 0) : pattern;
+    return newPatternLambda(tag, pattern, body);
+}
+
 Node* newCase(Tag tag, Node* left, Node* right) {
     // strict pattern matching
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
     Node* body = right;
     Node* items = isAsPattern(left) ? getRight(left) : left;
     for (; isApplication(items); items = getLeft(items))
-        body = newPatternLambda(tag, getRight(items), body);
+        body = newCasePatternLambda(tag, getRight(items), body);
     if (isAsPattern(left))
         // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
         body = newApplication(tag, newPatternLambda(tag, getLeft(left), body),

@@ -41,18 +41,23 @@ define isAsPattern(node)
     isApplication(node) and isThisLexeme(node, "@")
 
 
-define getNameAndValue(tag, left, right)
+define getNameAndValue(f, left, right)
     if isNull(right)
         undefined                   # force syntax errors
     if not isApplication(left)
         (left, right)
-    getNameAndValue(tag, getLeft(left),
-        newPatternLambda(tag, getRight(left), right))
+    getNameAndValue(f, getLeft(left), f(getRight(left), right))
+
+
+define newCasePatternLambda(tag, left, right)
+    if isThisSymbol(left, "()")
+        newPatternLambda(tag, newUnderscore(tag, 0), right)
+    newPatternLambda(tag, left, right)
 
 
 define newCaseArgument(tag, left, right)
     pattern := if isAsPattern(left) then getRight(left) else left
-    (_, right') := getNameAndValue(tag, pattern, right)
+    (_, right') := getNameAndValue(newCasePatternLambda(tag), pattern, right)
     if not isAsPattern(left)
         right'
     wrapper := newPatternLambda(tag, getLeft(left), right')

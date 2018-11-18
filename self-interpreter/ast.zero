@@ -6,19 +6,19 @@ ASTDataType ::= {ASTData(_ : Tag, _ : NodeType, _ : Maybe(_), _ : Integer)}
 newLeaf(tag, nodeType, maybeData, value) :=
     Node(ASTData(tag, nodeType, maybeData, value), [])
 newBranch(tag, nodeType, children) :=
-    Node(ASTData(tag, nodeType, nothing, 0), children)
+    Node(ASTData(tag, nodeType, Left(), 0), children)
 
 isLeaf(node) := isNil(getChildren(node))
 
 newSymbol(tag, value, maybeData) := newLeaf(tag, SYMBOL, maybeData, value)
-newOperator(tag, value, syntax') := newSymbol(tag, value, just(syntax'))
-newReference(tag, debruijn) := newSymbol(tag, debruijn, nothing)
+newOperator(tag, value, syntax') := newSymbol(tag, value, Right(syntax'))
+newReference(tag, debruijn) := newSymbol(tag, debruijn, Left())
 newName(tag) := newReference(tag, 0)
 newLambda(tag, parameter, body) := newBranch(tag, LAMBDA, [parameter, body])
 newApplication(tag, left, right) := newBranch(tag, APPLICATION, [left, right])
 newDefinition(tag, left, right) := newBranch(tag, DEFINITION, [left, right])
-newNatural(tag, value) := newLeaf(tag, NATURAL, nothing, value)
-newBuiltin(tag) := newLeaf(tag, BUILTIN, nothing, 0)
+newNatural(tag, value) := newLeaf(tag, NATURAL, Left(), value)
+newBuiltin(tag) := newLeaf(tag, BUILTIN, Left(), 0)
 
 getTag(Node(ASTData(tag, _, _, _), _)) := tag
 getNodeType(Node(ASTData(_, nodeType, _, _), _)) := nodeType
@@ -109,7 +109,7 @@ define renameNode(node, lexeme)
 define convertOperator(tag)
     builtins := ["+", "-", "*", "//", "%", "=", "=/=", "<", ">",
         "<=", ">=", "up", "error"]
-    if isJust(builtins.find(=*= getTagLexeme(tag)))
+    if isRight(builtins.find(=*= getTagLexeme(tag)))
         newBuiltin(tag)
     newName(tag)
 

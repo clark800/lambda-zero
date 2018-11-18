@@ -29,7 +29,7 @@ StateType ::= {State(
 )}
 
 define isOperator(node)
-    isJust(getMaybeData(node))
+    isRight(getMaybeData(node))
 
 define reduceOperand(node, _left, _right)
     node
@@ -114,17 +114,17 @@ define reduceLeft(state, operator)
 
 define lookupSyntax(operators, lexeme)
     if isNil(operators)
-        nothing
+        Left()
     (lexeme', syntax') := head(operators)
     if lexeme =*= lexeme'
-        just(syntax')
+        Right(syntax')
     lookupSyntax(tail(operators), lexeme)
 
 define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapJust(newOperator(tag, value)) ??
+    operators.lookupSyntax(lexeme).mapRight(newOperator(tag, value)) ??
         (if lexeme =*= " " then
-            operators.lookupSyntax("( )").mapJust(newOperator(tag, value)) ??
+            operators.lookupSyntax("( )").mapRight(newOperator(tag, value)) ??
             newName(tag) else newName(tag))
 
 #*

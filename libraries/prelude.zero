@@ -92,12 +92,14 @@ mapPair(xx, f) ≔ (f(first(xx)), f(second(xx)))
 curry(f) ≔ x ↦ y ↦ f((x, y))
 uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
-# maybe
-Maybe(a) ⩴ {nothing, just(thing ∈ a)}
-isNothing ≔ (case nothing ↦ true; case just(_) ↦ false)
-isJust ≔ (case nothing ↦ false; case just(_) ↦ true)
-mapJust(mx, f) := mx.(case nothing -> nothing; case just(x) -> just(f(x)))
-mx ⁇ d ≔ mx.(case nothing ↦ d; case just(x) ↦ x)    # just value or default
+# either
+Either(a, b) ::= {Left(_ : a), Right(_ : b)}
+isLeft ≔ (case Left(_) ↦ true; case Right(_) ↦ false)
+isRight ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
+mapLeft(exy, f) := exy.(case Left(x) -> Left(f(x)); case Right(y) -> Right(y))
+mapRight(exy, f) := exy.(case Left(x) -> Left(x); case Right(y) -> Right(f(y)))
+exy >> f := exy.(case Left(x) -> Left(x); Right(y) -> f(y))
+exy ⁇ d ≔ exy.(case Left(_) ↦ d; case Right(y) ↦ y)
 
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
@@ -136,11 +138,11 @@ define dropWhile(xs, p)
 
 define takeSafe(xs, n)
     match n
-        case 0 ↦ just([])
+        case 0 ↦ Right([])
         case ↑ n′
             match xs
-                case [] ↦ nothing
-                case x ∷ xs′ ↦ takeSafe(xs′, n′).mapJust(x ∷)
+                case [] ↦ Left()
+                case x ∷ xs′ ↦ takeSafe(xs′, n′).mapRight(x ∷)
 
 define dropSafe(xs, n)
     match n
@@ -159,8 +161,8 @@ define filterMap(xs, f)
         case x ∷ xs'
             ys := filterMap(xs', f)
             match f(x)
-                case nothing -> ys
-                case just(y) -> y ∷ ys
+                case Left(_) -> ys
+                case Right(y) -> y ∷ ys
 
 define zipWith(xs, f, ys)
     match xs
@@ -190,8 +192,8 @@ count(xs, p) ≔ length(xs ¦ p)
 
 define find(xs, p)
     match xs
-        case [] ↦ nothing
-        case x ∷ xs′ ↦ if p(x) then just(x) else xs′.find(p)
+        case [] ↦ Left()
+        case x ∷ xs′ ↦ if p(x) then Right(x) else xs′.find(p)
 
 # cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
@@ -256,13 +258,13 @@ define ns ⩿ ms      # string comparison
 define indexOf(nss, key)
     define indexOf′(list, depth)
         if isNil(list)
-            nothing
+            Left()
         if list[0] ≛ key
-            just(depth)
+            Right(depth)
         indexOf′(tail(list), depth + 1)
     indexOf′(nss, 0)
 
-contains(nss, key) ≔ isJust(nss.indexOf(key))
+contains(nss, key) ≔ isRight(nss.indexOf(key))
 
 define startsWith(ns, ks)
     match ks
@@ -371,4 +373,7 @@ sum := ∑
 product := ∏
 (=*=) := (≛)
 (<*=) := (⩿)
+(return) := Right
+(throw) := Left
+
 #*
