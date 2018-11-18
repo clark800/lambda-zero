@@ -9,6 +9,8 @@ syntax(if) ≔ prefix(12)
 syntax(then) := mixfix(if _)
 syntax(else) := mixfix(if _ then _)
 
+syntax(try) := prefix(14)
+syntax(except) := mixfix(try _)
 syntax(??) ≔ infixL(14)
 syntax(⁇) ≔ infixL(14)
 syntax(>>) ≔ infixL(14)

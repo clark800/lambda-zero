@@ -375,5 +375,6 @@ product := ∏
 (<*=) := (⩿)
 (return) := Right
 (throw) := Left
+(try) := (⁇)
 
 #*
