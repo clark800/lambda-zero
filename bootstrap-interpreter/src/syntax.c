@@ -158,6 +158,8 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return applyDefinition(tag, getLeft(left), getRight(left), right);
     if (isDefinition(left) && isThisLexeme(left, "::="))
         return applyADTDefinition(tag, getLeft(left), getRight(left), right);
+    if (isDefinition(left) && isThisLexeme(left, "try"))
+        return applyTryDefinition(tag, getLeft(left), getRight(left), right);
     if (isApplication(left) && isThisLexeme(left, "define"))
         return reduceDefine(getLeft(left), getRight(left), right);
     if (isCase(left) && isCase(right))
@@ -181,6 +183,12 @@ static void shiftNewline(Stack* stack, Node* operator) {
         push(stack, operator);
 }
 
+static Node* reduceTry(Node* operator, Node* left, Node* right) {
+    (void)left;
+    Node* name = newName(renameTag(getTag(operator), "??"));
+    return reduceApply(operator, name, right);
+}
+
 void initSymbols(void) {
     addBuiltinSyntax("\0", 0, 0, CLOSEFIX, R, shiftClose, reduceEOF);
     addBuiltinSyntax("(", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
@@ -201,6 +209,7 @@ void initSymbols(void) {
     addBuiltinSyntax("->", 6, 6, INFIX, R, shiftInfix, reduceArrow);
     addBuiltinSyntax("\u21A6", 6, 6, INFIX, R, shiftInfix, reduceArrow);
     addBuiltinSyntax("case", 7, 7, PREFIX, N, shiftPrefix, reducePrefix);
+    addBuiltinSyntax("try", 7, 7, PREFIX, L, shiftPrefix, reduceTry);
     addBuiltinSyntax("@", 8, 8, INFIX, N, shiftInfix, reduceApply);
     addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);

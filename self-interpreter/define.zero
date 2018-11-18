@@ -3,8 +3,12 @@
 define getHead(node)
     if isApplication(node) then getHead(getLeft(node)) else node
 
-define applyDefinition(tag, name, value, scope)
-    newApplication(tag, newPatternLambda(tag, name, scope), value)
+define applyDefinition(tag, left, right, scope)
+    newApplication(tag, newPatternLambda(tag, left, scope), right)
+
+define applyTryDefinition(tag, left, right, scope)
+    newApplication(tag, newApplication(tag, newName(renameTag(tag, "?")),
+        right), newPatternLambda(tag, left, scope))
 
 define hasRecursiveCalls(node, name)
     if isLeaf(node)
@@ -27,8 +31,7 @@ define isTuple(node)
         isTuple(getLeft(node))
     isTupleConstructor(node)
 
-define reduceDefine(operator, left, right)
-    tag := renameTag(getTag(operator), ":=")
+define reduceDefine'(tag, operator, left, right)
     if isThisLexeme(left, "syntax") or isTuple(left)
         newDefinition(tag, left, right)
     (name, value) := getNameAndValue(newPatternLambda(tag), left, right)
@@ -39,6 +42,12 @@ define reduceDefine(operator, left, right)
     if isThisSymbol(name, "main")
         applyDefinition(getTag(name), name, value, name)
     newDefinition(tag, name, transformRecursion(name, value))
+
+define reduceDefine(operator, left, right)
+    tag := getTag(operator)
+    if isThisLexeme(left, "try")
+        reduceDefine'(renameTag(tag, "try"), operator, getRight(left), right)
+    reduceDefine'(renameTag(tag, ":="), operator, left, right)
 
 define isValidConstructorParameter(parameter)
     isApplication(parameter) and isApplication(getLeft(parameter)) and

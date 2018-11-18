@@ -98,7 +98,7 @@ isLeft ≔ (case Left(_) ↦ true; case Right(_) ↦ false)
 isRight ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
 mapLeft(exy, f) := exy.(case Left(x) -> Left(f(x)); case Right(y) -> Right(y))
 mapRight(exy, f) := exy.(case Left(x) -> Left(x); case Right(y) -> Right(f(y)))
-exy >> f := exy.(case Left(x) -> Left(x); Right(y) -> f(y))
+exy ? f := exy.(case Left(x) -> Left(x); case Right(y) -> f(y))
 exy ⁇ d ≔ exy.(case Left(_) ↦ d; case Right(y) ↦ y)
 
 # list
@@ -375,6 +375,5 @@ product := ∏
 (<*=) := (⩿)
 (return) := Right
 (throw) := Left
-(try) := (⁇)
 
 #*
