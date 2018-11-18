@@ -185,7 +185,7 @@ static void shiftNewline(Stack* stack, Node* operator) {
 
 static Node* reduceTry(Node* operator, Node* left, Node* right) {
     (void)left;
-    Node* name = newName(renameTag(getTag(operator), "??"));
+    Node* name = newName(renameTag(getTag(operator), "?!"));
     return reduceApply(operator, name, right);
 }
 
@@ -210,7 +210,8 @@ void initSymbols(void) {
     addBuiltinSyntax("\u21A6", 6, 6, INFIX, R, shiftInfix, reduceArrow);
     addBuiltinSyntax("case", 7, 7, PREFIX, N, shiftPrefix, reducePrefix);
     addBuiltinSyntax("try", 7, 7, PREFIX, L, shiftPrefix, reduceTry);
-    addBuiltinSyntax("@", 8, 8, INFIX, N, shiftInfix, reduceApply);
+    addBuiltinSyntax("to", 8, 8, INFIX, R, shiftInfix, reduceArrow);
+    addBuiltinSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceApply);
     addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);

@@ -99,6 +99,7 @@ isRight ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
 mapLeft(exy, f) := exy.(case Left(x) -> Left(f(x)); case Right(y) -> Right(y))
 mapRight(exy, f) := exy.(case Left(x) -> Left(x); case Right(y) -> Right(f(y)))
 exy ? f := exy.(case Left(x) -> Left(x); case Right(y) -> f(y))
+exy ⁈ f ≔ exy.(case Left(x) ↦ f(x); case Right(y) ↦ y)
 exy ⁇ d ≔ exy.(case Left(_) ↦ d; case Right(y) ↦ y)
 
 # list
@@ -364,6 +365,7 @@ repl(in, prompt, f) ≔ prompt ⧺ in.lines.map(f).joinWith("\n" ⧺ prompt)
 (--) := (not)
 (¬) := (not)
 (^^) ≔ (°)
+(?!) := (⁈)
 (??) ≔ (⁇)
 (++) ≔ (⧺)
 filter := (¦)
@@ -374,6 +376,7 @@ product := ∏
 (=*=) := (≛)
 (<*=) := (⩿)
 (return) := Right
-(throw) := Left
+(fail) := Left
+(with) := constant
 
 #*
