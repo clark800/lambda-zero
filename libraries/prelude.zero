@@ -1,7 +1,7 @@
 #* prelude.zero
 
 undefined ≔ error("")
-Void ⩴ {}
+∅ ⩴ {}
 
 # function
 x.f ≔ f(x)                     # uniform function call syntax
@@ -13,7 +13,8 @@ f ∘ g ≔ x ↦ f(g(x))          # function composition
 id(x) ≔ x                      # identity function
 constant(x) ≔ _ ↦ x           # return value does not depend on parameter
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
-mirror(f)(x) ≔ f(x, x)         # convert binary function to unary function
+mirror(f) ≔ x -> f(x, x)         # convert binary function to unary function
+fix(f) := (x -> f(x(x)))(x -> f(x(x)))
 
 # boolean
 Boolean ⩴ {false, true}
@@ -35,7 +36,7 @@ while(f, p, z) ≔ f.until((not) ∘ p, z)
 (⫽) ≔ (//)
 
 # builtins
-# N ⩴ {0, ↑(↓ ∈ N)}
+# ℕ ⩴ {0, ↑(↓ ∈ N)}
 # (=) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
 #       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n = m)
 # (≠) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ true);
@@ -55,8 +56,8 @@ while(f, p, z) ≔ f.until((not) ∘ p, z)
 # n ⫽ m ≔ if m = 0 then undefined else (if n < m then 0 else ↑((n - m) ⫽ m))
 # n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
-Z ⩴ {+(_ ∈ N), -(_ ∈ N)}
-Q ⩴ {(numerator ∈ Z) / (denominator ∈ Z)}
+ℤ ⩴ {+(_ ∈ ℕ), -(_ ∈ ℕ)}
+ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
 positive(n) ≔ + n
 negative(n) ≔ - n
 negate ≔ (case + n ↦ - n; case - n ↦ + n)
@@ -96,13 +97,16 @@ uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
 # either
 Either(a, b) ::= {Left(_ : a), Right(_ : b)}
-isLeft ≔ (case Left(_) ↦ true; case Right(_) ↦ false)
-isRight ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
-mapLeft(exy, f) := exy.(case Left(x) -> Left(f(x)); case Right(y) -> Right(y))
-mapRight(exy, f) := exy.(case Left(x) -> Left(x); case Right(y) -> Right(f(y)))
 exy ⁇ f := exy.(case Left(x) -> Left(x); case Right(y) -> f(y))
 exy ⁈ f ≔ exy.(case Left(x) ↦ f(x); case Right(y) ↦ y)
-exy ? d ≔ exy.(case Left(_) ↦ d; case Right(y) ↦ y)
+bool ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
+mapLeft(exy, f) := exy ⁈ Left ∘ f
+mapRight(exy, f) := exy ⁇ Right ∘ f
+exy ? d ≔ exy ⁈ constant(d)
+
+void := Left()
+(throw) := Left
+(return) := Right
 
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
@@ -141,10 +145,10 @@ define dropWhile(xs, p)
 
 define takeSafe(xs, n)
     match n
-        case 0 ↦ Right([])
+        case 0 ↦ return []
         case ↑ n′
             match xs
-                case [] ↦ Left()
+                case [] ↦ void
                 case x ∷ xs′ ↦ takeSafe(xs′, n′).mapRight(x ∷)
 
 define dropSafe(xs, n)
@@ -195,8 +199,8 @@ count(xs, p) ≔ length(xs ¦ p)
 
 define find(xs, p)
     match xs
-        case [] ↦ Left()
-        case x ∷ xs′ ↦ if p(x) then Right(x) else xs′.find(p)
+        case [] ↦ void
+        case x ∷ xs′ ↦ if p(x) then return x else xs′.find(p)
 
 # cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
@@ -261,13 +265,13 @@ define ns ⩿ ms      # string comparison
 define indexOf(nss, key)
     define indexOf′(list, depth)
         if isNil(list)
-            Left()
+            void
         if list[0] ≛ key
-            Right(depth)
+            return depth
         indexOf′(tail(list), depth + 1)
     indexOf′(nss, 0)
 
-contains(nss, key) ≔ isRight(nss.indexOf(key))
+contains(nss, key) ≔ bool(nss.indexOf(key))
 
 define startsWith(ns, ks)
     match ks
@@ -355,7 +359,7 @@ parseInteger(string, base) ≔ if string.head = '-' then
 Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
 
 # repl
-repl(in, prompt, f) ≔ prompt ⧺ in.lines.map(f).joinWith("\n" ⧺ prompt)
+repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
 # operator aliases
 (||) ≔ (‖)
@@ -379,7 +383,5 @@ sum := ∑
 product := ∏
 (=*=) := (≛)
 (<*=) := (⩿)
-(return) := Right
-(throw) := Left
 
 #*

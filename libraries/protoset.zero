@@ -10,15 +10,14 @@ cardinality := length <> getElements
 elicit(protoset, object) := (
     ((~<), elements) := protoset
     if elements.isNil
-        Left()
+        void
     element := elements[0]
     if object ~< element /\ element ~< object
-        Right(element)
+        return element
     ((~<), tail(elements)).elicit(object)
 )
 
-object : protoset := isRight(protoset.elicit(object))
-object /: protoset := not object : protoset
+object in protoset := bool(protoset.elicit(object))
 
 mapElements(protoset, f) := (
     ((~<), elements) := protoset
@@ -31,7 +30,7 @@ filterElements(protoset, p) := (
 )
 
 add(protoset, object) := (
-    if object : protoset
+    if object in protoset
         protoset
     ((~<), elements) := protoset
     ((~<), object :: elements)
@@ -47,12 +46,12 @@ protoset U protoset' := (
     (order', elements') := protoset'
     if elements'.isNil
         protoset
-    if elements'[0] : protoset
+    if elements'[0] in protoset
         protoset U (order', tail(elements'))
     (order, elements) := protoset
     (order, elements'[0] :: elements) U (order', tail(elements'))
 )
 
-protoset \ protoset' := protoset.filterElements(/: protoset')
+protoset \ protoset' := protoset.filterElements((not) <> (in protoset'))
 
 #*

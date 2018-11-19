@@ -29,7 +29,7 @@ StateType ::= {State(
 )}
 
 define isOperator(node)
-    isRight(getMaybeData(node))
+    bool(getMaybeData(node))
 
 define reduceOperand(node, _left, _right)
     node
@@ -114,10 +114,10 @@ define reduceLeft(state, operator)
 
 define lookupSyntax(operators, lexeme)
     if isNil(operators)
-        Left()
+        void
     (lexeme', syntax') := head(operators)
     if lexeme =*= lexeme'
-        Right(syntax')
+        return syntax'
     lookupSyntax(tail(operators), lexeme)
 
 define parseSymbol(operators, tag, value)

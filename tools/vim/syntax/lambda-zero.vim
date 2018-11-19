@@ -9,7 +9,7 @@ syntax region lambdaZeroString start=/"/ skip=/\\"/ end=/"/ oneline
 syntax region lambdaZeroCharacter start=/'/ skip=/\\'/ end=/'/ oneline
 syntax match lambdaZeroLineComment "#.*$"
 syntax keyword lambdaZeroConstant true false
-syntax keyword lambdaZeroKeyword not and or if then else define match case return throw try catch
+syntax keyword lambdaZeroKeyword not and or in if then else define match case return throw void try catch
 
 highlight link lambdaZeroName Normal
 highlight link lambdaZeroOperator Operator

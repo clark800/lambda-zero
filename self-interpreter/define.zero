@@ -20,8 +20,8 @@ define transformRecursion(name, value)
     if not isSymbol(name) or not hasRecursiveCalls(value, name)
         value
     tag := getTag(name)
-    newApplication(tag, newYCombinator(tag),
-        newLambda(tag, newName(tag), value))
+    fix' := newName(renameTag(tag, "fix"))
+    newApplication(tag, fix', newLambda(tag, newName(tag), value))
 
 define isTupleConstructor(node)
     isSymbol(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
