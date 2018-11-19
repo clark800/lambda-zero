@@ -86,6 +86,10 @@ static inline Node* newSymbol(Tag tag, long long value, void* rules) {
 
 static inline Node* newName(Tag tag) {return newSymbol(tag, 0, NULL);}
 
+static inline Node* newRename(Tag tag, const char* s) {
+    return newName(renameTag(tag, s));
+}
+
 static inline Node* newUnderscore(Tag tag, unsigned long long debruijn) {
     return newSymbol(renameTag(tag, "_"), (long long)debruijn, NULL);
 }
@@ -120,17 +124,11 @@ static inline Node* newDefinition(Tag tag, Node* left, Node* right) {
     return newBranch(tag, DEFINITION, left, right);
 }
 
-static inline Node* newNil(Tag tag) {return newName(renameTag(tag, "[]"));}
+static inline Node* newNil(Tag tag) {return newRename(tag, "[]");}
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
-    Node* operator = newName(renameTag(tag, "::"));
+    Node* operator = newRename(tag, "::");
     return newApplication(tag, newApplication(tag, operator, item), list);
-}
-
-static inline Node* newBoolean(Tag tag, bool value) {
-    Node* underscore = newUnderscore(tag, 0);
-    return newLambda(tag, underscore, newLambda(tag, underscore,
-        value ? newUnderscore(tag, 1) : newUnderscore(tag, 2)));
 }
 
 // ====================================
@@ -154,8 +152,8 @@ static inline Node* convertOperator(Tag tag) {
 
 static inline Node* newPrinter(Tag tag) {
     Node* put = newBuiltin(renameTag(tag, "put"), PUT);
-    Node* fold = newName(renameTag(tag, "fold"));
-    Node* unit = newName(renameTag(tag, "()"));
+    Node* fold = newRename(tag, "fold");
+    Node* unit = newRename(tag, "()");
     Node* under = newUnderscore(tag, 1);
     return newLambda(tag, newUnderscore(tag, 0), newApplication(tag,
         newApplication(tag, newApplication(tag, fold, under), put), unit));

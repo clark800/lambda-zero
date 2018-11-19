@@ -17,8 +17,8 @@ Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> b ? (a -> c) --> (((?) b) (a -> c))
-    return newApplication(tag, newApplication(tag, newName(
-        renameTag(tag, "??")), right), newPatternLambda(tag, left, scope));
+    return newApplication(tag, newApplication(tag, newRename(tag, "??"), right),
+            newPatternLambda(tag, left, scope));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -33,7 +33,7 @@ static Node* newMainCall(Node* name) {
     Node* get = newBuiltin(renameTag(tag, "get"), GET);
     Node* get0 = newApplication(tag, get, newNatural(tag, 0));
     Node* operators = newChurchPair(tag,
-        newName(renameTag(tag, "[]")), newName(renameTag(tag, "::")));
+        newRename(tag, "[]"), newRename(tag, "::"));
     Node* input = newApplication(tag, get0, operators);
     return newApplication(tag, print, newApplication(tag, name, input));
 }
@@ -51,22 +51,13 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
     return isSymbol(node) ? isSameLexeme(node, name) : false;
 }
 
-static Node* newYCombinator(Tag tag) {
-    Node* underscore = newUnderscore(tag, 0);
-    Node* x = newUnderscore(tag, 1);
-    Node* y = newUnderscore(tag, 2);
-    Node* yxx = newApplication(tag, y, newApplication(tag, x, x));
-    Node* xyxx = newLambda(tag, underscore, yxx);
-    return newLambda(tag, underscore, newApplication(tag, xyxx, xyxx));
-}
-
 static Node* transformRecursion(Node* name, Node* value) {
     if (!isSymbol(name) || !hasRecursiveCalls(value, name))
         return value;
-    // value ==> (Y (name -> value))
+    // value ==> (fix (name -> value))
     Tag tag = getTag(name);
-    Node* yCombinator = newYCombinator(tag);
-    return newApplication(tag, yCombinator, newLambda(tag, name, value));
+    Node* fix = newRename(tag, "fix");
+    return newApplication(tag, fix, newLambda(tag, name, value));
 }
 
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
@@ -115,7 +106,7 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
     Node* getter = newUnderscore(tag, 1);
     for (unsigned int k = 0; k < n; ++k)
         getter = newApplication(tag, getter, k == i ? projector :
-            newName(renameTag(tag, "undefined")));
+            newRename(tag, "undefined"));
     getter = newLambda(tag, newUnderscore(tag, 0), getter);
     return applyDefinition(tag, name, getter, scope);
 }
@@ -149,7 +140,7 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
 Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     // define ADT name so that the symbol can't be defined twice
     // TODO: this should be the outermost definition
-    Node* undefined = newName(renameTag(tag, "undefined"));
+    Node* undefined = newRename(tag, "undefined");
     scope = applyDefinition(tag, getHead(left), undefined, scope);
 
     // for each item in the patterns tuple, define a constructor function

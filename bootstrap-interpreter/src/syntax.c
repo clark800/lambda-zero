@@ -60,7 +60,7 @@ static void shiftInfix(Stack* stack, Node* operator) {
         else if (isThisLeaf(operator, "-"))
             operator = parseSymbol(renameTag(getTag(operator), "(-)"), 0);
         else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-            push(stack, newName(renameTag(getTag(operator), ".*")));
+            push(stack, newRename(getTag(operator), ".*"));
         else syntaxError("missing left operand for", operator);
     }
     push(stack, operator);
@@ -70,7 +70,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     erase(stack, " ");      // if we erase newlines it would break associativity
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-        push(stack, newName(renameTag(getTag(operator), ".*")));
+        push(stack, newRename(getTag(operator), ".*"));
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);

@@ -29,6 +29,12 @@ void runtimeError(const char* message, Closure* closure) {
     exit(1);
 }
 
+static Node* newBoolean(Tag tag, bool value) {
+    Node* underscore = newUnderscore(tag, 0);
+    return newLambda(tag, underscore, newLambda(tag, underscore,
+        value ? newUnderscore(tag, 1) : newUnderscore(tag, 2)));
+}
+
 // note: it is important to check for overflow before it occurs because
 // undefined behavior occurs immediately after an overflow, which is
 // impossible to recover from

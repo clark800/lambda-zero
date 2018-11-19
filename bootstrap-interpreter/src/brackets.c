@@ -33,7 +33,7 @@ static Node* newTuple(Node* open, Node* commaList) {
 }
 
 static Node* newSection(Tag tag, const char* name, Node* body) {
-    return newLambda(tag, newName(renameTag(tag, name)), body);
+    return newLambda(tag, newRename(tag, name), body);
 }
 
 static Node* createSection(Tag tag, Node* contents) {
@@ -48,7 +48,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     syntaxErrorIf(!isThisLeaf(open, "("), "missing close for", open);
     Tag tag = getTag(open);
     if (contents == NULL) {
-        Node* unit = newName(renameTag(tag, "()"));
+        Node* unit = newRename(tag, "()");
         return function == NULL ? unit : newApplication(tag, function, unit);
     }
     if (isSection(contents))
@@ -87,7 +87,7 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     syntaxErrorIf(left != NULL, "missing space before", open);
     syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
     if (patterns == NULL)
-        return newName(renameTag(getTag(open), "{}"));
+        return newRename(getTag(open), "{}");
     syntaxErrorIf(isSection(patterns), "invalid section", open);
     return newTuple(open, patterns);
 }
@@ -151,7 +151,7 @@ void shiftClose(Stack* stack, Node* close) {
             push(stack, convertOperator(tag));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
-            push(stack, newName(renameTag(getTag(top), "*.")));
+            push(stack, newRename(getTag(top), "*."));
     }
 
     reduceLeft(stack, close);
