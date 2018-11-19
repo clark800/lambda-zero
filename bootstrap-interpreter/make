@@ -42,8 +42,7 @@ clean() {
 }
 
 is_up_to_date() {
-    local output="$1"
-    [[ -f "$output" && -z `find -L . -name "*.[c|h]" -newer "$output"` ]]
+    [[ -f "$1" && -z `find -L . -name "*.[c|h]" -newer "$1"` ]]
 }
 
 build_libc() {
@@ -101,15 +100,36 @@ run_cloc() {
     cloc --quiet --exclude-list-file=.clocignore --by-file $*
 }
 
+get_includes() {
+    filename="$(echo "$1" | cut -d'.' -f 1)"
+    gcc -MM -MT':' "$1" | tr -d ':\\\\' | xargs -n 1 echo "    $filename ->" |
+        grep '\.h' | cut -d'.' -f 1 | paste -d';' - <(echo) | grep -v '/' |
+        grep -v -- "-> $filename"
+}
+
+build_graph() {
+    cd src
+    echo "digraph graphname {"
+    echo "    size=6;"
+    echo "    ranksep=1.2;"
+    echo "    nodesep=0.8;"
+    echo "    mclimit=100;"
+    echo
+    export -f get_includes
+    ls *.c | xargs -n 1 -I{} bash -c "get_includes {}"
+    echo "}"
+}
+
 case "$1" in
     "") config_debug && build;;
+    test) config_debug && build && test/test.sh;;
     fast) config_fast && build;;
     small) config_small && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
-    test) config_debug && build && test/test.sh;;
     clean) clean;;
+    graph) build_graph | dot -o architecture.pdf -T pdf;;
     loc) get_loc;;
     cloc) run_cloc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;
     cloc-all) run_cloc . | tail -n +3 | cut -c -78;;
-    *) echo "usage: $0 [{fast|test|small|unused|clean|cloc|cloc-all}]"; exit 1;;
+    *) echo "usage: $0 [{test|fast|small|unused|clean|graph|loc}]"; exit 1;;
 esac
