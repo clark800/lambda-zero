@@ -60,6 +60,8 @@ syntax(¦) ≔ infixL(19)
 syntax(..) ≔ infix(19)
 syntax(‥) ≔ infix(19)
 
+syntax(<:>) := infixR(20)
+syntax(⬫) := infixR(20)
 syntax(::) ≔ infixR(20)
 syntax(∷) ≔ infixR(20)
 syntax(++) ≔ infixR(20)

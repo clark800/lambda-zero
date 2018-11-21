@@ -1,45 +1,46 @@
 #* serialize.zero
 
-define showAST(node)
-    match getNodeType(node)
-        case SYMBOL -> showLexeme(node)
-        case LAMBDA -> "(" ++ showLexeme(getParameter(node)) ++ " -> " ++
-                   showAST(getBody(node)) ++ ")"
-        case APPLICATION -> "(" ++ showAST(getLeft(node)) ++ " " ++
-                   showAST(getRight(node)) ++ ")"
-        case DEFINITION -> "(" ++ showAST(getLeft(node)) ++ " := " ++
-                   showAST(getRight(node)) ++ ")"
-        case NATURAL -> showNatural(getValue(node))
-        case BUILTIN -> "[" ++ showLexeme(node) ++ "]"
-
-
 define serialize(closure)
-    define serialize'(closure', depth)
-        term := getTerm(closure')
-        environment := getEnvironment(closure')
-        match getNodeType(term)
-            case SYMBOL
-                debruijn := getDebruijnIndex(term)
-                if debruijn > depth
+    define serialize'(Closure(term, environment), depth)
+        match term
+            case Reference(Tag(lexeme, _), debruijn)
+                if debruijn <= depth then lexeme else
                     serialize'(environment[debruijn - depth - 1], 0)
-                showLexeme(term)
-            case LAMBDA -> "(" ++ showLexeme(getParameter(term)) ++ " -> " ++
-                serialize'(Closure(getBody(term), environment), depth + 1) ++
-                ")"
-            case APPLICATION -> "(" ++
-                serialize'(Closure(getLeft(term), environment), depth) ++ " " ++
-                serialize'(Closure(getRight(term), environment), depth) ++ ")"
-            case DEFINITION -> "(" ++
-                serialize'(Closure(getLeft(term), environment), depth) ++
-                " := " ++
-                serialize'(Closure(getRight(term), environment), depth) ++ ")"
-            case NATURAL -> showNatural(getValue(term))
-            case BUILTIN -> showLexeme(term)
+            case Function(Tag(lexeme, _), body)
+                "(" ++ lexeme ++ " -> " ++
+                    serialize'(Closure(body, environment), depth + 1) ++ ")"
+            case Application(left, right) -> "(" ++
+                serialize'(Closure(left, environment), depth) ++ " " ++
+                serialize'(Closure(right, environment), depth) ++ ")"
+            case Natural(_, n)
+                showNatural(n)
+            case Optimization(Tag(lexeme, _))
+                lexeme
 
     result := serialize'(closure, 0)
     # ensure that full serialization succeeds before returning anything
     # or else lazy output will show part of the serailization even if
     # an error occurs during parsing
     if result.length = 0 then "" else result
+
+
+define serializeString(evaluateClosure, closure)
+    closure' := evaluateClosure(closure)
+    term := getTerm(closure')
+    try nil := maybeIsNil(term)
+    if nil
+        return []
+
+    dummy := Closure(Natural(noTag, 0), [])
+    enclose := `Closure(dummy :: dummy :: getEnvironment(closure'))
+
+    try headTerm := maybeHead(term)
+    try character := maybeNatural(getTerm(evaluateClosure(enclose(headTerm))))
+
+    try tailTerm := maybeTail(term)
+    try remaining := serializeString(evaluateClosure, enclose(tailTerm))
+
+    return character :: remaining
+
 
 #*

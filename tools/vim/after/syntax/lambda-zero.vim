@@ -134,6 +134,7 @@ syntax match zeroNiceOperator "|><|" conceal cchar=⋈
 
 " circle and diamond operators
 syntax match zeroNiceOperator "<>" conceal cchar=∘
+syntax match zeroNiceOperator "<:>" conceal cchar=⬫
 syntax match zeroNiceOperator "<+>" conceal cchar=⊕
 syntax match zeroNiceOperator "<->" conceal cchar=⊖
 syntax match zeroNiceOperator "<\*>" conceal cchar=⊙
@@ -151,7 +152,6 @@ syntax match zeroNiceOperator "<<>>" conceal cchar=⦾
 syntax match zeroNiceOperator "<\\/>" conceal cchar=⎊
 "syntax match zeroNiceOperator "" conceal cchar=⦿       " looks like circled dot
 syntax match zeroNiceOperator "<^>" conceal cchar=⬦
-syntax match zeroNiceOperator "<:>" conceal cchar=⟐
 
 " bar and turnstile operators (must come before boxed operators)
 syntax match zeroNiceOperand "\<T\>" conceal cchar=⊤    " top

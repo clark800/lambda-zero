@@ -16,7 +16,7 @@ define substitute(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             type
-        type' := variables.get(type, undefined).setNode(getNode(type))
+        type' := variables.get(type, undefined).setSource(getSource(type))
         if type'.getFreeVariables(empty).any((=~= type))
             recursionError(type, type, variables)
         type'.substitute(variables)
@@ -63,60 +63,62 @@ define generalize(type, variables, oldVariables)
         oldVariables.getAllFreeVariables(variables)
     newScheme(universals, type')
 
-define instantiate(scheme, variables, node)
+define instantiate(scheme, variables, term)
     (universals, type) := scheme
     (freshVariables, variables') := newTypeVariables(universals, variables)
     renaming := newVariableMap(zip(universals, freshVariables))
-    (type.rename(renaming).setNode(node), variables')
+    (type.rename(renaming).setSource(term), variables')
 
-define isRecursiveFunction(node)
-    false      # todo: fix
+
+define isFix(term)
+    isReference(term) and getTagLexeme(getTermTag(term)) =*= "fix"
+
 
 # stack is a list of type schemes for all the lambda-bound symbols in scope
 # variables is a table that maps type variables to types (either type
 #   variables or concrete types); every type variable appears in variables
-define infer(node, stack, variables)
-    if isNatural(node)
-        (newNaturalType(node), variables)
-    if isBuiltin(node)
-        (getBuiltinType(node), variables)
-    if isSymbol(node)
-        stack[getDebruijnIndex(node) - 1].instantiate(variables, node)
-    if isRecursiveFunction(node)
-        function := getBody(getRight(node))
-        (functionType, variables') := variables.newTypeVariable(function)
-        stack' := newScheme([], functionType) :: stack
-        (functionType', variables'') := function.infer(stack', variables')
-        (functionType, variables''.unify((functionType', functionType)))
-    if isLambda(node)
-        parameter := getParameter(node)
-        (parameterType, variables') := variables.newTypeVariable(parameter)
+define infer(stack, variables)
+    case term @ Reference(_, debruijn)
+        stack[debruijn - 1].instantiate(variables, term)
+    case term @ Function(_, body)
+        (parameterType, variables') := variables.newTypeVariable(term)
         stack' := newScheme([], parameterType) :: stack
-        (bodyType, variables'') := getBody(node).infer(stack', variables')
-        (newFunctionType(node, parameterType, bodyType), variables'')
-    if isDefinition(node)
-        (valueType, variables') := getRight(node).infer(stack, variables)
-        stack' := valueType.generalize(variables', variables) :: stack
-        getDefinitionScope(node).infer(stack', variables')
-    if isApplication(node)
-        (rightType, variables') := getRight(node).infer(stack, variables)
-        (leftType, variables'') := getLeft(node).infer(stack, variables')
-        (returnType, variables''') := variables''.newTypeVariable(node)
-        functionType := newFunctionType(NULL, rightType, returnType)
+        (bodyType, variables'') := infer(stack', variables', body)
+        (newFunctionType(term, parameterType, bodyType), variables'')
+    case term @ Application(left, right)
+        if isFunction(left)     # treat this as a let
+            (valueType, variables') := infer(stack, variables, right)
+            stack' := valueType.generalize(variables', variables) :: stack
+            infer(stack', variables', getFunctionBody(left))
+        if isFix(left) and isFunction(right)
+            function := getFunctionBody(right)
+            (functionType, variables') := variables.newTypeVariable(term)
+            stack' := newScheme([], functionType) :: stack
+            (functionType', variables'') := infer(stack', variables', function)
+            (functionType, variables''.unify((functionType', functionType)))
+        (rightType, variables') := infer(stack, variables, right)
+        (leftType, variables'') := infer(stack, variables', left)
+        (returnType, variables''') := variables''.newTypeVariable(term)
+        functionType := newFunctionType(noTerm, rightType, returnType)
         (returnType, variables'''.unify((leftType, functionType)))
-    undefined
+    case term @ Natural(_, _)
+        (newNaturalType(term), variables)
+    case term @ Optimization(_)
+        (getBuiltinType(term), variables)
+
 
 define inferType(stack, definition)
-    (name, value) := definition
-    knownTypeScheme := getKnownTypeScheme(name)
+    (tag, value) := definition
+    knownTypeScheme := getKnownTypeScheme(getTagLexeme(tag), value)
     if not isFreeType(second(knownTypeScheme))
         knownTypeScheme :: stack
-    (type, variables') := infer(value, stack, empty)
+    (type, variables') := infer(stack, empty, value)
     type.generalize(variables', empty) :: stack
 
+
 define main(input)
-    node := parse(input, "")
-    definitions := getDefinitions(node)
+    term := parse(input)
+    definitions := getDefinitions(term)
     schemes := reverse(definitions.cascade(inferType, []))
     (names, _) := unzip(definitions)
     showTypings(zip(names, schemes))

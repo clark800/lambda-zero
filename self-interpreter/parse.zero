@@ -8,15 +8,17 @@ define parseEscapeCode(code, tag)
     if code = '\\' then '\\'
     if code = '\"' then '\"'
     if code = '\'' then '\''
-    error("Syntax error: invalid escape sequence in " ++ showTag(tag))
+    parseError("invalid escape sequence in", tag)
+
 
 define parseQuotedCharacter(tag, string)
     c := head(string)
     if c =/= '\\'
         newNatural(tag, c)
     if isNil(tail(string))
-        error("Syntax error: missing end quote for " ++ showTag(tag))
+        parseError("missing end quote for", tag)
     newNatural(tag, parseEscapeCode(head(tail(string)), tag))
+
 
 define splitStringLiteral(string)
     if isNil(string)
@@ -24,64 +26,70 @@ define splitStringLiteral(string)
     n := if head(string) = '\\' and not isNil(tail(string)) then 2 else 1
     string.take(n) :: splitStringLiteral(string.drop(n))
 
+
 define buildStringLiteral(tag, characters)
     if isNil(characters)
         newNil(tag)
     prependList(tag, head(characters),
         buildStringLiteral(tag, tail(characters)))
 
+
 define getQuoteContents(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.length > 1 and lexeme.last = head(lexeme)
         dropLast(tail(lexeme))
-    error("Syntax error: missing end quote for " ++ showTag(tag))
+    parseError("missing end quote for", tag)
+
 
 define getQuotedCharacters(tag)
     splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
 
+
 define parseStringLiteral(tag)
     buildStringLiteral(tag, getQuotedCharacters(tag))
+
 
 define parseCharacterLiteral(tag)
     characters := getQuotedCharacters(tag)
     if characters.length = 1
         head(characters)
-    error("Syntax error: invalid character literal " ++ showTag(tag))
+    parseError("invalid character literal", tag)
+
 
 define parseNumericLiteral(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.any((not) <> isDigit)
-        error("Syntax error: invalid token " ++
-            showLexemeAndLocationLine(tag, "'"))
+        parseError("invalid token", tag)
     maxNatural := "9223372036854775807"
     natural := lexeme.dropWhile(= '0')
     if natural.length > maxNatural.length
-        error("Syntax error: magnitude of natural is too large " ++
-            showLexemeAndLocationLine(tag, "'"))
+        parseError("magnitude of natural is too large", tag)
     if natural.length = maxNatural.length and
             zipWith(natural, (>), maxNatural).any(id)
-        error("Syntax error: magnitude of natural is too large " ++
-            showLexemeAndLocationLine(tag, "'"))
+        parseError("magnitude of natural is too large", tag)
     newNatural(tag, parseNatural(lexeme, 10))
+
 
 define parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
         case Space -> parseSymbol(operators, renameTag(tag, " "), 0)
-        case VSpace -> error("internal error")
+        case VSpace -> parseError("internal error", tag)
         case Newline -> parseSymbol(operators, renameTag(tag, "\n"),
             length(getTagLexeme(tag)) - 1)
         case Symbolic -> parseSymbol(operators, tag, 0)
         case Numeric -> parseNumericLiteral(tag)
         case Character -> parseCharacterLiteral(tag)
         case String -> parseStringLiteral(tag)
-        case Comment -> error("internal error")
-        case Invalid -> syntaxError("invalid character", newName(tag))
+        case Comment -> parseError("internal error", tag)
+        case Invalid -> parseError("invalid character", tag)
+
 
 define shiftToken(state, token)
     shift(state, parseToken(getOperators(state), token))
 
-define parse(code, input)
+
+define parse(code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
@@ -91,6 +99,6 @@ define parse(code, input)
     if length(stack) =/= 1
         error("parser error")
     # error(showAST(head(stack)))
-    bind(head(stack))
+    bind(head(stack), [])
 
 #*

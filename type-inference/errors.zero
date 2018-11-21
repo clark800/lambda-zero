@@ -2,10 +2,10 @@
 
 define recursionError(type, type', variables)
     error("Type error: recursive type at " ++
-        showLocation(getLocation(getNode(type))) ++
-        " and " ++ showLocation(getLocation(getNode(type'))) ++
+        showTypeLocation(type) ++ " and " ++ showTypeLocation(type') ++
         ":\n" ++ showType(type) ++ " = " ++ showType(type') ++ "\n\n" ++
         showVariableMap(variables))
+
 
 define unificationError(originals, left, right)
     error("Type error: Can't unify\n" ++

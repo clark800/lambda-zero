@@ -1,26 +1,28 @@
 #* definitions.zero
 
-define getDefinitionName(definition)
-    getParameter(getLeft(definition))
+define isIdentity(term)
+    if not isFunction(term) then false
+    body := getFunctionBody(term)
+    if not isReference(body) then false
+    getDebruijnIndex(body) = 1
 
-define getDefinitionValue(definition)
-    getRight(definition)
 
-define getDefinitionScope(definition)
-    getBody(getLeft(definition))
+define getDefinitions
+    case Reference(_, _) -> []
+    case Function(_, _) -> []
+    case Application(left, right)
+        if isIdentity(left) then getDefinitions(right)
+        if not isFunction(left) then []
+        (getTermTag(left), right) :: getDefinitions(getFunctionBody(left))
+    case Natural(_, _) -> []
+    case Optimization(_) -> []
 
-define isDefinitionNode(node)
-    isApplication(node) and isLambda(getLeft(node)) and
-    (isThisLexeme(node, "define") or
-     isThisLexeme(node, ":=") or isThisLexeme(node, "≔") or
-     isThisLexeme(node, "::=") or isThisLexeme(node, "⩴"))
 
-define getDefinitions(node)
-    if isApplication(node) and isIdentity(getLeft(node))
-        getDefinitions(getRight(node))
-    if not isDefinitionNode(node)
-        []
-    (getDefinitionName(node), getDefinitionValue(node)) ::
-        getDefinitions(getDefinitionScope(node))
+define showDefinition((tag, value))
+    showTag(tag) ++ " := " ++ showTerm(value)
+
+
+define showDefinitions(definitions)
+    definitions.map(showDefinition.joinWith("\n"))
 
 #*

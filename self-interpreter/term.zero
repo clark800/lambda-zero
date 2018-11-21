@@ -1,0 +1,135 @@
+#* term.zero
+
+Term ::= {
+    Reference(_ : Tag, _ : Integer),
+    Function(_ : Tag, _ : Term),
+    Application(_ : Term, _ : Term),
+    Natural(_ :  Tag, _ : Integer),
+    Optimization(_ : Tag)
+}
+
+
+define getTermTag
+    case Reference(tag, _) -> tag
+    case Function(tag, _) -> tag
+    case Application(left, _) -> getTermTag(left)
+    case Natural(tag, _) -> tag
+    case Optimization(tag) -> tag
+
+
+define isReference
+    case Reference(_, _) -> true
+    case Function(_, _) -> false
+    case Application(_, _) -> false
+    case Natural(_, _) -> false
+    case Optimization(_) -> false
+
+
+define getDebruijnIndex
+    case Reference(_, n) -> n
+    case Function(_, _) -> undefined
+    case Application(_, _) -> undefined
+    case Natural(_, _) -> undefined
+    case Optimization(_) -> undefined
+
+
+define isFunction
+    case Reference(_, _) -> false
+    case Function(_, _) -> true
+    case Application(_, _) -> false
+    case Natural(_, _) -> false
+    case Optimization(_) -> false
+
+
+define getFunctionBody
+    case Reference(_, _) -> undefined
+    case Function(_, body) -> body
+    case Application(_, _) -> undefined
+    case Natural(_, _) -> undefined
+    case Optimization(_) -> undefined
+
+
+define maybeDebruijn
+    case Reference(_, debruijn) -> return debruijn
+    case Function(_, _) -> void
+    case Application(_, _) -> void
+    case Natural(_, _) -> void
+    case Optimization(_) -> void
+
+
+define maybeNatural
+    case Reference(_, _) -> void
+    case Function(_, _) -> void
+    case Application(_, _) -> void
+    case Natural(_, n) -> return n
+    case Optimization(_) -> void
+
+
+define maybeBody
+    case Reference(_, _) -> void
+    case Function(_, body) -> return body
+    case Application(_, _) -> void
+    case Natural(_, _) -> void
+    case Optimization(_) -> void
+
+
+define maybeLeft
+    case Reference(_, _) -> void
+    case Function(_, _) -> void
+    case Application(left, _) -> return left
+    case Natural(_, _) -> void
+    case Optimization(_) -> void
+
+
+define maybeRight
+    case Reference(_, _) -> void
+    case Function(_, _) -> void
+    case Application(_, right) -> return right
+    case Natural(_, _) -> void
+    case Optimization(_) -> void
+
+
+define maybeHead(term)
+    try body := maybeBody(term)
+    try body' := maybeBody(body)
+    try left := maybeLeft(body')
+    maybeRight(left)
+
+
+define maybeTail(term)
+    try body := maybeBody(term)
+    try body' := maybeBody(body)
+    maybeRight(body')
+
+
+define maybeIsNil(term)
+    # returns true for [], false for non-nil list, void for non-list
+    # term should be (n -> p -> n) or (n -> p -> ((p c) cs))
+
+    define ifNil(result)
+        try body := maybeBody(term)
+        try body' := maybeBody(body)
+        try debruijn := maybeDebruijn(body')
+        if debruijn = 2 then return result else void
+
+    define ifPush(result)
+        try body := maybeBody(term)
+        try body' := maybeBody(body)
+        try left := maybeLeft(body')
+        try left' := maybeLeft(left)
+        try debruijn := maybeDebruijn(left')
+        if debruijn = 1 then return result else void
+
+    ifNil(return true) ? ifPush(return false) ? void
+
+
+define showTerm
+    case Reference(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
+    case Function(tag, body)
+        "(" ++ showTag(tag) ++ " -> " ++ showTerm(body) ++ ")"
+    case Application(left, right)
+        "(" ++ showTerm(left) ++ " " ++ showTerm(right) ++ ")"
+    case Natural(_, n) -> showNatural(n)
+    case Optimization(tag) -> showTag(tag)
+
+#*

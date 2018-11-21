@@ -1,7 +1,7 @@
 #* prelude.zero
 
 undefined ≔ error("")
-∅ ⩴ {}
+⊥ ⩴ {}
 
 # function
 x.f ≔ f(x)                     # uniform function call syntax
@@ -383,5 +383,7 @@ sum := ∑
 product := ∏
 (=*=) := (≛)
 (<*=) := (⩿)
+(⬫) := `map
+(<:>) := `map
 
 #*
