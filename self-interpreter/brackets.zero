@@ -1,12 +1,12 @@
 #* brackets.zero
 
 define isCommaList(node)
-    isApplication(node) and getLexeme(node) =*= ","
+    isJuxtaposition(node) and getLexeme(node) =*= ","
 
 define applyToCommaList(tag, base, arguments)
     if not isCommaList(arguments)
-        newApplication(tag, base, arguments)
-    newApplication(tag, applyToCommaList(tag, base,
+        Juxtaposition(tag, base, arguments)
+    Juxtaposition(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments))
 
 define getCommaListSize(commaList)
@@ -17,7 +17,7 @@ define getCommaListSize(commaList)
 define newTuple(tag, commaList)
     n := getCommaListSize(commaList)
     lexeme := repeat(',').take(n - 1)
-    constructor := newName(Tag(lexeme, getTagLocation(tag)))
+    constructor := Name(Tag(lexeme, getTagLocation(tag)))
     applyToCommaList(tag, constructor, commaList)
 
 define getCommaListElements(commaList)
@@ -29,31 +29,33 @@ define reduceUnmatched(open, _left, _right)
     syntaxError("missing close for", open)
 
 define newSection(tag, name, body)
-    newLambda(tag, newName(renameTag(tag, name)), body)
+    Arrow(tag, Name(renameTag(tag, name)), body)
 
 define createSection(tag, contents)
     if isThisLexeme(contents, ".*.")
         newSection(tag, ".*", newSection(tag, "*.", contents))
-    if isLeaf(getLeft(contents))
+    if isName(getLeft(contents))
         getLeft(contents)       # parenthesized postfix operator
     newSection(tag, getLexeme(contents), contents)
 
 define reduceParentheses(open, function, contents)
-    if not isThisSymbol(open, "(")
+    if not isThisOperator(open, "(")
         syntaxError("missing close for", open)
     tag := getTag(open)
     if isNull(contents)
-        unit := newName(renameTag(tag, "()"))
+        unit := Name(renameTag(tag, "()"))
         if isNull(function)
             unit
-        newApplication(tag, function, unit)
+        Juxtaposition(tag, function, unit)
+    if isDefinition(contents)
+        syntaxError("missing scope for definition", contents)
     contents' := if isSection(contents) then
         createSection(tag, contents) else contents
     if not isNull(function)
         applyToCommaList(tag, function, contents')
     if isCommaList(contents')
         newTuple(tag, contents')
-    if not isLeaf(contents')
+    if isJuxtaposition(contents')
         contents'.setTag(tag)
     contents'
 
@@ -64,7 +66,7 @@ define createList(tag, commaList, list)
         prependList(tag, getRight(commaList), list))
 
 define reduceSquare(open, left, contents)
-    if not isThisSymbol(open, "[")
+    if not isThisOperator(open, "[")
         syntaxError("missing close for", open)
     tag := getTag(open)
     if isNull(contents)
@@ -75,17 +77,17 @@ define reduceSquare(open, left, contents)
         syntaxError("invalid section", open)
     if not isNull(left)
         n := getCommaListSize(contents)
-        constructor := newName(renameTag(tag, repeat('[').take(n)))
-        applyToCommaList(tag, newApplication(tag, constructor, left), contents)
+        constructor := Name(renameTag(tag, repeat('[').take(n)))
+        applyToCommaList(tag, Juxtaposition(tag, constructor, left), contents)
     createList(tag, contents, newNil(tag))
 
 define reduceCurly(open, left, patterns)
     if not isNull(left)
         syntaxError("missing space before", open)
-    if not isThisSymbol(open, "{")
+    if not isThisOperator(open, "{")
         syntaxError("missing close for", open)
     if isNull(patterns)
-        newName(renameTag(getTag(open), "{}"))
+        Name(renameTag(getTag(open), "{}"))
     if isSection(patterns)
         syntaxError("invalid section", open)
     newTuple(getTag(open), patterns)
@@ -105,7 +107,7 @@ define shiftOpen(state, open)
 
 define shiftOpenCurly(state, open)
     top := head(getStack(state))
-    if not isThisSymbol(top, "::=") and not isThisSymbol(top, "⩴")
+    if not isThisOperator(top, "::=") and not isThisOperator(top, "⩴")
         syntaxError("must appear on the right side of '::='", open)
     shiftOpen(state, open)
 
@@ -134,19 +136,19 @@ define shiftClose'(state, close)
 define preReduce(stack)
     top := head(stack)
     if isOperator(top) and not isSpecial(top)
-        if isThisSymbol(stack[1], ".*")
+        if isThisName(stack[1], ".*")
             # bracketed infix operator
-            convertOperator(getTag(top)) :: tail(tail(stack))
+            Name(getTag(top)) :: tail(tail(stack))
         if isOpenOperator(stack[1])
             # bracketed prefix operators
-            if isThisSymbol(top, "(+)")
-                convertOperator(renameTag(getTag(top), "+")) :: tail(stack)
-            if isThisSymbol(top, "(-)")
-                convertOperator(renameTag(getTag(top), "-")) :: tail(stack)
-            convertOperator(getTag(top)) :: tail(stack)
+            if isThisOperator(top, "(+)")
+                Name(renameTag(getTag(top), "+")) :: tail(stack)
+            if isThisOperator(top, "(-)")
+                Name(renameTag(getTag(top), "-")) :: tail(stack)
+            Name(getTag(top)) :: tail(stack)
         fixity := getFixity(getSyntax(top))
         if fixity = INFIX or fixity = PREFIX
-            newName(renameTag(getTag(top), "*.")) :: stack  # section
+            Name(renameTag(getTag(top), "*.")) :: stack  # section
         stack
     stack
 

@@ -12,10 +12,10 @@ getComponentTypes := getChildren
 define setSource(type, source)
     newType(source, getTypeCode(type), getIndex(type), getComponentTypes(type))
 
-noTerm := Reference(noTag, 0)
+noTerm := Variable(noTag, 0)
 
 define isNoTerm
-    case Reference(_, debruijn) -> debruijn = 0
+    case Variable(_, debruijn) -> debruijn = 0
     case Function(_, _) -> false
     case Application(_, _) -> false
     case Natural(_, _) -> false

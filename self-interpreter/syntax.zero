@@ -1,42 +1,44 @@
 #* syntax.zero
 
 define reduceApply(operator, left, right)
-    newApplication(getTag(operator), left, right)
+    Juxtaposition(getTag(operator), left, right)
 
 
 define reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
-        convertOperator(getTag(operator)), left), right)
+        Name(getTag(operator)), left), right)
 
 
 define reducePrefix(operator, _left, right)
-    reduceApply(operator, convertOperator(getTag(operator)), right)
+    reduceApply(operator, Name(getTag(operator)), right)
 
 
 define reducePostfix(operator, left, _right)
-    reduceApply(operator, convertOperator(getTag(operator)), left)
+    reduceApply(operator, Name(getTag(operator)), left)
 
 
 define reduceArrow(operator, left, right)
-    if isApplication(left) and isThisLexeme(left, "case")
+    if isJuxtaposition(left) and isThisLexeme(left, "case")
         newCase(getTag(left), getRight(left), right)
-    newPatternLambda(getTag(operator), left, right)
+    newPatternArrow(getTag(operator), left, right)
 
 
 define reduceNewline(operator, left, right)
     tag := getTag(left)
     if isDefinition(left) and isThisLexeme(left, ":=")
-        applyDefinition(tag, getLeft(left), getRight(left), right)
+        applyDefinition(tag, getDefinee(left), getDefinedValue(left), right)
     if isDefinition(left) and isThisLexeme(left, "try")
-        applyTryDefinition(tag, getLeft(left), getRight(left), right)
+        applyTryDefinition(tag, getDefinee(left), getDefinedValue(left), right)
     if isDefinition(left) and isThisLexeme(left, "::=")
-        applyADTDefinition(tag, getLeft(left), getRight(left), right)
-    if isApplication(left) and isThisLexeme(left, "define")
+        applyADTDefinition(tag, getDefinee(left), getDefinedValue(left), right)
+    if isJuxtaposition(left) and isThisLexeme(left, "define")
         reduceDefine(getLeft(left), getRight(left), right)
     if isCase(left) and isCase(right)
         combineCases(tag, left, right)
-    if isApplication(left) and isThisLexeme(left, "case")
+    if isJuxtaposition(left) and isThisLexeme(left, "case")
         reduceArrow(operator, left, right)
+    if isSyntaxMarker(left)
+        right
     reduceApply(operator, left, right)
 
 
@@ -50,7 +52,7 @@ define shiftPostfix(state, operator)
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
     stack'' := if not isSpecial(operator) and isOpenOperator(stack'[0]) then
-        newName(renameTag(getTag(operator), ".*")) :: stack' else stack'
+        Name(renameTag(getTag(operator), ".*")) :: stack' else stack'
     operand := stack''[0]
     if isOperator(operand)
         syntaxError("missing left operand for", operator)
@@ -66,10 +68,10 @@ define shiftInfix(state, operator)
     top := head(stack')
     tag := getTag(operator)
     if isOperator(top)
-        if isThisSymbol(operator, "+")
+        if isThisOperator(operator, "+")
             operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
             State(operator' :: stack', operators)
-        if isThisSymbol(operator, "-")
+        if isThisOperator(operator, "-")
             operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
             State(operator' :: stack', operators)
         if not isSpecial(operator) and isOpenOperator(top)
@@ -95,13 +97,13 @@ define reduceInvalid(operator, _left, _right)
 
 define reduceError(operator, _left, right)
     tag := getTag(operator)
-    if isThisSymbol(right, "[]")
-        newBuiltin(renameTag(tag, "(undefined)"))
-    newApplication(tag, convertOperator(tag), right)
+    if isThisName(right, "[]")
+        Name(renameTag(tag, "(undefined)"))
+    Juxtaposition(tag, Name(tag), right)
 
 
 define newOperator'(tag, precedence, fixity, associativity, shifter, reducer)
-    newOperator(tag, 0, Syntax(precedence, precedence, fixity, associativity,
+    Operator(tag, 0, Syntax(precedence, precedence, fixity, associativity,
         false, shifter, reducer, ""))
 
 
@@ -127,7 +129,7 @@ define newSyntaxOperator(tag, precedence, fixity)
 
 define reduceMixfix(operator, left, right)
     prior := getPrior(getSyntax(operator))
-    if not isApplication(left) or not getLexeme(left) =*= prior
+    if not isJuxtaposition(left) or not getLexeme(left) =*= prior
         syntaxError("mixfix syntax error", operator)
     reduceInfix(operator, left, right)
 
@@ -136,31 +138,35 @@ define newMixfixOperator(operators, tag, prior)
     precedence := getRightPrecedence(
         lookupSyntax(operators, getLexeme(prior)) ?
             syntaxError("syntax not defined", prior))
-    newOperator(tag, 0, Syntax(precedence, precedence, INFIX, LEFT, false,
+    Operator(tag, 0, Syntax(precedence, precedence, INFIX, LEFT, false,
         shiftInfix, reduceMixfix, getLexeme(prior)))
 
 
+define newSyntaxMarker(tag, operator)
+    Arrow(tag, operator, Reference(tag, 1))
+
+
 define defineSyntax(operators, node, left, right)
-    if not isApplication(left)
+    if not isJuxtaposition(left)
         syntaxError("invalid left operand", left)
     name := getRight(left)
-    if not isSymbol(name)
-        syntaxError("expected symbol operand to", getLeft(left))
+    if not isName(name)
+        syntaxError("expected name operand to", getLeft(left))
     if getLexeme(name).any(= '_')
         syntaxError("invalid underscore in operator name", name)
-    if not isApplication(right)
+    if not isJuxtaposition(right)
         syntaxError("invalid syntax definition", node)
     fixity := getLeft(right)
-    if isThisSymbol(fixity, "mixfix")
+    if isThisName(fixity, "mixfix")
         operator := newMixfixOperator(operators, getTag(name), getRight(right))
-        newLambda(getTag(left), operator, operator)
-    if not isNatural(getRight(right))
+        newSyntaxMarker(getTag(left), operator)
+    if not isNumeral(getRight(right))
         syntaxError("invalid syntax definition", node)
-    precedence := getValue(getRight(right))
+    precedence := getNumeralValue(getRight(right))
     if precedence < 0 or precedence > 99
         syntaxError("invalid precedence", getRight(right))
     operator := newSyntaxOperator(getTag(name), precedence, fixity)
-    newLambda(getTag(left), operator, operator)
+    newSyntaxMarker(getTag(left), operator)
 
 
 define addSyntax(operators, operator)
@@ -168,10 +174,10 @@ define addSyntax(operators, operator)
         syntaxError("syntax already defined", operator)
     operators' := (getLexeme(operator), getSyntax(operator)) :: operators
     p := getLeftPrecedence(getSyntax(operator))
-    if isThisSymbol(operator, "+")
+    if isThisOperator(operator, "+")
         s := Syntax(p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix, "")
         ("(+)", s) :: operators'
-    if isThisSymbol(operator, "-")
+    if isThisOperator(operator, "-")
         s := Syntax(p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix, "")
         ("(-)", s) :: operators'
     operators'
@@ -184,8 +190,9 @@ define reduceLeftErase(State(stack, operators), operator)
 define shiftNewline(state, operator)
     state' @ State(stack', operators') := reduceLeftErase(state, operator)
     top := head(stack')
-    if isDefinition(top) and isThisLexeme(getLeft(top), "syntax")
-        marker := defineSyntax(operators', top, getLeft(top), getRight(top))
+    if isDefinition(top) and isThisLexeme(getDefinee(top), "syntax")
+        marker := defineSyntax(operators', top,
+            getDefinee(top), getDefinedValue(top))
         operators'' := addSyntax(operators', getParameter(marker))
         State(operator :: marker :: tail(stack'), operators'')
     if isOperator(top)

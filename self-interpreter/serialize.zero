@@ -3,7 +3,7 @@
 define serialize(closure)
     define serialize'(Closure(term, environment), depth)
         match term
-            case Reference(Tag(lexeme, _), debruijn)
+            case Variable(Tag(lexeme, _), debruijn)
                 if debruijn <= depth then lexeme else
                     serialize'(environment[debruijn - depth - 1], 0)
             case Function(Tag(lexeme, _), body)

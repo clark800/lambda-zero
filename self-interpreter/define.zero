@@ -1,77 +1,79 @@
 #* define.zero
 
 define getHead(node)
-    if isApplication(node) then getHead(getLeft(node)) else node
+    if isJuxtaposition(node) then getHead(getLeft(node)) else node
 
 define applyDefinition(tag, left, right, scope)
-    newApplication(tag, newPatternLambda(tag, left, scope), right)
+    Juxtaposition(tag, newPatternArrow(tag, left, scope), right)
 
 define applyTryDefinition(tag, left, right, scope)
-    newApplication(tag, newApplication(tag, newName(renameTag(tag, "??")),
-        right), newPatternLambda(tag, left, scope))
+    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??")),
+        right), newPatternArrow(tag, left, scope))
 
 define hasRecursiveCalls(node, name)
-    if isLeaf(node)
+    if isName(node)
         getLexeme(node) =*= getLexeme(name)
-    hasRecursiveCalls(getLeft(node), name) or
-        hasRecursiveCalls(getRight(node), name)
+    if isArrow(node)
+        hasRecursiveCalls(getBody(node), name)
+    if isJuxtaposition(node)
+        hasRecursiveCalls(getLeft(node), name) or
+            hasRecursiveCalls(getRight(node), name)
+    false
 
 define transformRecursion(name, value)
-    if not isSymbol(name) or not hasRecursiveCalls(value, name)
+    if not isName(name) or not hasRecursiveCalls(value, name)
         value
     tag := getTag(name)
-    fix' := newName(renameTag(tag, "fix"))
-    newApplication(tag, fix', newLambda(tag, newName(tag), value))
+    fix' := Name(renameTag(tag, "fix"))
+    Juxtaposition(tag, fix', Arrow(tag, Name(tag), value))
 
 define isTupleConstructor(node)
-    isSymbol(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
+    isName(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
 
 define isTuple(node)
-    if isApplication(node)
+    if isJuxtaposition(node)
         isTuple(getLeft(node))
     isTupleConstructor(node)
 
 define reduceDefine'(tag, operator, left, right)
     if isThisLexeme(left, "syntax") or isTuple(left)
-        newDefinition(tag, left, right)
-    (name, value) := getNameAndValue(newPatternLambda(tag), left, right)
-    if isBuiltin(name)
-        syntaxError("cannot define a builtin operator", name)
-    if not isSymbol(name)
+        Definition(tag, left, right)
+    (name, value) := getNameAndValue(newPatternArrow(tag), left, right)
+    if not isName(name)
         syntaxError("invalid left hand side", operator)
-    if isThisSymbol(name, "main")
+    if isThisName(name, "main")
         applyDefinition(getTag(name), name, value, name)
-    newDefinition(tag, name, transformRecursion(name, value))
+    Definition(tag, name, transformRecursion(name, value))
 
 define reduceDefine(operator, left, right)
     tag := getTag(operator)
-    if isApplication(left) and isThisLexeme(left, "try")
+    if isJuxtaposition(left) and isThisLexeme(left, "try")
         reduceDefine'(renameTag(tag, "try"), operator, getRight(left), right)
     reduceDefine'(renameTag(tag, ":="), operator, left, right)
 
 define isValidConstructorParameter(parameter)
-    isApplication(parameter) and isApplication(getLeft(parameter)) and
+    isJuxtaposition(parameter) and isJuxtaposition(getLeft(parameter)) and
     isValidPattern(getRight(parameter)) and
-    isSymbol(getRight(getLeft(parameter))) and
-    (isThisSymbol(getLeft(getLeft(parameter)), ":") or
-     isThisSymbol(getLeft(getLeft(parameter)), "∈"))
+    isName(getRight(getLeft(parameter))) and
+    (isThisName(getLeft(getLeft(parameter)), ":") or
+     isThisName(getLeft(getLeft(parameter)), "∈"))
 
 define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
     if not isValidConstructorParameter(parameter)
         syntaxError("invalid constructor parameter", parameter)
     name := getRight(getLeft(parameter))
-    if isUnused(name)
+    if isUnused(getTag(name))
         scope
     projector := newProjector(tag, m, k)
-    undefined' := newName(renameTag(tag, "undefined"))
+    undefined' := Name(renameTag(tag, "undefined"))
     arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
-    getter := newLambda(tag, newUnderscore(tag, 0),
-        arguments.cascade(newApplication(tag), newUnderscore(tag, 1)))
+    getter := Arrow(tag, Name(renameTag(tag, "_")),
+        arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
     applyDefinition(tag, name, getter, scope)
 
 define newConstructorDefinition(tag, n, (pattern, j), scope)
     name := getHead(pattern)
-    if not isSymbol(name)
+    if not isName(name)
         syntaxError("invalid constructor name", name)
     parameters := getArguments(pattern)
     m := length(parameters)
@@ -79,8 +81,8 @@ define newConstructorDefinition(tag, n, (pattern, j), scope)
         newGetterDefinition(tag, n, j, m), scope)
     base := newUnderscore(tag, n - j)
     arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
-    body := arguments.cascade(newApplication(tag), base)
-    constructor := ((newLambda(tag, newUnderscore(tag, 0)))^^(n + m))(body)
+    body := arguments.cascade(Juxtaposition(tag), base)
+    constructor := ((Arrow(tag, Name(renameTag(tag, "_"))))^^(n + m))(body)
     applyDefinition(tag, name, constructor, scope')
 
 define reduceADT(operator, left, right)
@@ -89,10 +91,10 @@ define reduceADT(operator, left, right)
         syntaxError("invalid left hand side", operator)
     if not isThisLexeme(right, "{") and not isThisLexeme(right, "{}")
         syntaxError("ADT required to right of", operator)
-    newDefinition(tag, left, right)
+    Definition(tag, left, right)
 
 define applyADTDefinition(tag, left, right, scope)
-    undefined' := newName(renameTag(tag, "undefined"))
+    undefined' := Name(renameTag(tag, "undefined"))
     scope' := applyDefinition(tag, getHead(left), undefined', scope)
     constructors := getArguments(right)
     n := length(constructors)

@@ -21,6 +21,7 @@ Node* getRight(Node* branchNode);
 void setLeft(Node* branchNode, Node* left);
 void setRight(Node* branchNode, Node* right);
 char getType(Node* node);
+void setType(Node* node, char type);
 long long getValue(Node* leafNode);
 void setValue(Node* leafNode, long long value);
 void* getData(Node* leafNode);

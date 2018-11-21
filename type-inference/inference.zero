@@ -71,14 +71,14 @@ define instantiate(scheme, variables, term)
 
 
 define isFix(term)
-    isReference(term) and getTagLexeme(getTermTag(term)) =*= "fix"
+    isVariable(term) and getTagLexeme(getTermTag(term)) =*= "fix"
 
 
 # stack is a list of type schemes for all the lambda-bound symbols in scope
 # variables is a table that maps type variables to types (either type
 #   variables or concrete types); every type variable appears in variables
 define infer(stack, variables)
-    case term @ Reference(_, debruijn)
+    case term @ Variable(_, debruijn)
         stack[debruijn - 1].instantiate(variables, term)
     case term @ Function(_, body)
         (parameterType, variables') := variables.newTypeVariable(term)

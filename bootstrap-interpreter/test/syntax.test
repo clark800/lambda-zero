@@ -6,7 +6,7 @@ syntax(+) := infixL(20) \n 1 + 2
 1
 ===============================================================================
 %% := 1 \n syntax(%%) := infix(20) \n 0
-Syntax error: symbol already defined '%%' at line 2 column 9
+0
 ===============================================================================
 syntax(|_|) := infix(20) \n 0
 Syntax error: invalid underscore in operator name '|_|' at line 1 column 8

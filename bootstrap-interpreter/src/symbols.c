@@ -126,17 +126,13 @@ Node* parseSymbol(Tag tag, long long value) {
     return newSymbol(tag, value, rules);
 }
 
-bool isSyntaxDeclarationMarker(Node* node) {
-    return isLambda(node) && isThisLexeme(node, "syntax");
-}
-
 static void reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
     Hold* left = getFixity(getNode(operator)) == INFIX ? pop(stack) : NULL;
     // if a syntax declaration marker is about to be an argument to a reducer
     // then the scope of the syntax declaration has ended
-    if (left != NULL && isSyntaxDeclarationMarker(getNode(left)))
+    if (left != NULL && isSyntaxMarker(getNode(left)))
         unappend(RULES);
     shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
@@ -181,8 +177,7 @@ static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
     String prior = getRules(operator)->prior;
     if (!isApplication(left) || !isSameString(getLexeme(left), prior))
         syntaxError("mixfix syntax error", operator);
-    return newApplication(tag, newApplication(tag,
-        convertOperator(tag), left), right);
+    return newApplication(tag, newApplication(tag, newName(tag), left), right);
 }
 
 void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {

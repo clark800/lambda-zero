@@ -1,40 +1,44 @@
 #* bind.zero
 
+define findDebruijnIndex(parameterNames, tag)
+    if isUnused(tag)
+        parseError("cannot reference a symbol starting with underscore", tag)
+    parameterNames.indexOf(getTagLexeme(tag)).mapRight(1 +) ?
+        parseError("undefined symbol", tag)
+
+
+define bindOptimization(tag)
+    try (arity, optimize) := getBuiltin(tag)
+    return Optimization(tag, arity, optimize)
+
+
 define isDefined(parameter, parameterNames)
-    isNatural(parameter) or (not isUnderscore(parameter) and
-        parameterNames.contains(getLexeme(parameter)))
-
-
-define findDebruijnIndex(parameterNames, node)
-    if getValue(node) =/= 0
-        getValue(node)
-    if isUnused(node)
-        syntaxError("cannot reference a symbol starting with underscore", node)
-    parameterNames.indexOf(getLexeme(node)).mapRight(1 +) ?
-        syntaxError("undefined symbol", node)
+    isNumeral(parameter) or bool(bindOptimization(getTag(parameter))) or
+        (not isThisName(parameter, "_") and
+            parameterNames.contains(getLexeme(parameter)))
 
 
 define bind(node, parameterNames)
-    match getNodeType(node)
-        case SYMBOL
-            Reference(getTag(node), parameterNames.findDebruijnIndex(node))
-        case LAMBDA
-            parameter := getParameter(node)
+    match node
+        case Name(tag)
+            bindOptimization(tag) ?
+                Variable(tag, parameterNames.findDebruijnIndex(tag))
+        case Arrow(tag, parameter, body)
             if isDefined(parameter, parameterNames)
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(parameter)
             Function(getTag(parameter),
-                bind(getBody(node), parameterName :: parameterNames))
-        case APPLICATION
-            Application(bind(getLeft(node), parameterNames),
-                        bind(getRight(node), parameterNames))
-        case DEFINITION
+                bind(body, parameterName :: parameterNames))
+        case Juxtaposition(tag, left, right)
+            Application(bind(left, parameterNames),
+                        bind(right, parameterNames))
+        case Numeral(tag, value)
+            Natural(renameTag(tag, "_"), value)
+        case Reference(tag, debruijn)
+            Variable(tag, debruijn)
+        case Operator(_, _, _)
+            syntaxError("internal error", node)
+        case Defintion(_, _, _)
             syntaxError("missing scope for definition", node)
-        case NATURAL
-            Natural(renameTag(getTag(node), "_"), getValue(node))
-        case BUILTIN
-            (arity, optimize) := getBuiltin(getTag(node)) ?
-                syntaxError("builtin not found", node)
-            Optimization(getTag(node), arity, optimize)
 
 #*

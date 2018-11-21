@@ -1,112 +1,98 @@
 #* ast.zero
 
-NodeType ::= {SYMBOL, LAMBDA, APPLICATION, DEFINITION, NATURAL, BUILTIN}
-ASTDataType ::= {ASTData(_ : Tag, _ : NodeType, _ : Maybe(_), _ : Integer)}
+AST ::= {
+    Name(_ : Tag),
+    Arrow(_ : Tag, getParameter : AST, getBody : AST),
+    Juxtaposition(_ : Tag, getLeft : AST, getRight : AST),
+    Numeral(_ : Tag, getNumeralValue : Natural),
+    Reference(_ : Tag, _ : Natural),
+    Operator(_ : Tag, getRank : Natural, getOperatorSyntax : _),
+    Definition(_ : tag, getDefinee : AST, getDefinedValue : AST)
+}
 
-newLeaf(tag, nodeType, maybeData, value) :=
-    Node(ASTData(tag, nodeType, maybeData, value), [])
-newBranch(tag, nodeType, children) :=
-    Node(ASTData(tag, nodeType, void, 0), children)
+define getTag
+    case Name(tag) -> tag
+    case Arrow(tag, _, _) -> tag
+    case Juxtaposition(tag, _, _) -> tag
+    case Numeral(tag, _) -> tag
+    case Reference(tag, _) -> tag
+    case Operator(tag, _, _) -> tag
+    case Definition(tag, _, _) -> tag
 
-isLeaf(node) := isNil(getChildren(node))
+define getASTIndex
+    case Name(_) -> 0
+    case Arrow(_, _, _) -> 1
+    case Juxtaposition(_, _, _) -> 2
+    case Numeral(_, _) -> 3
+    case Reference(_, _) -> 4
+    case Operator(_, _, _) -> 5
+    case Definition(_, _, _) -> 6
 
-newSymbol(tag, value, maybeData) := newLeaf(tag, SYMBOL, maybeData, value)
-newOperator(tag, value, syntax') := newSymbol(tag, value, return(syntax'))
-newReference(tag, debruijn) := newSymbol(tag, debruijn, void)
-newName(tag) := newReference(tag, 0)
-newLambda(tag, parameter, body) := newBranch(tag, LAMBDA, [parameter, body])
-newApplication(tag, left, right) := newBranch(tag, APPLICATION, [left, right])
-newDefinition(tag, left, right) := newBranch(tag, DEFINITION, [left, right])
-newNatural(tag, value) := newLeaf(tag, NATURAL, void, value)
-newBuiltin(tag) := newLeaf(tag, BUILTIN, void, 0)
-
-getTag(Node(ASTData(tag, _, _, _), _)) := tag
-getNodeType(Node(ASTData(_, nodeType, _, _), _)) := nodeType
-getMaybeData(Node(ASTData(_, _, maybeData, _), _)) := maybeData
-getValue(Node(ASTData(_, _, _, value), _)) := value
-
-getLeft(node) := head(getChildren(node))
-getRight(node) := head(tail(getChildren(node)))
-getParameter(node) := getLeft(node)
-getBody(node) := getRight(node)
-
-define getNodeTypeCode
-    case SYMBOL -> 0
-    case LAMBDA -> 1
-    case APPLICATION -> 2
-    case DEFINITION -> 3
-    case NATURAL -> 4
-    case BUILTIN -> 5
-
-isNodeType(node, nodeType) :=
-    getNodeTypeCode(getNodeType(node)) = getNodeTypeCode(nodeType)
-isSymbol(node) := isNodeType(node, SYMBOL)
-isLambda(node) := isNodeType(node, LAMBDA)
-isApplication(node) := isNodeType(node, APPLICATION)
-isDefinition(node) := isNodeType(node, DEFINITION)
-isNatural(node) := isNodeType(node, NATURAL)
-isBuiltin(node) := isNodeType(node, BUILTIN)
+isName(node) := getASTIndex(node) = 0
+isArrow(node) := getASTIndex(node) = 1
+isJuxtaposition(node) := getASTIndex(node) = 2
+isNumeral(node) := getASTIndex(node) = 3
+isReference(node) := getASTIndex(node) = 4
+isOperator(node) := getASTIndex(node) = 5
+isDefinition(node) := getASTIndex(node) = 6
 
 getLexeme(node) := getTagLexeme(getTag(node))
-getLocation(node) := getTagLocation(getTag(node))
-getLine(node) := getLocationLine(getLocation(node))
-getColumn(node) := getLocationColumn(getLocation(node))
 
-NULL := newName(Tag("\0\0", Location("", 0, 0)))
+NULL := Name(Tag("\0\0", Location("", 0, 0)))
 isThisLexeme(node, lexeme) := getLexeme(node) =*= lexeme
-isThisSymbol(node, lexeme) := isSymbol(node) and isThisLexeme(node, lexeme)
-isNull(node) := isThisSymbol(node, "\0\0")
-isEOF(node) := isThisSymbol(node, "\0")
-isUnderscore(node) := isThisSymbol(node, "_")
-isUnused(node) := isSymbol(node) and head(getLexeme(node)) = '_'
+isThisName(node, lexeme) := isName(node) and isThisLexeme(node, lexeme)
+isThisOperator(node, lexeme) := isOperator(node) and isThisLexeme(node, lexeme)
+isNull(node) := isThisName(node, "\0\0")
+isEOF(node) := isThisOperator(node, "\0")
+isUnused(tag) := head(getTagLexeme(tag)) = '_'
 
 define isSection(node)
     isThisLexeme(node, ".*.") or
         isThisLexeme(node, ".*") or isThisLexeme(node, "*.")
 
 define newUnderscore(tag, debruijn)
-    newReference(Tag("_", getTagLocation(tag)), debruijn)
+    Reference(Tag("_", getTagLocation(tag)), debruijn)
 
 define newNil(tag)
-    newName(Tag("[]", getTagLocation(tag)))
+    Name(Tag("[]", getTagLocation(tag)))
 
 define prependList(tag, item, list)
-    name := newName(Tag("::", getTagLocation(tag)))
-    newApplication(tag, newApplication(tag, name, item), list)
+    name := Name(Tag("::", getTagLocation(tag)))
+    Juxtaposition(tag, Juxtaposition(tag, name, item), list)
 
 define isValidPattern(node)
-    isSymbol(node) or (isApplication(node) and
+    isName(node) or (isJuxtaposition(node) and
         isValidPattern(getLeft(node)) and isValidPattern(getRight(node)))
 
-define setTag(Node(ASTData(tag, nodeType, maybeData, value), children), tag')
-    Node(ASTData(tag', nodeType, maybeData, value), children)
+define setTag(node, tag)
+    match node
+        case Name(_) -> Name(tag)
+        case Arrow(_, parameter, body) -> Arrow(tag, parameter, body)
+        case Juxtaposition(_, left, right) -> Juxtaposition(tag, left, right)
+        case Numeral(_, value) -> Numeral(tag, value)
+        case Reference(_, debruijn) -> Reference(tag, debruijn)
+        case Operator(_, rank, rules) -> Operator(tag, rank, rules)
+        case Definition(_, left, right) -> Definition(tag, left, right)
 
 define renameTag(tag, lexeme)
     Tag(lexeme, getTagLocation(tag))
 
 define renameNode(node, lexeme)
-    newName(renameTag(getTag(node), lexeme))
-
-define convertOperator(tag)
-    builtins := ["+", "-", "*", "//", "%", "=", "=/=", "<", ">",
-        "<=", ">=", "up", "error"]
-    if bool(builtins.find(=*= getTagLexeme(tag)))
-        newBuiltin(tag)
-    newName(tag)
+    Name(renameTag(getTag(node), lexeme))
 
 define showLexeme(node)
     showTag(getTag(node))
 
-define showAST(node)
-    match getNodeType(node)
-        case SYMBOL -> showLexeme(node)
-        case LAMBDA -> "(" ++ showLexeme(getParameter(node)) ++ " -> " ++
-                   showAST(getBody(node)) ++ ")"
-        case APPLICATION -> "(" ++ showAST(getLeft(node)) ++ " " ++
-                   showAST(getRight(node)) ++ ")"
-        case DEFINITION -> "(" ++ showAST(getLeft(node)) ++ " := " ++
-                   showAST(getRight(node)) ++ ")"
-        case NATURAL -> showNatural(getValue(node))
-        case BUILTIN -> "[" ++ showLexeme(node) ++ "]"
+define showAST
+    case Name(tag) -> showTag(tag)
+    case Arrow(tag, parameter, body) ->
+        "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
+    case Juxtaposition(tag, left, right) ->
+        "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
+    case Numeral(tag, value) -> showNatural(value)
+    case Reference(tag, debruijn) -> showTag(tag)
+    case Operator(tag, rank, rules) -> showTag(tag)
+    case Definition(tag, left, right) ->
+        "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
 
 #*

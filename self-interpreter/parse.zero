@@ -14,10 +14,10 @@ define parseEscapeCode(code, tag)
 define parseQuotedCharacter(tag, string)
     c := head(string)
     if c =/= '\\'
-        newNatural(tag, c)
+        Numeral(tag, c)
     if isNil(tail(string))
         parseError("missing end quote for", tag)
-    newNatural(tag, parseEscapeCode(head(tail(string)), tag))
+    Numeral(tag, parseEscapeCode(head(tail(string)), tag))
 
 
 define splitStringLiteral(string)
@@ -67,7 +67,7 @@ define parseNumericLiteral(tag)
     if natural.length = maxNatural.length and
             zipWith(natural, (>), maxNatural).any(id)
         parseError("magnitude of natural is too large", tag)
-    newNatural(tag, parseNatural(lexeme, 10))
+    Numeral(tag, parseNatural(lexeme, 10))
 
 
 define parseToken(operators, token)
