@@ -119,8 +119,10 @@ xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
 join(xss) ≔ xss.fold((⧺), [])            # concatenate list of lists
 length(xs) ≔ xs.fold(constant(↑), 0)         # get length of list
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(xs, n) ≔ (tail ° n)(xs)            # drop n elements from front of list
-take(xs, n) ≔ n.(case 0 ↦ []; case ↑ n′ ↦ head(xs) ∷ tail(xs).take(n′))
+drop(xs, n) ≔ n.(case 0 -> xs; case ↑ n' ->
+    if isNil(xs) then xs else tail(xs).drop(n'))
+take(xs, n) ≔ n.(case 0 ↦ []; case ↑ n′ ↦
+    if isNil(xs) then xs else head(xs) ∷ tail(xs).take(n′))
 xs[n] ≔ head(xs.drop(n))          # get element of list at index
 xs[start, end] ≔ xs.drop(start).take(end - start)
 last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list

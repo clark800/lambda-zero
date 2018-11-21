@@ -18,12 +18,9 @@ define evaluate(closure @ Closure(term, environment), stack)
         case Natural(tag, n)
             if isNil(stack) then closure else
                 evaluate(Closure(expandNatural(tag, n), environment), stack)
-        case Optimization(tag)
-            (arity, builtin) := getBuiltin(`evaluate([]), tag) ? undefined
-            arguments := (stack.takeSafe(arity) ?
-                runtimeError("missing argument to", tag)).map(`evaluate([]))
-            right := if arity > 1 then arguments[1] else arguments[0]
-            evaluate(builtin(arguments[0], right), stack.dropSafe(arity))
+        case Optimization(tag, arity, optimize)
+            result := optimize(`evaluate([]), stack.take(arity))
+            evaluate(result, stack.drop(arity))
 
 
 define evaluateClosure(closure)

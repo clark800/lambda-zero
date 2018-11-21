@@ -19,7 +19,7 @@ define isNoTerm
     case Function(_, _) -> false
     case Application(_, _) -> false
     case Natural(_, _) -> false
-    case Optimization(_) -> false
+    case Optimization(_, _, _) -> false
 
 newFreeType(source) := newType(source, 1, 0, [])
 newBooleanType(source) := newType(source, 2, 0, [])

@@ -15,7 +15,7 @@ define getDefinitions
         if not isFunction(left) then []
         (getTermTag(left), right) :: getDefinitions(getFunctionBody(left))
     case Natural(_, _) -> []
-    case Optimization(_) -> []
+    case Optimization(_, _, _) -> []
 
 
 define showDefinition((tag, value))

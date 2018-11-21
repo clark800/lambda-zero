@@ -14,7 +14,7 @@ define serialize(closure)
                 serialize'(Closure(right, environment), depth) ++ ")"
             case Natural(_, n)
                 showNatural(n)
-            case Optimization(Tag(lexeme, _))
+            case Optimization(Tag(lexeme, _), _, _)
                 lexeme
 
     result := serialize'(closure, 0)
