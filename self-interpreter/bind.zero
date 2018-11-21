@@ -33,6 +33,8 @@ define bind(node, parameterNames)
         case NATURAL
             Natural(renameTag(getTag(node), "_"), getValue(node))
         case BUILTIN
-            Optimization(getTag(node))
+            (arity, optimize) := getBuiltin(getTag(node)) ?
+                syntaxError("builtin not found", node)
+            Optimization(getTag(node), arity, optimize)
 
 #*

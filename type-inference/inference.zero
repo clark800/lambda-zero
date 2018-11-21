@@ -103,7 +103,7 @@ define infer(stack, variables)
         (returnType, variables'''.unify((leftType, functionType)))
     case term @ Natural(_, _)
         (newNaturalType(term), variables)
-    case term @ Optimization(_)
+    case term @ Optimization(_, _, _)
         (getBuiltinType(term), variables)
 
 

@@ -1,22 +1,36 @@
 #* builtins.zero
 
-define getBuiltin(evaluateClosure, tag)
+define getBuiltin(tag)
     tag' := renameTag(tag, "_")
     maxInteger := 9223372036854775807
 
     define getNatural(term)
         maybeNatural(term) ? runtimeError("expected natural argument to", tag)
 
-    define compute(f, left, right)
-        f(getNatural(getTerm(left)), getNatural(getTerm(right)))
-
-    define makeNaturalBuiltin(f, left, right)
-        Closure(Natural(tag', f.compute(left, right)), [])
-
     define newBoolean(b)
         Function(tag', Function(tag', Reference(tag', if b then 1 else 2)))
 
-    define makeComparisonBuiltin(f, left, right)
+    define compute(f, left, right)
+        f(getNatural(getTerm(left)), getNatural(getTerm(right)))
+
+    define makeUnaryBuiltin(f, evaluate, arguments)
+        if length(arguments) < 1
+            runtimeError("missing argument to", tag)
+        argument := evaluate(arguments[0])
+        Closure(Natural(tag', f(getNatural(getTerm(argument)))), [])
+
+    define makeNaturalBuiltin(f, evaluate, arguments)
+        if length(arguments) < 2
+            runtimeError("missing argument to", tag)
+        left := evaluate(arguments[0])
+        right := evaluate(arguments[1])
+        Closure(Natural(tag', f.compute(left, right)), [])
+
+    define makeComparisonBuiltin(f, evaluate, arguments)
+        if length(arguments) < 2
+            runtimeError("missing argument to", tag)
+        left := evaluate(arguments[0])
+        right := evaluate(arguments[1])
         Closure(newBoolean(f.compute(left, right)), [])
 
     define addBuiltin(left, right)
@@ -44,13 +58,16 @@ define getBuiltin(evaluateClosure, tag)
             left
         left % right
 
-    define upBuiltin(left, right)
-        if left >= maxInteger
+    define upBuiltin(argument)
+        if argument >= maxInteger
             runtimeError("overflow in", tag)
-        left + 1
+        argument + 1
 
-    define errorBuiltin(closure)
-        message := serializeString(evaluateClosure, closure) ?
+    define errorBuiltin(evaluate, arguments)
+        if length(arguments) < 1
+            runtimeError("missing argument to", tag)
+        closure := head(arguments)
+        message := serializeString(evaluate, closure) ?
             runtimeError("expected string argument to", tag)
         error(message)
 
@@ -66,7 +83,7 @@ define getBuiltin(evaluateClosure, tag)
         (">", (2, makeComparisonBuiltin(>))),
         ("<=", (2, makeComparisonBuiltin(<=))),
         (">=", (2, makeComparisonBuiltin(>=))),
-        ("up", (1, makeNaturalBuiltin(upBuiltin))),
+        ("up", (1, makeUnaryBuiltin(upBuiltin))),
         ("error", (1, errorBuiltin)),
         ("(undefined)", (0, closure -> undefined))
     ])
