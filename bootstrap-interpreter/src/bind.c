@@ -38,9 +38,8 @@ static void bindSymbol(Node* node, Array* parameters, size_t globalDepth) {
 }
 
 static bool isDefined(Node* parameter, Array* parameters) {
-    return isNatural(parameter) || (!isUnderscore(parameter) &&
-        (findBuiltinCode(parameter) >= 0 ||
-        findDebruijnIndex(parameter, parameters) != 0));
+    return !isUnderscore(parameter) && (findBuiltinCode(parameter) >= 0 ||
+        findDebruijnIndex(parameter, parameters) != 0);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {

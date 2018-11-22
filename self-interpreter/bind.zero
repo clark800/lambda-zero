@@ -12,10 +12,9 @@ define bindOperation(tag)
     return Operation(tag, arity, optimize)
 
 
-define isDefined(parameter, parameterNames)
-    isNumber(parameter) or bool(bindOperation(getTag(parameter))) or
-        (not isThisName(parameter, "_") and
-            parameterNames.contains(getLexeme(parameter)))
+define isDefined(tag, parameterNames)
+    bool(bindOperation(tag)) or (not isUnderscore(tag) and
+        parameterNames.contains(getTagLexeme(tag)))
 
 
 define bind(node, parameterNames)
@@ -24,7 +23,7 @@ define bind(node, parameterNames)
             bindOperation(tag) ?
                 Variable(tag, parameterNames.findDebruijnIndex(tag))
         case Arrow(tag, parameter, body)
-            if isDefined(parameter, parameterNames)
+            if isDefined(getTag(parameter), parameterNames)
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(parameter)
             Abstraction(getTag(parameter),
@@ -40,5 +39,14 @@ define bind(node, parameterNames)
             syntaxError("internal error", node)
         case Defintion(_, _, _)
             syntaxError("missing scope for definition", node)
+        case AsPattern(_, _, _)
+            syntaxError("as pattern not in parameter position", node)
+        case CommaPair(_, _, _)
+            syntaxError("comma not inside brackets", node)
+        case Case(tag, constructors, body)
+            # todo: add constructors to Abstraction
+            Abstraction(tag, bind(body, getTagLexeme(tag) :: parameterNames))
+        case Section(_, _, _)
+            syntaxError("invalid section", node)
 
 #*

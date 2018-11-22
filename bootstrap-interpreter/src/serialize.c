@@ -8,7 +8,6 @@
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     switch (getNodeType(node)) {
-        case DEFINITION:
         case APPLICATION:
             fputs("(", stream);
             serializeNode(getLeft(node), locals, globals, depth, stream);
@@ -40,6 +39,7 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             break;
         case NATURAL: fputll(getValue(node), stream); break;
         case BUILTIN: printLexeme(getLexeme(node), stream); break;
+        default: fputs("#ERROR#", stream);
     }
 }
 

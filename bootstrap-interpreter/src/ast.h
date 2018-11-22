@@ -1,6 +1,7 @@
 typedef enum
-    {SYMBOL, LAMBDA, APPLICATION, DEFINITION, NATURAL, BUILTIN} NodeType;
-
+    {SYMBOL, LAMBDA, APPLICATION, DEFINITION, NATURAL, BUILTIN, SECTION}
+    NodeType;
+typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionSide;
 // ====================================
 // Functions to get a value from a node
 // ====================================
@@ -41,6 +42,7 @@ static inline bool isSymbol(Node* node) {return getNodeType(node) == SYMBOL;}
 static inline bool isLambda(Node* node) {return getNodeType(node) == LAMBDA;}
 static inline bool isNatural(Node* node) {return getNodeType(node) == NATURAL;}
 static inline bool isBuiltin(Node* node) {return getNodeType(node) == BUILTIN;}
+static inline bool isSection(Node* node) {return getNodeType(node) == SECTION;}
 
 static inline bool isApplication(Node* node) {
     return getNodeType(node) == APPLICATION;
@@ -59,11 +61,6 @@ static inline bool isUnderscore(Node* node) {return isThisLeaf(node, "_");}
 
 static inline bool isUnused(Node* node) {
     return getLexeme(node).start[0] == '_';
-}
-
-static inline bool isSection(Node* node) {
-    return isThisLexeme(node, ".*.") ||
-        isThisLexeme(node, ".*") || isThisLexeme(node, "*.");
 }
 
 static inline bool isAsPattern(Node* node) {
@@ -102,7 +99,7 @@ static inline Node* newBuiltin(Tag tag, long long n) {
 }
 
 static inline bool isValidParameter(Node* node) {
-    return isNatural(node) || (isSymbol(node) && getValue(node) == 0);
+    return isSymbol(node) && getValue(node) == 0;
 }
 
 static inline Node* newLambda(Tag tag, Node* parameter, Node* body) {
@@ -128,6 +125,51 @@ static inline Node* newNil(Tag tag) {return newRename(tag, "[]");}
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
     Node* operator = newRename(tag, "::");
     return newApplication(tag, newApplication(tag, operator, item), list);
+}
+
+// ====================================
+// Sections
+// ====================================
+
+static inline Node* newSection(Tag tag, SectionSide side, Node* body) {
+    return newBranch(tag, SECTION, newNatural(tag, (long long)side), body);
+}
+
+static inline Node* newLeftPlaceholder(Tag tag) {
+    return newSection(tag, RIGHTSECTION, newName(renameTag(tag, ".*")));
+}
+
+static inline Node* newRightPlaceholder(Tag tag) {
+    return newSection(tag, LEFTSECTION, newName(renameTag(tag, "*.")));
+}
+
+static inline bool isLeftPlaceholder(Node* node) {
+    return isSection(node) && isThisLeaf(getRight(node), ".*");
+}
+
+static inline Node* getSectionBody(Node* node) {return getRight(node);}
+
+static inline Node* wrapLeftSection(Tag tag, Node* body) {
+    return newLambda(tag, newName(renameTag(tag, "*.")), body);
+}
+
+static inline Node* wrapRightSection(Tag tag, Node* body) {
+    return newLambda(tag, newName(renameTag(tag, ".*")), body);
+}
+
+static inline Node* wrapSection(Tag tag, Node* section) {
+    Node* body = getSectionBody(section);
+    switch ((SectionSide)getValue(getLeft(section))) {
+        case LEFTSECTION:
+            return wrapLeftSection(tag, body);
+        case RIGHTSECTION:
+            if (isSymbol(getLeft(body)))
+                return getLeft(body);   // parenthesized postfix operator
+            return wrapRightSection(tag, body);
+        case LEFTRIGHTSECTION:
+            return wrapLeftSection(tag, wrapRightSection(tag, body));
+        default: return NULL;
+    }
 }
 
 // ====================================
