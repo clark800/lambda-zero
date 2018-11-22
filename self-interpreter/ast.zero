@@ -2,9 +2,9 @@
 
 AST ::= {
     Name(_ : Tag),
-    Arrow(_ : Tag, getParameter : AST, getBody : AST),
+    Arrow(_ : Tag, getArrowLeft : AST, getArrowRight : AST),
     Juxtaposition(_ : Tag, getLeft : AST, getRight : AST),
-    Numeral(_ : Tag, getNumeralValue : Natural),
+    Number(_ : Tag, getNumericValue : Natural),
     Reference(_ : Tag, _ : Natural),
     Operator(_ : Tag, getRank : Natural, getOperatorSyntax : _),
     Definition(_ : tag, getDefinee : AST, getDefinedValue : AST)
@@ -14,7 +14,7 @@ define getTag
     case Name(tag) -> tag
     case Arrow(tag, _, _) -> tag
     case Juxtaposition(tag, _, _) -> tag
-    case Numeral(tag, _) -> tag
+    case Number(tag, _) -> tag
     case Reference(tag, _) -> tag
     case Operator(tag, _, _) -> tag
     case Definition(tag, _, _) -> tag
@@ -23,7 +23,7 @@ define getASTIndex
     case Name(_) -> 0
     case Arrow(_, _, _) -> 1
     case Juxtaposition(_, _, _) -> 2
-    case Numeral(_, _) -> 3
+    case Number(_, _) -> 3
     case Reference(_, _) -> 4
     case Operator(_, _, _) -> 5
     case Definition(_, _, _) -> 6
@@ -31,7 +31,7 @@ define getASTIndex
 isName(node) := getASTIndex(node) = 0
 isArrow(node) := getASTIndex(node) = 1
 isJuxtaposition(node) := getASTIndex(node) = 2
-isNumeral(node) := getASTIndex(node) = 3
+isNumber(node) := getASTIndex(node) = 3
 isReference(node) := getASTIndex(node) = 4
 isOperator(node) := getASTIndex(node) = 5
 isDefinition(node) := getASTIndex(node) = 6
@@ -64,16 +64,6 @@ define isValidPattern(node)
     isName(node) or (isJuxtaposition(node) and
         isValidPattern(getLeft(node)) and isValidPattern(getRight(node)))
 
-define setTag(node, tag)
-    match node
-        case Name(_) -> Name(tag)
-        case Arrow(_, parameter, body) -> Arrow(tag, parameter, body)
-        case Juxtaposition(_, left, right) -> Juxtaposition(tag, left, right)
-        case Numeral(_, value) -> Numeral(tag, value)
-        case Reference(_, debruijn) -> Reference(tag, debruijn)
-        case Operator(_, rank, rules) -> Operator(tag, rank, rules)
-        case Definition(_, left, right) -> Definition(tag, left, right)
-
 define renameTag(tag, lexeme)
     Tag(lexeme, getTagLocation(tag))
 
@@ -89,7 +79,7 @@ define showAST
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
     case Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
-    case Numeral(tag, value) -> showNatural(value)
+    case Number(tag, value) -> showNatural(value)
     case Reference(tag, debruijn) -> showTag(tag)
     case Operator(tag, rank, rules) -> showTag(tag)
     case Definition(tag, left, right) ->

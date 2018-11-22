@@ -7,13 +7,13 @@ define findDebruijnIndex(parameterNames, tag)
         parseError("undefined symbol", tag)
 
 
-define bindOptimization(tag)
+define bindOperation(tag)
     try (arity, optimize) := getBuiltin(tag)
-    return Optimization(tag, arity, optimize)
+    return Operation(tag, arity, optimize)
 
 
 define isDefined(parameter, parameterNames)
-    isNumeral(parameter) or bool(bindOptimization(getTag(parameter))) or
+    isNumber(parameter) or bool(bindOperation(getTag(parameter))) or
         (not isThisName(parameter, "_") and
             parameterNames.contains(getLexeme(parameter)))
 
@@ -21,19 +21,19 @@ define isDefined(parameter, parameterNames)
 define bind(node, parameterNames)
     match node
         case Name(tag)
-            bindOptimization(tag) ?
+            bindOperation(tag) ?
                 Variable(tag, parameterNames.findDebruijnIndex(tag))
         case Arrow(tag, parameter, body)
             if isDefined(parameter, parameterNames)
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(parameter)
-            Function(getTag(parameter),
+            Abstraction(getTag(parameter),
                 bind(body, parameterName :: parameterNames))
         case Juxtaposition(tag, left, right)
-            Application(bind(left, parameterNames),
-                        bind(right, parameterNames))
-        case Numeral(tag, value)
-            Natural(renameTag(tag, "_"), value)
+            Application(tag, bind(left, parameterNames),
+                             bind(right, parameterNames))
+        case Number(tag, value)
+            Numeral(renameTag(tag, "_"), value)
         case Reference(tag, debruijn)
             Variable(tag, debruijn)
         case Operator(_, _, _)

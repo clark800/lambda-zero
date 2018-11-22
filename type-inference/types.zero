@@ -13,14 +13,7 @@ define setSource(type, source)
     newType(source, getTypeCode(type), getIndex(type), getComponentTypes(type))
 
 noTerm := Variable(noTag, 0)
-
-define isNoTerm
-    case Variable(_, debruijn) -> debruijn = 0
-    case Function(_, _) -> false
-    case Application(_, _) -> false
-    case Natural(_, _) -> false
-    case Optimization(_, _, _) -> false
-
+isNoTerm(term) := isVariable(term) and getDebruijnIndex(term) = 0
 newFreeType(source) := newType(source, 1, 0, [])
 newBooleanType(source) := newType(source, 2, 0, [])
 newNaturalType(source) := newType(source, 3, 0, [])
