@@ -3,12 +3,12 @@
 define isIdentity(term)
     if not isFunction(term) then false
     body := getFunctionBody(term)
-    if not isReference(body) then false
+    if not isVariable(body) then false
     getDebruijnIndex(body) = 1
 
 
 define getDefinitions
-    case Reference(_, _) -> []
+    case Variable(_, _) -> []
     case Function(_, _) -> []
     case Application(left, right)
         if isIdentity(left) then getDefinitions(right)

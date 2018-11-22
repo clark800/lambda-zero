@@ -6,18 +6,17 @@ define splitCodeAndInput(input)
     (code, input')
 
 
-define isMain(term)
+define isMain
     # todo: detect the name "main" rather than parameter name "input"
-    match term
-        case Reference(_, _) -> false
-        case Function(tag, _) -> getTagLexeme(tag) =*= "input"
-        case Application(_, _) -> false
-        case Natural(_, _) -> false
-        case Optimization(_, _, _) -> false
+    case Variable(_, _) -> false
+    case Function(tag, _) -> getTagLexeme(tag) =*= "input"
+    case Application(_, _) -> false
+    case Natural(_, _) -> false
+    case Optimization(_, _, _) -> false
 
 
 define newNilTerm(tag)
-    Function(tag, Function(tag, Reference(tag, 2)))
+    Function(tag, Function(tag, Variable(tag, 2)))
 
 
 define constructString(tag, string)

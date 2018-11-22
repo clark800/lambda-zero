@@ -28,9 +28,6 @@ StateType ::= {State(
     getOperators : List(Pair(List(N), SyntaxType))
 )}
 
-define isOperator(node)
-    bool(getMaybeData(node))
-
 define reduceOperand(node, _left, _right)
     node
 
@@ -40,16 +37,17 @@ define shiftOperand(State(stack, operators), node)
     State(node :: stack, operators)
 
 define getSyntax(node)
-    getMaybeData(node) ?
-        Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand, "")
+    if isOperator(node)
+        getOperatorSyntax(node)
+    Syntax(0, 0, NOFIX, NEITHER, false, shiftOperand, reduceOperand, "")
 
 define isSpecial(node)
     getSpecial(getSyntax(node))
 
 define propagateSection(operator, node, lexeme)
-    if isSpecial(operator) or not isApplication(node)
+    if isSpecial(operator) or not isJuxtaposition(node)
         syntaxError("operator does not support sections", operator)
-    newApplication(renameTag(getTag(node), lexeme),
+    Juxtaposition(renameTag(getTag(node), lexeme),
         getLeft(node), getRight(node))
 
 define reduceOperator(operator, left, right)
@@ -68,16 +66,16 @@ define shift(state, node)
     getShift(getSyntax(node))(state, node)
 
 define erase(stack, lexeme)
-    stack.dropIf(`isThisSymbol(lexeme))
+    stack.dropIf(`isThisOperator(lexeme))
 
-define isSyntaxDeclarationMarker(node)
-    isLambda(node) and isThisLexeme(node, "syntax")
+define isSyntaxMarker(node)
+    isArrow(node) and isThisLexeme(node, "syntax")
 
 define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
             reduceOperator(stack[1], NULL, stack[0]))
-    operators' := if isSyntaxDeclarationMarker(stack[2]) then
+    operators' := if isSyntaxMarker(stack[2]) then
         tail(operators) else operators
     shift(State(stack.drop(3), operators'),
         reduceOperator(stack[1], stack[2], stack[0]))
@@ -100,7 +98,7 @@ define isHigherPrecedence(left, right)
             syntaxError("incompatible associativity", right)
 
         if leftSyntax.getAssociativity = RIGHTVALUE
-            getValue(left) > getValue(right)
+            getRank(left) > getRank(right)
 
         leftSyntax.getAssociativity = LEFT
 
@@ -122,9 +120,9 @@ define lookupSyntax(operators, lexeme)
 
 define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapRight(newOperator(tag, value)) ?
+    operators.lookupSyntax(lexeme).mapRight(Operator(tag, value)) ?
         (if lexeme =*= " " then (operators.lookupSyntax("( )").
-            mapRight(newOperator(tag, value)) ? newName(tag)) else
-            newName(tag))
+            mapRight(Operator(tag, value)) ? Name(tag)) else
+            Name(tag))
 
 #*

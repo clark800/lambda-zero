@@ -10,9 +10,26 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     return 0;
 }
 
-static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
+static int findBuiltinCode(Node* node) {
+    // names in builtins must line up with codes in BuiltinCode, except
+    // UNDEFINED, EXIT, PUT, GET which don't have accessible names
+    static const char* const builtins[] = {"+", "-", "*", "//", "%",
+        "=", "=/=", "<", ">", "<=", ">=", "up", "error", "(undefined)"};
+    for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
+        if (isThisLexeme(node, builtins[i]))
+            return (int)i;
+    return -1;
+}
+
+static void bindSymbol(Node* node, Array* parameters, size_t globalDepth) {
     if (isUnused(node))
        syntaxError("cannot reference a symbol starting with underscore", node);
+    int code = findBuiltinCode(node);
+    if (code >= 0) {
+        setValue(node, code);
+        setType(node, BUILTIN);
+        return;
+    }
     unsigned long long index = findDebruijnIndex(node, parameters);
     syntaxErrorIf(index == 0, "undefined symbol", node);
     unsigned long long localDepth = length(parameters) - globalDepth;
@@ -22,14 +39,15 @@ static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
 
 static bool isDefined(Node* parameter, Array* parameters) {
     return isNatural(parameter) || (!isUnderscore(parameter) &&
-        findDebruijnIndex(parameter, parameters) != 0);
+        (findBuiltinCode(parameter) >= 0 ||
+        findDebruijnIndex(parameter, parameters) != 0));
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     // this error should never happen, but if something invalid gets through
     // we can at least point to the location of the problem
     if (isSymbol(node) && getValue(node) == 0) {
-        bindReference(node, parameters, length(globals));
+        bindSymbol(node, parameters, length(globals));
     } else if (isLambda(node)) {
         if (isDefined(getParameter(node), parameters))
             syntaxError("symbol already defined", getParameter(node));
@@ -58,10 +76,6 @@ Array* bind(Hold* root) {
         Node* definedValue = getRight(node);
         if (isDefined(definedSymbol, parameters))
             syntaxError("symbol already defined", definedSymbol);
-        if (isIdentity(getLeft(node))) {
-            node = getRight(node);
-            continue;                           // ignore syntax declarations
-        }
         bindWith(definedValue, parameters, globals);
         append(parameters, definedSymbol);
         append(globals, definedValue);

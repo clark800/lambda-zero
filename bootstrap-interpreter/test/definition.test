@@ -1,6 +1,6 @@
 ===============================================================================
 (a := 4) \n (a + a)
-Syntax error: missing scope for definition '(' at line 1 column 1
+Syntax error: missing scope for definition ':=' at line 1 column 4
 ===============================================================================
 a := 1 \n b := a + a \n b
 2
@@ -57,7 +57,7 @@ f(x) := (g(y) := y \n g) \n f
 Syntax error: invalid parameter ':=' at line 1 column 7
 ===============================================================================
 x % y := x * y \n 0
-Syntax error: cannot define a builtin operator '%' at line 1 column 3
+Syntax error: symbol already defined '%' at line 1 column 3
 ===============================================================================
 f(x) := 1 \n f(x) := 2 \n f(0)
 Syntax error: symbol already defined 'f' at line 2 column 2

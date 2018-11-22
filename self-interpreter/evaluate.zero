@@ -1,13 +1,13 @@
 #* evaluate.zero
 
 define expandNatural(tag, n)
-    Function(tag, Function(tag, if n = 0 then Reference(tag, 2) else
-        Application(Reference(tag, 1), Natural(tag, n - 1))))
+    Function(tag, Function(tag, if n = 0 then Variable(tag, 2) else
+        Application(Variable(tag, 1), Natural(tag, n - 1))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
     match term
-        case Reference(_, debruijn)
+        case Variable(_, debruijn)
             evaluate(environment[debruijn - 1], stack)
         case Function(_, body)
             if isNil(stack) then closure else

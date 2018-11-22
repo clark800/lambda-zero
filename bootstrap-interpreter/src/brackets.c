@@ -51,13 +51,15 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
         Node* unit = newRename(tag, "()");
         return function == NULL ? unit : newApplication(tag, function, unit);
     }
+    if (isDefinition(contents))
+        syntaxError("missing scope for definition", contents);
     if (isSection(contents))
         contents = createSection(tag, contents);
     if (function != NULL)
         return applyToCommaList(tag, function, contents);
     if (isCommaList(contents))
         return newTuple(open, contents);
-    if (!isLeaf(contents))
+    if (isApplication(contents))
         setTag(contents, tag);
     return contents;
 }
@@ -138,7 +140,7 @@ void shiftClose(Stack* stack, Node* close) {
             // bracketed infix operator
             Hold* op = pop(stack);
             release(pop(stack));
-            push(stack, convertOperator(getTag(getNode(op))));
+            push(stack, newName(getTag(getNode(op))));
             release(op);
         } else if (isOpenOperator(peek(stack, 1))) {
             // bracketed prefix operator
@@ -148,7 +150,7 @@ void shiftClose(Stack* stack, Node* close) {
                 tag = renameTag(tag, "+");
             else if (isThisLeaf(getNode(op), "(-)"))
                 tag = renameTag(tag, "-");
-            push(stack, convertOperator(tag));
+            push(stack, newName(tag));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
             push(stack, newRename(getTag(top), "*."));

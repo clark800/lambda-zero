@@ -13,17 +13,17 @@ static Node* reduceApply(Node* operator, Node* left, Node* right) {
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceApply(operator,
-        convertOperator(getTag(operator)), left), right);
+        newName(getTag(operator)), left), right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
-    return reduceApply(operator, convertOperator(getTag(operator)), right);
+    return reduceApply(operator, newName(getTag(operator)), right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
-    return reduceApply(operator, convertOperator(getTag(operator)), left);
+    return reduceApply(operator, newName(getTag(operator)), left);
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
@@ -166,6 +166,8 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return combineCases(tag, left, right);
     if (isApplication(left) && isThisLexeme(left, "case"))
         return reduceArrow(operator, left, right);
+    if (isSyntaxMarker(left))
+        return right;
     return reduceApply(operator, left, right);
 }
 

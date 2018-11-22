@@ -61,11 +61,6 @@ static inline bool isUnused(Node* node) {
     return getLexeme(node).start[0] == '_';
 }
 
-static inline bool isIdentity(Node* node) {
-    return isLambda(node) && isSymbol(getBody(node)) &&
-        isSameLexeme(getParameter(node), getBody(node));
-}
-
 static inline bool isSection(Node* node) {
     return isThisLexeme(node, ".*.") ||
         isThisLexeme(node, ".*") || isThisLexeme(node, "*.");
@@ -73,6 +68,10 @@ static inline bool isSection(Node* node) {
 
 static inline bool isAsPattern(Node* node) {
     return isApplication(node) && isThisLexeme(node, "@");
+}
+
+static inline bool isSyntaxMarker(Node* node) {
+    return isLambda(node) && isThisLexeme(node, "syntax");
 }
 
 // ================================
@@ -138,17 +137,6 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
 enum BuiltinCode {PLUS, MINUS, TIMES, DIVIDE, MODULO,
       EQUAL, NOTEQUAL, LESSTHAN, GREATERTHAN, LESSTHANOREQUAL,
       GREATERTHANOREQUAL, INCREMENT, ERROR, UNDEFINED, EXIT, PUT, GET};
-
-static inline Node* convertOperator(Tag tag) {
-    // names in builtins must line up with codes in BuiltinCode, except
-    // UNDEFINED, EXIT, PUT, GET which don't have accessible names
-    static const char* const builtins[] = {"+", "-", "*", "//", "%",
-        "=", "=/=", "<", ">", "<=", ">=", "up", "error"};
-    for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
-        if (isThisString(tag.lexeme, builtins[i]))
-            return newBuiltin(tag, i);
-    return newName(tag);
-}
 
 static inline Node* newPrinter(Tag tag) {
     Node* put = newBuiltin(renameTag(tag, "put"), PUT);

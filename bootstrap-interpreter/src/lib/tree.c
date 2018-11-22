@@ -27,6 +27,7 @@ bool isLeaf(Node* node) {return node->isLeaf != 0;}
 Tag getTag(Node* node) {return node->tag;}
 void setTag(Node* node, Tag tag) {node->tag = tag;}
 char getType(Node* node) {return node->type;}
+void setType(Node* node, char type) {node->type = type;}
 Node* getLeft(Node* node) {return node->left.child;}
 Node* getRight(Node* node) {return node->right.child;}
 long long getValue(Node* node) {return node->left.value;}
