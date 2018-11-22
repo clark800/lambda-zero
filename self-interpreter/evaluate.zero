@@ -1,25 +1,25 @@
 #* evaluate.zero
 
 define expandNatural(tag, n)
-    Function(tag, Function(tag, if n = 0 then Variable(tag, 2) else
-        Application(Variable(tag, 1), Natural(tag, n - 1))))
+    Abstraction(tag, Abstraction(tag, if n = 0 then Variable(tag, 2) else
+        Application(tag, Variable(tag, 1), Numeral(tag, n - 1))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
     match term
         case Variable(_, debruijn)
             evaluate(environment[debruijn - 1], stack)
-        case Function(_, body)
+        case Abstraction(_, body)
             if isNil(stack) then closure else
                 evaluate(Closure(body, stack[0] :: environment), tail(stack))
-        case Application(left, right)
-            evaluate(Closure(left, environment),
-                     Closure(right, environment) :: stack)
-        case Natural(tag, n)
+        case Application(_, applicand, argument)
+            evaluate(Closure(applicand, environment),
+                     Closure(argument, environment) :: stack)
+        case Numeral(tag, n)
             if isNil(stack) then closure else
                 evaluate(Closure(expandNatural(tag, n), environment), stack)
-        case Optimization(tag, arity, optimize)
-            result := optimize(`evaluate([]), stack.take(arity))
+        case Operation(_, arity, operator)
+            result := operator(`evaluate([]), stack.take(arity))
             evaluate(result, stack.drop(arity))
 
 

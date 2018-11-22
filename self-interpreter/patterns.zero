@@ -31,7 +31,7 @@ define newPatternArrow(tag, pattern, body)
             projections := projectors.map(Juxtaposition(tag, underscore))
             Arrow(tag, Name(renameTag(tag, "_")),
                 projections.cascade(Juxtaposition(tag), function))
-        case Numeral(_, _) -> Arrow(tag, pattern, body)
+        case Number(_, _) -> Arrow(tag, pattern, body)
         case Reference(_, _) -> syntaxError("invalid parameter", pattern)
         case Operator(_, _) -> syntaxError("invalid parameter", pattern)
         case Definition(_, _, _) -> syntaxError("invalid parameter", pattern)
@@ -79,7 +79,7 @@ define mergeCaseBodies(tag, left, right)
 
 
 define combineCases(tag, left, right)
-    body := mergeCaseBodies(tag, getBody(left), getBody(right))
+    body := mergeCaseBodies(tag, getArrowRight(left), getArrowRight(right))
     Arrow(tag, Name(renameTag(tag, "_")), body)
 
 #*

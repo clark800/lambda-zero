@@ -14,7 +14,7 @@ define hasRecursiveCalls(node, name)
     if isName(node)
         getLexeme(node) =*= getLexeme(name)
     if isArrow(node)
-        hasRecursiveCalls(getBody(node), name)
+        hasRecursiveCalls(getArrowRight(node), name)
     if isJuxtaposition(node)
         hasRecursiveCalls(getLeft(node), name) or
             hasRecursiveCalls(getRight(node), name)

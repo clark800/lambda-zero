@@ -56,7 +56,7 @@ define reduceParentheses(open, function, contents)
     if isCommaList(contents')
         newTuple(tag, contents')
     if isJuxtaposition(contents')
-        contents'.setTag(tag)
+        Juxtaposition(tag, getLeft(contents'), getRight(contents'))
     contents'
 
 define createList(tag, commaList, list)

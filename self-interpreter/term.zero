@@ -1,105 +1,68 @@
 #* term.zero
 
 Term ::= {
-    Variable(_ : Tag, _ : Natural),
-    Function(_ : Tag, _ : Term),
-    Application(_ : Term, _ : Term),
-    Natural(_ :  Tag, _ : Natural),
-    Optimization(_ : Tag, _ : Natural, _ : _)
+    Variable(_ : Tag, getDebruijnIndex : Natural),
+    Abstraction(_ : Tag, getBody : Term),
+    Application(_ : Tag, getApplicand : Term, getArgument : Term),
+    Numeral(_ :  Tag, getNatural : Natural),
+    Operation(_ : Tag, getArity : Natural, getOperator : _)
 }
 
 
 define getTermTag
     case Variable(tag, _) -> tag
-    case Function(tag, _) -> tag
-    case Application(left, _) -> getTermTag(left)
-    case Natural(tag, _) -> tag
-    case Optimization(tag, _, _) -> tag
+    case Abstraction(tag, _) -> tag
+    case Application(tag, _, _) -> tag
+    case Numeral(tag, _) -> tag
+    case Operation(tag, _, _) -> tag
 
 
-define isVariable
-    case Variable(_, _) -> true
-    case Function(_, _) -> false
-    case Application(_, _) -> false
-    case Natural(_, _) -> false
-    case Optimization(_, _, _) -> false
+define indexTerm
+    case Variable(_, _) -> 0
+    case Abstraction(_, _) -> 1
+    case Application(_, _, _) -> 2
+    case Numeral(_, _) -> 3
+    case Operation(_, _, _) -> 4
 
 
-define getDebruijnIndex
-    case Variable(_, n) -> n
-    case Function(_, _) -> undefined
-    case Application(_, _) -> undefined
-    case Natural(_, _) -> undefined
-    case Optimization(_, _, _) -> undefined
+isVariable(term) := indexTerm(term) = 0
+isAbstraction(term) := indexTerm(term) = 1
+isApplication(term) := indexTerm(term) = 2
+isNumeral(term) := indexTerm(term) = 3
+isOperation(term) := indexTerm(term) = 4
 
 
-define isFunction
-    case Variable(_, _) -> false
-    case Function(_, _) -> true
-    case Application(_, _) -> false
-    case Natural(_, _) -> false
-    case Optimization(_, _, _) -> false
+define maybeDebruijnIndex(term)
+    if isVariable(term) then return getDebruijnIndex(term) else void
 
 
-define getFunctionBody
-    case Variable(_, _) -> undefined
-    case Function(_, body) -> body
-    case Application(_, _) -> undefined
-    case Natural(_, _) -> undefined
-    case Optimization(_, _, _) -> undefined
+define maybeBody(term)
+    if isAbstraction(term) then return getBody(term) else void
 
 
-define maybeDebruijn
-    case Variable(_, debruijn) -> return debruijn
-    case Function(_, _) -> void
-    case Application(_, _) -> void
-    case Natural(_, _) -> void
-    case Optimization(_, _, _) -> void
+define maybeApplicand(term)
+    if isApplication(term) then return getApplicand(term) else void
 
 
-define maybeNatural
-    case Variable(_, _) -> void
-    case Function(_, _) -> void
-    case Application(_, _) -> void
-    case Natural(_, n) -> return n
-    case Optimization(_, _, _) -> void
+define maybeArgument(term)
+    if isApplication(term) then return getArgument(term) else void
 
 
-define maybeBody
-    case Variable(_, _) -> void
-    case Function(_, body) -> return body
-    case Application(_, _) -> void
-    case Natural(_, _) -> void
-    case Optimization(_, _, _) -> void
-
-
-define maybeLeft
-    case Variable(_, _) -> void
-    case Function(_, _) -> void
-    case Application(left, _) -> return left
-    case Natural(_, _) -> void
-    case Optimization(_, _, _) -> void
-
-
-define maybeRight
-    case Variable(_, _) -> void
-    case Function(_, _) -> void
-    case Application(_, right) -> return right
-    case Natural(_, _) -> void
-    case Optimization(_, _, _) -> void
+define maybeNatural(term)
+    if isNumeral(term) then return getNatural(term) else void
 
 
 define maybeHead(term)
     try body := maybeBody(term)
     try body' := maybeBody(body)
-    try left := maybeLeft(body')
-    maybeRight(left)
+    try applicand := maybeApplicand(body')
+    maybeArgument(applicand)
 
 
 define maybeTail(term)
     try body := maybeBody(term)
     try body' := maybeBody(body)
-    maybeRight(body')
+    maybeArgument(body')
 
 
 define maybeIsNil(term)
@@ -109,15 +72,15 @@ define maybeIsNil(term)
     define ifNil(result)
         try body := maybeBody(term)
         try body' := maybeBody(body)
-        try debruijn := maybeDebruijn(body')
+        try debruijn := maybeDebruijnIndex(body')
         if debruijn = 2 then return result else void
 
     define ifPush(result)
         try body := maybeBody(term)
         try body' := maybeBody(body)
-        try left := maybeLeft(body')
-        try left' := maybeLeft(left)
-        try debruijn := maybeDebruijn(left')
+        try applicand := maybeApplicand(body')
+        try applicand' := maybeApplicand(applicand)
+        try debruijn := maybeDebruijnIndex(applicand')
         if debruijn = 1 then return result else void
 
     ifNil(return true) ? ifPush(return false) ? void
@@ -125,11 +88,11 @@ define maybeIsNil(term)
 
 define showTerm
     case Variable(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
-    case Function(tag, body)
+    case Abstraction(tag, body)
         "(" ++ showTag(tag) ++ " -> " ++ showTerm(body) ++ ")"
-    case Application(left, right)
-        "(" ++ showTerm(left) ++ " " ++ showTerm(right) ++ ")"
-    case Natural(_, n) -> showNatural(n)
-    case Optimization(tag, _, _) -> showTag(tag)
+    case Application(_, applicand, argument)
+        "(" ++ showTerm(applicand) ++ " " ++ showTerm(argument) ++ ")"
+    case Numeral(_, n) -> showNatural(n)
+    case Operation(tag, _, _) -> showTag(tag)
 
 #*

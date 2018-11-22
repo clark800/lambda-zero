@@ -3,19 +3,19 @@
 define serialize(closure)
     define serialize'(Closure(term, environment), depth)
         match term
-            case Variable(Tag(lexeme, _), debruijn)
-                if debruijn <= depth then lexeme else
+            case Variable(tag, debruijn)
+                if debruijn <= depth then showTag(tag) else
                     serialize'(environment[debruijn - depth - 1], 0)
-            case Function(Tag(lexeme, _), body)
-                "(" ++ lexeme ++ " -> " ++
+            case Abstraction(tag, body)
+                "(" ++ showTag(tag) ++ " -> " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Application(left, right) -> "(" ++
-                serialize'(Closure(left, environment), depth) ++ " " ++
-                serialize'(Closure(right, environment), depth) ++ ")"
-            case Natural(_, n)
+            case Application(_, applicand, argument) -> "(" ++
+                serialize'(Closure(applicand, environment), depth) ++ " " ++
+                serialize'(Closure(argument, environment), depth) ++ ")"
+            case Numeral(_, n)
                 showNatural(n)
-            case Optimization(Tag(lexeme, _), _, _)
-                lexeme
+            case Operation(tag, _, _)
+                showTag(tag)
 
     result := serialize'(closure, 0)
     # ensure that full serialization succeeds before returning anything
@@ -31,7 +31,7 @@ define serializeString(evaluateClosure, closure)
     if nil
         return []
 
-    dummy := Closure(Natural(noTag, 0), [])
+    dummy := Closure(Numeral(noTag, 0), [])
     enclose := `Closure(dummy :: dummy :: getEnvironment(closure'))
 
     try headTerm := maybeHead(term)

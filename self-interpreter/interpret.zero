@@ -6,17 +6,13 @@ define splitCodeAndInput(input)
     (code, input')
 
 
-define isMain
+define isMain(term)
     # todo: detect the name "main" rather than parameter name "input"
-    case Variable(_, _) -> false
-    case Function(tag, _) -> getTagLexeme(tag) =*= "input"
-    case Application(_, _) -> false
-    case Natural(_, _) -> false
-    case Optimization(_, _, _) -> false
+    isAbstraction(term) and getTagLexeme(getTermTag(term)) =*= "input"
 
 
 define newNilTerm(tag)
-    Function(tag, Function(tag, Variable(tag, 2)))
+    Abstraction(tag, Abstraction(tag, Variable(tag, 2)))
 
 
 define constructString(tag, string)
@@ -27,7 +23,7 @@ define constructString(tag, string)
 define evaluateMain(Closure(main, environment), input)
     # todo: use tag for "input" parameter to main
     tag := getTermTag(main)
-    term := Application(main, constructString(tag, input))
+    term := Application(tag, main, constructString(tag, input))
     serializeString(evaluateClosure, Closure(term, environment)) ?
         runtimeError("expected string from", tag)
 

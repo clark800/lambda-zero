@@ -4,27 +4,27 @@ define getBuiltin(tag)
     tag' := renameTag(tag, "_")
     maxInteger := 9223372036854775807
 
-    define getNatural(term)
+    define checkNatural(term)
         maybeNatural(term) ? runtimeError("expected natural argument to", tag)
 
     define newBoolean(b)
-        Function(tag', Function(tag', Variable(tag', if b then 1 else 2)))
+        Abstraction(tag', Abstraction(tag', Variable(tag', if b then 1 else 2)))
 
     define compute(f, left, right)
-        f(getNatural(getTerm(left)), getNatural(getTerm(right)))
+        f(checkNatural(getTerm(left)), checkNatural(getTerm(right)))
 
     define makeUnaryBuiltin(f, evaluate, arguments)
         if length(arguments) < 1
             runtimeError("missing argument to", tag)
         argument := evaluate(arguments[0])
-        Closure(Natural(tag', f(getNatural(getTerm(argument)))), [])
+        Closure(Numeral(tag', f(checkNatural(getTerm(argument)))), [])
 
     define makeNaturalBuiltin(f, evaluate, arguments)
         if length(arguments) < 2
             runtimeError("missing argument to", tag)
         left := evaluate(arguments[0])
         right := evaluate(arguments[1])
-        Closure(Natural(tag', f.compute(left, right)), [])
+        Closure(Numeral(tag', f.compute(left, right)), [])
 
     define makeComparisonBuiltin(f, evaluate, arguments)
         if length(arguments) < 2

@@ -1,21 +1,13 @@
 #* definitions.zero
 
-define isIdentity(term)
-    if not isFunction(term) then false
-    body := getFunctionBody(term)
-    if not isVariable(body) then false
-    getDebruijnIndex(body) = 1
-
-
 define getDefinitions
     case Variable(_, _) -> []
-    case Function(_, _) -> []
-    case Application(left, right)
-        if isIdentity(left) then getDefinitions(right)
-        if not isFunction(left) then []
-        (getTermTag(left), right) :: getDefinitions(getFunctionBody(left))
-    case Natural(_, _) -> []
-    case Optimization(_, _, _) -> []
+    case Abstraction(_, _) -> []
+    case Application(_, applicand, argument)
+        if not isAbstraction(applicand) then []
+        (getTermTag(applicand), argument) :: getDefinitions(getBody(applicand))
+    case Numeral(_, _) -> []
+    case Operation(_, _, _) -> []
 
 
 define showDefinition((tag, value))
