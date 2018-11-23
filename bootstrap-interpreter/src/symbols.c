@@ -64,20 +64,23 @@ Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
     return getRules(close)->reduce(open, left, right);
 }
 
-static Node* propagateSection(Node* operator, Node* node, const char* name) {
-    if (isSpecial(operator) || !isApplication(node))
+static Node* propagateSection(Node* operator, SectionSide side, Node* body) {
+    if (isSpecial(operator) || !isApplication(body))
         syntaxError("operator does not support sections", operator);
-    setTag(node, renameTag(getTag(node), name));
-    return node;
+    return newSection(getTag(operator), side, body);
 }
 
 Node* reduce(Node* operator, Node* left, Node* right) {
-    Node* result = getRules(operator)->reduce(operator, left, right);
+    Node* leftOp = left != NULL && isSection(left) ?
+        getSectionBody(left) : left;
+    Node* rightOp = right != NULL && isSection(right) ?
+        getSectionBody(right) : right;
+    Node* result = getRules(operator)->reduce(operator, leftOp, rightOp);
     if (left != NULL && isSection(left))
-        return propagateSection(operator, result,
-            right != NULL && isSection(right) ?  ".*." : ".*");
+        return propagateSection(operator, right != NULL && isSection(right) ?
+            LEFTRIGHTSECTION : RIGHTSECTION, result);
     if (right != NULL && isSection(right))
-        return propagateSection(operator, result, "*.");
+        return propagateSection(operator, LEFTSECTION, result);
     return result;
 }
 

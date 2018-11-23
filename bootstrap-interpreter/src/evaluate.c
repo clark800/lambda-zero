@@ -129,7 +129,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
                 if (isEmpty(stack))
                     return hold(closure);
                 evaluateLambda(closure, stack); break;
-            case DEFINITION: runtimeError("definition", closure); break;
+            default: runtimeError("internal error", closure); break;
         }
     }
 }

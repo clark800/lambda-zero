@@ -44,19 +44,20 @@ define getSyntax(node)
 define isSpecial(node)
     getSpecial(getSyntax(node))
 
-define propagateSection(operator, node, lexeme)
-    if isSpecial(operator) or not isJuxtaposition(node)
+define propagateSection(operator, side, body)
+    if isSpecial(operator) or not isJuxtaposition(body)
         syntaxError("operator does not support sections", operator)
-    Juxtaposition(renameTag(getTag(node), lexeme),
-        getLeft(node), getRight(node))
+    Section(getTag(operator), side, body)
 
 define reduceOperator(operator, left, right)
-    result := getReduce(getSyntax(operator))(operator, left, right)
-    if not isNull(left) and isSection(left)
-        propagateSection(operator, result,
-            if not isNull(right) and isSection(right) then ".*." else ".*")
-    if not isNull(right) and isSection(right)
-        propagateSection(operator, result, "*.")
+    left' := if isSection(left) then getSectionBody(left) else left
+    right' := if isSection(right) then getSectionBody(right) else right
+    result := getReduce(getSyntax(operator))(operator, left', right')
+    if isSection(left)
+        side := if isSection(right) then LeftRightSection else RightSection
+        propagateSection(operator, side, result)
+    if isSection(right)
+        propagateSection(operator, LeftSection, result)
     result
 
 define reduceBracket(open, close, left, right)
@@ -68,14 +69,11 @@ define shift(state, node)
 define erase(stack, lexeme)
     stack.dropIf(`isThisOperator(lexeme))
 
-define isSyntaxMarker(node)
-    isArrow(node) and isThisLexeme(node, "syntax")
-
 define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
             reduceOperator(stack[1], NULL, stack[0]))
-    operators' := if isSyntaxMarker(stack[2]) then
+    operators' := if isSyntaxDefinition(stack[2]) then
         tail(operators) else operators
     shift(State(stack.drop(3), operators'),
         reduceOperator(stack[1], stack[2], stack[0]))

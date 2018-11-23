@@ -10,18 +10,8 @@ define applyTryDefinition(tag, left, right, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??")),
         right), newPatternArrow(tag, left, scope))
 
-define hasRecursiveCalls(node, name)
-    if isName(node)
-        getLexeme(node) =*= getLexeme(name)
-    if isArrow(node)
-        hasRecursiveCalls(getArrowRight(node), name)
-    if isJuxtaposition(node)
-        hasRecursiveCalls(getLeft(node), name) or
-            hasRecursiveCalls(getRight(node), name)
-    false
-
 define transformRecursion(name, value)
-    if not isName(name) or not hasRecursiveCalls(value, name)
+    if not isName(name) or not containsName(name, value)
         value
     tag := getTag(name)
     fix' := Name(renameTag(tag, "fix"))
@@ -36,7 +26,7 @@ define isTuple(node)
     isTupleConstructor(node)
 
 define reduceDefine'(tag, operator, left, right)
-    if isThisLexeme(left, "syntax") or isTuple(left)
+    if isKeyphrase(left, "syntax") or isTuple(left)
         Definition(tag, left, right)
     (name, value) := getNameAndValue(newPatternArrow(tag), left, right)
     if not isName(name)
@@ -47,9 +37,13 @@ define reduceDefine'(tag, operator, left, right)
 
 define reduceDefine(operator, left, right)
     tag := getTag(operator)
-    if isJuxtaposition(left) and isThisLexeme(left, "try")
+    if isKeyphrase(left, "try")
         reduceDefine'(renameTag(tag, "try"), operator, getRight(left), right)
     reduceDefine'(renameTag(tag, ":="), operator, left, right)
+
+define isValidPattern(node)
+    isName(node) or (isJuxtaposition(node) and
+        isValidPattern(getLeft(node)) and isValidPattern(getRight(node)))
 
 define isValidConstructorParameter(parameter)
     isJuxtaposition(parameter) and isJuxtaposition(getLeft(parameter)) and

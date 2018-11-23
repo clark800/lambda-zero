@@ -1,9 +1,5 @@
 #* patterns.zero
 
-define isCase(node)
-    isArrow(node) and isThisLexeme(node, "case")
-
-
 define getArguments(pattern)
     if not isJuxtaposition(pattern)
         []
@@ -16,29 +12,21 @@ define newProjector(tag, size, index)
 
 
 define newPatternArrow(tag, pattern, body)
-    match pattern
-        case Name(_) -> Arrow(tag, pattern, body)
-        case Arrow(_, _, _) -> syntaxError("invalid parameter", pattern)
-        case Juxtaposition(_, left, right)
-            if isThisLexeme(pattern, "@")
-                newPatternArrow(tag, left,
-                    Juxtaposition(tag, newPatternArrow(tag, right, body), left))
-            arguments := getArguments(pattern)
-            size := length(arguments)
-            underscore := newUnderscore(tag, 1)
-            function := arguments.fold(newPatternArrow(tag), body)
-            projectors := (0 .. size - 1).map(newProjector(tag, size))
-            projections := projectors.map(Juxtaposition(tag, underscore))
-            Arrow(tag, Name(renameTag(tag, "_")),
-                projections.cascade(Juxtaposition(tag), function))
-        case Number(_, _) -> Arrow(tag, pattern, body)
-        case Reference(_, _) -> syntaxError("invalid parameter", pattern)
-        case Operator(_, _) -> syntaxError("invalid parameter", pattern)
-        case Definition(_, _, _) -> syntaxError("invalid parameter", pattern)
-
-
-define isAsPattern(node)
-    isJuxtaposition(node) and isThisLexeme(node, "@")
+    if isName(pattern)
+        Arrow(tag, pattern, body)
+    if isAsPattern(pattern)
+        newPatternArrow(tag, getName(pattern), Juxtaposition(tag,
+            newPatternArrow(tag, getPattern(pattern), body), getName(pattern)))
+    if isJuxtaposition(pattern)
+        arguments := getArguments(pattern)
+        size := length(arguments)
+        underscore := newUnderscore(tag, 1)
+        function := arguments.fold(newPatternArrow(tag), body)
+        projectors := (0 .. size - 1).map(newProjector(tag, size))
+        projections := projectors.map(Juxtaposition(tag, underscore))
+        Arrow(tag, Name(renameTag(tag, "_")),
+            projections.cascade(Juxtaposition(tag), function))
+    syntaxError("invalid parameter", pattern)
 
 
 define getNameAndValue(f, left, right)
@@ -56,19 +44,18 @@ define newCasePatternArrow(tag, left, right)
 
 
 define newCaseArgument(tag, left, right)
-    pattern := if isAsPattern(left) then getRight(left) else left
+    pattern := if isAsPattern(left) then getPattern(left) else left
     (_, right') := getNameAndValue(newCasePatternArrow(tag), pattern, right)
     if not isAsPattern(left)
         right'
-    wrapper := newPatternArrow(tag, getLeft(left), right')
+    wrapper := newPatternArrow(tag, getName(left), right')
     Juxtaposition(tag, wrapper, newUnderscore(tag, 1))
 
 
 define newCase(tag, left, right)
     argument := newCaseArgument(tag, left, right)
-    parameter := Name(renameTag(tag, "_"))
-    reference := newUnderscore(tag, 1)
-    Arrow(tag, parameter, Juxtaposition(tag, reference, argument))
+    tag' := renameTag(tag, "_")
+    Case(tag', [], Juxtaposition(tag, newUnderscore(tag, 1), argument))
 
 
 define mergeCaseBodies(tag, left, right)
@@ -78,8 +65,9 @@ define mergeCaseBodies(tag, left, right)
     Juxtaposition(tag, merged, getRight(right))
 
 
-define combineCases(tag, left, right)
-    body := mergeCaseBodies(tag, getArrowRight(left), getArrowRight(right))
-    Arrow(tag, Name(renameTag(tag, "_")), body)
+define combineCases(left, right)
+    tag := renameTag(getTag(left), "_")
+    body := mergeCaseBodies(tag, getCaseBody(left), getCaseBody(right))
+    Case(tag, [], body)
 
 #*

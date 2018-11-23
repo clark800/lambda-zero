@@ -1,18 +1,15 @@
 #* brackets.zero
 
-define isCommaList(node)
-    isJuxtaposition(node) and getLexeme(node) =*= ","
-
 define applyToCommaList(tag, base, arguments)
-    if not isCommaList(arguments)
+    if not isCommaPair(arguments)
         Juxtaposition(tag, base, arguments)
     Juxtaposition(tag, applyToCommaList(tag, base,
-        getLeft(arguments)), getRight(arguments))
+        getCommaLeft(arguments)), getCommaRight(arguments))
 
 define getCommaListSize(commaList)
-    if not isCommaList(commaList)
+    if not isCommaPair(commaList)
         1
-    getCommaListSize(getLeft(commaList)) + 1
+    getCommaListSize(getCommaLeft(commaList)) + 1
 
 define newTuple(tag, commaList)
     n := getCommaListSize(commaList)
@@ -21,22 +18,12 @@ define newTuple(tag, commaList)
     applyToCommaList(tag, constructor, commaList)
 
 define getCommaListElements(commaList)
-    if not isCommaList(commaList)
+    if not isCommaPair(commaList)
         [commaList]
-    getCommaListElements(getLeft(commaList)) ++ [getRight(commaList)]
+    getCommaListElements(getCommaLeft(commaList)) ++ [getCommaRight(commaList)]
 
 define reduceUnmatched(open, _left, _right)
     syntaxError("missing close for", open)
-
-define newSection(tag, name, body)
-    Arrow(tag, Name(renameTag(tag, name)), body)
-
-define createSection(tag, contents)
-    if isThisLexeme(contents, ".*.")
-        newSection(tag, ".*", newSection(tag, "*.", contents))
-    if isName(getLeft(contents))
-        getLeft(contents)       # parenthesized postfix operator
-    newSection(tag, getLexeme(contents), contents)
 
 define reduceParentheses(open, function, contents)
     if not isThisOperator(open, "(")
@@ -50,20 +37,20 @@ define reduceParentheses(open, function, contents)
     if isDefinition(contents)
         syntaxError("missing scope for definition", contents)
     contents' := if isSection(contents) then
-        createSection(tag, contents) else contents
+        wrapSection(tag, contents) else contents
     if not isNull(function)
         applyToCommaList(tag, function, contents')
-    if isCommaList(contents')
+    if isCommaPair(contents')
         newTuple(tag, contents')
     if isJuxtaposition(contents')
         Juxtaposition(tag, getLeft(contents'), getRight(contents'))
     contents'
 
 define createList(tag, commaList, list)
-    if not isCommaList(commaList)
+    if not isCommaPair(commaList)
         prependList(tag, commaList, list)
-    createList(tag, getLeft(commaList),
-        prependList(tag, getRight(commaList), list))
+    createList(tag, getCommaLeft(commaList),
+        prependList(tag, getCommaRight(commaList), list))
 
 define reduceSquare(open, left, contents)
     if not isThisOperator(open, "[")
@@ -73,8 +60,6 @@ define reduceSquare(open, left, contents)
         if isNull(left)
             newNil(tag)
         syntaxError("missing argument to", open)
-    if isSection(contents)
-        syntaxError("invalid section", open)
     if not isNull(left)
         n := getCommaListSize(contents)
         constructor := Name(renameTag(tag, repeat('[').take(n)))
@@ -88,8 +73,6 @@ define reduceCurly(open, left, patterns)
         syntaxError("missing close for", open)
     if isNull(patterns)
         Name(renameTag(getTag(open), "{}"))
-    if isSection(patterns)
-        syntaxError("invalid section", open)
     newTuple(getTag(open), patterns)
 
 define reduceEOF(open, left, contents)
@@ -97,8 +80,6 @@ define reduceEOF(open, left, contents)
         syntaxError("invalid syntax", open)
     if not isEOF(open)
         syntaxError("missing close for", open)
-    if isCommaList(contents)
-        syntaxError("comma not inside brackets", contents)
     contents
 
 define shiftOpen(state, open)
@@ -136,7 +117,7 @@ define shiftClose'(state, close)
 define preReduce(stack)
     top := head(stack)
     if isOperator(top) and not isSpecial(top)
-        if isThisName(stack[1], ".*")
+        if isLeftPlaceholder(stack[1])
             # bracketed infix operator
             Name(getTag(top)) :: tail(tail(stack))
         if isOpenOperator(stack[1])
@@ -148,7 +129,7 @@ define preReduce(stack)
             Name(getTag(top)) :: tail(stack)
         fixity := getFixity(getSyntax(top))
         if fixity = INFIX or fixity = PREFIX
-            Name(renameTag(getTag(top), "*.")) :: stack  # section
+            newRightPlaceholder(getTag(top)) :: stack   # LeftSection
         stack
     stack
 

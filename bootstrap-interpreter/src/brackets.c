@@ -32,18 +32,6 @@ static Node* newTuple(Node* open, Node* commaList) {
     return applyToCommaList(getTag(open), name, commaList);
 }
 
-static Node* newSection(Tag tag, const char* name, Node* body) {
-    return newLambda(tag, newRename(tag, name), body);
-}
-
-static Node* createSection(Tag tag, Node* contents) {
-    if (isThisLexeme(contents, ".*."))
-        return newSection(tag, ".*", newSection(tag, "*.", contents));
-    if (isLeaf(getLeft(contents)))
-        return getLeft(contents);   // parenthesized postfix operator
-    return newSection(tag, getLexeme(contents).start, contents);
-}
-
 Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     syntaxErrorIf(!isThisLeaf(open, "("), "missing close for", open);
     Tag tag = getTag(open);
@@ -54,7 +42,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     if (isDefinition(contents))
         syntaxError("missing scope for definition", contents);
     if (isSection(contents))
-        contents = createSection(tag, contents);
+        contents = wrapSection(tag, contents);
     if (function != NULL)
         return applyToCommaList(tag, function, contents);
     if (isCommaList(contents))
@@ -71,7 +59,7 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
         syntaxErrorIf(left != NULL, "missing argument to", open);
         return newNil(tag);
     }
-    syntaxErrorIf(isSection(contents), "invalid section", open);
+    syntaxErrorIf(isSection(contents), "invalid section", contents);
     if (left != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
         Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
@@ -90,7 +78,7 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
     if (patterns == NULL)
         return newRename(getTag(open), "{}");
-    syntaxErrorIf(isSection(patterns), "invalid section", open);
+    syntaxErrorIf(isSection(patterns), "invalid section", patterns);
     return newTuple(open, patterns);
 }
 
@@ -136,7 +124,7 @@ void shiftClose(Stack* stack, Node* close) {
 
     Node* top = peek(stack, 0);
     if (isOperator(top) && !isSpecial(top) && !isEOF(close)) {
-        if (isThisLeaf(peek(stack, 1), ".*")) {
+        if (isLeftPlaceholder(peek(stack, 1))) {
             // bracketed infix operator
             Hold* op = pop(stack);
             release(pop(stack));
@@ -153,7 +141,7 @@ void shiftClose(Stack* stack, Node* close) {
             push(stack, newName(tag));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
-            push(stack, newRename(getTag(top), "*."));
+            push(stack, newRightPlaceholder(getTag(top)));
     }
 
     reduceLeft(stack, close);

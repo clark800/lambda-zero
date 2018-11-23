@@ -51,7 +51,7 @@ a -> b -> c -> d -> (a(\n b \n c\n) \n d)
 Syntax error: symbol already defined 'x' at line 1 column 8
 ===============================================================================
 (0 -> 5)(4)
-Syntax error: symbol already defined '0' at line 1 column 2
+Syntax error: invalid parameter '0' at line 1 column 2
 ===============================================================================
 (-> 0)
 Syntax error: missing left operand for '->' at line 1 column 2
