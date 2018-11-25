@@ -72,7 +72,7 @@ define erase(stack, lexeme)
 define reduceTop(State(stack, operators))
     if getFixity(getSyntax(stack[1])) = PREFIX
         shift(State(stack.drop(2), operators),
-            reduceOperator(stack[1], NULL, stack[0]))
+            reduceOperator(stack[1], Null(getTag(stack[1])), stack[0]))
     operators' := if isSyntaxDefinition(stack[2]) then
         tail(operators) else operators
     shift(State(stack.drop(3), operators'),

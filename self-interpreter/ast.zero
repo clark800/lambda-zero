@@ -18,7 +18,8 @@ AST ::= {
     CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
     Case(_ : Tag, getConstructors : List(Tag), getCaseBody : AST),
     Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
-    ADT(_ : Tag, getContents : List(AST))
+    ADT(_ : Tag, getContents : List(AST)),
+    Null(_ : tag)
 }
 
 define getTag
@@ -34,6 +35,7 @@ define getTag
     case Case(tag, _, _) -> tag
     case Section(tag, _, _) -> tag
     case ADT(tag, _) -> tag
+    case Null(tag) -> tag
 
 define containsName(name)
     case Name(tag) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
@@ -49,6 +51,7 @@ define containsName(name)
     case Case(_, _, body) -> containsName(name, body)
     case Section(_, _, _) -> false
     case ADT(_, _) -> false
+    case Null(_) -> false
 
 define showAST
     case Name(tag) -> showTag(tag)
@@ -68,6 +71,7 @@ define showAST
     case Case(tag, _, body) -> "(case -> " ++ showAST(body) ++ ")"
     case Section(_, _, body) -> showAST(body)
     case ADT(_, contents) -> "{" ++ contents.map(showAST).joinWith(", ") ++ "}"
+    case Null(_) -> "#NULL#"
 
 define indexAST
     case Name(_) -> 0
@@ -82,6 +86,7 @@ define indexAST
     case Case(_, _, _) -> 9
     case Section(_, _, _) -> 10
     case ADT(_, _) -> 11
+    case Null(_) -> 12
 
 isName(node) := indexAST(node) = 0
 isArrow(node) := indexAST(node) = 1
@@ -95,6 +100,7 @@ isCommaPair(node) := indexAST(node) = 8
 isCase(node) := indexAST(node) = 9
 isSection(node) := indexAST(node) = 10
 isADT(node) := indexAST(node) = 11
+isNull(node) := indexAST(node) = 12
 
 define indexDefinitionType
     case PlainDefinition -> 0
@@ -104,50 +110,29 @@ define indexDefinitionType
 
 isSyntaxDefinition(node) :=
     isDefinition(node) and indexDefinitionType(getDefinitionType(node)) = 2
-
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
-
-NULL := Name(Tag("\0\0", Location("", 0, 0)))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
 isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme
-isNull(node) := isThisName(node, "\0\0")
 isEOF(node) := isThisOperator(node, "\0")
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
-
-define newUnderscore(tag, debruijn)
-    Reference(Tag("_", getTagLocation(tag)), debruijn)
-
-define newNil(tag)
-    Name(Tag("[]", getTagLocation(tag)))
-
-define prependList(tag, item, list)
-    name := Name(Tag("::", getTagLocation(tag)))
-    Juxtaposition(tag, Juxtaposition(tag, name, item), list)
-
-define renameTag(tag, lexeme)
-    Tag(lexeme, getTagLocation(tag))
-
-define renameNode(node, lexeme)
-    Name(renameTag(getTag(node), lexeme))
-
-define newLeftPlaceholder(tag)
+renameTag(tag, lexeme) := Tag(lexeme, getTagLocation(tag))
+UnderscoreArrow(tag, body) := Arrow(tag, Name(renameTag(tag, "_")), body)
+newUnderscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn)
+newNil(tag) := Name(renameTag(tag, "[]"))
+prependList(tag, item, list) := Juxtaposition(tag,
+    Juxtaposition(tag, Name(renameTag(tag, "::")), item), list)
+newLeftPlaceholder(tag) :=
     Section(tag, RightSection, Name(renameTag(tag, ".*")))
-
-define newRightPlaceholder(tag)
+newRightPlaceholder(tag) :=
     Section(tag, LeftSection, Name(renameTag(tag, "*.")))
-
-define isLeftPlaceholder(node)
+isLeftPlaceholder(node) :=
     isSection(node) and isThisName(getSectionBody(node), ".*")
-
-define wrapLeftSection(tag, body)
-    Arrow(tag, Name(renameTag(tag, "*.")), body)
-
-define wrapRightSection(tag, body)
-    Arrow(tag, Name(renameTag(tag, ".*")), body)
+wrapLeftSection(tag, body) := Arrow(tag, Name(renameTag(tag, "*.")), body)
+wrapRightSection(tag, body) := Arrow(tag, Name(renameTag(tag, ".*")), body)
 
 define wrapSection(tag, section)
     body := getSectionBody(section)
