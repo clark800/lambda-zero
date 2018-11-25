@@ -84,18 +84,12 @@ define shiftOpen(state, open)
     state' := reduceLeft(state, open)
     State(open :: getStack(state'), getOperators(state'))
 
-define shiftOpenCurly(state, open)
-    top := head(getStack(state))
-    if not isThisOperator(top, "::=") and not isThisOperator(top, "⩴")
-        syntaxError("must appear on the right side of '::='", open)
-    shiftOpen(state, open)
-
 define isOpenOperator(operator)
     isOperator(operator) and getFixity(getSyntax(operator)) = OPENFIX
 
 define pushBracket(stack, open, close, contents)
     if isEOF(open) or isOperator(stack[0])
-        reduceBracket(open, close, NULL, contents) :: stack
+        reduceBracket(open, close, Null(getTag(open)), contents) :: stack
     reduceBracket(open, close, stack[0], contents) :: tail(stack)
 
 define shiftClose'(state, close)
@@ -103,7 +97,8 @@ define shiftClose'(state, close)
     if isEOF(stack[0])
         syntaxError("missing open for", close)
     if isOpenOperator(stack[0])
-        stack' := pushBracket(tail(stack), stack[0], close, NULL)
+        open := stack[0]
+        stack' := pushBracket(tail(stack), open, close, Null(getTag(open)))
         State(stack', getOperators(state))
     if isEOF(stack[1]) and not isEOF(close)
         syntaxError("missing open for", close)

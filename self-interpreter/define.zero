@@ -45,7 +45,7 @@ define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
     projector := newProjector(tag, m, k)
     undefined' := Name(renameTag(tag, "undefined"))
     arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
-    getter := Arrow(tag, Name(renameTag(tag, "_")),
+    getter := UnderscoreArrow(tag,
         arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
     applyPlainDefinition(tag, name, getter, scope)
 
@@ -60,7 +60,7 @@ define newConstructorDefinition(tag, n, (pattern, j), scope)
     base := newUnderscore(tag, n - j)
     arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
     body := arguments.cascade(Juxtaposition(tag), base)
-    constructor := ((Arrow(tag, Name(renameTag(tag, "_"))))^^(n + m))(body)
+    constructor := (UnderscoreArrow(tag) ^^ (n + m))(body)
     applyPlainDefinition(tag, name, constructor, scope')
 
 define applyADTDefinition(tag, left, right, scope)

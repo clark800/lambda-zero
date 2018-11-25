@@ -7,8 +7,7 @@ define getArguments(pattern)
 
 
 define newProjector(tag, size, index)
-    reference := newUnderscore(tag, size - index)
-    ((Arrow(tag, Name(renameTag(tag, "_")))) ^^ size)(reference)
+    (UnderscoreArrow(tag) ^^ size)(newUnderscore(tag, size - index))
 
 
 define newPatternArrow(tag, pattern, body)
@@ -24,8 +23,7 @@ define newPatternArrow(tag, pattern, body)
         function := arguments.fold(newPatternArrow(tag), body)
         projectors := (0 .. size - 1).map(newProjector(tag, size))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        Arrow(tag, Name(renameTag(tag, "_")),
-            projections.cascade(Juxtaposition(tag), function))
+        UnderscoreArrow(tag, projections.cascade(Juxtaposition(tag), function))
     syntaxError("invalid parameter", pattern)
 
 
@@ -39,7 +37,7 @@ define getNameAndValue(f, left, right)
 
 define newCasePatternArrow(tag, left, right)
     if isThisName(left, "()")
-        Arrow(tag, Name(renameTag(tag, "_")), right)
+        UnderscoreArrow(tag, right)
     newPatternArrow(tag, left, right)
 
 
