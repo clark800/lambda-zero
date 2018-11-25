@@ -3,12 +3,12 @@
 define getHead(node)
     if isJuxtaposition(node) then getHead(getLeft(node)) else node
 
-define applyDefinition(tag, left, right, scope)
-    Juxtaposition(tag, newPatternArrow(tag, left, scope), right)
+define applyPlainDefinition(tag, name, value, scope)
+    Juxtaposition(tag, newPatternArrow(tag, name, scope), value)
 
-define applyTryDefinition(tag, left, right, scope)
+define applyTryDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??")),
-        right), newPatternArrow(tag, left, scope))
+        value), newPatternArrow(tag, name, scope))
 
 define transformRecursion(name, value)
     if not isName(name) or not containsName(name, value)
@@ -24,22 +24,6 @@ define isTuple(node)
     if isJuxtaposition(node)
         isTuple(getLeft(node))
     isTupleConstructor(node)
-
-define reduceDefine'(tag, operator, left, right)
-    if isKeyphrase(left, "syntax") or isTuple(left)
-        Definition(tag, left, right)
-    (name, value) := getNameAndValue(newPatternArrow(tag), left, right)
-    if not isName(name)
-        syntaxError("invalid left hand side", operator)
-    if isThisName(name, "main")
-        applyDefinition(getTag(name), name, value, name)
-    Definition(tag, name, transformRecursion(name, value))
-
-define reduceDefine(operator, left, right)
-    tag := getTag(operator)
-    if isKeyphrase(left, "try")
-        reduceDefine'(renameTag(tag, "try"), operator, getRight(left), right)
-    reduceDefine'(renameTag(tag, ":="), operator, left, right)
 
 define isValidPattern(node)
     isName(node) or (isJuxtaposition(node) and
@@ -63,7 +47,7 @@ define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
     arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
     getter := Arrow(tag, Name(renameTag(tag, "_")),
         arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
-    applyDefinition(tag, name, getter, scope)
+    applyPlainDefinition(tag, name, getter, scope)
 
 define newConstructorDefinition(tag, n, (pattern, j), scope)
     name := getHead(pattern)
@@ -77,21 +61,48 @@ define newConstructorDefinition(tag, n, (pattern, j), scope)
     arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
     body := arguments.cascade(Juxtaposition(tag), base)
     constructor := ((Arrow(tag, Name(renameTag(tag, "_"))))^^(n + m))(body)
-    applyDefinition(tag, name, constructor, scope')
+    applyPlainDefinition(tag, name, constructor, scope')
+
+define applyADTDefinition(tag, left, right, scope)
+    undefined' := Name(renameTag(tag, "undefined"))
+    scope' := applyPlainDefinition(tag, getHead(left), undefined', scope)
+    constructors := getArguments(right)
+    n := length(constructors)
+    zip(constructors, naturals).fold(newConstructorDefinition(tag, n), scope')
+
+define applyDefinition(definition, scope)
+    tag := getTag(definition)
+    name := getDefinee(definition)
+    value := getDefinedValue(definition)
+    match getDefinitionType(definition)
+        case PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
+        case TryDefinition -> applyTryDefinition(tag, name, value, scope)
+        case SyntaxDefinition -> scope
+        case ADTDefinition -> applyADTDefinition(tag, name, value, scope)
+
+define reduceDefine'(tag, definitionType, left, right)
+    if isTuple(left)
+        Definition(tag, definitionType, left, right)
+    (name, value) := getNameAndValue(newPatternArrow(tag), left, right)
+    if not isName(name)
+        parseError("invalid left hand side", tag)
+    if isThisName(name, "main")
+        applyPlainDefinition(tag, name, value, name)
+    Definition(tag, definitionType, name, transformRecursion(name, value))
+
+define reduceDefine(operator, left, right)
+    tag := getTag(operator)
+    if isKeyphrase(left, "try")
+        reduceDefine'(tag, TryDefinition, getRight(left), right)
+    if isKeyphrase(left, "syntax")
+        reduceDefine'(tag, SyntaxDefinition, getRight(left), right)
+    reduceDefine'(tag, PlainDefinition, left, right)
 
 define reduceADT(operator, left, right)
-    tag := renameTag(getTag(operator), "::=")
     if not isValidPattern(left)
         syntaxError("invalid left hand side", operator)
     if not isThisLexeme(right, "{") and not isThisLexeme(right, "{}")
         syntaxError("ADT required to right of", operator)
-    Definition(tag, left, right)
-
-define applyADTDefinition(tag, left, right, scope)
-    undefined' := Name(renameTag(tag, "undefined"))
-    scope' := applyDefinition(tag, getHead(left), undefined', scope)
-    constructors := getArguments(right)
-    n := length(constructors)
-    zip(constructors, naturals).fold(newConstructorDefinition(tag, n), scope')
+    Definition(getTag(operator), ADTDefinition, left, right)
 
 #*
