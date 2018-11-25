@@ -1,4 +1,5 @@
 main
+tags
 *.pdf
 *.o
 *.tmp
