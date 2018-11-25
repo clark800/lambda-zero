@@ -219,8 +219,8 @@ OPERATORS := [
     ("define", coreSyntax(5, 5, PREFIX, NEITHER, shiftPrefix, reducePrefix)),
     (":=", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceDefine)),
     ("≔", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceDefine)),
-    ("::=", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADT)),
-    ("⩴", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADT)),
+    ("::=", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADTDefine)),
+    ("⩴", coreSyntax(5, 5, INFIX, NEITHER, shiftInfix, reduceADTDefine)),
     # reserve precedence 6 for "try"
     ("->", coreSyntax(7, 7, INFIX, RIGHT, shiftInfix, reduceArrow)),
     ("↦", coreSyntax(7, 7, INFIX, RIGHT, shiftInfix, reduceArrow)),

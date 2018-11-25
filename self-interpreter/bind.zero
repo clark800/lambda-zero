@@ -48,5 +48,7 @@ define bind(node, parameterNames)
             Abstraction(tag, bind(body, getTagLexeme(tag) :: parameterNames))
         case Section(_, _, _)
             syntaxError("invalid section", node)
+        case ADT(_, _)
+            syntaxError("ADTs can only appear to the right of ::=", node)
 
 #*

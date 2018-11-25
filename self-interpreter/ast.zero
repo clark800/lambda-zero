@@ -17,7 +17,8 @@ AST ::= {
     AsPattern(_ : Tag, getName : AST, getPattern : AST),
     CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
     Case(_ : Tag, getConstructors : List(Tag), getCaseBody : AST),
-    Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST)
+    Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
+    ADT(_ : Tag, getContents : List(AST))
 }
 
 define getTag
@@ -32,6 +33,7 @@ define getTag
     case CommaPair(tag, _, _) -> tag
     case Case(tag, _, _) -> tag
     case Section(tag, _, _) -> tag
+    case ADT(tag, _) -> tag
 
 define containsName(name)
     case Name(tag) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
@@ -45,7 +47,8 @@ define containsName(name)
     case AsPattern(_, _, _) -> false
     case CommaPair(_, _, _) -> false
     case Case(_, _, body) -> containsName(name, body)
-    case Section(_, _, body) -> false
+    case Section(_, _, _) -> false
+    case ADT(_, _) -> false
 
 define showAST
     case Name(tag) -> showTag(tag)
@@ -64,6 +67,7 @@ define showAST
         "(" ++ showAST(left) ++ ", " ++ showAST(right) ++ ")"
     case Case(tag, _, body) -> "(case -> " ++ showAST(body) ++ ")"
     case Section(_, _, body) -> showAST(body)
+    case ADT(_, contents) -> "{" ++ contents.map(showAST).joinWith(", ") ++ "}"
 
 define indexAST
     case Name(_) -> 0
@@ -77,6 +81,7 @@ define indexAST
     case CommaPair(_, _, _) -> 8
     case Case(_, _, _) -> 9
     case Section(_, _, _) -> 10
+    case ADT(_, _) -> 11
 
 isName(node) := indexAST(node) = 0
 isArrow(node) := indexAST(node) = 1
@@ -89,6 +94,7 @@ isAsPattern(node) := indexAST(node) = 7
 isCommaPair(node) := indexAST(node) = 8
 isCase(node) := indexAST(node) = 9
 isSection(node) := indexAST(node) = 10
+isADT(node) := indexAST(node) = 11
 
 define indexDefinitionType
     case PlainDefinition -> 0
@@ -103,9 +109,8 @@ getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 
 NULL := Name(Tag("\0\0", Location("", 0, 0)))
-isThisLexeme(node, lexeme) := getLexeme(node) =*= lexeme
-isThisName(node, lexeme) := isName(node) and isThisLexeme(node, lexeme)
-isThisOperator(node, lexeme) := isOperator(node) and isThisLexeme(node, lexeme)
+isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
+isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme
 isNull(node) := isThisName(node, "\0\0")
 isEOF(node) := isThisOperator(node, "\0")
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
