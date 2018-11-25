@@ -1,0 +1,10 @@
+--recurse=yes
+--tag-relative=yes
+--exclude=.git
+--exclude=.ctags.d
+
+--langdef=lambda-zero
+--langmap=lambda-zero:.zero
+--regex-lambda-zero=/^define[ ]*([a-zA-Z0-9_]+)(\(.*\))?$/\1/d,definition/
+--regex-lambda-zero=/^([a-zA-Z0-9_]+)(\(.*\))?[ ]+:=/\1/d,definition/
+--regex-lambda-zero=/^([a-zA-Z0-9_]+)(\(.*\))?[ ]+≔/\1/d,definition/
