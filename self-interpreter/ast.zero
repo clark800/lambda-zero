@@ -1,5 +1,8 @@
 #* ast.zero
 
+DefinitionType ::=
+    {PlainDefinition, TryDefinition, SyntaxDefinition, ADTDefinition}
+
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
@@ -9,7 +12,8 @@ AST ::= {
     Number(_ : Tag, getNumericValue : Natural),
     Reference(_ : Tag, _ : Natural),
     Operator(_ : Tag, getRank : Natural, getOperatorSyntax : _),
-    Definition(_ : Tag, getDefinee : AST, getDefinedValue : AST),
+    Definition(_ : Tag, getDefinitionType : DefinitionType,
+        getDefinee : AST, getDefinedValue : AST),
     AsPattern(_ : Tag, getName : AST, getPattern : AST),
     CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
     Case(_ : Tag, getConstructors : List(Tag), getCaseBody : AST),
@@ -23,7 +27,7 @@ define getTag
     case Number(tag, _) -> tag
     case Reference(tag, _) -> tag
     case Operator(tag, _, _) -> tag
-    case Definition(tag, _, _) -> tag
+    case Definition(tag, _, _, _) -> tag
     case AsPattern(tag, _, _) -> tag
     case CommaPair(tag, _, _) -> tag
     case Case(tag, _, _) -> tag
@@ -37,7 +41,7 @@ define containsName(name)
     case Number(_, _) -> false
     case Reference(_, _) -> false
     case Operator(_, _, _) -> false
-    case Definition(_, _, _) -> false
+    case Definition(_, _, _, _) -> false
     case AsPattern(_, _, _) -> false
     case CommaPair(_, _, _) -> false
     case Case(_, _, body) -> containsName(name, body)
@@ -52,7 +56,7 @@ define showAST
     case Number(tag, value) -> showNatural(value)
     case Reference(tag, debruijn) -> showTag(tag)
     case Operator(tag, rank, rules) -> showTag(tag)
-    case Definition(tag, left, right) ->
+    case Definition(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
     case AsPattern(tag, name, pattern) ->
         "(" ++ showAST(name) ++ ")@(" ++ showAST(pattern) ++ ")"
@@ -68,7 +72,7 @@ define indexAST
     case Number(_, _) -> 3
     case Reference(_, _) -> 4
     case Operator(_, _, _) -> 5
-    case Definition(_, _, _) -> 6
+    case Definition(_, _, _, _) -> 6
     case AsPattern(_, _, _) -> 7
     case CommaPair(_, _, _) -> 8
     case Case(_, _, _) -> 9
@@ -86,6 +90,15 @@ isCommaPair(node) := indexAST(node) = 8
 isCase(node) := indexAST(node) = 9
 isSection(node) := indexAST(node) = 10
 
+define indexDefinitionType
+    case PlainDefinition -> 0
+    case TryDefinition -> 1
+    case SyntaxDefinition -> 2
+    case ADTDefinition -> 3
+
+isSyntaxDefinition(node) :=
+    isDefinition(node) and indexDefinitionType(getDefinitionType(node)) = 2
+
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 
@@ -99,8 +112,6 @@ isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
-isSyntaxDefinition(node) :=
-    isDefinition(node) and isKeyphrase(getDefinee(node), "syntax")
 
 define newUnderscore(tag, debruijn)
     Reference(Tag("_", getTagLocation(tag)), debruijn)
