@@ -18,8 +18,8 @@ define newTuple(tag, commaList)
     applyToCommaList(tag, constructor, commaList)
 
 define getCommaListElements(commaList)
-    if not isCommaPair(commaList)
-        [commaList]
+    if isNull(commaList) then []
+    if not isCommaPair(commaList) then [commaList]
     getCommaListElements(getCommaLeft(commaList)) ++ [getCommaRight(commaList)]
 
 define reduceUnmatched(open, _left, _right)
@@ -71,9 +71,7 @@ define reduceCurly(open, left, patterns)
         syntaxError("missing space before", open)
     if not isThisOperator(open, "{")
         syntaxError("missing close for", open)
-    if isNull(patterns)
-        Name(renameTag(getTag(open), "{}"))
-    newTuple(getTag(open), patterns)
+    ADT(getTag(open), getCommaListElements(patterns))
 
 define reduceEOF(open, left, contents)
     if not isNull(left)
