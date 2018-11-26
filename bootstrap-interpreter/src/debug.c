@@ -17,11 +17,11 @@ static void serializeAST(Node* node, FILE* stream) {
     if (!isLeaf(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
-        fputs(isLambda(node) ? " -> " : " ", stream);
+        fputs(isAbstraction(node) ? " -> " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
-    } else if (isNatural(node)) {
-        // builtins create naturals, so not all naturals will exist in input
+    } else if (isNumeral(node)) {
+        // operations create numerals, so not all numerals will exist in input
         fputll(getValue(node), stream);
     } else {
         printLexeme(getLexeme(node), stream);

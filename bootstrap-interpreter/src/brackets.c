@@ -15,15 +15,15 @@ static unsigned int getCommaListLength(Node* node) {
 
 static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
     if (!isCommaList(arguments))
-        return newApplication(tag, base, arguments);
-    return newApplication(tag, applyToCommaList(tag, base,
+        return Application(tag, base, arguments);
+    return Application(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments));
 }
 
 static Node* newSpineName(Node* node, const char* name, unsigned int length) {
     unsigned int maxLength = (unsigned int)strlen(name);
     syntaxErrorIf(length > maxLength, "too many arguments", node);
-    return newName(newTag(newString(name, length), getTag(node).location));
+    return Name(newTag(newString(name, length), getTag(node).location));
 }
 
 static Node* newTuple(Node* open, Node* commaList) {
@@ -36,8 +36,8 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     syntaxErrorIf(!isThisLeaf(open, "("), "missing close for", open);
     Tag tag = getTag(open);
     if (contents == NULL) {
-        Node* unit = newRename(tag, "()");
-        return function == NULL ? unit : newApplication(tag, function, unit);
+        Node* unit = FixedName(tag, "()");
+        return function == NULL ? unit : Application(tag, function, unit);
     }
     if (isDefinition(contents))
         syntaxError("missing scope for definition", contents);
@@ -57,15 +57,15 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL) {
         syntaxErrorIf(left != NULL, "missing argument to", open);
-        return newNil(tag);
+        return Nil(tag);
     }
     syntaxErrorIf(isSection(contents), "invalid section", contents);
     if (left != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
         Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
-        return applyToCommaList(tag, newApplication(tag, name, left), contents);
+        return applyToCommaList(tag, Application(tag, name, left), contents);
     }
-    Node* list = newNil(tag);
+    Node* list = Nil(tag);
     if (!isCommaList(contents))
         return prepend(tag, contents, list);
     for(; isCommaList(contents); contents = getLeft(contents))
@@ -77,7 +77,7 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     syntaxErrorIf(left != NULL, "missing space before", open);
     syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
     if (patterns == NULL)
-        return newRename(getTag(open), "{}");
+        return FixedName(getTag(open), "{}");
     syntaxErrorIf(isSection(patterns), "invalid section", patterns);
     return newTuple(open, patterns);
 }
@@ -128,7 +128,7 @@ void shiftClose(Stack* stack, Node* close) {
             // bracketed infix operator
             Hold* op = pop(stack);
             release(pop(stack));
-            push(stack, newName(getTag(getNode(op))));
+            push(stack, Name(getTag(getNode(op))));
             release(op);
         } else if (isOpenOperator(peek(stack, 1))) {
             // bracketed prefix operator
@@ -138,10 +138,10 @@ void shiftClose(Stack* stack, Node* close) {
                 tag = renameTag(tag, "+");
             else if (isThisLeaf(getNode(op), "(-)"))
                 tag = renameTag(tag, "-");
-            push(stack, newName(tag));
+            push(stack, Name(tag));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
-            push(stack, newRightPlaceholder(getTag(top)));
+            push(stack, RightPlaceholder(getTag(top)));
     }
 
     reduceLeft(stack, close);

@@ -7,7 +7,7 @@
 
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
-    switch (getNodeType(node)) {
+    switch (getASTType(node)) {
         case APPLICATION:
             fputs("(", stream);
             serializeNode(getLeft(node), locals, globals, depth, stream);
@@ -15,15 +15,15 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             serializeNode(getRight(node), locals, globals, depth, stream);
             fputs(")", stream);
             break;
-        case LAMBDA:
+        case ABSTRACTION:
             fputs("(", stream);
             printLexeme(getLexeme(getParameter(node)), stream);
             fputs(" -> ", stream);
             serializeNode(getBody(node), locals, globals, depth + 1, stream);
             fputs(")", stream);
             break;
-        case SYMBOL:
-            if (isGlobalReference(node)) {
+        case VARIABLE:
+            if (isGlobal(node)) {
                 Node* value = elementAt(globals, getGlobalIndex(node));
                 serializeNode(value, locals, globals, 0, stream);
                 return;
@@ -37,8 +37,8 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
                 printLexeme(getLexeme(node), stream);
             }
             break;
-        case NATURAL: fputll(getValue(node), stream); break;
-        case BUILTIN: printLexeme(getLexeme(node), stream); break;
+        case NUMERAL: fputll(getValue(node), stream); break;
+        case OPERATION: printLexeme(getLexeme(node), stream); break;
         default: fputs("#ERROR#", stream);
     }
 }

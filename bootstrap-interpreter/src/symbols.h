@@ -2,7 +2,6 @@ typedef enum {NOFIX, INFIX, PREFIX, POSTFIX, OPENFIX, CLOSEFIX} Fixity;
 typedef enum {L, R, N, RV} Associativity;
 typedef unsigned char Precedence;
 
-bool isOperator(Node* node);
 bool isSpecial(Node* node);
 bool isOpenOperator(Node* node);
 void erase(Stack* stack, const char* lexeme);
@@ -14,7 +13,7 @@ void reduceLeft(Stack* stack, Node* operator);
 void shift(Stack* stack, Node* node);
 
 Node* parseSymbol(Tag tag, long long value);
-void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
+void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
     Precedence rightPrecedence, Fixity fixity, Associativity associativity,
     void (*shift)(Stack*, Node*), Node* (*reduce)(Node*, Node*, Node*));
 void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,

@@ -33,7 +33,7 @@ static Node* reduceOperand(Node* operand, Node* left, Node* right) {
 static inline Rules* getRules(Node* node) {
     static Rules operand =
         {{"", 0}, {"", 0}, 0, 0, NOFIX, N, false, shiftOperand, reduceOperand};
-    if (!isSymbol(node))
+    if (!isOperator(node))
         return &operand;
     Rules* rules = (Rules*)getData(node);
     return rules == NULL ? &operand : rules;
@@ -41,10 +41,6 @@ static inline Rules* getRules(Node* node) {
 
 Fixity getFixity(Node* operator) {
     return getRules(operator)->fixity;
-}
-
-bool isOperator(Node* node) {
-    return isSymbol(node) && getFixity(node) != NOFIX;
 }
 
 void erase(Stack* stack, const char* lexeme) {
@@ -67,7 +63,7 @@ Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
 static Node* propagateSection(Node* operator, SectionSide side, Node* body) {
     if (isSpecial(operator) || !isApplication(body))
         syntaxError("operator does not support sections", operator);
-    return newSection(getTag(operator), side, body);
+    return Section(getTag(operator), side, body);
 }
 
 Node* reduce(Node* operator, Node* left, Node* right) {
@@ -125,8 +121,8 @@ static Rules* findRules(String lexeme) {
 Node* parseSymbol(Tag tag, long long value) {
     Rules* rules = findRules(tag.lexeme);
     if (rules == NULL && isThisString(tag.lexeme, " "))
-        return newSymbol(tag, value, findRules(newString("( )", 3)));
-    return newSymbol(tag, value, rules);
+        return Operator(tag, value, findRules(newString("( )", 3)));
+    return rules == NULL ? Name(tag) : Operator(tag, value, rules);
 }
 
 static void reduceTop(Stack* stack) {
@@ -164,7 +160,7 @@ void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
         fixity, associativity, false, shifter, reducer});
 }
 
-void addBuiltinSyntax(const char* symbol, Precedence leftPrecedence,
+void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
     if (RULES == NULL)
@@ -180,7 +176,7 @@ static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
     String prior = getRules(operator)->prior;
     if (!isApplication(left) || !isSameString(getLexeme(left), prior))
         syntaxError("mixfix syntax error", operator);
-    return newApplication(tag, newApplication(tag, newName(tag), left), right);
+    return Application(tag, Application(tag, Name(tag), left), right);
 }
 
 void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
