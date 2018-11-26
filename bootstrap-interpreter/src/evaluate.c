@@ -3,7 +3,7 @@
 #include "lib/stack.h"
 #include "ast.h"
 #include "closure.h"
-#include "builtins.h"
+#include "operations.h"
 
 typedef const Array Globals;
 static Hold* evaluateClosure(Closure* closure, Globals* globals);
@@ -33,10 +33,10 @@ static Node* getGlobalValue(Node* global, Globals* globals) {
 static Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
     // the default case works for all node types;
     // the other cases are short-circuit optmizations
-    switch (getNodeType(node)) {
-        case BUILTIN:
-        case NATURAL: return newClosure(node, VOID, trace);
-        case SYMBOL: return isGlobalReference(node) ?
+    switch (getASTType(node)) {
+        case OPERATION:
+        case NUMERAL: return newClosure(node, VOID, trace);
+        case VARIABLE: return isGlobal(node) ?
             newClosure(node, VOID, trace) : getReferee(node, locals);
         default: return newClosure(node, locals, trace);
     }
@@ -59,12 +59,12 @@ static void evaluateLambda(Closure* closure, Stack* stack) {
 }
 
 static bool isValue(Node* node) {
-    return isLambda(node) || isNatural(node) || isBuiltin(node);
+    return isAbstraction(node) || isNumeral(node) || isOperation(node);
 }
 
 static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
     Node* reference = getTerm(closure);
-    if (isGlobalReference(reference)) {
+    if (isGlobal(reference)) {
         setTerm(closure, getGlobalValue(reference, globals));
         if (!TEST)
             push((Stack*)getBacktrace(closure), reference);
@@ -79,7 +79,7 @@ static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
 }
 
 static Hold* popArgument(Closure* closure, Stack* stack, Globals* globals) {
-    eraseUpdates(stack);    // partially applied builtins are not values
+    eraseUpdates(stack);    // partially applied operations are not values
     if (isEmpty(stack))
         runtimeError("missing argument to", closure);
     Hold* expression = pop(stack);
@@ -88,11 +88,12 @@ static Hold* popArgument(Closure* closure, Stack* stack, Globals* globals) {
     return result;
 }
 
-static void evaluateBuiltin(Closure* closure, Stack* stack, Globals* globals) {
-    unsigned int arity = getBuiltinArity(getTerm(closure));
+static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
+    unsigned int arity = getArity(getTerm(closure));
     Hold* left = arity > 0 ? popArgument(closure, stack, globals) : NULL;
     Hold* right = arity > 1 ? popArgument(closure, stack, globals) : NULL;
-    Hold* result = evaluateBuiltinNode(closure, getNode(left), getNode(right));
+    Hold* result = evaluateOperationNode(closure,
+        getNode(left), getNode(right));
     setClosure(closure, getNode(result));
     release(result);
     if (left != NULL)
@@ -101,13 +102,13 @@ static void evaluateBuiltin(Closure* closure, Stack* stack, Globals* globals) {
         release(right);
 }
 
-static Node* expandNatural(Node* natural) {
-    long long n = getValue(natural);
-    Tag tag = getTag(natural);
-    Node* underscore = newUnderscore(tag, 0);
-    Node* body = n == 0 ? newUnderscore(tag, 2) :
-       newApplication(tag, newUnderscore(tag, 1), newNatural(tag, n - 1));
-    return newLambda(tag, underscore, newLambda(tag, underscore, body));
+static Node* expandNumeral(Node* numeral) {
+    long long n = getValue(numeral);
+    Tag tag = getTag(numeral);
+    Node* underscore = Underscore(tag, 0);
+    Node* body = n == 0 ? Underscore(tag, 2) :
+       Application(tag, Underscore(tag, 1), Numeral(tag, n - 1));
+    return Abstraction(tag, underscore, Abstraction(tag, underscore, body));
 }
 
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
@@ -115,16 +116,16 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
         //#include "debug.h"
         //extern void debugState(Closure* closure, Stack* stack);
         //debugState(closure, stack);
-        switch (getNodeType(getTerm(closure))) {
+        switch (getASTType(getTerm(closure))) {
             case APPLICATION: evaluateApplication(closure, stack); break;
-            case SYMBOL: evaluateReference(closure, stack, globals); break;
-            case BUILTIN: evaluateBuiltin(closure, stack, globals); break;
-            case NATURAL:
+            case VARIABLE: evaluateReference(closure, stack, globals); break;
+            case OPERATION: evaluateOperation(closure, stack, globals); break;
+            case NUMERAL:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return hold(closure);
-                setTerm(closure, expandNatural(getTerm(closure))); break;
-            case LAMBDA:
+                setTerm(closure, expandNumeral(getTerm(closure))); break;
+            case ABSTRACTION:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return hold(closure);

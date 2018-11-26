@@ -10,24 +10,24 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     return 0;
 }
 
-static int findBuiltinCode(Node* node) {
-    // names in builtins must line up with codes in BuiltinCode, except
+static int findOperationCode(Node* node) {
+    // names in operations must line up with codes in OperationCode, except
     // UNDEFINED, EXIT, PUT, GET which don't have accessible names
-    static const char* const builtins[] = {"+", "-", "*", "//", "%",
+    static const char* const operations[] = {"+", "-", "*", "//", "%",
         "=", "=/=", "<", ">", "<=", ">=", "up", "error", "(undefined)"};
-    for (unsigned int i = 0; i < sizeof(builtins)/sizeof(char*); ++i)
-        if (isThisLexeme(node, builtins[i]))
+    for (unsigned int i = 0; i < sizeof(operations)/sizeof(char*); ++i)
+        if (isThisLexeme(node, operations[i]))
             return (int)i;
     return -1;
 }
 
-static void bindSymbol(Node* node, Array* parameters, size_t globalDepth) {
+static void bindName(Node* node, Array* parameters, size_t globalDepth) {
     if (isUnused(node))
        syntaxError("cannot reference a symbol starting with underscore", node);
-    int code = findBuiltinCode(node);
+    int code = findOperationCode(node);
     if (code >= 0) {
         setValue(node, code);
-        setType(node, BUILTIN);
+        setType(node, OPERATION);
         return;
     }
     unsigned long long index = findDebruijnIndex(node, parameters);
@@ -38,16 +38,16 @@ static void bindSymbol(Node* node, Array* parameters, size_t globalDepth) {
 }
 
 static bool isDefined(Node* parameter, Array* parameters) {
-    return !isUnderscore(parameter) && (findBuiltinCode(parameter) >= 0 ||
+    return !isUnderscore(parameter) && (findOperationCode(parameter) >= 0 ||
         findDebruijnIndex(parameter, parameters) != 0);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     // this error should never happen, but if something invalid gets through
     // we can at least point to the location of the problem
-    if (isSymbol(node) && getValue(node) == 0) {
-        bindSymbol(node, parameters, length(globals));
-    } else if (isLambda(node)) {
+    if (isName(node)) {
+        bindName(node, parameters, length(globals));
+    } else if (isAbstraction(node)) {
         if (isDefined(getParameter(node), parameters))
             syntaxError("symbol already defined", getParameter(node));
         append(parameters, getParameter(node));
@@ -62,7 +62,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
 }
 
 static bool isDesugaredDefinition(Node* node) {
-    return isApplication(node) && isLambda(getLeft(node)) &&
+    return isApplication(node) && isAbstraction(getLeft(node)) &&
         !isUnderscore(getParameter(getLeft(node)));
 }
 
@@ -71,12 +71,12 @@ Array* bind(Hold* root) {
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
     while (isDesugaredDefinition(node)) {
-        Node* definedSymbol = getParameter(getLeft(node));
+        Node* definedName = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
-        if (isDefined(definedSymbol, parameters))
-            syntaxError("symbol already defined", definedSymbol);
+        if (isDefined(definedName, parameters))
+            syntaxError("symbol already defined", definedName);
         bindWith(definedValue, parameters, globals);
-        append(parameters, definedSymbol);
+        append(parameters, definedName);
         append(globals, definedValue);
         node = getBody(getLeft(node));
     }

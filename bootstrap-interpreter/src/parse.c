@@ -16,20 +16,20 @@
 
 bool TRACE_PARSING = false;
 
-static bool isNaturalLexeme(String lexeme) {
+static bool isNumeralLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
         if (!isdigit(lexeme.start[i]))
             return false;
     return lexeme.length > 0;
 }
 
-static Node* parseNatural(Tag tag) {
-    tokenErrorIf(!isNaturalLexeme(tag.lexeme), "invalid token", tag);
+static Node* parseNumeral(Tag tag) {
+    tokenErrorIf(!isNumeralLexeme(tag.lexeme), "invalid token", tag);
     errno = 0;
     long long value = strtoll(tag.lexeme.start, NULL, 10);
     tokenErrorIf((value == LLONG_MIN || value == LLONG_MAX) &&
-        errno == ERANGE, "magnitude of natural is too large", tag);
-    return newNatural(tag, value);
+        errno == ERANGE, "magnitude of numeral is too large", tag);
+    return Numeral(tag, value);
 }
 
 static const char* skipQuoteCharacter(const char* start) {
@@ -59,14 +59,14 @@ static Node* parseCharacterLiteral(Tag tag) {
     tokenErrorIf(end[0] != quote, "missing end quote for", tag);
     const char* skip = skipQuoteCharacter(tag.lexeme.start + 1);
     tokenErrorIf(skip != end, "invalid character literal", tag);
-    return newNatural(tag, decodeCharacter(tag.lexeme.start + 1, tag));
+    return Numeral(tag, decodeCharacter(tag.lexeme.start + 1, tag));
 }
 
 static Node* buildStringLiteral(Tag tag, const char* start) {
     char c = start[0];
     tokenErrorIf(c == '\n' || c == 0, "missing end quote for", tag);
-    return c == tag.lexeme.start[0] ? newNil(tag) :
-        prepend(tag, newNatural(tag, decodeCharacter(start, tag)),
+    return c == tag.lexeme.start[0] ? Nil(tag) :
+        prepend(tag, Numeral(tag, decodeCharacter(start, tag)),
         buildStringLiteral(tag, skipQuoteCharacter(start)));
 }
 
@@ -76,7 +76,7 @@ static Node* parseStringLiteral(Tag tag) {
 
 static Node* parseToken(Token token) {
     switch (token.type) {
-        case NUMERIC: return parseNatural(token.tag);
+        case NUMERIC: return parseNumeral(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);

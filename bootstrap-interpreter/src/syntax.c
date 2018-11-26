@@ -8,22 +8,22 @@
 #include "brackets.h"
 
 static Node* reduceApply(Node* operator, Node* left, Node* right) {
-    return newApplication(getTag(operator), left, right);
+    return Application(getTag(operator), left, right);
 }
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceApply(operator,
-        newName(getTag(operator)), left), right);
+        Name(getTag(operator)), left), right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
-    return reduceApply(operator, newName(getTag(operator)), right);
+    return reduceApply(operator, Name(getTag(operator)), right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
-    return reduceApply(operator, newName(getTag(operator)), left);
+    return reduceApply(operator, Name(getTag(operator)), left);
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
@@ -60,7 +60,7 @@ static void shiftInfix(Stack* stack, Node* operator) {
         else if (isThisLeaf(operator, "-"))
             operator = parseSymbol(renameTag(getTag(operator), "(-)"), 0);
         else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-            push(stack, newLeftPlaceholder(getTag(operator)));
+            push(stack, LeftPlaceholder(getTag(operator)));
         else syntaxError("missing left operand for", operator);
     }
     push(stack, operator);
@@ -70,7 +70,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     erase(stack, " ");      // if we erase newlines it would break associativity
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-        push(stack, newLeftPlaceholder(getTag(operator)));
+        push(stack, LeftPlaceholder(getTag(operator)));
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);
@@ -82,10 +82,10 @@ static Node* reduceError(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
     if (isThisLeaf(right, "[]"))
-        return newBuiltin(tag, UNDEFINED);
-    Node* exit = newBuiltin(renameTag(tag, "exit"), EXIT);
-    return newApplication(tag, exit, newApplication(tag, newPrinter(tag),
-        newApplication(tag, newBuiltin(tag, ERROR), right)));
+        return Operation(tag, UNDEFINED);
+    Node* exit = Operation(renameTag(tag, "exit"), EXIT);
+    return Application(tag, exit, Application(tag, Printer(tag),
+        Application(tag, Operation(tag, ERROR), right)));
 }
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
@@ -107,10 +107,10 @@ static Node* defineSyntax(Node* definition, Node* left, Node* right) {
     Node* fixity = getLeft(right);
     if (isThisLeaf(fixity, "mixfix")) {
         addMixfixSyntax(tag, getRight(right), shiftInfix);
-        return newLambda(getTag(left), newName(tag), newName(tag));
+        return Abstraction(getTag(left), Name(tag), Name(tag));
     }
 
-    if (!isNatural(getRight(right)))
+    if (!isNumeral(getRight(right)))
         syntaxError("invalid syntax definition", definition);
     long long precedence = getValue(getRight(right));
     if (precedence < 0 || precedence > 99)
@@ -138,18 +138,18 @@ static Node* defineSyntax(Node* definition, Node* left, Node* right) {
     // add special case prefix operators for "+" and "-"
     // done here to avoid hard-coding a precedence for them
     if (isThisLeaf(name, "+"))
-        addBuiltinSyntax("(+)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
+        addCoreSyntax("(+)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
     if (isThisLeaf(name, "-"))
-        addBuiltinSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
+        addCoreSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
 
     // reduce to an identity function with the operator symbol as parameter name
     // so that if the operator symbol is already defined it will be a syntax
     // error. this ensures that operator symbols can't be used before their
     // syntax is declared because use must follow definition and definition
-    // must follow syntax declaration. builtin operators don't need to be
+    // must follow syntax declaration. operations don't need to be
     // defined, but they can only be accessed as operators, which again means
     // that use must follow syntax declaration.
-    return newLambda(getTag(left), newName(tag), newName(tag));
+    return Abstraction(getTag(left), Name(tag), Name(tag));
 }
 
 static Node* reduceNewline(Node* operator, Node* left, Node* right) {
@@ -186,29 +186,29 @@ static void shiftNewline(Stack* stack, Node* operator) {
 }
 
 void initSymbols(void) {
-    addBuiltinSyntax("\0", 0, 0, CLOSEFIX, R, shiftClose, reduceEOF);
-    addBuiltinSyntax("(", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
-    addBuiltinSyntax(")", 0, 90, CLOSEFIX, R, shiftClose, reduceParentheses);
-    addBuiltinSyntax("[", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
-    addBuiltinSyntax("]", 0, 90, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
-    addBuiltinSyntax("{", 90, 0, OPENFIX, R, shiftOpenCurly, reduceUnmatched);
-    addBuiltinSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
-    addBuiltinSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
-    addBuiltinSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
-    addBuiltinSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
-    addBuiltinSyntax(";", 4, 4, INFIX, R, shiftInfix, reduceNewline);
-    addBuiltinSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
-    addBuiltinSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
-    addBuiltinSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
-    addBuiltinSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    addBuiltinSyntax("\u2A74", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
+    addCoreSyntax("\0", 0, 0, CLOSEFIX, R, shiftClose, reduceEOF);
+    addCoreSyntax("(", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
+    addCoreSyntax(")", 0, 90, CLOSEFIX, R, shiftClose, reduceParentheses);
+    addCoreSyntax("[", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
+    addCoreSyntax("]", 0, 90, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
+    addCoreSyntax("{", 90, 0, OPENFIX, R, shiftOpenCurly, reduceUnmatched);
+    addCoreSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
+    addCoreSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
+    addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
+    addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
+    addCoreSyntax(";", 4, 4, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
+    addCoreSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
+    addCoreSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
+    addCoreSyntax("\u2A74", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
     // reserve precedence 6 for "try"
-    addBuiltinSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
-    addBuiltinSyntax("\u21A6", 7, 7, INFIX, R, shiftInfix, reduceArrow);
-    addBuiltinSyntax("case", 8, 8, PREFIX, N, shiftPrefix, reducePrefix);
-    addBuiltinSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceApply);
-    addBuiltinSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
-    addBuiltinSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
-    addBuiltinSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
-    addBuiltinSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
+    addCoreSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
+    addCoreSyntax("\u21A6", 7, 7, INFIX, R, shiftInfix, reduceArrow);
+    addCoreSyntax("case", 8, 8, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceApply);
+    addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
+    addCoreSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
+    addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
+    addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
 }

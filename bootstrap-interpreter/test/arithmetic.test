@@ -30,7 +30,7 @@
 9223372036854775807
 ===============================================================================
 9223372036854775808
-Syntax error: magnitude of natural is too large '9223372036854775808' at line 1 column 1
+Syntax error: magnitude of numeral is too large '9223372036854775808' at line 1 column 1
 ===============================================================================
 9223372036854775807 + 1
 \nRuntime error: overflow in '+' at line 1 column 21
@@ -51,7 +51,7 @@ Syntax error: missing left operand for '%' at line 1 column 1
 \nRuntime error: missing argument to '+' at line 1 column 2
 ===============================================================================
 1 + 2(3)
-\nRuntime error: expected natural argument to '+' at line 1 column 3
+\nRuntime error: expected numeric argument to '+' at line 1 column 3
 ===============================================================================
 5 - * 2
 Syntax error: missing left operand for '*' at line 1 column 5

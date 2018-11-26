@@ -63,10 +63,10 @@ define parseNumericLiteral(tag)
     maxNatural := "9223372036854775807"
     natural := lexeme.dropWhile(= '0')
     if natural.length > maxNatural.length
-        parseError("magnitude of natural is too large", tag)
+        parseError("magnitude of numeral is too large", tag)
     if natural.length = maxNatural.length and
             zipWith(natural, (>), maxNatural).any(id)
-        parseError("magnitude of natural is too large", tag)
+        parseError("magnitude of numeral is too large", tag)
     Number(tag, parseNatural(lexeme, 10))
 
 
