@@ -32,6 +32,11 @@ static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     return newPatternLambda(getTag(operator), left, right);
 }
 
+static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isName(left), "expected name to left of" , operator);
+    return reduceApply(operator, left, right);
+}
+
 static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     (void)left, (void)right;
     syntaxError("reserved operator", operator);
@@ -206,7 +211,7 @@ void initSymbols(void) {
     addCoreSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("\u21A6", 7, 7, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("case", 8, 8, PREFIX, N, shiftPrefix, reducePrefix);
-    addCoreSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceApply);
+    addCoreSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addCoreSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);

@@ -14,8 +14,9 @@ define newPatternArrow(tag, pattern, body)
     if isName(pattern)
         Arrow(tag, pattern, body)
     if isAsPattern(pattern)
-        newPatternArrow(tag, getName(pattern), Juxtaposition(tag,
-            newPatternArrow(tag, getPattern(pattern), body), getName(pattern)))
+        Arrow(tag, getName(pattern), Juxtaposition(tag,
+            newPatternArrow(tag, getPattern(pattern), body),
+            Reference(getTag(getName(pattern)), 1)))
     if isJuxtaposition(pattern)
         arguments := getArguments(pattern)
         size := length(arguments)

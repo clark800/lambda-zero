@@ -43,34 +43,37 @@ static bool isDefined(Node* parameter, Array* parameters) {
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
-    // this error should never happen, but if something invalid gets through
-    // we can at least point to the location of the problem
-    if (isName(node)) {
-        bindName(node, parameters, length(globals));
-    } else if (isAbstraction(node)) {
-        if (isDefined(getParameter(node), parameters))
-            syntaxError("symbol already defined", getParameter(node));
-        append(parameters, getParameter(node));
-        bindWith(getBody(node), parameters, globals);
-        unappend(parameters);
-    } else if (isApplication(node)) {
-        bindWith(getLeft(node), parameters, globals);
-        bindWith(getRight(node), parameters, globals);
-    } else if (isDefinition(node)) {
-        syntaxError("missing scope for definition", node);
+    switch (getASTType(node)) {
+        case VARIABLE:
+            if (isName(node))
+                bindName(node, parameters, length(globals));
+            break;
+        case ABSTRACTION:
+            if (isDefined(getParameter(node), parameters))
+                syntaxError("symbol already defined", getParameter(node));
+            append(parameters, getParameter(node));
+            bindWith(getBody(node), parameters, globals);
+            unappend(parameters);
+            break;
+        case LET:
+        case APPLICATION:
+            bindWith(getLeft(node), parameters, globals);
+            bindWith(getRight(node), parameters, globals);
+            break;
+        case OPERATION:
+        case NUMERAL: break;
+        case DEFINITION:
+            syntaxError("missing scope for definition", node); break;
+        case OPERATOR:
+        case SECTION: syntaxError("internal error", node); break;
     }
-}
-
-static bool isDesugaredDefinition(Node* node) {
-    return isApplication(node) && isAbstraction(getLeft(node)) &&
-        !isUnderscore(getParameter(getLeft(node)));
 }
 
 Array* bind(Hold* root) {
     Node* node = getNode(root);
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
-    while (isDesugaredDefinition(node)) {
+    while (isLet(node) && !isUnderscore(getParameter(getLeft(node)))) {
         Node* definedName = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
         if (isDefined(definedName, parameters))

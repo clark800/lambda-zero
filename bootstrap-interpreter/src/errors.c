@@ -49,7 +49,7 @@ void syntaxError(const char* message, Node* node) {
 }
 
 void usageError(const char* name) {
-    printThree("Usage error: ", name, " [-p] [-t] [FILE]\n");
+    printThree("Usage error: ", name, " [-d] [-D] [-t] [FILE]\n");
     exit(2);
 }
 

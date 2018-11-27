@@ -4,7 +4,7 @@ define getHead(node)
     if isJuxtaposition(node) then getHead(getLeft(node)) else node
 
 define applyPlainDefinition(tag, name, value, scope)
-    Juxtaposition(tag, newPatternArrow(tag, name, scope), value)
+    Let(tag, newPatternArrow(tag, name, scope), value)
 
 define applyTryDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??")),

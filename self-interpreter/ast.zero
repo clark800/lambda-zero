@@ -1,14 +1,14 @@
 #* ast.zero
 
+CoupleType ::= {JuxtapositionCouple, LetCouple}
 DefinitionType ::=
     {PlainDefinition, TryDefinition, SyntaxDefinition, ADTDefinition}
-
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
     Name(_ : Tag),
     Arrow(_ : Tag, getArrowLeft : AST, getArrowRight : AST),
-    Juxtaposition(_ : Tag, getLeft : AST, getRight : AST),
+    Couple(_ : Tag, getCoupleType : CoupleType, getLeft : AST, getRight : AST),
     Number(_ : Tag, getNumericValue : Natural),
     Reference(_ : Tag, _ : Natural),
     Operator(_ : Tag, getRank : Natural, getOperatorSyntax : _),
@@ -25,7 +25,7 @@ AST ::= {
 define getTag
     case Name(tag) -> tag
     case Arrow(tag, _, _) -> tag
-    case Juxtaposition(tag, _, _) -> tag
+    case Couple(tag, _, _, _) -> tag
     case Number(tag, _) -> tag
     case Reference(tag, _) -> tag
     case Operator(tag, _, _) -> tag
@@ -40,7 +40,7 @@ define getTag
 define containsName(name)
     case Name(tag) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     case Arrow(_, _, body) -> containsName(name, body)
-    case Juxtaposition(_, left, right) ->
+    case Couple(_, _, left, right) ->
         containsName(name, left) or containsName(name, right)
     case Number(_, _) -> false
     case Reference(_, _) -> false
@@ -57,7 +57,7 @@ define showAST
     case Name(tag) -> showTag(tag)
     case Arrow(tag, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
-    case Juxtaposition(tag, left, right) ->
+    case Couple(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
     case Number(tag, value) -> showNatural(value)
     case Reference(tag, debruijn) -> showTag(tag)
@@ -76,7 +76,7 @@ define showAST
 define indexAST
     case Name(_) -> 0
     case Arrow(_, _, _) -> 1
-    case Juxtaposition(_, _, _) -> 2
+    case Couple(_, _, _, _) -> 2
     case Number(_, _) -> 3
     case Reference(_, _) -> 4
     case Operator(_, _, _) -> 5
@@ -90,7 +90,7 @@ define indexAST
 
 isName(node) := indexAST(node) = 0
 isArrow(node) := indexAST(node) = 1
-isJuxtaposition(node) := indexAST(node) = 2
+isCouple(node) := indexAST(node) = 2
 isNumber(node) := indexAST(node) = 3
 isReference(node) := indexAST(node) = 4
 isOperator(node) := indexAST(node) = 5
@@ -101,6 +101,16 @@ isCase(node) := indexAST(node) = 9
 isSection(node) := indexAST(node) = 10
 isADT(node) := indexAST(node) = 11
 isNull(node) := indexAST(node) = 12
+
+define indexCoupleType
+    case JuxtapositionCouple -> 0
+    case LetCouple -> 1
+
+isJuxtaposition(node) := indexAST(node) = 2 and
+    indexCoupleType(getCoupleType(node)) = 0
+isLet(node) := indexAST(node) = 2 and indexCoupleType(getCoupleType(node)) = 1
+Juxtaposition(tag, left, right) := Couple(tag, JuxtapositionCouple, left, right)
+Let(tag, left, right) := Couple(tag, LetCouple, left, right)
 
 define indexDefinitionType
     case PlainDefinition -> 0
@@ -119,7 +129,6 @@ isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
-renameTag(tag, lexeme) := Tag(lexeme, getTagLocation(tag))
 UnderscoreArrow(tag, body) := Arrow(tag, Name(renameTag(tag, "_")), body)
 newUnderscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn)
 newNil(tag) := Name(renameTag(tag, "[]"))

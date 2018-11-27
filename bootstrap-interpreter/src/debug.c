@@ -25,8 +25,8 @@ static void serializeAST(Node* node, FILE* stream) {
         fputll(getValue(node), stream);
     } else {
         printLexeme(getLexeme(node), stream);
-        //fputs("#", stream);
-        //fputll(getValue(node), stream);
+        fputs("#", stream);
+        fputll(getValue(node), stream);
     }
 }
 

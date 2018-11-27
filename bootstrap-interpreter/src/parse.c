@@ -14,7 +14,7 @@
 #include "debug.h"
 #include "parse.h"
 
-bool TRACE_PARSING = false;
+int DEBUG = 0;
 
 static bool isNumeralLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
@@ -94,7 +94,7 @@ Program parse(const char* input) {
     Token start = newStartToken(input);
     push(stack, parseToken(start));
     for (Token token = lex(start); token.type != END; token = lex(token)) {
-        debugParseState(token.tag, stack, TRACE_PARSING);
+        debugParseState(token.tag, stack, DEBUG >= 2);
         if (token.type != COMMENT && token.type != VSPACE) {
             Node* node = parseToken(token);
             shift(stack, node);
@@ -104,11 +104,11 @@ Program parse(const char* input) {
     Hold* result = pop(stack);
     syntaxErrorIf(isEOF(getNode(result)), "no input", getNode(result));
     deleteStack(stack);
-    debugParseStage("parse", getNode(result), TRACE_PARSING);
+    debugParseStage("parse", getNode(result), DEBUG >= 2);
     Array* globals = bind(result);
-    debugParseStage("bind", getNode(result), TRACE_PARSING);
+    debugParseStage("bind", getNode(result), DEBUG >= 2);
     Node* entry = elementAt(globals, length(globals) - 1);
-    debugParseStage("entry", entry, TRACE_PARSING);
+    debugParseStage("entry", entry, DEBUG >= 1);
     return (Program){result, entry, globals};
 }
 

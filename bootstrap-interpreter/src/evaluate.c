@@ -117,6 +117,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
         //extern void debugState(Closure* closure, Stack* stack);
         //debugState(closure, stack);
         switch (getASTType(getTerm(closure))) {
+            case LET:
             case APPLICATION: evaluateApplication(closure, stack); break;
             case VARIABLE: evaluateReference(closure, stack, globals); break;
             case OPERATION: evaluateOperation(closure, stack, globals); break;

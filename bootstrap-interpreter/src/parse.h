@@ -4,6 +4,6 @@ typedef struct {
     Array* globals;
 } Program;
 
-extern bool TRACE_PARSING;
+extern int DEBUG;
 Program parse(const char* input);
 void deleteProgram(Program program);

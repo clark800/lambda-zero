@@ -9,5 +9,5 @@ x @ y @ x -> x
 Syntax error: operator is non-associative '@' at line 1 column 3
 ===============================================================================
 _ @ x -> x
-Syntax error: cannot reference a symbol starting with underscore '_' at line 1 column 1
+(_ -> ((x -> x) _))
 ===============================================================================

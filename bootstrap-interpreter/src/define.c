@@ -12,7 +12,7 @@ Node* getHead(Node* node) {
 
 Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    return Application(tag, newPatternLambda(tag, left, scope), right);
+    return Let(tag, newPatternLambda(tag, left, scope), right);
 }
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
