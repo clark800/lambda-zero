@@ -2,10 +2,6 @@
 #include "ast.h"
 #include "errors.h"
 
-bool isCase(Node* node) {
-    return isAbstraction(node) && isThisLexeme(node, "case");
-}
-
 unsigned int getArgumentCount(Node* application) {
     unsigned int i = 0;
     for (Node* n = application; isApplication(n); ++i)
@@ -45,13 +41,14 @@ Node* newCasePatternLambda(Tag tag, Node* pattern, Node* body) {
     // Unit is a special case because it's the only type where you know
     // the exact form of any instance of the type, so you can actually
     // pattern match against a value instead of a variable
-    pattern = isThisLeaf(pattern, "()") ? Underscore(tag, 0) : pattern;
+    pattern = isThisName(pattern, "()") ? Underscore(tag, 0) : pattern;
     return newPatternLambda(tag, pattern, body);
 }
 
-Node* newCase(Tag tag, Node* left, Node* right) {
+Node* reduceCase(Node* operator, Node* left, Node* right) {
     // strict pattern matching
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
+    Tag tag = getTag(operator);
     Node* body = right;
     Node* items = isAsPattern(left) ? getRight(left) : left;
     for (; isApplication(items); items = getLeft(items))
@@ -63,7 +60,7 @@ Node* newCase(Tag tag, Node* left, Node* right) {
     // discard left, which is now just the constructor
     Node* parameter = Underscore(tag, 0);
     Node* reference = Underscore(tag, 1);
-    return Abstraction(tag, parameter, Application(tag, reference, body));
+    return Case(tag, parameter, Application(tag, reference, body));
 }
 
 static Node* mergeCaseBodies(Tag tag, Node* left, Node* right) {
@@ -73,10 +70,11 @@ static Node* mergeCaseBodies(Tag tag, Node* left, Node* right) {
     return Application(tag, merged, getRight(right));
 }
 
-Node* combineCases(Tag tag, Node* left, Node* right) {
+Node* combineCases(Node* left, Node* right) {
     // left == c1(a1) -> b1     -->   _ -> _ (a1 -> b1)
     // right == c2(a2) -> b2    -->   _ -> _ (a2 -> b2)
     // result == _ -> _ (a1 -> b1) (a2 -> b2)
+    Tag tag = renameTag(getTag(left), "_");
     Node* body = mergeCaseBodies(tag, getBody(left), getBody(right));
-    return Abstraction(tag, Underscore(tag, 0), body);
+    return Case(tag, Underscore(tag, 0), body);
 }

@@ -1,6 +1,8 @@
-typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, LET, OPERATION,
-    OPERATOR, DEFINITION, SECTION} ASTType;
-typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionSide;
+typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, CASE, LET, OPERATION,
+    OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, CURLYBRACKET} ASTType;
+typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
+typedef enum {PLAINDEFINITION, TRYDEFINITION, SYNTAXDEFINITION, ADTDEFINITION}
+    DefinitionVariety;
 
 // ====================================
 // Functions to get a value from a node
@@ -14,7 +16,7 @@ static inline long long getOperationCode(Node* n) {return getValue(n);}
 
 static inline unsigned long long getDebruijnIndex(Node* n) {
     assert(getValue(n) > 0);
-    return (unsigned long long)(getValue(n) - 1);
+    return (unsigned long long)getValue(n);
 }
 
 static inline unsigned long long getGlobalIndex(Node* n) {
@@ -30,36 +32,42 @@ static inline bool isSameLexeme(Node* a, Node* b) {
     return isSameString(getLexeme(a), getLexeme(b));
 }
 
-static inline bool isThisLexeme(Node* node, const char* lexeme) {
-    return isThisString(getLexeme(node), lexeme);
-}
-
-static inline bool isThisLeaf(Node* leaf, const char* lexeme) {
-    return isLeaf(leaf) && isThisLexeme(leaf, lexeme);
-}
-
 static inline bool isVariable(Node* n) {return getASTType(n) == VARIABLE;}
 static inline bool isAbstraction(Node* n) {return getASTType(n) == ABSTRACTION;}
 static inline bool isApplication(Node* n) {return getASTType(n) == APPLICATION;}
 static inline bool isNumeral(Node* n) {return getASTType(n) == NUMERAL;}
 static inline bool isOperation(Node* n) {return getASTType(n) == OPERATION;}
+static inline bool isCase(Node* n) {return getASTType(n) == CASE;}
 static inline bool isLet(Node* n) {return getASTType(n) == LET;}
 static inline bool isOperator(Node* n) {return getASTType(n) == OPERATOR;}
 static inline bool isDefinition(Node* n) {return getASTType(n) == DEFINITION;}
 static inline bool isSection(Node* n) {return getASTType(n) == SECTION;}
+static inline bool isAsPattern(Node* n) {return getASTType(n) == ASPATTERN;}
+static inline bool isCommaPair(Node* n) {return getASTType(n) == COMMAPAIR;}
+static inline bool isADT(Node* n) {return getASTType(n) == CURLYBRACKET;}
+
 static inline bool isGlobal(Node* n) {return isVariable(n) && getValue(n) < 0;}
-static inline bool isEOF(Node* n) {return isThisLeaf(n, "\0");}
-static inline bool isUnderscore(Node* n) {return isThisLeaf(n, "_");}
 static inline bool isName(Node* n) {return isVariable(n) && getValue(n) == 0;}
 static inline bool isUnused(Node* n) {return getLexeme(n).start[0] == '_';}
 
-static inline bool isAsPattern(Node* n) {
-    return isApplication(n) && isThisLexeme(n, "@");
+static inline bool isSyntaxDefinition(Node* n) {
+    return isDefinition(n) && getVariety(n) == SYNTAXDEFINITION;
 }
 
-static inline bool isSyntaxMarker(Node* n) {
-    return isAbstraction(n) && isThisLexeme(n, "syntax");
+static inline bool isThisName(Node* node, const char* lexeme) {
+    return isName(node) && isThisString(getLexeme(node), lexeme);
 }
+
+static inline bool isThisOperator(Node* node, const char* lexeme) {
+    return isOperator(node) && isThisString(getLexeme(node), lexeme);
+}
+
+static inline bool isKeyphrase(Node* n, const char* key) {
+    return isApplication(n) && isThisName(getLeft(n), key);
+}
+
+static inline bool isEOF(Node* n) {return isThisOperator(n, "\0");}
+static inline bool isUnderscore(Node* n) {return isThisName(n, "_");}
 
 // ================================
 // Functions to construct nodes
@@ -83,15 +91,27 @@ static inline Node* Abstraction(Tag tag, Node* parameter, Node* body) {
     // to the string literal for error messages, but we prefer not to make the
     // parameter name be the string literal
     assert(isName(parameter));
-    return newBranch(tag, ABSTRACTION, parameter, body);
+    return newBranch(tag, ABSTRACTION, 0, parameter, body);
 }
 
 static inline Node* Application(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, APPLICATION, left, right);
+    return newBranch(tag, APPLICATION, 0, left, right);
+}
+
+static inline Node* Case(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, CASE, 0, left, right);
+}
+
+static inline Node* AsPattern(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, ASPATTERN, 0, left, right);
+}
+
+static inline Node* CommaPair(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, COMMAPAIR, 0, left, right);
 }
 
 static inline Node* Let(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, LET, left, right);
+    return newBranch(tag, LET, 0, left, right);
 }
 
 static inline Node* Numeral(Tag tag, long long n) {
@@ -102,8 +122,13 @@ static inline Node* Operation(Tag tag, long long n) {
     return newLeaf(tag, OPERATION, n, NULL);
 }
 
-static inline Node* Definition(Tag tag, Node* left, Node* right) {
-    return newBranch(tag, DEFINITION, left, right);
+static inline Node* Definition(Tag tag, DefinitionVariety variety,
+        Node* left, Node* right) {
+    return newBranch(tag, DEFINITION, variety, left, right);
+}
+
+static inline Node* ADT(Tag tag, Node* commaList) {
+    return newBranch(tag, CURLYBRACKET, 0, VOID, commaList);
 }
 
 static inline Node* FixedName(Tag tag, const char* s) {
@@ -124,8 +149,8 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
 // Sections
 // ====================================
 
-static inline Node* Section(Tag tag, SectionSide side, Node* body) {
-    return newBranch(tag, SECTION, Numeral(tag, (long long)side), body);
+static inline Node* Section(Tag tag, SectionVariety variety, Node* body) {
+    return newBranch(tag, SECTION, variety, VOID, body);
 }
 
 static inline Node* LeftPlaceholder(Tag tag) {
@@ -137,7 +162,7 @@ static inline Node* RightPlaceholder(Tag tag) {
 }
 
 static inline bool isLeftPlaceholder(Node* node) {
-    return isSection(node) && isThisLeaf(getRight(node), ".*");
+    return isSection(node) && isThisName(getRight(node), ".*");
 }
 
 static inline Node* getSectionBody(Node* node) {return getRight(node);}
@@ -152,7 +177,7 @@ static inline Node* wrapRightSection(Tag tag, Node* body) {
 
 static inline Node* wrapSection(Tag tag, Node* section) {
     Node* body = getSectionBody(section);
-    switch ((SectionSide)getValue(getLeft(section))) {
+    switch ((SectionVariety)getVariety(section)) {
         case LEFTSECTION:
             return wrapLeftSection(tag, body);
         case RIGHTSECTION:
@@ -161,8 +186,9 @@ static inline Node* wrapSection(Tag tag, Node* section) {
             return wrapRightSection(tag, body);
         case LEFTRIGHTSECTION:
             return wrapLeftSection(tag, wrapRightSection(tag, body));
-        default: return NULL;
     }
+    assert(false);
+    return NULL;
 }
 
 // ====================================

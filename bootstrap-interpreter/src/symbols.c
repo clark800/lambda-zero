@@ -22,7 +22,7 @@ typedef struct {
 static void shiftOperand(Stack* stack, Node* node) {
     if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
         syntaxError("missing operator before", node);
-    push(stack, reduce(node, NULL, NULL));
+    push(stack, reduce(node, VOID, VOID));
 }
 
 static Node* reduceOperand(Node* operand, Node* left, Node* right) {
@@ -44,7 +44,7 @@ Fixity getFixity(Node* operator) {
 }
 
 void erase(Stack* stack, const char* lexeme) {
-    if (!isEmpty(stack) && isThisLeaf(peek(stack, 0), lexeme))
+    if (!isEmpty(stack) && isThisOperator(peek(stack, 0), lexeme))
         release(pop(stack));
 }
 
@@ -60,22 +60,20 @@ Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
     return getRules(close)->reduce(open, left, right);
 }
 
-static Node* propagateSection(Node* operator, SectionSide side, Node* body) {
+static Node* propagateSection(Node* operator, SectionVariety side, Node* body) {
     if (isSpecial(operator) || !isApplication(body))
         syntaxError("operator does not support sections", operator);
     return Section(getTag(operator), side, body);
 }
 
 Node* reduce(Node* operator, Node* left, Node* right) {
-    Node* leftOp = left != NULL && isSection(left) ?
-        getSectionBody(left) : left;
-    Node* rightOp = right != NULL && isSection(right) ?
-        getSectionBody(right) : right;
+    Node* leftOp = isSection(left) ? getSectionBody(left) : left;
+    Node* rightOp = isSection(right) ? getSectionBody(right) : right;
     Node* result = getRules(operator)->reduce(operator, leftOp, rightOp);
-    if (left != NULL && isSection(left))
-        return propagateSection(operator, right != NULL && isSection(right) ?
+    if (isSection(left))
+        return propagateSection(operator, isSection(right) ?
             LEFTRIGHTSECTION : RIGHTSECTION, result);
-    if (right != NULL && isSection(right))
+    if (isSection(right))
         return propagateSection(operator, LEFTSECTION, result);
     return result;
 }
@@ -128,16 +126,16 @@ Node* parseSymbol(Tag tag, long long value) {
 static void reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
-    Hold* left = getFixity(getNode(operator)) == INFIX ? pop(stack) : NULL;
+    Hold* left = getFixity(getNode(operator)) == INFIX ?
+        pop(stack) : hold(VOID);
     // if a syntax declaration marker is about to be an argument to a reducer
     // then the scope of the syntax declaration has ended
-    if (left != NULL && isSyntaxMarker(getNode(left)))
+    if (isSyntaxDefinition(getNode(left)))
         unappend(RULES);
     shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
     release(operator);
-    if (left != NULL)
-        release(left);
+    release(left);
 }
 
 void reduceLeft(Stack* stack, Node* operator) {

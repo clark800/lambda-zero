@@ -23,7 +23,7 @@ static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
 }
 
 static Closure* getReferee(Node* reference, Node* locals) {
-    return getListElement(locals, getDebruijnIndex(reference));
+    return getListElement(locals, getDebruijnIndex(reference) - 1);
 }
 
 static Node* getGlobalValue(Node* global, Globals* globals) {
@@ -117,7 +117,6 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
         //extern void debugState(Closure* closure, Stack* stack);
         //debugState(closure, stack);
         switch (getASTType(getTerm(closure))) {
-            case LET:
             case APPLICATION: evaluateApplication(closure, stack); break;
             case VARIABLE: evaluateReference(closure, stack, globals); break;
             case OPERATION: evaluateOperation(closure, stack, globals); break;
@@ -131,7 +130,8 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
                 if (isEmpty(stack))
                     return hold(closure);
                 evaluateLambda(closure, stack); break;
-            default: runtimeError("internal error", closure); break;
+            default:
+                assert(false); break;
         }
     }
 }

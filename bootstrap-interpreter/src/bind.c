@@ -16,7 +16,7 @@ static int findOperationCode(Node* node) {
     static const char* const operations[] = {"+", "-", "*", "//", "%",
         "=", "=/=", "<", ">", "<=", ">=", "up", "error", "(undefined)"};
     for (unsigned int i = 0; i < sizeof(operations)/sizeof(char*); ++i)
-        if (isThisLexeme(node, operations[i]))
+        if (isThisName(node, operations[i]))
             return (int)i;
     return -1;
 }
@@ -48,6 +48,9 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
             if (isName(node))
                 bindName(node, parameters, length(globals));
             break;
+        case CASE:
+            setType(node, ABSTRACTION);
+            // fall through
         case ABSTRACTION:
             if (isDefined(getParameter(node), parameters))
                 syntaxError("symbol already defined", getParameter(node));
@@ -56,16 +59,25 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
             unappend(parameters);
             break;
         case LET:
+            setType(node, APPLICATION);
+            // fall through
         case APPLICATION:
             bindWith(getLeft(node), parameters, globals);
             bindWith(getRight(node), parameters, globals);
             break;
-        case OPERATION:
-        case NUMERAL: break;
+        case NUMERAL:
+        case OPERATION: break;
         case DEFINITION:
             syntaxError("missing scope for definition", node); break;
+        case ASPATTERN:
+            syntaxError("as pattern not in parameter position", node); break;
+        case COMMAPAIR:
+            syntaxError("comma not inside brackets", node); break;
+        case CURLYBRACKET:
+            syntaxError("must appear on the right side of '::='", node); break;
         case OPERATOR:
-        case SECTION: syntaxError("internal error", node); break;
+        case SECTION:
+            assert(false); break;
     }
 }
 
