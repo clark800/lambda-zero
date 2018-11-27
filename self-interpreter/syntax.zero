@@ -24,6 +24,8 @@ define reduceArrow(operator, left, right)
 
 
 define reduceAsPattern(operator, left, right)
+    if not isName(left)
+        syntaxError("expected name to left of", operator)
     AsPattern(getTag(operator), left, right)
 
 

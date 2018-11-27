@@ -14,7 +14,7 @@ define getCommaListSize(commaList)
 define newTuple(tag, commaList)
     n := getCommaListSize(commaList)
     lexeme := repeat(',').take(n - 1)
-    constructor := Name(Tag(lexeme, getTagLocation(tag)))
+    constructor := Name(renameTag(tag, lexeme))
     applyToCommaList(tag, constructor, commaList)
 
 define getCommaListElements(commaList)

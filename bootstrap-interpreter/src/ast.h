@@ -1,4 +1,4 @@
-typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, OPERATION,
+typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, LET, OPERATION,
     OPERATOR, DEFINITION, SECTION} ASTType;
 typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionSide;
 
@@ -43,6 +43,7 @@ static inline bool isAbstraction(Node* n) {return getASTType(n) == ABSTRACTION;}
 static inline bool isApplication(Node* n) {return getASTType(n) == APPLICATION;}
 static inline bool isNumeral(Node* n) {return getASTType(n) == NUMERAL;}
 static inline bool isOperation(Node* n) {return getASTType(n) == OPERATION;}
+static inline bool isLet(Node* n) {return getASTType(n) == LET;}
 static inline bool isOperator(Node* n) {return getASTType(n) == OPERATOR;}
 static inline bool isDefinition(Node* n) {return getASTType(n) == DEFINITION;}
 static inline bool isSection(Node* n) {return getASTType(n) == SECTION;}
@@ -87,6 +88,10 @@ static inline Node* Abstraction(Tag tag, Node* parameter, Node* body) {
 
 static inline Node* Application(Tag tag, Node* left, Node* right) {
     return newBranch(tag, APPLICATION, left, right);
+}
+
+static inline Node* Let(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, LET, left, right);
 }
 
 static inline Node* Numeral(Tag tag, long long n) {

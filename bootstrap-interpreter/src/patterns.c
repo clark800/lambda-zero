@@ -23,14 +23,15 @@ Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
 Node* newPatternLambda(Tag tag, Node* left, Node* right) {
     if (isName(left))
         return Abstraction(tag, left, right);
-    syntaxErrorIf(!isApplication(left), "invalid parameter", left);
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
-    if (isThisLexeme(left, "@"))
-        return newPatternLambda(tag, getLeft(left), Application(tag,
-            newPatternLambda(tag, getRight(left), right), getLeft(left)));
+    if (isAsPattern(left))
+        return Abstraction(tag, getLeft(left), Application(tag,
+            newPatternLambda(tag, getRight(left), right),
+            Variable(getTag(getLeft(left)), 1)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
+    syntaxErrorIf(!isApplication(left), "invalid parameter", left);
     Node* body = right;
     for (Node* items = left; isApplication(items); items = getLeft(items))
         body = newPatternLambda(tag, getRight(items), body);

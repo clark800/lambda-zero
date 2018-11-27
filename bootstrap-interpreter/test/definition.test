@@ -54,7 +54,7 @@ f(x) := (g(y) := y \n g) \n f
 (x -> ((g -> g) (y -> y)))
 ===============================================================================
 (f(x) := x \n f) := 1 \n 0
-Syntax error: invalid parameter ':=' at line 1 column 7
+Syntax error: invalid left hand side ':=' at line 2 column 5
 ===============================================================================
 x % y := x * y \n 0
 Syntax error: symbol already defined '%' at line 1 column 3

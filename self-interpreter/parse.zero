@@ -74,14 +74,14 @@ define parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
         case Space -> parseSymbol(operators, renameTag(tag, " "), 0)
-        case VSpace -> parseError("internal error", tag)
+        case VSpace -> parseError("internal error: VSpace", tag)
         case Newline -> parseSymbol(operators, renameTag(tag, "\n"),
             length(getTagLexeme(tag)) - 1)
         case Symbolic -> parseSymbol(operators, tag, 0)
         case Numeric -> parseNumericLiteral(tag)
         case Character -> parseCharacterLiteral(tag)
         case String -> parseStringLiteral(tag)
-        case Comment -> parseError("internal error", tag)
+        case Comment -> parseError("internal error: Comment", tag)
         case Invalid -> parseError("invalid character", tag)
 
 
