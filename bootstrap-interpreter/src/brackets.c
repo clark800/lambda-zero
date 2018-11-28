@@ -5,16 +5,12 @@
 #include "errors.h"
 #include "symbols.h"
 
-static bool isCommaList(Node* node) {
-    return isApplication(node) && isThisLexeme(node, ",");
-}
-
 static unsigned int getCommaListLength(Node* node) {
-    return !isCommaList(node) ? 1 : 1 + getCommaListLength(getLeft(node));
+    return !isCommaPair(node) ? 1 : 1 + getCommaListLength(getLeft(node));
 }
 
 static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
-    if (!isCommaList(arguments))
+    if (!isCommaPair(arguments))
         return Application(tag, base, arguments);
     return Application(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments));
@@ -33,7 +29,7 @@ static Node* newTuple(Node* open, Node* commaList) {
 }
 
 Node* reduceParentheses(Node* open, Node* function, Node* contents) {
-    syntaxErrorIf(!isThisLeaf(open, "("), "missing close for", open);
+    syntaxErrorIf(!isThisOperator(open, "("), "missing close for", open);
     Tag tag = getTag(open);
     if (contents == NULL) {
         Node* unit = FixedName(tag, "()");
@@ -45,7 +41,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
         contents = wrapSection(tag, contents);
     if (function != NULL)
         return applyToCommaList(tag, function, contents);
-    if (isCommaList(contents))
+    if (isCommaPair(contents))
         return newTuple(open, contents);
     if (isApplication(contents))
         setTag(contents, tag);
@@ -53,7 +49,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
 }
 
 Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
-    syntaxErrorIf(!isThisLeaf(open, "["), "missing close for", open);
+    syntaxErrorIf(!isThisOperator(open, "["), "missing close for", open);
     Tag tag = getTag(open);
     if (contents == NULL) {
         syntaxErrorIf(left != NULL, "missing argument to", open);
@@ -66,26 +62,26 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
         return applyToCommaList(tag, Application(tag, name, left), contents);
     }
     Node* list = Nil(tag);
-    if (!isCommaList(contents))
+    if (!isCommaPair(contents))
         return prepend(tag, contents, list);
-    for(; isCommaList(contents); contents = getLeft(contents))
+    for(; isCommaPair(contents); contents = getLeft(contents))
         list = prepend(tag, getRight(contents), list);
     return prepend(tag, contents, list);
 }
 
 Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     syntaxErrorIf(left != NULL, "missing space before", open);
-    syntaxErrorIf(!isThisLeaf(open, "{"), "missing close for", open);
+    syntaxErrorIf(!isThisOperator(open, "{"), "missing close for", open);
     if (patterns == NULL)
-        return FixedName(getTag(open), "{}");
+        return ADT(renameTag(getTag(open), "{}"), VOID);
     syntaxErrorIf(isSection(patterns), "invalid section", patterns);
-    return newTuple(open, patterns);
+    return ADT(getTag(open), newTuple(open, patterns));
 }
 
 Node* reduceEOF(Node* open, Node* left, Node* contents) {
     syntaxErrorIf(left != NULL, "invalid syntax", open);  // should never happen
     syntaxErrorIf(!isEOF(open), "missing close for", open);
-    syntaxErrorIf(isCommaList(contents), "comma not inside brackets", contents);
+    syntaxErrorIf(isCommaPair(contents), "comma not inside brackets", contents);
     return contents;
 }
 
@@ -110,13 +106,6 @@ void shiftOpen(Stack* stack, Node* open) {
     push(stack, open);
 }
 
-void shiftOpenCurly(Stack* stack, Node* operator) {
-    Node* top = peek(stack, 0);
-    if (!isThisLeaf(top, "::=") && !isThisLeaf(top, "\u2A74"))
-        syntaxError("must appear on the right side of '::='", operator);
-    shiftOpen(stack, operator);
-}
-
 void shiftClose(Stack* stack, Node* close) {
     erase(stack, " ");
     erase(stack, "\n");
@@ -134,9 +123,9 @@ void shiftClose(Stack* stack, Node* close) {
             // bracketed prefix operator
             Hold* op = pop(stack);
             Tag tag = getTag(getNode(op));
-            if (isThisLeaf(getNode(op), "(+)"))
+            if (isThisOperator(getNode(op), "(+)"))
                 tag = renameTag(tag, "+");
-            else if (isThisLeaf(getNode(op), "(-)"))
+            else if (isThisOperator(getNode(op), "(-)"))
                 tag = renameTag(tag, "-");
             push(stack, Name(tag));
             release(op);

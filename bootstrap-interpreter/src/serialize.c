@@ -8,7 +8,6 @@
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     switch (getASTType(node)) {
-        case LET:
         case APPLICATION:
             fputs("(", stream);
             serializeNode(getLeft(node), locals, globals, depth, stream);
@@ -27,16 +26,15 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             if (isGlobal(node)) {
                 Node* value = elementAt(globals, getGlobalIndex(node));
                 serializeNode(value, locals, globals, 0, stream);
-                return;
+                break;
             }
             unsigned long long debruijn = getDebruijnIndex(node);
-            if (debruijn >= depth) {
-                Closure* next = getListElement(locals, debruijn - depth);
-                serializeNode(getTerm(next), getLocals(next), globals, 0,
-                    stream);
-            } else {
+            if (debruijn <= depth) {
                 printLexeme(getLexeme(node), stream);
+                break;
             }
+            Closure* next = getListElement(locals, debruijn - depth - 1);
+            serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
             break;
         case NUMERAL: fputll(getValue(node), stream); break;
         case OPERATION: printLexeme(getLexeme(node), stream); break;

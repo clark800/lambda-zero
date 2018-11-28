@@ -9,7 +9,7 @@ extern Node* const VOID;
 void initNodeAllocator(void);
 void destroyNodeAllocator(void);
 
-Node* newBranch(Tag tag, char type, Node* left, Node* right);
+Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right);
 Node* newPair(Node* left, Node* right);
 Node* newLeaf(Tag tag, char type, long long value, void* data);
 
@@ -22,6 +22,7 @@ void setLeft(Node* branchNode, Node* left);
 void setRight(Node* branchNode, Node* right);
 char getType(Node* node);
 void setType(Node* node, char type);
+char getVariety(Node* node);
 long long getValue(Node* leafNode);
 void setValue(Node* leafNode, long long value);
 void* getData(Node* leafNode);

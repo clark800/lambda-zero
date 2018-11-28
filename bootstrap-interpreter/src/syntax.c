@@ -27,14 +27,18 @@ static Node* reducePostfix(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
-    if (isApplication(left) && isThisLexeme(left, "case"))
-        return newCase(getTag(left), getRight(left), right);
+    if (isKeyphrase(left, "case"))
+        return reduceCase(operator, getRight(left), right);
     return newPatternLambda(getTag(operator), left, right);
 }
 
 static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isName(left), "expected name to left of" , operator);
-    return reduceApply(operator, left, right);
+    return AsPattern(getTag(operator), left, right);
+}
+
+static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
+    return CommaPair(getTag(operator), left, right);
 }
 
 static Node* reduceReserved(Node* operator, Node* left, Node* right) {
@@ -60,9 +64,9 @@ static void shiftInfix(Stack* stack, Node* operator) {
     erase(stack, " ");      // if we erase newlines it would break associativity
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
-        if (isThisLeaf(operator, "+"))
+        if (isThisOperator(operator, "+"))
             operator = parseSymbol(renameTag(getTag(operator), "(+)"), 0);
-        else if (isThisLeaf(operator, "-"))
+        else if (isThisOperator(operator, "-"))
             operator = parseSymbol(renameTag(getTag(operator), "(-)"), 0);
         else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
             push(stack, LeftPlaceholder(getTag(operator)));
@@ -79,14 +83,14 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);
-    push(stack, reduce(operator, getNode(operand), NULL));
+    push(stack, reduce(operator, getNode(operand), VOID));
     release(operand);
 }
 
 static Node* reduceError(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
-    if (isThisLeaf(right, "[]"))
+    if (isThisName(right, "[]"))
         return Operation(tag, UNDEFINED);
     Node* exit = Operation(renameTag(tag, "exit"), EXIT);
     return Application(tag, exit, Application(tag, Printer(tag),
@@ -99,10 +103,10 @@ static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
-static Node* defineSyntax(Node* definition, Node* left, Node* right) {
+static void defineSyntax(Node* definition, Node* left, Node* right) {
     syntaxErrorIf(!isApplication(left), "invalid left operand", left);
     Node* name = getRight(left);
-    syntaxErrorIf(!isLeaf(name), "expected symbol operand to", getLeft(left));
+    syntaxErrorIf(!isName(name), "expected symbol operand to", getLeft(left));
     if (contains(getLexeme(name), '_'))
        syntaxError("invalid underscore in operator name", name);
     if (!isApplication(right))
@@ -110,9 +114,9 @@ static Node* defineSyntax(Node* definition, Node* left, Node* right) {
 
     Tag tag = getTag(name);
     Node* fixity = getLeft(right);
-    if (isThisLeaf(fixity, "mixfix")) {
+    if (isThisName(fixity, "mixfix")) {
         addMixfixSyntax(tag, getRight(right), shiftInfix);
-        return Abstraction(getTag(left), Name(tag), Name(tag));
+        return;
     }
 
     if (!isNumeral(getRight(right)))
@@ -122,57 +126,41 @@ static Node* defineSyntax(Node* definition, Node* left, Node* right) {
         syntaxError("invalid precedence", getRight(right));
     Precedence p = (Precedence)precedence;
 
-    if (isThisLeaf(name, "()")) {
+    if (isThisName(name, "()")) {
         tag = renameTag(tag, " ");
-        if (!isThisLeaf(fixity, "infixL"))
+        if (!isThisName(fixity, "infixL"))
             syntaxError("syntax must be infixL", fixity);
         addSyntax(tag, p, p, INFIX, L, shiftSpace, reduceInfix);
     }
-    else if (isThisLeaf(fixity, "infix"))
+    else if (isThisName(fixity, "infix"))
         addSyntax(tag, p, p, INFIX, N, shiftInfix, reduceInfix);
-    else if (isThisLeaf(fixity, "infixL"))
+    else if (isThisName(fixity, "infixL"))
         addSyntax(tag, p, p, INFIX, L, shiftInfix, reduceInfix);
-    else if (isThisLeaf(fixity, "infixR"))
+    else if (isThisName(fixity, "infixR"))
         addSyntax(tag, p, p, INFIX, R, shiftInfix, reduceInfix);
-    else if (isThisLeaf(fixity, "prefix"))
+    else if (isThisName(fixity, "prefix"))
         addSyntax(tag, p, p, PREFIX, L, shiftPrefix, reducePrefix);
-    else if (isThisLeaf(fixity, "postfix"))
+    else if (isThisName(fixity, "postfix"))
         addSyntax(tag, p, p, POSTFIX, L, shiftPostfix, reducePostfix);
     else syntaxError("invalid fixity", fixity);
 
     // add special case prefix operators for "+" and "-"
     // done here to avoid hard-coding a precedence for them
-    if (isThisLeaf(name, "+"))
+    if (isThisName(name, "+"))
         addCoreSyntax("(+)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
-    if (isThisLeaf(name, "-"))
+    if (isThisName(name, "-"))
         addCoreSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
-
-    // reduce to an identity function with the operator symbol as parameter name
-    // so that if the operator symbol is already defined it will be a syntax
-    // error. this ensures that operator symbols can't be used before their
-    // syntax is declared because use must follow definition and definition
-    // must follow syntax declaration. operations don't need to be
-    // defined, but they can only be accessed as operators, which again means
-    // that use must follow syntax declaration.
-    return Abstraction(getTag(left), Name(tag), Name(tag));
 }
 
 static Node* reduceNewline(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(left);
-    if (isDefinition(left) && isThisLexeme(left, ":="))
-        return applyDefinition(tag, getLeft(left), getRight(left), right);
-    if (isDefinition(left) && isThisLexeme(left, "::="))
-        return applyADTDefinition(tag, getLeft(left), getRight(left), right);
-    if (isDefinition(left) && isThisLexeme(left, "try"))
-        return applyTryDefinition(tag, getLeft(left), getRight(left), right);
-    if (isApplication(left) && isThisLexeme(left, "define"))
+    if (isDefinition(left))
+        return applyDefinition(left, right);
+    if (isKeyphrase(left, "define"))
         return reduceDefine(getLeft(left), getRight(left), right);
     if (isCase(left) && isCase(right))
-        return combineCases(tag, left, right);
-    if (isApplication(left) && isThisLexeme(left, "case"))
+        return combineCases(left, right);
+    if (isKeyphrase(left, "case"))
         return reduceArrow(operator, left, right);
-    if (isSyntaxMarker(left))
-        return right;
     return reduceApply(operator, left, right);
 }
 
@@ -180,11 +168,8 @@ static void shiftNewline(Stack* stack, Node* operator) {
     erase(stack, " ");
     reduceLeft(stack, operator);
     Node* top = peek(stack, 0);
-    if (isDefinition(top) && isThisLexeme(getLeft(top), "syntax")) {
-        Hold* definition = pop(stack);
-        push(stack, defineSyntax(top, getLeft(top), getRight(top)));
-        release(definition);
-    }
+    if (isSyntaxDefinition(top))
+        defineSyntax(top, getLeft(top), getRight(top));
     // ignore newlines after operators for line continuations
     if (!isOperator(peek(stack, 0)))
         push(stack, operator);
@@ -196,10 +181,10 @@ void initSymbols(void) {
     addCoreSyntax(")", 0, 90, CLOSEFIX, R, shiftClose, reduceParentheses);
     addCoreSyntax("[", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
     addCoreSyntax("]", 0, 90, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
-    addCoreSyntax("{", 90, 0, OPENFIX, R, shiftOpenCurly, reduceUnmatched);
+    addCoreSyntax("{", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
     addCoreSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
     addCoreSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
-    addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceApply);
+    addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
     addCoreSyntax(";", 4, 4, INFIX, R, shiftInfix, reduceNewline);
     addCoreSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);

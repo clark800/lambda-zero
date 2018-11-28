@@ -10,7 +10,7 @@ Node* getHead(Node* node) {
     return node;
 }
 
-Node* applyDefinition(Tag tag, Node* left, Node* right, Node* scope) {
+Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
     return Let(tag, newPatternLambda(tag, left, scope), right);
 }
@@ -60,22 +60,6 @@ static Node* transformRecursion(Node* name, Node* value) {
     return Application(tag, fix, Abstraction(tag, name, value));
 }
 
-Node* reduceDefine(Node* operator, Node* left, Node* right) {
-    Tag tag = renameTag(getTag(operator), ":=");
-    if (isApplication(left) && isThisLexeme(left, "try")) {
-        tag = renameTag(tag, "try");
-        left = getRight(left);
-    }
-    if (isThisLexeme(left, "syntax") || isTuple(left) || isAsPattern(left))
-        return Definition(tag, left, right);
-    for (; isApplication(left); left = getLeft(left))
-        right = newPatternLambda(tag, getRight(left), right);
-    syntaxErrorIf(!isName(left), "invalid left hand side", operator);
-    if (isThisLeaf(left, "main"))
-        return applyDefinition(getTag(left), left, right, newMainCall(left));
-    return Definition(tag, left, transformRecursion(left, right));
-}
-
 static inline bool isValidPattern(Node* node) {
     return isName(node) || (isApplication(node) &&
         isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
@@ -85,8 +69,8 @@ static bool isValidConstructorParameter(Node* parameter) {
     return isApplication(parameter) && isApplication(getLeft(parameter)) &&
         isValidPattern(getRight(parameter)) &&
         isName(getRight(getLeft(parameter))) &&
-        (isThisLeaf(getLeft(getLeft(parameter)), ":") ||
-         isThisLeaf(getLeft(getLeft(parameter)), "\u2208"));
+        (isThisName(getLeft(getLeft(parameter)), ":") ||
+         isThisName(getLeft(getLeft(parameter)), "\u2208"));
 }
 
 static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
@@ -107,7 +91,7 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
         getter = Application(tag, getter, k == i ? projector :
             FixedName(tag, "undefined"));
     getter = Abstraction(tag, Underscore(tag, 0), getter);
-    return applyDefinition(tag, name, getter, scope);
+    return applyPlainDefinition(tag, name, getter, scope);
 }
 
 static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
@@ -133,26 +117,62 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
             Underscore(tag, (unsigned long long)(n + m - j)));
     for (unsigned int q = 0; q < n + m; ++q)
         constructor = Abstraction(tag, Underscore(tag, 0), constructor);
-    return applyDefinition(tag, pattern, constructor, scope);
+    return applyPlainDefinition(tag, pattern, constructor, scope);
 }
 
 Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     // define ADT name so that the symbol can't be defined twice
     // TODO: this should be the outermost definition
     Node* undefined = FixedName(tag, "undefined");
-    scope = applyDefinition(tag, getHead(left), undefined, scope);
+    scope = applyPlainDefinition(tag, getHead(left), undefined, scope);
+    Node* tuple = getRight(adt);
 
     // for each item in the patterns tuple, define a constructor function
-    unsigned int n = getArgumentCount(adt);
-    for (unsigned int i = 1; isApplication(adt); ++i, adt = getLeft(adt))
-        scope = newConstructorDefinition(tag, getRight(adt), scope, n - i, n);
+    unsigned int n = getArgumentCount(tuple);
+    for (unsigned int i = 1; isApplication(tuple); ++i, tuple = getLeft(tuple))
+        scope = newConstructorDefinition(tag, getRight(tuple), scope, n - i, n);
     return scope;
 }
 
+Node* applyDefinition(Node* definition, Node* scope) {
+    Tag tag = getTag(definition);
+    Node* name = getLeft(definition);
+    Node* value = getRight(definition);
+    switch ((DefinitionVariety)getVariety(definition)) {
+        case PLAINDEFINITION:
+            return applyPlainDefinition(tag, name, value, scope);
+        case TRYDEFINITION:
+            return applyTryDefinition(tag, name, value, scope);
+        case SYNTAXDEFINITION:
+            return scope;
+        case ADTDEFINITION:
+            return applyADTDefinition(tag, name, value, scope);
+    }
+    assert(false);
+    return NULL;
+}
+
+Node* reduceDefine(Node* operator, Node* left, Node* right) {
+    Tag tag = getTag(operator);
+    DefinitionVariety variety = PLAINDEFINITION;
+    if (isKeyphrase(left, "try")) {
+        variety = TRYDEFINITION;
+        left = getRight(left);
+    }
+    if (isKeyphrase(left, "syntax"))
+        return Definition(tag, SYNTAXDEFINITION, left, right);
+    if (isTuple(left) || isAsPattern(left))
+        return Definition(tag, variety, left, right);
+    for (; isApplication(left); left = getLeft(left))
+        right = newPatternLambda(tag, getRight(left), right);
+    syntaxErrorIf(!isName(left), "invalid left hand side", operator);
+    if (isThisName(left, "main"))
+        return applyPlainDefinition(tag, left, right, newMainCall(left));
+    return Definition(tag, variety, left, transformRecursion(left, right));
+}
+
 Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
-    Tag tag = renameTag(getTag(operator), "::=");
     syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
-    if (!isThisLexeme(right, "{") && !isThisLexeme(right, "{}"))
-        syntaxError("ADT required to right of", operator);
-    return Definition(tag, left, right);
+    syntaxErrorIf(!isADT(right), "ADT required to right of", operator);
+    return Definition(getTag(operator), ADTDEFINITION, left, right);
 }
