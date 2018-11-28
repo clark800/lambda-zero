@@ -1,14 +1,14 @@
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "errors.h"
+#include "ast.h"
 #include "symbols.h"
 #include "patterns.h"
 #include "define.h"
 #include "brackets.h"
 
 static Node* reduceApply(Node* operator, Node* left, Node* right) {
-    return Application(getTag(operator), left, right);
+    return Juxtaposition(getTag(operator), left, right);
 }
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
@@ -91,10 +91,10 @@ static Node* reduceError(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
     if (isThisName(right, "[]"))
-        return Operation(tag, UNDEFINED);
-    Node* exit = Operation(renameTag(tag, "exit"), EXIT);
-    return Application(tag, exit, Application(tag, Printer(tag),
-        Application(tag, Operation(tag, ERROR), right)));
+        return Name(renameTag(tag, "(undefined)"));
+    Node* exit = Name(renameTag(tag, "(exit)"));
+    return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
+        Juxtaposition(tag, Name(renameTag(tag, "error")), right)));
 }
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
@@ -104,12 +104,12 @@ static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
 }
 
 static void defineSyntax(Node* definition, Node* left, Node* right) {
-    syntaxErrorIf(!isApplication(left), "invalid left operand", left);
+    syntaxErrorIf(!isJuxtaposition(left), "invalid left operand", left);
     Node* name = getRight(left);
     syntaxErrorIf(!isName(name), "expected symbol operand to", getLeft(left));
     if (contains(getLexeme(name), '_'))
        syntaxError("invalid underscore in operator name", name);
-    if (!isApplication(right))
+    if (!isJuxtaposition(right))
         syntaxError("invalid syntax definition", definition);
 
     Tag tag = getTag(name);
@@ -119,7 +119,7 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         return;
     }
 
-    if (!isNumeral(getRight(right)))
+    if (!isNumber(getRight(right)))
         syntaxError("invalid syntax definition", definition);
     long long precedence = getValue(getRight(right));
     if (precedence < 0 || precedence > 99)

@@ -1,7 +1,8 @@
 #include "lib/tree.h"
 #include "lib/array.h"
-#include "ast.h"
 #include "errors.h"
+#include "term.h"
+#include "../synthesize/ast.h"
 
 static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     for (unsigned long long i = 1; i <= length(parameters); ++i)
@@ -11,12 +12,8 @@ static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
 }
 
 static int findOperationCode(Node* node) {
-    // names in operations must line up with codes in OperationCode, except
-    // UNDEFINED, EXIT, PUT, GET which don't have accessible names
-    static const char* const operations[] = {"+", "-", "*", "//", "%",
-        "=", "=/=", "<", ">", "<=", ">=", "up", "error", "(undefined)"};
-    for (unsigned int i = 0; i < sizeof(operations)/sizeof(char*); ++i)
-        if (isThisName(node, operations[i]))
+    for (unsigned int i = 0; i < sizeof(Operations)/sizeof(char*); ++i)
+        if (isThisName(node, Operations[i]))
             return (int)i;
     return -1;
 }
@@ -35,6 +32,7 @@ static void bindName(Node* node, Array* parameters, size_t globalDepth) {
     unsigned long long localDepth = length(parameters) - globalDepth;
     setValue(node, index <= localDepth ? (long long)index :
         (long long)(index - length(parameters) - 1));
+    setType(node, VARIABLE);
 }
 
 static bool isDefined(Node* parameter, Array* parameters) {
@@ -44,29 +42,24 @@ static bool isDefined(Node* parameter, Array* parameters) {
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     switch (getASTType(node)) {
-        case VARIABLE:
-            if (isName(node))
-                bindName(node, parameters, length(globals));
-            break;
+        case REFERENCE: setType(node, VARIABLE); break;
+        case NAME: bindName(node, parameters, length(globals)); break;
+        case ARROW:
         case CASE:
-            setType(node, ABSTRACTION);
-            // fall through
-        case ABSTRACTION:
             if (isDefined(getParameter(node), parameters))
                 syntaxError("symbol already defined", getParameter(node));
             append(parameters, getParameter(node));
             bindWith(getBody(node), parameters, globals);
             unappend(parameters);
+            setType(node, ABSTRACTION);
             break;
+        case JUXTAPOSITION:
         case LET:
-            setType(node, APPLICATION);
-            // fall through
-        case APPLICATION:
             bindWith(getLeft(node), parameters, globals);
             bindWith(getRight(node), parameters, globals);
+            setType(node, APPLICATION);
             break;
-        case NUMERAL:
-        case OPERATION: break;
+        case NUMBER: setType(node, NUMERAL); break;
         case DEFINITION:
             syntaxError("missing scope for definition", node); break;
         case ASPATTERN:

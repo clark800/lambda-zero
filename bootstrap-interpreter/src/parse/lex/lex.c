@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "lib/tag.h"
+#include "token.h"
 #include "lex.h"
 
 static bool isComment(char c) {return c == '#';}

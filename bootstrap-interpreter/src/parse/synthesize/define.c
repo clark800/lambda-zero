@@ -1,12 +1,12 @@
 #include "lib/tree.h"
-#include "ast.h"
 #include "errors.h"
+#include "ast.h"
 #include "patterns.h"
 
 bool isIO = false;
 
 Node* getHead(Node* node) {
-    for (; isApplication(node); node = getLeft(node));
+    for (; isJuxtaposition(node); node = getLeft(node));
     return node;
 }
 
@@ -17,30 +17,39 @@ Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> b ? (a -> c) --> (((?) b) (a -> c))
-    return Application(tag, Application(tag, FixedName(tag, "??"), right),
+    return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "??"), right),
             newPatternLambda(tag, left, scope));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
-    return Abstraction(tag, Underscore(tag, 0), Application(tag,
-        Application(tag, Underscore(tag, 1), left), right));
+    return UnderscoreArrow(tag, Juxtaposition(tag,
+        Juxtaposition(tag, Underscore(tag, 1), left), right));
+}
+
+Node* Printer(Tag tag) {
+    Node* put = Name(renameTag(tag, "(put)"));
+    Node* fold = FixedName(tag, "fold");
+    Node* unit = FixedName(tag, "()");
+    Node* under = Underscore(tag, 1);
+    return UnderscoreArrow(tag, Juxtaposition(tag,
+        Juxtaposition(tag, Juxtaposition(tag, fold, under), put), unit));
 }
 
 static Node* newMainCall(Node* name) {
     isIO = true;
     Tag tag = getTag(name);
     Node* print = Printer(tag);
-    Node* get = Operation(renameTag(tag, "get"), GET);
-    Node* get0 = Application(tag, get, Numeral(tag, 0));
+    Node* get = Name(renameTag(tag, "(get)"));
+    Node* get0 = Juxtaposition(tag, get, Number(tag, 0));
     Node* operators = newChurchPair(tag,
         FixedName(tag, "[]"), FixedName(tag, "::"));
-    Node* input = Application(tag, get0, operators);
-    return Application(tag, print, Application(tag, name, input));
+    Node* input = Juxtaposition(tag, get0, operators);
+    return Juxtaposition(tag, print, Juxtaposition(tag, name, input));
 }
 
 static bool isTuple(Node* node) {
     // a tuple is a spine of applications headed by a name starting with comma
-    return isApplication(node) ? isTuple(getLeft(node)) :
+    return isJuxtaposition(node) ? isTuple(getLeft(node)) :
         (isName(node) && getLexeme(node).start[0] == ',');
 }
 
@@ -57,16 +66,16 @@ static Node* transformRecursion(Node* name, Node* value) {
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);
     Node* fix = FixedName(tag, "fix");
-    return Application(tag, fix, Abstraction(tag, name, value));
+    return Juxtaposition(tag, fix, Arrow(tag, name, value));
 }
 
 static inline bool isValidPattern(Node* node) {
-    return isName(node) || (isApplication(node) &&
+    return isName(node) || (isJuxtaposition(node) &&
         isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
 }
 
 static bool isValidConstructorParameter(Node* parameter) {
-    return isApplication(parameter) && isApplication(getLeft(parameter)) &&
+    return isJuxtaposition(parameter) && isJuxtaposition(getLeft(parameter)) &&
         isValidPattern(getRight(parameter)) &&
         isName(getRight(getLeft(parameter))) &&
         (isThisName(getLeft(getLeft(parameter)), ":") ||
@@ -88,9 +97,9 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
     Node* projector = newProjector(tag, m, j);
     Node* getter = Underscore(tag, 1);
     for (unsigned int k = 0; k < n; ++k)
-        getter = Application(tag, getter, k == i ? projector :
+        getter = Juxtaposition(tag, getter, k == i ? projector :
             FixedName(tag, "undefined"));
-    getter = Abstraction(tag, Underscore(tag, 0), getter);
+    getter = UnderscoreArrow(tag, getter);
     return applyPlainDefinition(tag, name, getter, scope);
 }
 
@@ -113,10 +122,10 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
     // build: p_1 -> ... -> p_m -> c_1 -> ... -> c_n -> c_i p_1 ... p_m
     Node* constructor = Underscore(tag, (unsigned long long)(n - i));
     for (unsigned int j = 0; j < m; ++j)
-        constructor = Application(tag, constructor,
+        constructor = Juxtaposition(tag, constructor,
             Underscore(tag, (unsigned long long)(n + m - j)));
     for (unsigned int q = 0; q < n + m; ++q)
-        constructor = Abstraction(tag, Underscore(tag, 0), constructor);
+        constructor = UnderscoreArrow(tag, constructor);
     return applyPlainDefinition(tag, pattern, constructor, scope);
 }
 
@@ -125,12 +134,12 @@ Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     // TODO: this should be the outermost definition
     Node* undefined = FixedName(tag, "undefined");
     scope = applyPlainDefinition(tag, getHead(left), undefined, scope);
-    Node* tuple = getRight(adt);
+    Node* t = getRight(adt);
 
     // for each item in the patterns tuple, define a constructor function
-    unsigned int n = getArgumentCount(tuple);
-    for (unsigned int i = 1; isApplication(tuple); ++i, tuple = getLeft(tuple))
-        scope = newConstructorDefinition(tag, getRight(tuple), scope, n - i, n);
+    unsigned int n = getArgumentCount(t);
+    for (unsigned int i = 1; isJuxtaposition(t); ++i, t = getLeft(t))
+        scope = newConstructorDefinition(tag, getRight(t), scope, n - i, n);
     return scope;
 }
 
@@ -163,7 +172,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
         return Definition(tag, SYNTAXDEFINITION, left, right);
     if (isTuple(left) || isAsPattern(left))
         return Definition(tag, variety, left, right);
-    for (; isApplication(left); left = getLeft(left))
+    for (; isJuxtaposition(left); left = getLeft(left))
         right = newPatternLambda(tag, getRight(left), right);
     syntaxErrorIf(!isName(left), "invalid left hand side", operator);
     if (isThisName(left, "main"))

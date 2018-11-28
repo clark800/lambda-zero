@@ -18,7 +18,7 @@ CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors \
+CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors -Isrc/shared/ \
 -Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
 -Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
 -fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"
@@ -27,8 +27,8 @@ CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors \
 # increases the executable size; here we set it back to the default
 
 LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
-SOURCES=`find -L ./src -name "*.c" -not -path "./src/lib/libc/*"`
-HEADERS=`find -L ./src -name "*.h" -not -path "./src/lib/libc/*"`
+SOURCES=`find -L ./src -name "*.c" -not -path "./src/shared/lib/libc/*"`
+HEADERS=`find -L ./src -name "*.h" -not -path "./src/shared/lib/libc/*"`
 OBJECTS="*.o"
 
 echoexec() {
@@ -46,7 +46,7 @@ is_up_to_date() {
 }
 
 build_libc() {
-    (cd src/lib/libc && ./make)
+    (cd src/shared/lib/libc && ./make)
 }
 
 build() {
@@ -72,11 +72,11 @@ config_debug() {
 }
 
 config_custom() {
-    custom="-nostdlib -nostdinc -isystem ./src/lib/libc/include/ -fno-builtin"
+    custom="-nostdlib -nostdinc -isystem ./src/shared/lib/libc/include/ -fno-builtin"
     CC_FLAGS="$custom $CC_FLAGS"
     LINK_FLAGS="-nostdlib $LINK_FLAGS"
     SOURCES=`find -L . -name "*.c"`
-    OBJECTS="*.o src/lib/libc/sys.o"
+    OBJECTS="*.o src/shared/lib/libc/sys.o"
 }
 
 config_small() {
@@ -101,9 +101,11 @@ run_cloc() {
 }
 
 get_includes() {
-    filename="$(echo "$1" | cut -d'.' -f 1)"
-    gcc -MM -MT':' "$1" | tr -d ':\\\\' | xargs -n 1 echo "    $filename ->" |
-        grep '\.h' | cut -d'.' -f 1 | paste -d';' - <(echo) | grep -v '/' |
+    filename="$(basename "$1" | cut -d'.' -f 1)"
+    gcc -MM -MT':' -I"shared" "$1" | tr -d ':\\\\' | xargs -n 1 echo |
+        grep -v "lib/" | xargs -n 1 basename |
+        xargs -n 1 echo "    $filename ->" |
+        grep '\.h' | cut -d'.' -f 1 | paste -d';' - <(echo -n) |
         grep -v -- "-> $filename"
 }
 
@@ -116,7 +118,8 @@ build_graph() {
     echo "    mclimit=100;"
     echo
     export -f get_includes
-    ls *.c | xargs -n 1 -I{} bash -c "get_includes {}"
+    find . -name "*.c" | grep -v "lib/" |
+        xargs -n 1 -I{} bash -c "get_includes {}"
     echo "}"
 }
 
@@ -127,6 +130,8 @@ case "$1" in
     small) config_small && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
     clean) clean;;
+    tree) tree --noreport -C -P *.[hc] -I lib src;;
+    dot) build_graph;;
     graph) build_graph | dot -o architecture.pdf -T pdf;;
     loc) get_loc;;
     cloc) run_cloc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;

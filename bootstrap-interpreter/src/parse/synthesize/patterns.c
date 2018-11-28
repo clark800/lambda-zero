@@ -1,10 +1,10 @@
 #include "lib/tree.h"
-#include "ast.h"
 #include "errors.h"
+#include "ast.h"
 
 unsigned int getArgumentCount(Node* application) {
     unsigned int i = 0;
-    for (Node* n = application; isApplication(n); ++i)
+    for (Node* n = application; isJuxtaposition(n); ++i)
         n = getLeft(n);
     return i;
 }
@@ -12,36 +12,36 @@ unsigned int getArgumentCount(Node* application) {
 Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
     Node* projector = Underscore(tag, size - index);
     for (unsigned int i = 0; i < size; ++i)
-        projector = Abstraction(tag, Underscore(tag, 0), projector);
+        projector = UnderscoreArrow(tag, projector);
     return projector;
 }
 
 Node* newPatternLambda(Tag tag, Node* left, Node* right) {
     if (isName(left))
-        return Abstraction(tag, left, right);
+        return Arrow(tag, left, right);
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
     if (isAsPattern(left))
-        return Abstraction(tag, getLeft(left), Application(tag,
+        return Arrow(tag, getLeft(left), Juxtaposition(tag,
             newPatternLambda(tag, getRight(left), right),
-            Variable(getTag(getLeft(left)), 1)));
+            Reference(getTag(getLeft(left)), 1)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
-    syntaxErrorIf(!isApplication(left), "invalid parameter", left);
+    syntaxErrorIf(!isJuxtaposition(left), "invalid parameter", left);
     Node* body = right;
-    for (Node* items = left; isApplication(items); items = getLeft(items))
+    for (Node* items = left; isJuxtaposition(items); items = getLeft(items))
         body = newPatternLambda(tag, getRight(items), body);
     for (unsigned int i = 0, size = getArgumentCount(left); i < size; ++i)
-        body = Application(tag, body, Application(tag,
+        body = Juxtaposition(tag, body, Juxtaposition(tag,
             Underscore(tag, 1), newProjector(tag, size, i)));
-    return Abstraction(tag, Underscore(tag, 0), body);
+    return UnderscoreArrow(tag, body);
 }
 
 Node* newCasePatternLambda(Tag tag, Node* pattern, Node* body) {
     // Unit is a special case because it's the only type where you know
     // the exact form of any instance of the type, so you can actually
     // pattern match against a value instead of a variable
-    pattern = isThisName(pattern, "()") ? Underscore(tag, 0) : pattern;
+    pattern = isThisName(pattern, "()") ? Name(renameTag(tag, "_")) : pattern;
     return newPatternLambda(tag, pattern, body);
 }
 
@@ -51,23 +51,21 @@ Node* reduceCase(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     Node* body = right;
     Node* items = isAsPattern(left) ? getRight(left) : left;
-    for (; isApplication(items); items = getLeft(items))
+    for (; isJuxtaposition(items); items = getLeft(items))
         body = newCasePatternLambda(tag, getRight(items), body);
     if (isAsPattern(left))
         // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
-        body = Application(tag, newPatternLambda(tag, getLeft(left), body),
+        body = Juxtaposition(tag, newPatternLambda(tag, getLeft(left), body),
             Underscore(tag, 1));
     // discard left, which is now just the constructor
-    Node* parameter = Underscore(tag, 0);
-    Node* reference = Underscore(tag, 1);
-    return Case(tag, parameter, Application(tag, reference, body));
+    return Case(tag, Juxtaposition(tag, Underscore(tag, 1), body));
 }
 
 static Node* mergeCaseBodies(Tag tag, Node* left, Node* right) {
-    if (!isApplication(right))
+    if (!isJuxtaposition(right))
         return left;
     Node* merged = mergeCaseBodies(tag, left, getLeft(right));
-    return Application(tag, merged, getRight(right));
+    return Juxtaposition(tag, merged, getRight(right));
 }
 
 Node* combineCases(Node* left, Node* right) {
@@ -75,6 +73,5 @@ Node* combineCases(Node* left, Node* right) {
     // right == c2(a2) -> b2    -->   _ -> _ (a2 -> b2)
     // result == _ -> _ (a1 -> b1) (a2 -> b2)
     Tag tag = renameTag(getTag(left), "_");
-    Node* body = mergeCaseBodies(tag, getBody(left), getBody(right));
-    return Case(tag, Underscore(tag, 0), body);
+    return Case(tag, mergeCaseBodies(tag, getRight(left), getRight(right)));
 }
