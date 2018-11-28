@@ -4,14 +4,59 @@
 #include "lib/tree.h"
 #include "lib/array.h"
 #include "lib/freelist.h"
-#include "closure.h"
+#include "print.h"
 #include "errors.h"
-#include "parse.h"
-#include "evaluate.h"
-#include "serialize.h"
+#include "term.h"
+#include "parse/parse.h"
+#include "evaluate/closure.h"
+#include "evaluate/evaluate.h"
 
 bool TEST = false;
 extern bool isIO;
+
+static inline String getLexeme(Node* n) {return getTag(n).lexeme;}
+
+static void serializeNode(Node* node, Node* locals, const Array* globals,
+        unsigned int depth, FILE* stream) {
+    switch (getTermType(node)) {
+        case VARIABLE:
+            if (isGlobal(node)) {
+                Node* value = elementAt(globals, getGlobalIndex(node));
+                serializeNode(value, locals, globals, 0, stream);
+                break;
+            }
+            unsigned long long debruijn = getDebruijnIndex(node);
+            if (debruijn <= depth) {
+                printLexeme(getLexeme(node), stream);
+                break;
+            }
+            Closure* next = getListElement(locals, debruijn - depth - 1);
+            serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
+            break;
+        case APPLICATION:
+            fputs("(", stream);
+            serializeNode(getLeft(node), locals, globals, depth, stream);
+            fputs(" ", stream);
+            serializeNode(getRight(node), locals, globals, depth, stream);
+            fputs(")", stream);
+            break;
+        case ABSTRACTION:
+            fputs("(", stream);
+            printLexeme(getLexeme(getParameter(node)), stream);
+            fputs(" -> ", stream);
+            serializeNode(getBody(node), locals, globals, depth + 1, stream);
+            fputs(")", stream);
+            break;
+        case NUMERAL: fputll(getValue(node), stream); break;
+        case OPERATION: printLexeme(getLexeme(node), stream); break;
+        default: fputs("#ERROR#", stream); break;
+    }
+}
+
+static void serialize(Closure* closure, const Array* globals) {
+    serializeNode(getTerm(closure), getLocals(closure), globals, 0, stdout);
+    fputs("\n", stdout);
+}
 
 static void checkForMemoryLeak(const char* label, size_t expectedUsage) {
     size_t usage = getMemoryUsage();

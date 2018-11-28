@@ -4,8 +4,8 @@
 #include "lib/util.h"   // error
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "errors.h"
+#include "term.h"
 #include "closure.h"
 
 static bool STDERR = false;
@@ -30,9 +30,8 @@ void runtimeError(const char* message, Closure* closure) {
 }
 
 static Node* newBoolean(Tag tag, bool value) {
-    Node* underscore = Underscore(tag, 0);
-    return Abstraction(tag, underscore, Abstraction(tag, underscore,
-        value ? Underscore(tag, 1) : Underscore(tag, 2)));
+    return Abstraction(tag, Abstraction(tag,
+        value ? Variable(tag, 1) : Variable(tag, 2)));
 }
 
 // note: it is important to check for overflow before it occurs because
@@ -99,7 +98,7 @@ static Node* evaluatePut(Closure* operation, Node* left) {
         runtimeError("non-byte value in string returned from main", operation);
     fputc((int)c, STDERR ? stderr : stdout);
     Tag tag = getTag(getTerm(operation));
-    return Abstraction(tag, Underscore(tag, 0), Underscore(tag, 1));
+    return Abstraction(tag, Variable(tag, 1));
 }
 
 static Node* evaluateGet(Closure* operation, Node* left, Node* right) {
@@ -142,9 +141,9 @@ static Node* computeOperation(Closure* operation,
         case GREATERTHAN: return newBoolean(tag, left > right);
         case LESSTHANOREQUAL: return newBoolean(tag, left <= right);
         case GREATERTHANOREQUAL: return newBoolean(tag, left >= right);
+        default: assert(false);
+            return NULL;
     }
-    assert(false);
-    return NULL;
 }
 
 static Hold* makeResult(Closure* operation, Node* node) {

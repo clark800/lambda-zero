@@ -1,7 +1,7 @@
 #include "lib/tree.h"
 #include "lib/array.h"
 #include "lib/stack.h"
-#include "ast.h"
+#include "term.h"
 #include "closure.h"
 #include "operations.h"
 
@@ -22,29 +22,29 @@ static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     }
 }
 
-static Closure* getReferee(Node* reference, Node* locals) {
+static Closure* getReferee(Term* reference, Node* locals) {
     return getListElement(locals, getDebruijnIndex(reference) - 1);
 }
 
-static Node* getGlobalValue(Node* global, Globals* globals) {
+static Term* getGlobalValue(Term* global, Globals* globals) {
     return elementAt(globals, (size_t)getGlobalIndex(global));
 }
 
-static Closure* optimizeClosure(Node* node, Node* locals, Node* trace) {
-    // the default case works for all node types;
+static Closure* optimizeClosure(Term* term, Node* locals, Node* trace) {
+    // the default case works for all term types;
     // the other cases are short-circuit optmizations
-    switch (getASTType(node)) {
+    switch (getTermType(term)) {
         case OPERATION:
-        case NUMERAL: return newClosure(node, VOID, trace);
-        case VARIABLE: return isGlobal(node) ?
-            newClosure(node, VOID, trace) : getReferee(node, locals);
-        default: return newClosure(node, locals, trace);
+        case NUMERAL: return newClosure(term, VOID, trace);
+        case VARIABLE: return isGlobal(term) ?
+            newClosure(term, VOID, trace) : getReferee(term, locals);
+        default: return newClosure(term, locals, trace);
     }
 }
 
 static void evaluateApplication(Closure* closure, Stack* stack) {
     // push right side of application onto stack and step into left side
-    Node* application = getTerm(closure);
+    Term* application = getTerm(closure);
     push(stack, optimizeClosure(
         getRight(application), getLocals(closure), getTrace(closure)));
     setTerm(closure, getLeft(application));
@@ -58,12 +58,12 @@ static void evaluateLambda(Closure* closure, Stack* stack) {
     setTerm(closure, getBody(getTerm(closure)));
 }
 
-static bool isValue(Node* node) {
-    return isAbstraction(node) || isNumeral(node) || isOperation(node);
+static bool isValue(Term* term) {
+    return isAbstraction(term) || isNumeral(term) || isOperation(term);
 }
 
 static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
-    Node* reference = getTerm(closure);
+    Term* reference = getTerm(closure);
     if (isGlobal(reference)) {
         setTerm(closure, getGlobalValue(reference, globals));
         if (!TEST)
@@ -102,13 +102,12 @@ static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
         release(right);
 }
 
-static Node* expandNumeral(Node* numeral) {
+static Term* expandNumeral(Term* numeral) {
     long long n = getValue(numeral);
     Tag tag = getTag(numeral);
-    Node* underscore = Underscore(tag, 0);
-    Node* body = n == 0 ? Underscore(tag, 2) :
-       Application(tag, Underscore(tag, 1), Numeral(tag, n - 1));
-    return Abstraction(tag, underscore, Abstraction(tag, underscore, body));
+    Term* body = n == 0 ? Variable(tag, 2) :
+       Application(tag, Variable(tag, 1), Numeral(tag, n - 1));
+    return Abstraction(tag, Abstraction(tag, body));
 }
 
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
@@ -116,7 +115,7 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
         //#include "debug.h"
         //extern void debugState(Closure* closure, Stack* stack);
         //debugState(closure, stack);
-        switch (getASTType(getTerm(closure))) {
+        switch (getTermType(getTerm(closure))) {
             case APPLICATION: evaluateApplication(closure, stack); break;
             case VARIABLE: evaluateReference(closure, stack, globals); break;
             case OPERATION: evaluateOperation(closure, stack, globals); break;
@@ -143,7 +142,7 @@ static Hold* evaluateClosure(Closure* closure, Globals* globals) {
     return result;
 }
 
-Hold* evaluateTerm(Node* term, Globals* globals) {
+Hold* evaluateTerm(Term* term, Globals* globals) {
     INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, VOID, VOID));
     Hold* result = evaluateClosure(getNode(closure), globals);

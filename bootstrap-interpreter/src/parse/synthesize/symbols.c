@@ -3,8 +3,8 @@
 #include "lib/tree.h"
 #include "lib/util.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "errors.h"
+#include "ast.h"
 #include "symbols.h"
 
 static Array* RULES = NULL;     // note: this never gets free'd
@@ -61,7 +61,7 @@ Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
 }
 
 static Node* propagateSection(Node* operator, SectionVariety side, Node* body) {
-    if (isSpecial(operator) || !isApplication(body))
+    if (isSpecial(operator) || !isJuxtaposition(body))
         syntaxError("operator does not support sections", operator);
     return Section(getTag(operator), side, body);
 }
@@ -172,9 +172,9 @@ void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
 static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     String prior = getRules(operator)->prior;
-    if (!isApplication(left) || !isSameString(getLexeme(left), prior))
+    if (!isJuxtaposition(left) || !isSameString(getLexeme(left), prior))
         syntaxError("mixfix syntax error", operator);
-    return Application(tag, Application(tag, Name(tag), left), right);
+    return Juxtaposition(tag, Juxtaposition(tag, Name(tag), left), right);
 }
 
 void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {

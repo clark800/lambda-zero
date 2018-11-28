@@ -1,8 +1,8 @@
 #include <string.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "errors.h"
+#include "ast.h"
 #include "symbols.h"
 
 static unsigned int getCommaListLength(Node* node) {
@@ -11,8 +11,8 @@ static unsigned int getCommaListLength(Node* node) {
 
 static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
     if (!isCommaPair(arguments))
-        return Application(tag, base, arguments);
-    return Application(tag, applyToCommaList(tag, base,
+        return Juxtaposition(tag, base, arguments);
+    return Juxtaposition(tag, applyToCommaList(tag, base,
         getLeft(arguments)), getRight(arguments));
 }
 
@@ -33,7 +33,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL) {
         Node* unit = FixedName(tag, "()");
-        return function == NULL ? unit : Application(tag, function, unit);
+        return function == NULL ? unit : Juxtaposition(tag, function, unit);
     }
     if (isDefinition(contents))
         syntaxError("missing scope for definition", contents);
@@ -43,7 +43,7 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
         return applyToCommaList(tag, function, contents);
     if (isCommaPair(contents))
         return newTuple(open, contents);
-    if (isApplication(contents))
+    if (isJuxtaposition(contents))
         setTag(contents, tag);
     return contents;
 }
@@ -59,7 +59,7 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
     if (left != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
         Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
-        return applyToCommaList(tag, Application(tag, name, left), contents);
+        return applyToCommaList(tag, Juxtaposition(tag, name, left), contents);
     }
     Node* list = Nil(tag);
     if (!isCommaPair(contents))

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "lib/tree.h"
 #include "lib/stack.h"
-#include "ast.h"
 #include "print.h"
+#include "ast.h"
 
 void debug(const char* message) {
     fputs(message, stderr);
@@ -17,11 +17,11 @@ static void serializeAST(Node* node, FILE* stream) {
     if (!isLeaf(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
-        fputs(isAbstraction(node) ? " -> " : " ", stream);
+        fputs(isArrow(node) ? " -> " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
-    } else if (isNumeral(node)) {
-        // operations create numerals, so not all numerals will exist in input
+    } else if (isNumber(node)) {
+        // numbers can be generated, so not all numbers will exist in input
         fputll(getValue(node), stream);
     } else {
         printLexeme(getLexeme(node), stream);

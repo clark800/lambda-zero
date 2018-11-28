@@ -3,33 +3,30 @@
 #include <errno.h>
 #include <limits.h>
 #include "lib/tree.h"
-#include "lib/array.h"
 #include "lib/stack.h"
-#include "lex.h"
-#include "ast.h"
 #include "errors.h"
+#include "../lex/token.h"
+#include "ast.h"
+#include "debug.h"
 #include "symbols.h"
 #include "syntax.h"
-#include "bind.h"
-#include "debug.h"
-#include "parse.h"
 
 int DEBUG = 0;
 
-static bool isNumeralLexeme(String lexeme) {
+static bool isNumberLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
         if (!isdigit(lexeme.start[i]))
             return false;
     return lexeme.length > 0;
 }
 
-static Node* parseNumeral(Tag tag) {
-    tokenErrorIf(!isNumeralLexeme(tag.lexeme), "invalid token", tag);
+static Node* parseNumber(Tag tag) {
+    tokenErrorIf(!isNumberLexeme(tag.lexeme), "invalid token", tag);
     errno = 0;
     long long value = strtoll(tag.lexeme.start, NULL, 10);
     tokenErrorIf((value == LLONG_MIN || value == LLONG_MAX) &&
         errno == ERANGE, "magnitude of numeral is too large", tag);
-    return Numeral(tag, value);
+    return Number(tag, value);
 }
 
 static const char* skipQuoteCharacter(const char* start) {
@@ -59,14 +56,14 @@ static Node* parseCharacterLiteral(Tag tag) {
     tokenErrorIf(end[0] != quote, "missing end quote for", tag);
     const char* skip = skipQuoteCharacter(tag.lexeme.start + 1);
     tokenErrorIf(skip != end, "invalid character literal", tag);
-    return Numeral(tag, decodeCharacter(tag.lexeme.start + 1, tag));
+    return Number(tag, decodeCharacter(tag.lexeme.start + 1, tag));
 }
 
 static Node* buildStringLiteral(Tag tag, const char* start) {
     char c = start[0];
     tokenErrorIf(c == '\n' || c == 0, "missing end quote for", tag);
     return c == tag.lexeme.start[0] ? Nil(tag) :
-        prepend(tag, Numeral(tag, decodeCharacter(start, tag)),
+        prepend(tag, Number(tag, decodeCharacter(start, tag)),
         buildStringLiteral(tag, skipQuoteCharacter(start)));
 }
 
@@ -76,7 +73,7 @@ static Node* parseStringLiteral(Tag tag) {
 
 static Node* parseToken(Token token) {
     switch (token.type) {
-        case NUMERIC: return parseNumeral(token.tag);
+        case NUMERIC: return parseNumber(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
@@ -88,12 +85,11 @@ static Node* parseToken(Token token) {
     }
 }
 
-Program parse(const char* input) {
+Hold* synthesize(Token (*lexer)(Token), Token start) {
     initSymbols();
     Stack* stack = newStack();
-    Token start = newStartToken(input);
     push(stack, parseToken(start));
-    for (Token token = lex(start); token.type != END; token = lex(token)) {
+    for (Token token = lexer(start); token.type != END; token = lexer(token)) {
         debugParseState(token.tag, stack, DEBUG >= 2);
         if (token.type != COMMENT && token.type != VSPACE) {
             Node* node = parseToken(token);
@@ -101,18 +97,9 @@ Program parse(const char* input) {
             release(hold(node));
         }
     }
-    Hold* result = pop(stack);
-    syntaxErrorIf(isEOF(getNode(result)), "no input", getNode(result));
+    Hold* ast = pop(stack);
+    syntaxErrorIf(isEOF(getNode(ast)), "no input", getNode(ast));
     deleteStack(stack);
-    debugParseStage("parse", getNode(result), DEBUG >= 2);
-    Array* globals = bind(result);
-    debugParseStage("bind", getNode(result), DEBUG >= 2);
-    Node* entry = elementAt(globals, length(globals) - 1);
-    debugParseStage("entry", entry, DEBUG >= 1);
-    return (Program){result, entry, globals};
+    return ast;
 }
 
-void deleteProgram(Program program) {
-    release(program.root);
-    deleteArray(program.globals);
-}
