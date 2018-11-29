@@ -102,7 +102,7 @@ run_cloc() {
 
 get_includes() {
     filename="$(basename "$1" | cut -d'.' -f 1)"
-    gcc -MM -MT':' -I"shared" "$1" | tr -d ':\\\\' | xargs -n 1 echo |
+    gcc -MM -MT':' -I"." "$1" | tr -d ':\\\\' | xargs -n 1 echo |
         grep -v "lib/" | xargs -n 1 basename |
         xargs -n 1 echo "    $filename ->" |
         grep '\.h' | cut -d'.' -f 1 | paste -d';' - <(echo -n) |
