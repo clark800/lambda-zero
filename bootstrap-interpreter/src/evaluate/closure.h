@@ -42,15 +42,3 @@ static inline void setClosure(Closure* closure, Closure* update) {
     // first, the trace may be erased before it can be copied!
     setLocals(closure, getLocals(update));
 }
-
-static inline Closure* newUpdate(Closure* closure) {
-    return newClosure(VOID, closure, VOID);
-}
-
-static inline bool isUpdate(Closure* closure) {
-    return getTerm(closure) == VOID;
-}
-
-static inline Closure* getUpdateClosure(Closure* update) {
-    return getLocals(update);
-}

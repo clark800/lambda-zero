@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include "lib/tree.h"
-#include "lib/stack.h"
-#include "print.h"
-#include "ast.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/stack.h"
+#include "shared/lib/util.h"
+#include "parse/shared/ast.h"
 
 void debug(const char* message) {
     fputs(message, stderr);
@@ -24,7 +24,7 @@ static void serializeAST(Node* node, FILE* stream) {
         // numbers can be generated, so not all numbers will exist in input
         fputll(getValue(node), stream);
     } else {
-        printLexeme(getLexeme(node), stream);
+        printString(getLexeme(node), stream);
         fputs("#", stream);
         fputll(getValue(node), stream);
     }
@@ -62,7 +62,7 @@ void debugState(Closure* closure, Stack* stack) {
 void debugParseState(Tag tag, Stack* stack, bool trace) {
     if (trace) {
         debug("Token: '");
-        printLexeme(tag.lexeme, stderr);
+        printString(tag.lexeme, stderr);
         debug("'  Stack: ");
         debugStack(stack, NULL);
         debug("\n");

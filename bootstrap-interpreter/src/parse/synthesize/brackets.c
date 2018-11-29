@@ -1,8 +1,8 @@
 #include <string.h>
-#include "lib/tree.h"
-#include "lib/stack.h"
-#include "errors.h"
-#include "ast.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/stack.h"
+#include "parse/shared/errors.h"
+#include "parse/shared/ast.h"
 #include "symbols.h"
 
 static unsigned int getCommaListLength(Node* node) {
@@ -26,6 +26,30 @@ static Node* newTuple(Node* open, Node* commaList) {
     const char* lexeme = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
     Node* name = newSpineName(open, lexeme, getCommaListLength(commaList) - 1);
     return applyToCommaList(getTag(open), name, commaList);
+}
+
+static Node* wrapLeftSection(Tag tag, Node* body) {
+    return Arrow(tag, Name(renameTag(tag, "*.")), body);
+}
+
+static Node* wrapRightSection(Tag tag, Node* body) {
+    return Arrow(tag, Name(renameTag(tag, ".*")), body);
+}
+
+static Node* wrapSection(Tag tag, Node* section) {
+    Node* body = getSectionBody(section);
+    switch ((SectionVariety)getVariety(section)) {
+        case LEFTSECTION:
+            return wrapLeftSection(tag, body);
+        case RIGHTSECTION:
+            if (isName(getLeft(body)))
+                return getLeft(body);   // parenthesized postfix operator
+            return wrapRightSection(tag, body);
+        case LEFTRIGHTSECTION:
+            return wrapLeftSection(tag, wrapRightSection(tag, body));
+    }
+    assert(false);
+    return NULL;
 }
 
 Node* reduceParentheses(Node* open, Node* function, Node* contents) {

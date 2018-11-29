@@ -1,12 +1,20 @@
-#include "lib/tree.h"
-#include "lib/array.h"
-#include "lib/stack.h"
-#include "term.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/array.h"
+#include "shared/lib/stack.h"
+#include "shared/term.h"
 #include "closure.h"
+#include "exception.h"
 #include "operations.h"
 
 typedef const Array Globals;
 static Hold* evaluateClosure(Closure* closure, Globals* globals);
+
+static bool isUpdate(Closure* closure) { return getTerm(closure) == VOID;}
+static Closure* getUpdateClosure(Closure* update) {return getLocals(update);}
+
+static Closure* newUpdate(Closure* closure) {
+    return newClosure(VOID, closure, VOID);
+}
 
 static void eraseUpdates(Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0)))

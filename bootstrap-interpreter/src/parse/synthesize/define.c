@@ -1,6 +1,6 @@
-#include "lib/tree.h"
-#include "errors.h"
-#include "ast.h"
+#include "shared/lib/tree.h"
+#include "parse/shared/errors.h"
+#include "parse/shared/ast.h"
 #include "patterns.h"
 
 bool isIO = false;

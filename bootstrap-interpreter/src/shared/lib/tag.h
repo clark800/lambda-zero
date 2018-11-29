@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 typedef struct {
     const char* start;
@@ -21,3 +22,5 @@ Tag renameTag(Tag tag, const char* name);
 bool isThisString(String a, const char* b);
 bool isSameString(String a, String b);
 bool contains(String a, char c);
+void printString(String string, FILE* stream);
+void printTag(Tag tag, const char* quote, FILE* stream);

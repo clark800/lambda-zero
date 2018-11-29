@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "lib/readfile.h"
-#include "lib/tree.h"
-#include "lib/array.h"
-#include "lib/freelist.h"
-#include "print.h"
-#include "errors.h"
-#include "term.h"
+#include "shared/lib/readfile.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/array.h"
+#include "shared/lib/freelist.h"
+#include "shared/lib/util.h"
+#include "shared/term.h"
 #include "parse/parse.h"
 #include "evaluate/closure.h"
 #include "evaluate/evaluate.h"
@@ -27,7 +26,7 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             }
             unsigned long long debruijn = getDebruijnIndex(node);
             if (debruijn <= depth) {
-                printLexeme(getLexeme(node), stream);
+                printString(getLexeme(node), stream);
                 break;
             }
             Closure* next = getListElement(locals, debruijn - depth - 1);
@@ -42,13 +41,13 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             break;
         case ABSTRACTION:
             fputs("(", stream);
-            printLexeme(getLexeme(getParameter(node)), stream);
+            printString(getLexeme(getParameter(node)), stream);
             fputs(" -> ", stream);
             serializeNode(getBody(node), locals, globals, depth + 1, stream);
             fputs(")", stream);
             break;
         case NUMERAL: fputll(getValue(node), stream); break;
-        case OPERATION: printLexeme(getLexeme(node), stream); break;
+        case OPERATION: printString(getLexeme(node), stream); break;
         default: fputs("#ERROR#", stream); break;
     }
 }
@@ -56,6 +55,29 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
 static void serialize(Closure* closure, const Array* globals) {
     serializeNode(getTerm(closure), getLocals(closure), globals, 0, stdout);
     fputs("\n", stdout);
+}
+
+static void print3(const char* a, const char* b, const char* c) {
+    fputs(a, stderr);
+    fputs(b, stderr);
+    fputs(c, stderr);
+}
+
+void usageError(const char* name) {
+    print3("Usage error: ", name, " [-d] [-D] [-t] [FILE]\n");
+    exit(2);
+}
+
+void readError(const char* filename) {
+    print3("Usage error: file '", filename, "' cannot be opened\n");
+    exit(2);
+}
+
+void memoryError(const char* label, long long bytes) {
+    print3("MEMORY LEAK IN \"", label, "\": ");
+    fputll(bytes, stderr);
+    fputs(" bytes\n", stderr);
+    exit(3);
 }
 
 static void checkForMemoryLeak(const char* label, size_t expectedUsage) {

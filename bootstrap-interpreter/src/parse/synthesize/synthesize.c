@@ -2,12 +2,12 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include "lib/tree.h"
-#include "lib/stack.h"
-#include "errors.h"
-#include "../lex/token.h"
-#include "ast.h"
-#include "debug.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/stack.h"
+#include "parse/shared/errors.h"
+#include "parse/shared/token.h"
+#include "parse/shared/ast.h"
+#include "parse/shared/debug.h"
 #include "symbols.h"
 #include "syntax.h"
 

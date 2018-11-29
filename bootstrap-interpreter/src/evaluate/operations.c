@@ -1,33 +1,15 @@
 #include <stdlib.h>     // exit
 #include <stdio.h>      // fputs
 #include <limits.h>     // LLONG_MAX
-#include "lib/util.h"   // error
-#include "lib/tree.h"
-#include "lib/stack.h"
-#include "errors.h"
-#include "term.h"
+#include "shared/lib/util.h"   // error
+#include "shared/lib/tree.h"
+#include "shared/lib/stack.h"
+#include "shared/term.h"
 #include "closure.h"
+#include "exception.h"
 
 static bool STDERR = false;
 Stack* INPUT_STACK;
-
-static void printBacktrace(Closure* closure) {
-    fputs("\n\nBacktrace:\n", stderr);
-    Stack* backtrace = (Stack*)getBacktrace(closure);
-    for (Iterator* it = iterate(backtrace); !end(it); it = next(it))
-        printTagLine(getTag(cursor(it)), "");
-}
-
-static void printRuntimeError(const char* message, Closure* closure) {
-    if (!TEST && !isEmpty((Stack*)getBacktrace(closure)))
-        printBacktrace(closure);
-    printError("\nRuntime", message, getTag(getTerm(closure)));
-}
-
-void runtimeError(const char* message, Closure* closure) {
-    printRuntimeError(message, closure);
-    exit(1);
-}
 
 static Node* newBoolean(Tag tag, bool value) {
     return Abstraction(tag, Abstraction(tag,
