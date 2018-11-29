@@ -4,16 +4,8 @@ typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
 typedef enum {PLAINDEFINITION, TRYDEFINITION, SYNTAXDEFINITION, ADTDEFINITION}
     DefinitionVariety;
 
-// ====================================
-// Functions to get a value from a node
-// ====================================
-
 static inline ASTType getASTType(Node* n) {return (ASTType)getType(n);}
 static inline String getLexeme(Node* n) {return getTag(n).lexeme;}
-
-// =============================================
-// Functions to test if a node is a certain type
-// =============================================
 
 static inline bool isSameLexeme(Node* a, Node* b) {
     return isSameString(getLexeme(a), getLexeme(b));
@@ -56,11 +48,6 @@ static inline bool isKeyphrase(Node* n, const char* key) {
 static inline bool isEOF(Node* n) {return isThisOperator(n, "\0");}
 static inline bool isUnderscore(Node* n) {return isThisName(n, "_");}
 
-// ================================
-// Functions to construct nodes
-// ================================
-
-
 static inline Node* Reference(Tag tag, long long value) {
     return newLeaf(tag, REFERENCE, value, NULL);
 }
@@ -74,11 +61,6 @@ static inline Node* Operator(Tag tag, long long value, void* rules) {
 }
 
 static inline Node* Arrow(Tag tag, Node* parameter, Node* body) {
-    // we could make the left child of a lambda VOID, but storing a parameter
-    // lets us decouple the location of the lambda from the parameter name,
-    // which is useful in cases like string literals where we need to point
-    // to the string literal for error messages, but we prefer not to make the
-    // parameter name be the string literal
     assert(isName(parameter));
     return newBranch(tag, ARROW, 0, parameter, body);
 }
@@ -135,10 +117,6 @@ static inline Node* prepend(Tag tag, Node* item, Node* list) {
         item), list);
 }
 
-// ====================================
-// Sections
-// ====================================
-
 static inline Node* Section(Tag tag, SectionVariety variety, Node* body) {
     return newBranch(tag, SECTION, variety, VOID, body);
 }
@@ -156,27 +134,3 @@ static inline bool isLeftPlaceholder(Node* node) {
 }
 
 static inline Node* getSectionBody(Node* node) {return getRight(node);}
-
-static inline Node* wrapLeftSection(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, "*.")), body);
-}
-
-static inline Node* wrapRightSection(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, ".*")), body);
-}
-
-static inline Node* wrapSection(Tag tag, Node* section) {
-    Node* body = getSectionBody(section);
-    switch ((SectionVariety)getVariety(section)) {
-        case LEFTSECTION:
-            return wrapLeftSection(tag, body);
-        case RIGHTSECTION:
-            if (isName(getLeft(body)))
-                return getLeft(body);   // parenthesized postfix operator
-            return wrapRightSection(tag, body);
-        case LEFTRIGHTSECTION:
-            return wrapLeftSection(tag, wrapRightSection(tag, body));
-    }
-    assert(false);
-    return NULL;
-}

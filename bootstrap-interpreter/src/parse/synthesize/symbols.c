@@ -1,10 +1,10 @@
 #include <string.h>
-#include "lib/array.h"
-#include "lib/tree.h"
-#include "lib/util.h"
-#include "lib/stack.h"
-#include "errors.h"
-#include "ast.h"
+#include "shared/lib/array.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/util.h"
+#include "shared/lib/stack.h"
+#include "parse/shared/errors.h"
+#include "parse/shared/ast.h"
 #include "symbols.h"
 
 static Array* RULES = NULL;     // note: this never gets free'd

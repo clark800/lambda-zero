@@ -1,6 +1,6 @@
-#include "lib/tree.h"
-#include "errors.h"
-#include "ast.h"
+#include "shared/lib/tree.h"
+#include "parse/shared/errors.h"
+#include "parse/shared/ast.h"
 
 unsigned int getArgumentCount(Node* application) {
     unsigned int i = 0;

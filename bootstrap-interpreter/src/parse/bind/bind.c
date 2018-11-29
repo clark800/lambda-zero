@@ -1,8 +1,8 @@
-#include "lib/tree.h"
-#include "lib/array.h"
-#include "errors.h"
-#include "term.h"
-#include "../synthesize/ast.h"
+#include "shared/lib/tree.h"
+#include "shared/lib/array.h"
+#include "shared/term.h"
+#include "parse/shared/errors.h"
+#include "parse/shared/ast.h"
 
 static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
     for (unsigned long long i = 1; i <= length(parameters); ++i)

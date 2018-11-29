@@ -18,7 +18,7 @@ CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors -Isrc/shared/ \
+CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors -Isrc/ \
 -Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
 -Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
 -fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"

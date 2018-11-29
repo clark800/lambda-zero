@@ -1,9 +1,8 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
-#include "lib/tag.h"
-#include "token.h"
-#include "lex.h"
+#include "shared/lib/tag.h"
+#include "parse/shared/token.h"
 
 static bool isComment(char c) {return c == '#';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}
