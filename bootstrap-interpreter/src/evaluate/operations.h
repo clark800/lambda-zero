@@ -1,3 +1,3 @@
 extern Stack* INPUT_STACK;
-unsigned int getArity(Node* operation);
-Hold* evaluateOperationNode(Closure* operation, Closure* left, Closure* right);
+unsigned int getArity(Term* operation);
+Hold* evaluateOperationTerm(Closure* operation, Closure* left, Closure* right);

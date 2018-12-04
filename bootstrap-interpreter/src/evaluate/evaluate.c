@@ -100,7 +100,7 @@ static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
     unsigned int arity = getArity(getTerm(closure));
     Hold* left = arity > 0 ? popArgument(closure, stack, globals) : NULL;
     Hold* right = arity > 1 ? popArgument(closure, stack, globals) : NULL;
-    Hold* result = evaluateOperationNode(closure,
+    Hold* result = evaluateOperationTerm(closure,
         getNode(left), getNode(right));
     setClosure(closure, getNode(result));
     release(result);

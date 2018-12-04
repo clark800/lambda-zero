@@ -11,7 +11,7 @@
 static bool STDERR = false;
 Stack* INPUT_STACK;
 
-static Node* newBoolean(Tag tag, bool value) {
+static Term* newBoolean(Tag tag, bool value) {
     return Abstraction(tag, Abstraction(tag,
         value ? Variable(tag, 1) : Variable(tag, 2)));
 }
@@ -43,7 +43,7 @@ static long long divide(long long left, long long right, Closure* operation) {
     return left / right;
 }
 
-unsigned int getArity(Node* operation) {
+unsigned int getArity(Term* operation) {
     switch (getOperationCode(operation)) {
         case UNDEFINED: return 0;
         case ERROR: return 1;
@@ -54,7 +54,7 @@ unsigned int getArity(Node* operation) {
     }
 }
 
-static long long getNumericValue(Node* operation, Node* numeral) {
+static long long getNumericValue(Term* operation, Term* numeral) {
     // NULL is allowed for unary operators like increment
     if (numeral != NULL && !isNumeral(numeral))
         runtimeError("expected numeric argument to", operation);
@@ -74,7 +74,7 @@ static Hold* evaluateError(Closure* operation, Closure* message) {
     return hold(message);
 }
 
-static Node* evaluatePut(Closure* operation, Node* left) {
+static Term* evaluatePut(Closure* operation, Term* left) {
     long long c = getNumericValue(operation, left);
     if (c < 0 || c >= 256)
         runtimeError("non-byte value in string returned from main", operation);
@@ -83,7 +83,7 @@ static Node* evaluatePut(Closure* operation, Node* left) {
     return Abstraction(tag, Variable(tag, 1));
 }
 
-static Node* evaluateGet(Closure* operation, Node* left, Node* right) {
+static Term* evaluateGet(Closure* operation, Term* left, Term* right) {
     static long long inputIndex = 0;
     long long index = getNumericValue(operation, left);
     assert(index <= inputIndex);
@@ -92,22 +92,22 @@ static Node* evaluateGet(Closure* operation, Node* left, Node* right) {
     inputIndex += 1;
     int c = fgetc(stdin);
     if (c == EOF) {
-        Node* nilGlobal = getRight(getLeft(getBody(right)));
+        Term* nilGlobal = getRight(getLeft(getBody(right)));
         push(INPUT_STACK, nilGlobal);
     } else {
         // push ((::) c get(n + 1, globals))
         Tag tag = getTag(getTerm(operation));
-        Node* prependGlobal = getRight(getBody(right));
-        Node* nextIndex = Numeral(tag, index + 1);
-        Node* getIndex = Application(tag, getTerm(operation), nextIndex);
-        Node* tail = Application(tag, getIndex, right);
-        Node* prependC = Application(tag, prependGlobal, Numeral(tag, c));
+        Term* prependGlobal = getRight(getBody(right));
+        Term* nextIndex = Numeral(tag, index + 1);
+        Term* getIndex = Application(tag, getTerm(operation), nextIndex);
+        Term* tail = Application(tag, getIndex, right);
+        Term* prependC = Application(tag, prependGlobal, Numeral(tag, c));
         push(INPUT_STACK, Application(tag, prependC, tail));
     }
     return peek(INPUT_STACK, 0);
 }
 
-static Node* computeOperation(Closure* operation,
+static Term* computeOperation(Closure* operation,
         long long left, long long right) {
     Tag tag = getTag(getTerm(operation));
     switch (getOperationCode(getTerm(operation))) {
@@ -128,18 +128,18 @@ static Node* computeOperation(Closure* operation,
     }
 }
 
-static Hold* makeResult(Closure* operation, Node* node) {
+static Hold* makeResult(Closure* operation, Term* node) {
     return hold(newClosure(node, VOID, getTrace(operation)));
 }
 
-static Hold* evaluateOperator(Closure* operation, Node* left, Node* right) {
+static Hold* evaluateOperator(Closure* operation, Term* left, Term* right) {
     long long leftValue = getNumericValue(operation, left);
     long long rightValue = getNumericValue(operation, right);
-    Node* result = computeOperation(operation, leftValue, rightValue);
+    Term* result = computeOperation(operation, leftValue, rightValue);
     return makeResult(operation, result);
 }
 
-static Hold* evaluateOperation(Closure* operation, Node* left, Node* right) {
+static Hold* evaluateOperation(Closure* operation, Term* left, Term* right) {
     switch (getOperationCode(getTerm(operation))) {
         case EXIT: return error("\n");
         case UNDEFINED: return evaluateError(operation, NULL);
@@ -150,7 +150,7 @@ static Hold* evaluateOperation(Closure* operation, Node* left, Node* right) {
     }
 }
 
-Hold* evaluateOperationNode(Closure* operation, Closure* left, Closure* right) {
+Hold* evaluateOperationTerm(Closure* operation, Closure* left, Closure* right) {
     if (getOperationCode(getTerm(operation)) == ERROR)
         return evaluateError(operation, left);
     switch (getArity(getTerm(operation))) {
