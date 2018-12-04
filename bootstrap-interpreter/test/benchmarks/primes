@@ -1,4 +1,4 @@
 #!/bin/bash -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODE='main(input) := showList(primes.take(1000), showNatural) ++ "\n"'
-time "$DIR/../../main" -t <(cat "$DIR/../../../libraries/operators.zero" "$DIR/../../../libraries/prelude.zero" <(echo "$CODE"))
+\time -v "$DIR/../../main" -t <(cat "$DIR/../../../libraries/operators.zero" "$DIR/../../../libraries/prelude.zero" <(echo "$CODE"))
