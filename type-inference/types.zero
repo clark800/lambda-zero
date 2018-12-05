@@ -2,63 +2,125 @@
 
 # note: types contain source terms so that we have the ability to serialize the
 # whole source term if there is a type error
-newType(source, code, index, components) :=
-    Node((source, code, index), components)
-getSource := first_3 <> getData
-getTypeCode := second_3 <> getData
-getIndex := third_3 <> getData
-getTypeVariableIndex := getIndex
-getComponentTypes := getChildren
+Type ::= {
+    FreeType(_source : Term),
+    BottomType(_source : Term),
+    BooleanType(_source : Term),
+    NaturalType(_source : Term),
+    TypeVariable(_source : Term, getTypeVariableIndex : Natural),
+    FunctionType(_source : Term, getParameterType : Type, getBodyType : Type)
+}
+
+define getSource
+    case FreeType(source) -> source
+    case BottomType(source) -> source
+    case BooleanType(source) -> source
+    case NaturalType(source) -> source
+    case TypeVariable(source, _) -> source
+    case FunctionType(source, _, _) -> source
+
+
 define setSource(type, source)
-    newType(source, getTypeCode(type), getIndex(type), getComponentTypes(type))
+    match type
+        case FreeType(_) -> FreeType(source)
+        case BottomType(_) -> BottomType(source)
+        case BooleanType(_) -> BooleanType(source)
+        case NaturalType(_) -> NaturalType(source)
+        case TypeVariable(_, index) -> TypeVariable(source, index)
+        case FunctionType(_, parameter, body) ->
+            FunctionType(source, parameter, body)
+
+
+define indexType
+    case FreeType(_) -> 0
+    case BottomType(_) -> 1
+    case BooleanType(_) -> 2
+    case NaturalType(_) -> 3
+    case TypeVariable(_, _) -> 4
+    case FunctionType(_, _, _) -> 5
+
+
+isFreeType(type) := indexType(type) = 0
+isBottomType(type) := indexType(type) = 1
+isBooleanType(type) := indexType(type) = 2
+isNaturalType(type) := indexType(type) = 3
+isTypeVariable(type) := indexType(type) = 4
+isFunctionType(type) := indexType(type) = 5
+
+
+define getVariableName(index)
+    characters := ['a', 'b', 'c', 'd']
+    if index < 4
+        [characters[index]]
+    getVariableName((index // 4) - 1) ++ [characters[index % 4]]
+
+
+define showType
+    case FreeType(_) -> "_"
+    case BottomType(_) ->"⊥"
+    case BooleanType(_) -> "𝔹"
+    case NaturalType(_) -> "ℕ"
+    case TypeVariable(_, index) -> getVariableName(index)
+    case FunctionType(_, parameter, body)
+        if isFunctionType(parameter)
+            "(" ++ showType(parameter) ++ ")" ++ " → " ++ showType(body)
+        showType(parameter) ++ " → " ++ showType(body)
+
+
+syntax(=~=) := infix(18)
+
+define a =~= b
+    match a
+        case FreeType(_) -> isFreeType(b)
+        case BottomType(_) -> isBottomType(b)
+        case BooleanType(_) -> isBooleanType(b)
+        case NaturalType(_) -> isNaturalType(b)
+        case TypeVariable(_, _) -> isTypeVariable(b) and
+            getTypeVariableIndex(a) = getTypeVariableIndex(b)
+        case FunctionType(_, _, _) -> isFunctionType(b) and
+            getParameterType(a) =~= getParameterType(b) and
+            getBodyType(a) =~= getBodyType(b)
+
 
 noTerm := Variable(noTag, 0)
 isNoTerm(term) := isVariable(term) and getDebruijnIndex(term) = 0
-newFreeType(source) := newType(source, 1, 0, [])
-newBooleanType(source) := newType(source, 2, 0, [])
-newNaturalType(source) := newType(source, 3, 0, [])
-newFunctionType(source, left, right) := newType(source, 4, 0, [left, right])
-newTupleType(source, types) := newType(source, 5, 0, types)
-newListType(source, type) := newType(source, 6, 0, [type])
-newTreeType(source, type) := newType(source, 7, 0, [type])
-newMaybeType(source, type) := newType(source, 8, 0, [type])
-newBottomType(source) := newType(source, 9, 0, [])
+
 define newTypeVariable(variables, source)
-    type := newType(source, 0, cardinality(variables), [])
-    (type, variables.insert(type, newFreeType(noTerm)))
+    type := TypeVariable(source, cardinality(variables))
+    (type, variables.insert(type, FreeType(noTerm)))
+
 newTypeVariables(originals, variables) :=
     originals.map(getSource).cascadeMap(`newTypeVariable, variables)
-newProjectionType(source, elementTypes, returnType) :=
-    newFunctionType(source, newTupleType(noTerm, elementTypes), returnType)
-newStringType(source) := newListType(source, newNaturalType(noTerm))
-newScheme(universals, type) := (universals, type)
 
-isTypeVariable(type) := getTypeCode(type) = 0
-isFreeType(type) := getTypeCode(type) = 1
-isBooleanType(type) := getTypeCode(type) = 2
-isNaturalType(type) := getTypeCode(type) = 3
-isFunctionType(type) := getTypeCode(type) = 4
-isTupleType(type) := getTypeCode(type) = 5
-isListType(type) := getTypeCode(type) = 6
-isTreeType(type) := getTypeCode(type) = 7
-isMaybeType(type) := getTypeCode(type) = 8
-isBottomType(type) := getTypeCode(type) = 9
 isFree(type, variables) := not variables.hasKey(type) or
     isFreeType(variables.get(type, undefined))
 
-syntax(=~=) := infix(13)
-a =~= b := getTypeCode(a) = getTypeCode(b) and getIndex(a) = getIndex(b) and
-    zip(getComponentTypes(a), getComponentTypes(b)).all(uncurry((=~=)))
+define getComponentTypes
+    case FreeType(_) -> []
+    case BottomType(_) -> []
+    case BooleanType(_) -> []
+    case NaturalType(_) -> []
+    case TypeVariable(_, _) -> []
+    case FunctionType(_, parameter, body) -> [parameter, body]
 
-mapComponents(type, f) := newType(getSource(type), getTypeCode(type),
-    getIndex(type), getComponentTypes(type).map(f))
+define mapComponents(type, f)
+    match type
+        case FreeType(_) -> type
+        case BottomType(_) -> type
+        case BooleanType(_) -> type
+        case NaturalType(_) -> type
+        case TypeVariable(_, _) -> type
+        case FunctionType(source, parameter, body) ->
+            FunctionType(source, f(parameter), f(body))
 
-newVariableMap(mappings) := newTable((<=).on(getIndex), mappings)
+newVariableMap(mappings) := newTable((<=).on(getTypeVariableIndex), mappings)
 empty := newVariableMap([])
 
 define rename(type, variables)
     if isTypeVariable(type)
         variables.get(type, type)
     type.mapComponents(`rename(variables))
+
+newScheme(universals, type) := (universals, type)
 
 #*

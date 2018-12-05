@@ -24,7 +24,7 @@ if(c, a, b) := c(a, b)
 
 syntax(=) := infix(13)
 
-c(a) := if(a = 0, 1, a)
+# c(a) := if(a = 0, 1, a)
 
 syntax(:) := infix(13)
 
@@ -40,29 +40,29 @@ syntax(+) := infixL(16)
 
 syntax(::) := infixR(15)
 
-List(a) ::= {[], (head : a) :: (tail : List(a))}
+# List(a) ::= {[], (head : a) :: (tail : List(a))}
 
-list := [1 + 2, c(3), first(q(1, true)), f'(2, c)]
+# list := [1 + 2, c(3), first(q(1, true)), f'(2, c)]
 
-list' := [x -> x, y -> y, x -> y -> y]
+# list' := [x -> x, y -> y, x -> y -> y]
 
 # swap((x, y)) := (y, x)
 
 # rot((w, x, y, z)) := (x, y, z, w)
 
-Maybe(a) ::= {nothing, just(_ : a)}
+# Maybe(a) ::= {nothing, just(_ : a)}
 
-maybe(mx, f, x) := mx(x, f)
+# maybe(mx, f, x) := mx(x, f)
 
-maybeTest := maybe(just(2), (* 2), 0)
+# maybeTest := maybe(just(2), (* 2), 0)
 
-string := "test"
+# string := "test"
 
-e := if(true, 1, error("..."))
+# e := if(true, 1, error("..."))
 
 # repeat(x) := x :: repeat(x)
 
-isNothing(mx) := maybe(mx, constant(false), true)
+# isNothing(mx) := maybe(mx, constant(false), true)
 
 # r(x) := (
 #     (y, z) := r(x + 1)

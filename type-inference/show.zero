@@ -1,44 +1,5 @@
 #* show.zero
 
-define getVariableName(index)
-    characters := ['a', 'b', 'c', 'd']
-    if index < 4
-        [characters[index]]
-    getVariableName((index // 4) - 1) ++ [characters[index % 4]]
-
-define showType(type)
-    define showType'(type')
-        if isFunctionType(type') then
-            "(" ++ showType(type') ++ ")" else showType(type')
-    if isFreeType(type)
-        "_"
-    if isBottomType(type)
-        "⊥"
-    if isNaturalType(type)
-        "ℕ"
-    if isBooleanType(type)
-        "𝔹"
-    if isTypeVariable(type)
-        getVariableName(getTypeVariableIndex(type))
-    if isTupleType(type)
-        components := getComponentTypes(type)
-        size := length(components)
-        if size = 2
-            "(" ++ components.map(showType).joinWith(" × ") ++ ")"
-        "Tuple_" ++ showNatural(size) ++ "(" ++
-            components.map(showType).joinWith(", ") ++ ")"
-    if isMaybeType(type)
-        "Maybe(" ++ showType(getComponentTypes(type)[0]) ++ ")"
-    if isListType(type)
-        showType'(getComponentTypes(type)[0]) ++ "[]"
-    if isTreeType(type)
-        "Tree(" ++ showType(getComponentTypes(type)[0]) ++ ")"
-    if isFunctionType(type)
-        components := getComponentTypes(type)
-        showType'(components[0]) ++ " → " ++ showType(components[1])
-    undefined
-
-
 define showTypeLocation(type)
     showLocation(getTagLocation(getTermTag(getSource(type))))
 

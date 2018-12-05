@@ -2,11 +2,10 @@
 
 define builtinTypes
     syntax(>->) := infixR(10)
-    (>->) := newFunctionType(noTerm)
-    bottom := newBottomType(noTerm)
-    boolean := newBooleanType(noTerm)
-    natural := newNaturalType(noTerm)
-    string := newListType(noTerm, natural)
+    (>->) := FunctionType(noTerm)
+    bottom := BottomType(noTerm)
+    boolean := BooleanType(noTerm)
+    natural := NaturalType(noTerm)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -22,47 +21,10 @@ define builtinTypes
         ("<=", comparison),
         (">=", comparison),
         ("up", natural >-> natural),
-        ("error", string >-> bottom),
         ("(undefined)", bottom)
     ])
 
 define getBuiltinType(term)
     builtinTypes.get(getTagLexeme(getTermTag(term)), undefined).setSource(term)
-
-define knownTypeSchemes
-    syntax(>->) := infixR(10)
-    (>->) := newFunctionType(noTerm)
-    boolean := newBooleanType(noTerm)
-    (a, variables') := empty.newTypeVariable(noTerm)
-    (b, variables'') := variables'.newTypeVariable(noTerm)
-    aList := newListType(noTerm, a)
-    aMaybe := newMaybeType(noTerm, a)
-    aTree := newTreeType(noTerm, a)
-    aTreeList := newListType(noTerm, aTree)
-    abPair := newTupleType(noTerm, [a, b])
-    newDictionary([
-        ("true", newScheme([], boolean)),
-        ("false", newScheme([], boolean)),
-        ("if", newScheme([a], boolean >-> a >-> a >-> a)),
-        (",", newScheme([a, b], a >-> b >-> abPair)),
-        ("first", newScheme([a, b], abPair >-> a)),
-        ("second", newScheme([a, b], abPair >-> b)),
-        ("[]", newScheme([a], aList)),
-        ("::", newScheme([a], a >-> aList >-> aList)),
-        ("head", newScheme([a], aList >-> a)),
-        ("tail", newScheme([a], aList >-> aList)),
-        ("isEmpty", newScheme([a], aList >-> boolean)),
-        ("nothing", newScheme([a], aMaybe)),
-        ("just", newScheme([a], a >-> aMaybe)),
-        ("maybe", newScheme([a, b], aMaybe >-> (a >-> b) >-> b >-> b)),
-        ("newNode", newScheme([a], a >-> aTreeList >-> aTree)),
-        ("getData", newScheme([a], aTree >-> a)),
-        ("getChildren", newScheme([a], aTree >-> aTreeList))
-    ])
-
-define getKnownTypeScheme(name, source)
-    defaultScheme := newScheme([], newFreeType(source))
-    (universals, type) := knownTypeSchemes.get(name, defaultScheme)
-    (universals, type.setSource(source))
 
 #*
