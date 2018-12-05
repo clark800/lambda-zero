@@ -4,8 +4,8 @@ define builtinTypes
     syntax(>->) := infixR(10)
     (>->) := FunctionType(noTerm)
     bottom := BottomType(noTerm)
-    boolean := BooleanType(noTerm)
-    natural := NaturalType(noTerm)
+    boolean := NominalType(noTerm, "𝔹", [])
+    natural := NominalType(noTerm, "ℕ", [])
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([

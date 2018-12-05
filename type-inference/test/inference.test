@@ -64,6 +64,9 @@ syntax(::) := infixR(15)
 
 # isNothing(mx) := maybe(mx, constant(false), true)
 
+syntax(-) := infixL(21)
+r(n, m) := r(n - 1, r(n, n))
+
 # r(x) := (
 #     (y, z) := r(x + 1)
 #     (x, y)
