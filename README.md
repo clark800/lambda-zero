@@ -178,11 +178,11 @@ First `cd` to the bootstrap-interpreter directory.
 For example, try this sample program that prints out an infinite list of prime
 numbers:
 
-    ./run ../sample-code/showprimes
+    ./run test/samples/primes.zero
 
 This sample program runs an interactive REPL that reverses each line entered:
 
-    ./run ../sample-code/repl
+    ./run test/samples/repl.zero
 
 The `run` script prepends the [prelude](libraries/prelude.zero) to the `SOURCEFILE` and
 passes the result to `main`.

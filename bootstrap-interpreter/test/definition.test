@@ -119,3 +119,6 @@ define f(x)\n  x * x\nf(3)
 (define) := 0\n(define)
 Syntax error: missing right operand for 'define' at line 1 column 2
 ==========================================================================
+x := x + 1 \n x
+Syntax error: undefined symbol 'x' at line 1 column 6
+==========================================================================

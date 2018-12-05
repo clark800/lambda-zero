@@ -61,12 +61,12 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
-    if (!isName(name) || !hasRecursiveCalls(value, name))
+    if (!isName(name) || (!isArrow(value) && !isCase(value)) ||
+            !hasRecursiveCalls(value, name))
         return value;
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);
-    Node* fix = FixedName(tag, "fix");
-    return Juxtaposition(tag, fix, Arrow(tag, name, value));
+    return Juxtaposition(tag, FixedName(tag, "fix"), Arrow(tag, name, value));
 }
 
 static inline bool isValidPattern(Node* node) {
