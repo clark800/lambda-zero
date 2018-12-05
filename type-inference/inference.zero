@@ -39,9 +39,7 @@ define unify'(originals, variables, (left, right))
         variables.insert(left, right)
     if isTypeVariable(right)
         variables.insert(right, left)
-    if (getTypeCode(left) = getTypeCode(right) and
-        getIndex(left) = getIndex(right) and
-        length(getComponentTypes(left)) = length(getComponentTypes(right)))
+    if indexType(left) = indexType(right)
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
     unificationError(originals.mapPair(`substitute(variables)),
@@ -84,7 +82,7 @@ define infer(stack, variables)
         (parameterType, variables') := variables.newTypeVariable(term)
         stack' := newScheme([], parameterType) :: stack
         (bodyType, variables'') := infer(stack', variables', body)
-        (newFunctionType(term, parameterType, bodyType), variables'')
+        (FunctionType(term, parameterType, bodyType), variables'')
     case term @ Application(_, applicand, argument)
         if isAbstraction(applicand)     # treat this as a let
             (valueType, variables') := infer(stack, variables, argument)
@@ -99,20 +97,16 @@ define infer(stack, variables)
         (argumentType, variables') := infer(stack, variables, argument)
         (applicandType, variables'') := infer(stack, variables', applicand)
         (returnType, variables''') := variables''.newTypeVariable(term)
-        functionType := newFunctionType(noTerm, argumentType, returnType)
+        functionType := FunctionType(noTerm, argumentType, returnType)
         (returnType, variables'''.unify((applicandType, functionType)))
     case term @ Numeral(_, _)
-        (newNaturalType(term), variables)
+        (NaturalType(term), variables)
     case term @ Operation(_, _, _)
         (getBuiltinType(term), variables)
 
 
 define inferType(stack, definition)
-    (tag, value) := definition
-    knownTypeScheme := getKnownTypeScheme(getTagLexeme(tag), value)
-    if not isFreeType(second(knownTypeScheme))
-        knownTypeScheme :: stack
-    (type, variables') := infer(stack, empty, value)
+    (type, variables') := infer(stack, empty, second(definition))
     type.generalize(variables', empty) :: stack
 
 
