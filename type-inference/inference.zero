@@ -100,7 +100,7 @@ define infer(stack, variables)
         functionType := FunctionType(noTerm, argumentType, returnType)
         (returnType, variables'''.unify((applicandType, functionType)))
     case term @ Numeral(_, _)
-        (NaturalType(term), variables)
+        (NominalType(term, "ℕ", []), variables)
     case term @ Operation(_, _, _)
         (getBuiltinType(term), variables)
 
@@ -108,6 +108,16 @@ define infer(stack, variables)
 define inferType(stack, definition)
     (type, variables') := infer(stack, empty, second(definition))
     type.generalize(variables', empty) :: stack
+
+
+define getDefinitions
+    case Variable(_, _) -> []
+    case Abstraction(_, _) -> []
+    case Application(_, applicand, argument)
+        if not isAbstraction(applicand) then []
+        (getTermTag(applicand), argument) :: getDefinitions(getBody(applicand))
+    case Numeral(_, _) -> []
+    case Operation(_, _, _) -> []
 
 
 define main(input)
