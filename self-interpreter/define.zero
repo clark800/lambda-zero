@@ -11,7 +11,8 @@ define applyTryDefinition(tag, name, value, scope)
         value), newPatternArrow(tag, name, scope))
 
 define transformRecursion(name, value)
-    if not isName(name) or not containsName(name, value)
+    if not isName(name) or (not isArrow(value) and not isCase(value)) or
+            not containsName(name, value)
         value
     tag := getTag(name)
     fix' := Name(renameTag(tag, "fix"))
