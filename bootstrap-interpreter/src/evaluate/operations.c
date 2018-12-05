@@ -16,6 +16,12 @@ static Term* newBoolean(Tag tag, bool value) {
         value ? Variable(tag, 1) : Variable(tag, 2)));
 }
 
+static long long increment(long long n, Closure* operation) {
+    if (n >= LLONG_MAX)
+        runtimeError("overflow in", operation);
+    return n + 1;
+}
+
 // note: it is important to check for overflow before it occurs because
 // undefined behavior occurs immediately after an overflow, which is
 // impossible to recover from
@@ -111,7 +117,7 @@ static Term* computeOperation(Closure* operation,
         long long left, long long right) {
     Tag tag = getTag(getTerm(operation));
     switch (getOperationCode(getTerm(operation))) {
-        case INCREMENT: return Numeral(tag, left + 1);
+        case INCREMENT: return Numeral(tag, increment(left, operation));
         case PLUS: return Numeral(tag, add(left, right, operation));
         case MINUS: return Numeral(tag, subtract(left, right, operation));
         case TIMES: return Numeral(tag, multiply(left, right, operation));
