@@ -1,0 +1,14 @@
+# note: types contain source terms so that we have the ability to serialize the
+# whole source term if there is a type error
+Type ::= {
+    FreeType,
+    BottomType(_source : Term),
+    TypeVariable(_source : Term, getTypeVariableIndex : Natural),
+    NominalType(_source : Term,
+        getHeadName : String, getParameters : List(Type)),
+    FunctionType(_source : Term, getParameterType : Type, getBodyType : Type)
+}
+
+TypeScheme ::= {Scheme(getUniversals : List(Type), getType : Type)}
+
+Free := Scheme([], FreeType)

@@ -17,6 +17,51 @@ define isDefined(tag, parameterNames)
         parameterNames.contains(getTagLexeme(tag)))
 
 
+define parseType(node, context)
+    if isName(node)
+        name := getLexeme(node)
+        context.lookup(name) ? NominalType(noTerm, name, [])
+    name := getLexeme(getHead(node))
+    if context.hasKey(name)
+        syntaxError("type variable not allowed in applicand position", node)
+    NominalType(noTerm, name, getArguments(node).map(`parseType(context)))
+
+
+define buildContext(dataType)
+    # context maps type variable names to type variables
+    components := getArguments(dataType)
+    if not components.all(isName)
+        syntaxError("all components should be names", dataType)
+    typeVariables := (0 .. length(components)).map(TypeVariable(noTerm))
+    newTable((<*=), zip(components.map(getLexeme), typeVariables))
+
+
+define newConstructorType(term, parameterTypes, dataType, context)
+    # todo: check that universals are not already defined and that all other
+    # names are already defined; also make sure universal name is not the
+    # same as the dataType name
+    if isNil(parameterTypes)
+        parseType(dataType, context)
+    parameterType := parseType(head(parameterTypes), context)
+    FunctionType(term, parameterType, newConstructorType(getBody(term),
+        tail(parameterTypes), dataType, context))
+
+
+define newConstructorScheme(term, parameterTypes, dataType)
+    context := buildContext(dataType)
+    universals := getValues(context)
+    type := newConstructorType(term, parameterTypes, dataType, context)
+    Scheme(universals, type)
+
+
+define newAccessorScheme(term, dataType, returnType)
+    context := buildContext(dataType)
+    universals := getValues(context)
+    type := FunctionType(term, parseType(dataType, context),
+        parseType(returnType, context))
+    Scheme(universals, type)
+
+
 define bind(node, parameterNames)
     match node
         case Name(tag)
@@ -26,7 +71,7 @@ define bind(node, parameterNames)
             if isDefined(getTag(parameter), parameterNames)
                 syntaxError("symbol already defined", parameter)
             parameterName := getLexeme(parameter)
-            Abstraction(getTag(parameter),
+            Abstraction(getTag(parameter), Free,
                 bind(body, parameterName :: parameterNames))
         case Couple(tag, _, left, right)
             Application(tag, bind(left, parameterNames),
@@ -45,11 +90,20 @@ define bind(node, parameterNames)
             syntaxError("comma not inside brackets", node)
         case Case(tag, constructors, body)
             # todo: add constructors to Abstraction
-            Abstraction(tag, bind(body, getTagLexeme(tag) :: parameterNames))
+            Abstraction(tag, Free,
+                bind(body, getTagLexeme(tag) :: parameterNames))
         case Section(_, _, _)
             syntaxError("invalid section", node)
         case ADT(_, _)
             syntaxError("must appear on the right side of '::='", node)
+        case Constructor(tag, parameterTypes, dataType, body)
+            term := bind(body, parameterNames)
+            scheme := newConstructorScheme(term, parameterTypes, dataType)
+            Abstraction(getTermTag(term), scheme, getBody(term))
+        case Accessor(tag, dataType, returnType, body)
+            term := bind(body, parameterNames)
+            scheme := newAccessorScheme(term, dataType, returnType)
+            Abstraction(getTermTag(term), scheme, getBody(term))
         case Null(_)
             error("internal error: Null reached bind")
 

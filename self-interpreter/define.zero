@@ -37,7 +37,7 @@ define isValidConstructorParameter(parameter)
     (isThisName(getLeft(getLeft(parameter)), ":") or
      isThisName(getLeft(getLeft(parameter)), "∈"))
 
-define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
+define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     if not isValidConstructorParameter(parameter)
         syntaxError("invalid constructor parameter", parameter)
     name := getRight(getLeft(parameter))
@@ -46,22 +46,29 @@ define newGetterDefinition(tag, n, j, m, (parameter, k), scope)
     projector := newProjector(tag, m, k)
     undefined' := Name(renameTag(tag, "undefined"))
     arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
-    getter := UnderscoreArrow(tag,
+    body := UnderscoreArrow(tag,
         arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
-    applyPlainDefinition(tag, name, getter, scope)
+    returnType := getRight(parameter)
+    accessor := Accessor(tag, dataType, returnType, body)
+    applyPlainDefinition(tag, name, accessor, scope)
 
-define newConstructorDefinition(tag, n, (pattern, j), scope)
+define readParameterTypes(pattern)
+    if not isJuxtaposition(pattern) then []
+    readParameterTypes(getLeft(pattern)) ++ [getRight(getRight(pattern))]
+
+define newConstructorDefinition(tag, dataType, n, (pattern, j), scope)
     name := getHead(pattern)
     if not isName(name)
         syntaxError("invalid constructor name", name)
     parameters := getArguments(pattern)
     m := length(parameters)
     scope' := zip(parameters, naturals).fold(
-        newGetterDefinition(tag, n, j, m), scope)
-    base := newUnderscore(tag, n - j)
+        newGetterDefinition(tag, dataType, n, j, m), scope)
     arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
-    body := arguments.cascade(Juxtaposition(tag), base)
-    constructor := (UnderscoreArrow(tag) ^^ (n + m))(body)
+    base := arguments.cascade(Juxtaposition(tag), newUnderscore(tag, n - j))
+    body := (UnderscoreArrow(tag) ^^ (n + m))(base)
+    parameterTypes := readParameterTypes(pattern)
+    constructor := Constructor(tag, parameterTypes, dataType, body)
     applyPlainDefinition(tag, name, constructor, scope')
 
 define applyADTDefinition(tag, left, right, scope)
@@ -69,7 +76,8 @@ define applyADTDefinition(tag, left, right, scope)
     scope' := applyPlainDefinition(tag, getHead(left), undefined', scope)
     constructors := getContents(right)
     n := length(constructors)
-    zip(constructors, naturals).fold(newConstructorDefinition(tag, n), scope')
+    zip(constructors, naturals).fold(
+        newConstructorDefinition(tag, left, n), scope')
 
 define applyDefinition(definition, scope)
     tag := getTag(definition)

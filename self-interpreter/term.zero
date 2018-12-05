@@ -2,7 +2,7 @@
 
 Term ::= {
     Variable(_ : Tag, getDebruijnIndex : Natural),
-    Abstraction(_ : Tag, getBody : Term),
+    Abstraction(_ : Tag, getScheme : Scheme, getBody : Term),
     Application(_ : Tag, getApplicand : Term, getArgument : Term),
     Numeral(_ :  Tag, getNatural : Natural),
     Operation(_ : Tag, getArity : Natural, getOperator : _)
@@ -11,7 +11,7 @@ Term ::= {
 
 define getTermTag
     case Variable(tag, _) -> tag
-    case Abstraction(tag, _) -> tag
+    case Abstraction(tag, _, _) -> tag
     case Application(tag, _, _) -> tag
     case Numeral(tag, _) -> tag
     case Operation(tag, _, _) -> tag
@@ -19,7 +19,7 @@ define getTermTag
 
 define indexTerm
     case Variable(_, _) -> 0
-    case Abstraction(_, _) -> 1
+    case Abstraction(_, _, _) -> 1
     case Application(_, _, _) -> 2
     case Numeral(_, _) -> 3
     case Operation(_, _, _) -> 4
@@ -88,11 +88,14 @@ define maybeIsNil(term)
 
 define showTerm
     case Variable(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
-    case Abstraction(tag, body)
+    case Abstraction(tag, _, body)
         "(" ++ showTag(tag) ++ " -> " ++ showTerm(body) ++ ")"
     case Application(_, applicand, argument)
         "(" ++ showTerm(applicand) ++ " " ++ showTerm(argument) ++ ")"
     case Numeral(_, n) -> showNatural(n)
     case Operation(tag, _, _) -> showTag(tag)
+
+noTerm := Variable(noTag, 0)
+isNoTerm(term) := isVariable(term) and getDebruijnIndex(term) = 0
 
 #*
