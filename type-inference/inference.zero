@@ -59,10 +59,9 @@ define generalize(type, variables, oldVariables)
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
         oldVariables.getAllFreeVariables(variables)
-    newScheme(universals, type')
+    Scheme(universals, type')
 
-define instantiate(scheme, variables, term)
-    (universals, type) := scheme
+define instantiate(Scheme(universals, type), variables, term)
     (freshVariables, variables') := newTypeVariables(universals, variables)
     renaming := newVariableMap(zip(universals, freshVariables))
     (type.rename(renaming).setSource(term), variables')
@@ -78,9 +77,11 @@ define isFix(term)
 define infer(stack, variables)
     case term @ Variable(_, debruijn)
         stack[debruijn - 1].instantiate(variables, term)
-    case term @ Abstraction(_, body)
+    case term @ Abstraction(_, scheme, body)
+        if not isFreeType(getType(scheme))
+            scheme.instantiate(empty, term)
         (parameterType, variables') := variables.newTypeVariable(term)
-        stack' := newScheme([], parameterType) :: stack
+        stack' := Scheme([], parameterType) :: stack
         (bodyType, variables'') := infer(stack', variables', body)
         (FunctionType(term, parameterType, bodyType), variables'')
     case term @ Application(_, applicand, argument)
@@ -91,7 +92,7 @@ define infer(stack, variables)
         if isFix(applicand) and isAbstraction(argument)
             function := getBody(argument)
             (functionType, variables') := variables.newTypeVariable(term)
-            stack' := newScheme([], functionType) :: stack
+            stack' := Scheme([], functionType) :: stack
             (functionType', variables'') := infer(stack', variables', function)
             (functionType, variables''.unify((functionType', functionType)))
         (argumentType, variables') := infer(stack, variables, argument)
@@ -112,7 +113,7 @@ define inferType(stack, definition)
 
 define getDefinitions
     case Variable(_, _) -> []
-    case Abstraction(_, _) -> []
+    case Abstraction(_, _, _) -> []
     case Application(_, applicand, argument)
         if not isAbstraction(applicand) then []
         (getTermTag(applicand), argument) :: getDefinitions(getBody(applicand))

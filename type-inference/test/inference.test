@@ -40,11 +40,11 @@ syntax(+) := infixL(16)
 
 syntax(::) := infixR(15)
 
-# List(a) ::= {[], (head : a) :: (tail : List(a))}
+List(a) ::= {[], (head : a) :: (tail : List(a))}
 
 # list := [1 + 2, c(3), first(q(1, true)), f'(2, c)]
 
-# list' := [x -> x, y -> y, x -> y -> y]
+list' := [x -> x, y -> y, x -> y -> y]
 
 # swap((x, y)) := (y, x)
 

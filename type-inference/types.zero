@@ -1,18 +1,7 @@
 #* types.zero
 
-# note: types contain source terms so that we have the ability to serialize the
-# whole source term if there is a type error
-Type ::= {
-    FreeType(_source : Term),
-    BottomType(_source : Term),
-    TypeVariable(_source : Term, getTypeVariableIndex : Natural),
-    NominalType(_source : Term,
-        getHeadName : String, getParameters : List(Type)),
-    FunctionType(_source : Term, getParameterType : Type, getBodyType : Type)
-}
-
 define getSource
-    case FreeType(source) -> source
+    case FreeType -> undefined
     case BottomType(source) -> source
     case TypeVariable(source, _) -> source
     case NominalType(source, _, _) -> source
@@ -21,7 +10,7 @@ define getSource
 
 define setSource(type, source)
     match type
-        case FreeType(_) -> FreeType(source)
+        case FreeType -> FreeType
         case BottomType(_) -> BottomType(source)
         case TypeVariable(_, index) -> TypeVariable(source, index)
         case NominalType(_, name, parameters) ->
@@ -31,7 +20,7 @@ define setSource(type, source)
 
 
 define indexType
-    case FreeType(_) -> 0
+    case FreeType -> 0
     case BottomType(_) -> 1
     case TypeVariable(_, _) -> 2
     case NominalType(_, _, _) -> 3
@@ -53,7 +42,7 @@ define getVariableName(index)
 
 
 define showType
-    case FreeType(_) -> "_"
+    case FreeType -> "_"
     case BottomType(_) ->"⊥"
     case TypeVariable(_, index) -> getVariableName(index)
     case NominalType(_, name, parameters)
@@ -66,7 +55,7 @@ define showType
 
 
 define getComponentTypes
-    case FreeType(_) -> []
+    case FreeType -> []
     case BottomType(_) -> []
     case TypeVariable(_, _) -> []
     case NominalType(_, _, parameters) -> parameters
@@ -77,7 +66,7 @@ syntax(=~=) := infix(18)
 
 define a =~= b
     match a
-        case FreeType(_) -> undefined
+        case FreeType -> undefined
         case BottomType(_) -> isBottomType(b)
         case TypeVariable(_, _) -> isTypeVariable(b) and
             getTypeVariableIndex(a) = getTypeVariableIndex(b)
@@ -89,12 +78,9 @@ define a =~= b
             getBodyType(a) =~= getBodyType(b)
 
 
-noTerm := Variable(noTag, 0)
-isNoTerm(term) := isVariable(term) and getDebruijnIndex(term) = 0
-
 define newTypeVariable(variables, source)
     type := TypeVariable(source, cardinality(variables))
-    (type, variables.insert(type, FreeType(noTerm)))
+    (type, variables.insert(type, FreeType))
 
 newTypeVariables(originals, variables) :=
     originals.map(getSource).cascadeMap(`newTypeVariable, variables)
@@ -104,7 +90,7 @@ isFree(type, variables) := not variables.hasKey(type) or
 
 define mapComponents(type, f)
     match type
-        case FreeType(_) -> type
+        case FreeType -> type
         case BottomType(_) -> type
         case TypeVariable(_, _) -> type
         case NominalType(source, name, parameters) ->
@@ -119,7 +105,5 @@ define rename(type, variables)
     if isTypeVariable(type)
         variables.get(type, type)
     type.mapComponents(`rename(variables))
-
-newScheme(universals, type) := (universals, type)
 
 #*

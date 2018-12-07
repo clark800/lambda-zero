@@ -12,7 +12,7 @@ define isMain(term)
 
 
 define newNilTerm(tag)
-    Abstraction(tag, Abstraction(tag, Variable(tag, 2)))
+    Abstraction(tag, Free, Abstraction(tag, Free, Variable(tag, 2)))
 
 
 define constructString(tag, string)

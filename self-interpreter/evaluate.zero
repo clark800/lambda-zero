@@ -1,15 +1,16 @@
 #* evaluate.zero
 
 define expandNatural(tag, n)
-    Abstraction(tag, Abstraction(tag, if n = 0 then Variable(tag, 2) else
-        Application(tag, Variable(tag, 1), Numeral(tag, n - 1))))
+    Abstraction(tag, Free, Abstraction(tag, Free,
+        if n = 0 then Variable(tag, 2) else
+            Application(tag, Variable(tag, 1), Numeral(tag, n - 1))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
     match term
         case Variable(_, debruijn)
             evaluate(environment[debruijn - 1], stack)
-        case Abstraction(_, body)
+        case Abstraction(_, _, body)
             if isNil(stack) then closure else
                 evaluate(Closure(body, stack[0] :: environment), tail(stack))
         case Application(_, applicand, argument)
