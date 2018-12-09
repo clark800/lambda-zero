@@ -103,6 +103,7 @@ bool ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
 mapLeft(exy, f) := exy ⁈ Left ∘ f
 mapRight(exy, f) := exy ⁇ Right ∘ f
 exy ? d ≔ exy ⁈ constant(d)
+(??) ≔ (⁇)
 
 void := Left()
 (throw) := Left
@@ -129,6 +130,14 @@ last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
 dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
     head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
+safeHead(xs) := if isNil(xs) then void else return head(xs)
+safeTail(xs) := if isNil(xs) then void else return tail(xs)
+
+define safeIndex(xs)
+    case 0 -> safeHead(xs)
+    case up n'
+        try xs' := safeTail(xs)
+        safeIndex(xs', n')
 
 define dropIf(ns, p)
     match ns
@@ -144,22 +153,6 @@ define dropWhile(xs, p)
     match xs
         case [] ↦ []
         case x ∷ xs′ ↦ if p(x) then dropWhile(xs′, p) else xs
-
-define takeSafe(xs, n)
-    match n
-        case 0 ↦ return []
-        case ↑ n′
-            match xs
-                case [] ↦ void
-                case x ∷ xs′ ↦ takeSafe(xs′, n′).mapRight(x ∷)
-
-define dropSafe(xs, n)
-    match n
-        case 0 ↦ xs
-        case ↑ n′
-            match xs
-                case [] ↦ []
-                case _ ∷ xs′ ↦ dropSafe(xs′, n′)
 
 xs ¦ p ≔ fold(xs, x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
 map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          # map function over list
@@ -199,20 +192,23 @@ any(xs, p) ≔ xs.map(p).fold((or), false)     # test if any element satisfies p
 all(xs, p) ≔ xs.map(p).fold((and), true)      # test if all elements satisfy p
 count(xs, p) ≔ length(xs ¦ p)
 
-define find(xs, p)
-    match xs
-        case [] ↦ void
-        case x ∷ xs′ ↦ if p(x) then return x else xs′.find(p)
-
-# cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
-cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
-    f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
-
 # generic list constructors
 iterate(f, x) ≔ x ∷ iterate(f, f(x))       # iteratively apply f
 repeat(x) ≔ x ∷ repeat(x)                  # infinitely repeat one element
 replicate(x, n) ≔ ((x ∷) ° n)([])         # replicate one element n times
 cycle(xs) ≔ xs ⧺ cycle(xs)                 # infinitely cycle list
+
+countFrom ≔ iterate(↑)
+naturals ≔ countFrom(0)
+
+find(xs, p) := safeHead(xs ¦ p)
+contains(xs, p) ≔ bool(xs.find(p))
+findIndices(xs, p) := (zip(naturals, xs) ¦ p ∘ second).map(first)
+findIndex(xs, p) := safeHead(findIndices(xs, p))
+
+# cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
+cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
+    f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
 
 # integer list
 n ‥ m ≔ if n > m then [] else n ∷ (n + 1 ‥ m)
@@ -221,21 +217,17 @@ define sort
     case [] ↦ []
     case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
 
-define deduplicate
-    case [] ↦ []
-    case n ∷ ns ↦ n ∷ deduplicate(ns ¦ (≠ n))
-
 define deduplicateBy(xs, (≟))
     match xs
         case [] ↦ []
         case x ∷ xs′ ↦ x ∷ deduplicateBy(xs′ ¦ (not) ∘ (≟ x), (≟))
 
+deduplicate(xs) := deduplicateBy(xs, (=))
+
 ∑(ns) ≔ ns.cascade((+), 0)
 ∏(ns) ≔ ns.cascade((⋅), 1)
 minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
-countFrom ≔ iterate(↑)
-naturals ≔ countFrom(0)
 
 define primes
     define filterPrime
@@ -264,16 +256,6 @@ define ns ⩿ ms      # string comparison
                 case [] ↦ false
                 case m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′
 
-define indexOf(nss, key)
-    define indexOf′(list, depth)
-        if isNil(list)
-            void
-        if list[0] ≛ key
-            return depth
-        indexOf′(tail(list), depth + 1)
-    indexOf′(nss, 0)
-
-contains(nss, key) ≔ bool(nss.indexOf(key))
 
 define startsWith(ns, ks)
     match ks
@@ -374,7 +356,6 @@ repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ promp
 (¬) := (not)
 (^^) ≔ (°)
 (?!) := (⁈)
-(??) ≔ (⁇)
 (try) := (⁈)
 (catch) := (‖)
 (++) ≔ (⧺)

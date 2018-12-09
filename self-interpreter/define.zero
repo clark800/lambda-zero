@@ -7,7 +7,7 @@ define applyPlainDefinition(tag, name, value, scope)
     Let(tag, newPatternArrow(tag, name, scope), value)
 
 define applyTryDefinition(tag, name, value, scope)
-    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??")),
+    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??"), 0),
         value), newPatternArrow(tag, name, scope))
 
 define transformRecursion(name, value)
@@ -15,8 +15,8 @@ define transformRecursion(name, value)
             not containsName(name, value)
         value
     tag := getTag(name)
-    fix' := Name(renameTag(tag, "fix"))
-    Juxtaposition(tag, fix', Arrow(tag, Name(tag), value))
+    fix' := Name(renameTag(tag, "fix"), 0)
+    Juxtaposition(tag, fix', Arrow(tag, Name(tag, 0), value))
 
 define isTupleConstructor(node)
     isName(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
@@ -44,7 +44,7 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     if isUnused(getTag(name))
         scope
     projector := newProjector(tag, m, k)
-    undefined' := Name(renameTag(tag, "undefined"))
+    undefined' := Name(renameTag(tag, "undefined"), 0)
     arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
     body := UnderscoreArrow(tag,
         arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
@@ -72,7 +72,7 @@ define newConstructorDefinition(tag, dataType, n, (pattern, j), scope)
     applyPlainDefinition(tag, name, constructor, scope')
 
 define applyADTDefinition(tag, left, right, scope)
-    undefined' := Name(renameTag(tag, "undefined"))
+    undefined' := Name(renameTag(tag, "undefined"), 0)
     scope' := applyPlainDefinition(tag, getHead(left), undefined', scope)
     constructors := getContents(right)
     n := length(constructors)

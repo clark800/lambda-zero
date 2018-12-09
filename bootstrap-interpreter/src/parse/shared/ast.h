@@ -52,8 +52,8 @@ static inline Node* Reference(Tag tag, long long value) {
     return newLeaf(tag, REFERENCE, value, NULL);
 }
 
-static inline Node* Name(Tag tag) {
-    return newLeaf(tag, NAME, 0, NULL);
+static inline Node* Name(Tag tag, long long depth) {
+    return newLeaf(tag, NAME, depth, NULL);
 }
 
 static inline Node* Operator(Tag tag, long long value, void* rules) {
@@ -70,7 +70,7 @@ static inline Node* Juxtaposition(Tag tag, Node* left, Node* right) {
 }
 
 static inline Node* Case(Tag tag, Node* body) {
-    return newBranch(tag, CASE, 0, Name(renameTag(tag, "_")), body);
+    return newBranch(tag, CASE, 0, Name(renameTag(tag, "_"), 0), body);
 }
 
 static inline Node* AsPattern(Tag tag, Node* left, Node* right) {
@@ -99,7 +99,7 @@ static inline Node* ADT(Tag tag, Node* commaList) {
 }
 
 static inline Node* FixedName(Tag tag, const char* s) {
-    return Name(renameTag(tag, s));
+    return Name(renameTag(tag, s), 0);
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
@@ -107,7 +107,7 @@ static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, "_")), body);
+    return Arrow(tag, Name(renameTag(tag, "_"), 0), body);
 }
 
 static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}
@@ -122,11 +122,11 @@ static inline Node* Section(Tag tag, SectionVariety variety, Node* body) {
 }
 
 static inline Node* LeftPlaceholder(Tag tag) {
-    return Section(tag, RIGHTSECTION, Name(renameTag(tag, ".*")));
+    return Section(tag, RIGHTSECTION, Name(renameTag(tag, ".*"), 0));
 }
 
 static inline Node* RightPlaceholder(Tag tag) {
-    return Section(tag, LEFTSECTION, Name(renameTag(tag, "*.")));
+    return Section(tag, LEFTSECTION, Name(renameTag(tag, "*."), 0));
 }
 
 static inline bool isLeftPlaceholder(Node* node) {

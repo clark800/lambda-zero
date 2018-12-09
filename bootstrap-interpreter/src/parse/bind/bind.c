@@ -4,40 +4,40 @@
 #include "parse/shared/errors.h"
 #include "parse/shared/ast.h"
 
-static unsigned long long findDebruijnIndex(Node* symbol, Array* parameters) {
+static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
+    long long depth = 0;
     for (unsigned long long i = 1; i <= length(parameters); ++i)
-        if (isSameLexeme(elementAt(parameters, length(parameters) - i), symbol))
-            return i;
+        if (isSameLexeme(elementAt(parameters, length(parameters) - i), name))
+            if (depth++ == getValue(name))
+                return i;
     return 0;
 }
 
-static int findOperationCode(Node* node) {
+static int findOperationCode(Node* name) {
     for (unsigned int i = 0; i < sizeof(Operations)/sizeof(char*); ++i)
-        if (isThisName(node, Operations[i]))
+        if (isThisName(name, Operations[i]))
             return (int)i;
     return -1;
 }
 
-static void bindName(Node* node, Array* parameters, size_t globalDepth) {
-    if (isUnused(node))
-       syntaxError("cannot reference a symbol starting with underscore", node);
-    int code = findOperationCode(node);
-    if (code >= 0) {
-        setValue(node, code);
-        setType(node, OPERATION);
+static void bindName(Node* name, Array* parameters, size_t globalDepth) {
+    if (isUnused(name))
+       syntaxError("cannot reference a symbol starting with underscore", name);
+    unsigned long long index = findDebruijnIndex(name, parameters);
+    if (index > 0) {
+        unsigned long long localDepth = length(parameters) - globalDepth;
+        setValue(name, index <= localDepth ? (long long)index :
+            (long long)(index - length(parameters) - 1));
+        setType(name, VARIABLE);
         return;
     }
-    unsigned long long index = findDebruijnIndex(node, parameters);
-    syntaxErrorIf(index == 0, "undefined symbol", node);
-    unsigned long long localDepth = length(parameters) - globalDepth;
-    setValue(node, index <= localDepth ? (long long)index :
-        (long long)(index - length(parameters) - 1));
-    setType(node, VARIABLE);
-}
-
-static bool isDefined(Node* parameter, Array* parameters) {
-    return !isUnderscore(parameter) && (findOperationCode(parameter) >= 0 ||
-        findDebruijnIndex(parameter, parameters) != 0);
+    int code = findOperationCode(name);
+    if (code >= 0) {
+        setValue(name, code);
+        setType(name, OPERATION);
+        return;
+    }
+    syntaxError("undefined symbol", name);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
@@ -46,8 +46,6 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
         case NAME: bindName(node, parameters, length(globals)); break;
         case ARROW:
         case CASE:
-            if (isDefined(getParameter(node), parameters))
-                syntaxError("symbol already defined", getParameter(node));
             append(parameters, getParameter(node));
             bindWith(getBody(node), parameters, globals);
             unappend(parameters);
@@ -81,8 +79,6 @@ Array* bind(Hold* root) {
     while (isLet(node) && !isUnderscore(getParameter(getLeft(node)))) {
         Node* definedName = getParameter(getLeft(node));
         Node* definedValue = getRight(node);
-        if (isDefined(definedName, parameters))
-            syntaxError("symbol already defined", definedName);
         bindWith(definedValue, parameters, globals);
         append(parameters, definedName);
         append(globals, definedValue);

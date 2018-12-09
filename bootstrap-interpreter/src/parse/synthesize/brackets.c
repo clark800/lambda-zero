@@ -19,7 +19,7 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
 static Node* newSpineName(Node* node, const char* name, unsigned int length) {
     unsigned int maxLength = (unsigned int)strlen(name);
     syntaxErrorIf(length > maxLength, "too many arguments", node);
-    return Name(newTag(newString(name, length), getTag(node).location));
+    return Name(newTag(newString(name, length), getTag(node).location), 0);
 }
 
 static Node* newTuple(Node* open, Node* commaList) {
@@ -29,11 +29,11 @@ static Node* newTuple(Node* open, Node* commaList) {
 }
 
 static Node* wrapLeftSection(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, "*.")), body);
+    return Arrow(tag, Name(renameTag(tag, "*."), 0), body);
 }
 
 static Node* wrapRightSection(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, ".*")), body);
+    return Arrow(tag, Name(renameTag(tag, ".*"), 0), body);
 }
 
 static Node* wrapSection(Tag tag, Node* section) {
@@ -141,7 +141,7 @@ void shiftClose(Stack* stack, Node* close) {
             // bracketed infix operator
             Hold* op = pop(stack);
             release(pop(stack));
-            push(stack, Name(getTag(getNode(op))));
+            push(stack, Name(getTag(getNode(op)), 0));
             release(op);
         } else if (isOpenOperator(peek(stack, 1))) {
             // bracketed prefix operator
@@ -151,7 +151,7 @@ void shiftClose(Stack* stack, Node* close) {
                 tag = renameTag(tag, "+");
             else if (isThisOperator(getNode(op), "(-)"))
                 tag = renameTag(tag, "-");
-            push(stack, Name(tag));
+            push(stack, Name(tag, 0));
             release(op);
         } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
             push(stack, RightPlaceholder(getTag(top)));

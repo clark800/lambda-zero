@@ -6,7 +6,7 @@ DefinitionType ::=
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
-    Name(_ : Tag),
+    Name(_ : Tag, _depth : Natural),
     Arrow(_ : Tag, getArrowLeft : AST, getArrowRight : AST),
     Couple(_ : Tag, getCoupleType : CoupleType, getLeft : AST, getRight : AST),
     Number(_ : Tag, getNumericValue : Natural),
@@ -25,7 +25,7 @@ AST ::= {
 }
 
 define getTag
-    case Name(tag) -> tag
+    case Name(tag, _) -> tag
     case Arrow(tag, _, _) -> tag
     case Couple(tag, _, _, _) -> tag
     case Number(tag, _) -> tag
@@ -42,7 +42,7 @@ define getTag
     case Null(tag) -> tag
 
 define containsName(name)
-    case Name(tag) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
+    case Name(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     case Arrow(_, _, body) -> containsName(name, body)
     case Couple(_, _, left, right) ->
         containsName(name, left) or containsName(name, right)
@@ -60,7 +60,7 @@ define containsName(name)
     case Null(_) -> false
 
 define showAST
-    case Name(tag) -> showTag(tag)
+    case Name(tag, _) -> showTag(tag)
     case Arrow(tag, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
     case Couple(tag, _, left, right) ->
@@ -82,7 +82,7 @@ define showAST
     case Null(_) -> "#NULL#"
 
 define indexAST
-    case Name(_) -> 0
+    case Name(_, _) -> 0
     case Arrow(_, _, _) -> 1
     case Couple(_, _, _, _) -> 2
     case Number(_, _) -> 3
@@ -141,19 +141,19 @@ isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
-UnderscoreArrow(tag, body) := Arrow(tag, Name(renameTag(tag, "_")), body)
+UnderscoreArrow(tag, body) := Arrow(tag, Name(renameTag(tag, "_"), 0), body)
 newUnderscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn)
-newNil(tag) := Name(renameTag(tag, "[]"))
+newNil(tag) := Name(renameTag(tag, "[]"), 0)
 prependList(tag, item, list) := Juxtaposition(tag,
-    Juxtaposition(tag, Name(renameTag(tag, "::")), item), list)
+    Juxtaposition(tag, Name(renameTag(tag, "::"), 0), item), list)
 newLeftPlaceholder(tag) :=
-    Section(tag, RightSection, Name(renameTag(tag, ".*")))
+    Section(tag, RightSection, Name(renameTag(tag, ".*"), 0))
 newRightPlaceholder(tag) :=
-    Section(tag, LeftSection, Name(renameTag(tag, "*.")))
+    Section(tag, LeftSection, Name(renameTag(tag, "*."), 0))
 isLeftPlaceholder(node) :=
     isSection(node) and isThisName(getSectionBody(node), ".*")
-wrapLeftSection(tag, body) := Arrow(tag, Name(renameTag(tag, "*.")), body)
-wrapRightSection(tag, body) := Arrow(tag, Name(renameTag(tag, ".*")), body)
+wrapLeftSection(tag, body) := Arrow(tag, Name(renameTag(tag, "*."), 0), body)
+wrapRightSection(tag, body) := Arrow(tag, Name(renameTag(tag, ".*"), 0), body)
 
 define wrapSection(tag, section)
     body := getSectionBody(section)
