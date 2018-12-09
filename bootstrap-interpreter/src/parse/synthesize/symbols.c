@@ -120,7 +120,7 @@ Node* parseSymbol(Tag tag, long long value) {
     Rules* rules = findRules(tag.lexeme);
     if (rules == NULL && isThisString(tag.lexeme, " "))
         return Operator(tag, value, findRules(newString("( )", 3)));
-    return rules == NULL ? Name(tag) : Operator(tag, value, rules);
+    return rules == NULL ? Name(tag, 0) : Operator(tag, value, rules);
 }
 
 static void reduceTop(Stack* stack) {
@@ -174,7 +174,7 @@ static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
     String prior = getRules(operator)->prior;
     if (!isJuxtaposition(left) || !isSameString(getLexeme(left), prior))
         syntaxError("mixfix syntax error", operator);
-    return Juxtaposition(tag, Juxtaposition(tag, Name(tag), left), right);
+    return Juxtaposition(tag, Juxtaposition(tag, Name(tag, 0), left), right);
 }
 
 void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {

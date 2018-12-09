@@ -1,10 +1,7 @@
 #* bind.zero
 
-define findDebruijnIndex(parameterNames, tag)
-    if isUnused(tag)
-        parseError("cannot reference a symbol starting with underscore", tag)
-    parameterNames.indexOf(getTagLexeme(tag)).mapRight(1 +) ?
-        parseError("undefined symbol", tag)
+define findDebruijnIndex(stack, tag, depth)
+    stack.findIndices(=*= getTagLexeme(tag)).safeIndex(depth).mapRight(1 +)
 
 
 define bindOperation(tag)
@@ -12,9 +9,11 @@ define bindOperation(tag)
     return Operation(tag, arity, optimize)
 
 
-define isDefined(tag, parameterNames)
-    bool(bindOperation(tag)) or (not isUnderscore(tag) and
-        parameterNames.contains(getTagLexeme(tag)))
+define bindName(stack, tag, depth)
+    if isUnused(tag)
+        parseError("cannot reference a symbol starting with underscore", tag)
+    stack.findDebruijnIndex(tag, depth).mapRight(Variable(tag)) ?
+        bindOperation(tag) ? parseError("undefined symbol", tag)
 
 
 define parseType(node, context)
@@ -62,20 +61,15 @@ define newAccessorScheme(term, dataType, returnType)
     Scheme(universals, type)
 
 
-define bind(node, parameterNames)
+define bind(node, stack)
     match node
-        case Name(tag)
-            bindOperation(tag) ?
-                Variable(tag, parameterNames.findDebruijnIndex(tag))
+        case Name(tag, depth)
+            stack.bindName(tag, depth)
         case Arrow(tag, parameter, body)
-            if isDefined(getTag(parameter), parameterNames)
-                syntaxError("symbol already defined", parameter)
-            parameterName := getLexeme(parameter)
             Abstraction(getTag(parameter), Free,
-                bind(body, parameterName :: parameterNames))
+                bind(body, getLexeme(parameter) :: stack))
         case Couple(tag, _, left, right)
-            Application(tag, bind(left, parameterNames),
-                             bind(right, parameterNames))
+            Application(tag, bind(left, stack), bind(right, stack))
         case Number(tag, value)
             Numeral(renameTag(tag, "_"), value)
         case Reference(tag, debruijn)
@@ -89,19 +83,17 @@ define bind(node, parameterNames)
         case CommaPair(_, _, _)
             syntaxError("comma not inside brackets", node)
         case Case(tag, constructors, body)
-            # todo: add constructors to Abstraction
-            Abstraction(tag, Free,
-                bind(body, getTagLexeme(tag) :: parameterNames))
+            Abstraction(tag, Free, bind(body, getTagLexeme(tag) :: stack))
         case Section(_, _, _)
             syntaxError("invalid section", node)
         case ADT(_, _)
             syntaxError("must appear on the right side of '::='", node)
         case Constructor(tag, parameterTypes, dataType, body)
-            term := bind(body, parameterNames)
+            term := bind(body, stack)
             scheme := newConstructorScheme(term, parameterTypes, dataType)
             Abstraction(getTermTag(term), scheme, getBody(term))
         case Accessor(tag, dataType, returnType, body)
-            term := bind(body, parameterNames)
+            term := bind(body, stack)
             scheme := newAccessorScheme(term, dataType, returnType)
             Abstraction(getTermTag(term), scheme, getBody(term))
         case Null(_)

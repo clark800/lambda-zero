@@ -47,8 +47,8 @@ a -> b -> c -> d -> (a(\n b \n c\n) \n d)
 ( \n (p -> (p(x -> (y -> x)))) \n (f -> ((f(a -> a))(b -> b))) \n )
 (a -> a)
 ===============================================================================
+x -> x -> x
 (x -> (x -> x))
-Syntax error: symbol already defined 'x' at line 1 column 8
 ===============================================================================
 (0 -> 5)(4)
 Syntax error: invalid parameter '0' at line 1 column 2

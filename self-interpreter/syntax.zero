@@ -6,15 +6,15 @@ define reduceApply(operator, left, right)
 
 define reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
-        Name(getTag(operator)), left), right)
+        Name(getTag(operator), 0), left), right)
 
 
 define reducePrefix(operator, _left, right)
-    reduceApply(operator, Name(getTag(operator)), right)
+    reduceApply(operator, Name(getTag(operator), 0), right)
 
 
 define reducePostfix(operator, left, _right)
-    reduceApply(operator, Name(getTag(operator)), left)
+    reduceApply(operator, Name(getTag(operator), 0), left)
 
 
 define reduceArrow(operator, left, right)
@@ -104,8 +104,8 @@ define reduceInvalid(operator, _left, _right)
 define reduceError(operator, _left, right)
     tag := getTag(operator)
     if isThisName(right, "[]")
-        Name(renameTag(tag, "(undefined)"))
-    Juxtaposition(tag, Name(tag), right)
+        Name(renameTag(tag, "(undefined)"), 0)
+    Juxtaposition(tag, Name(tag, 0), right)
 
 
 define newOperator'(tag, precedence, fixity, associativity, shifter, reducer)

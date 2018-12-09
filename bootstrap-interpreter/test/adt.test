@@ -27,10 +27,10 @@ undefined := 9\nA ::= {()}\nA
 9
 ===============================================================================
 undefined := 0\nA ::= {()}\nA := 0\nA
-Syntax error: symbol already defined 'A' at line 3 column 1
+0
 ===============================================================================
 undefined := 0\nA := 0\nA ::= {()}\nA
-Syntax error: symbol already defined 'A' at line 3 column 1
+0
 ===============================================================================
 syntax(:) := infix(20)\nundefined := 0\nN ::= {z, s(_ : N)}\nz
 (_ -> (_ -> _))

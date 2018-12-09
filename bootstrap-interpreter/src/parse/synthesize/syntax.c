@@ -13,17 +13,17 @@ static Node* reduceApply(Node* operator, Node* left, Node* right) {
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceApply(operator,
-        Name(getTag(operator)), left), right);
+        Name(getTag(operator), 0), left), right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
-    return reduceApply(operator, Name(getTag(operator)), right);
+    return reduceApply(operator, Name(getTag(operator), 0), right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
-    return reduceApply(operator, Name(getTag(operator)), left);
+    return reduceApply(operator, Name(getTag(operator), 0), left);
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
@@ -91,10 +91,10 @@ static Node* reduceError(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
     if (isThisName(right, "[]"))
-        return Name(renameTag(tag, "(undefined)"));
-    Node* exit = Name(renameTag(tag, "(exit)"));
+        return Name(renameTag(tag, "(undefined)"), 0);
+    Node* exit = Name(renameTag(tag, "(exit)"), 0);
     return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
-        Juxtaposition(tag, Name(renameTag(tag, "error")), right)));
+        Juxtaposition(tag, Name(renameTag(tag, "error"), 0), right)));
 }
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {

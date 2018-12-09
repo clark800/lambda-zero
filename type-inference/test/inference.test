@@ -65,6 +65,8 @@ list' := [x -> x, y -> y, x -> y -> y]
 # isNothing(mx) := maybe(mx, constant(false), true)
 
 syntax(-) := infixL(21)
+
+fix := x -> x  # dummy definition
 r(n, m) := r(n - 1, r(n, n))
 
 # r(x) := (

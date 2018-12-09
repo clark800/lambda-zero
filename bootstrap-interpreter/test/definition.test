@@ -56,11 +56,11 @@ f(x) := (g(y) := y \n g) \n f
 (f(x) := x \n f) := 1 \n 0
 Syntax error: invalid left hand side ':=' at line 2 column 5
 ===============================================================================
-x % y := x * y \n 0
-Syntax error: symbol already defined '%' at line 1 column 3
+x % y := x * y \n 3 % 4
+12
 ===============================================================================
 f(x) := 1 \n f(x) := 2 \n f(0)
-Syntax error: symbol already defined 'f' at line 2 column 2
+2
 ===============================================================================
 f(x) := x(1, 2) \n f((+))
 3

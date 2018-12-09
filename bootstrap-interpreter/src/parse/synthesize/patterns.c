@@ -41,7 +41,8 @@ Node* newCasePatternLambda(Tag tag, Node* pattern, Node* body) {
     // Unit is a special case because it's the only type where you know
     // the exact form of any instance of the type, so you can actually
     // pattern match against a value instead of a variable
-    pattern = isThisName(pattern, "()") ? Name(renameTag(tag, "_")) : pattern;
+    pattern = isThisName(pattern, "()") ?
+        Name(renameTag(tag, "_"), 0) : pattern;
     return newPatternLambda(tag, pattern, body);
 }
 
