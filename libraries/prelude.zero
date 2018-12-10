@@ -28,14 +28,6 @@ until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
 while(f, p, z) ≔ f.until((not) ∘ p, z)
 
 # math
-(↑) ≔ (up)
-(≠) ≔ (=/=)
-(≤) ≔ (<=)
-(≥) ≔ (>=)
-(⋅) := (*)
-(⫽) ≔ (//)
-
-# builtins
 # ℕ ⩴ {0, ↑(↓ ∈ N)}
 # (=) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
 #       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n = m)
@@ -103,7 +95,8 @@ bool ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
 mapLeft(exy, f) := exy ⁈ Left ∘ f
 mapRight(exy, f) := exy ⁇ Right ∘ f
 exy ? d ≔ exy ⁈ constant(d)
-(??) ≔ (⁇)
+(try) := (⁈)
+(catch) := (‖)
 
 void := Left()
 (throw) := Left
@@ -111,7 +104,6 @@ void := Left()
 
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
-(::) ≔ (∷)
 prepend ≔ `(∷)
 isNil ≔ (case [] ↦ true; case _ ∷ _ ↦ false)    # note: isEmpty is for sets
 fold(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
@@ -155,7 +147,10 @@ define dropWhile(xs, p)
         case x ∷ xs′ ↦ if p(x) then dropWhile(xs′, p) else xs
 
 xs ¦ p ≔ fold(xs, x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
+filter := (¦)
+
 map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          # map function over list
+(<:>) := `map
 
 define filterMap(xs, f)
     match xs
@@ -226,6 +221,9 @@ deduplicate(xs) := deduplicateBy(xs, (=))
 
 ∑(ns) ≔ ns.cascade((+), 0)
 ∏(ns) ≔ ns.cascade((⋅), 1)
+sum := ∑
+product := ∏
+
 minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
 
@@ -344,29 +342,5 @@ Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
 
 # repl
 repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
-
-# operator aliases
-(||) ≔ (‖)
-(<>) ≔ (∘)
-(/\) ≔ (and)
-(∧) := (and)
-(\/) ≔ (or)
-(∨) := (or)
-(--) := (not)
-(¬) := (not)
-(^^) ≔ (°)
-(?!) := (⁈)
-(try) := (⁈)
-(catch) := (‖)
-(++) ≔ (⧺)
-filter := (¦)
-(|:) := (¦)
-(..) := (‥)
-sum := ∑
-product := ∏
-(=*=) := (≛)
-(<*=) := (⩿)
-(⬫) := `map
-(<:>) := `map
 
 #*

@@ -10,7 +10,7 @@
 static Array* RULES = NULL;     // note: this never gets free'd
 
 typedef struct {
-    String lexeme, prior;
+    String lexeme, alias, prior;
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
     Associativity associativity;
@@ -19,24 +19,9 @@ typedef struct {
     Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
 
-static void shiftOperand(Stack* stack, Node* node) {
-    if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
-        syntaxError("missing operator before", node);
-    push(stack, reduce(node, VOID, VOID));
-}
-
-static Node* reduceOperand(Node* operand, Node* left, Node* right) {
-    (void)left, (void)right;
-    return operand;
-}
-
-static inline Rules* getRules(Node* node) {
-    static Rules operand =
-        {{"", 0}, {"", 0}, 0, 0, NOFIX, N, false, shiftOperand, reduceOperand};
-    if (!isOperator(node))
-        return &operand;
-    Rules* rules = (Rules*)getData(node);
-    return rules == NULL ? &operand : rules;
+static Rules* getRules(Node* node) {
+    assert(isOperator(node));
+    return (Rules*)getData(node);
 }
 
 Fixity getFixity(Node* operator) {
@@ -49,7 +34,7 @@ void erase(Stack* stack, const char* lexeme) {
 }
 
 bool isSpecial(Node* node) {
-    return isOperator(node) && ((Rules*)getRules(node))->special;
+    return isOperator(node) && getRules(node)->special;
 }
 
 bool isOpenOperator(Node* node) {
@@ -79,7 +64,13 @@ Node* reduce(Node* operator, Node* left, Node* right) {
 }
 
 void shift(Stack* stack, Node* node) {
-    getRules(node)->shift(stack, node);
+    if (isOperator(node)) {
+        getRules(node)->shift(stack, node);
+    } else {
+        if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
+            syntaxError("missing operator before", node);
+        push(stack, node);
+    }
 }
 
 bool isHigherPrecedence(Node* left, Node* right) {
@@ -120,7 +111,8 @@ Node* parseSymbol(Tag tag, long long value) {
     Rules* rules = findRules(tag.lexeme);
     if (rules == NULL && isThisString(tag.lexeme, " "))
         return Operator(tag, value, findRules(newString("( )", 3)));
-    return rules == NULL ? Name(tag, 0) : Operator(tag, value, rules);
+    return rules == NULL ? Name(tag, 0) :
+        Operator(newTag(rules->alias, tag.location), value, rules);
 }
 
 static void reduceTop(Stack* stack) {
@@ -144,18 +136,23 @@ void reduceLeft(Stack* stack, Node* operator) {
         reduceTop(stack);
 }
 
+static void appendAlias(Rules* rules, String alias) {
+    Rules* newRules = (Rules*)smalloc(sizeof(Rules));
+    *newRules = *rules;
+    newRules->lexeme = alias;
+    append(RULES, newRules);
+}
+
 static void appendSyntax(Rules rules) {
-    Rules* new = (Rules*)smalloc(sizeof(Rules));
-    *new = rules;
-    append(RULES, new);
+    appendAlias(&rules, rules.lexeme);
 }
 
 void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
         Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
-    appendSyntax((Rules){tag.lexeme, {"", 0}, leftPrecedence, rightPrecedence,
-        fixity, associativity, false, shifter, reducer});
+    appendSyntax((Rules){tag.lexeme, tag.lexeme, {"", 0}, leftPrecedence,
+        rightPrecedence, fixity, associativity, false, shifter, reducer});
 }
 
 void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
@@ -165,8 +162,8 @@ void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
         RULES = newArray(1024);
     bool special = strncmp(symbol, "(+)", 4) && strncmp(symbol, "(-)", 4);
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
-    appendSyntax((Rules){lexeme, {"", 0}, leftPrecedence, rightPrecedence,
-        fixity, associativity, special, shifter, reducer});
+    appendSyntax((Rules){lexeme, lexeme, {"", 0}, leftPrecedence,
+        rightPrecedence, fixity, associativity, special, shifter, reducer});
 }
 
 static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
@@ -182,6 +179,17 @@ void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
     Rules* rules = findRules(getLexeme(prior));
     syntaxErrorIf(rules == NULL, "syntax not defined", prior);
     Precedence p = rules->rightPrecedence;
-    appendSyntax((Rules){tag.lexeme, getLexeme(prior), p, p, INFIX, L, false,
-        shifter, reduceMixfix});
+    appendSyntax((Rules){tag.lexeme, tag.lexeme, getLexeme(prior),
+        p, p, INFIX, L, false, shifter, reduceMixfix});
+}
+
+void addCoreAlias(const char* alias, const char* name) {
+    appendAlias(findRules(toString(name)), toString(alias));
+}
+
+void addAlias(String alias, Node* name) {
+    syntaxErrorIf(!isName(name), "expected operator name", name);
+    Rules* rules = findRules(getLexeme(name));
+    syntaxErrorIf(rules == NULL, "syntax not defined", name);
+    appendAlias(rules, alias);
 }

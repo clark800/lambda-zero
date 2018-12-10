@@ -7,6 +7,10 @@ String newString(const char* start, unsigned int length) {
     return (String){start, length};
 }
 
+String toString(const char* start) {
+    return newString(start, (unsigned int)strlen(start));
+}
+
 Location newLocation(const char* file, unsigned int line, unsigned int column) {
     return (Location){file, line, column};
 }

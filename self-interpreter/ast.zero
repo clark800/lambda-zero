@@ -11,7 +11,7 @@ AST ::= {
     Couple(_ : Tag, getCoupleType : CoupleType, getLeft : AST, getRight : AST),
     Number(_ : Tag, getNumericValue : Natural),
     Reference(_ : Tag, _ : Natural),
-    Operator(_ : Tag, getRank : Natural, getOperatorSyntax : _),
+    Operator(_ : Tag, getRank : Natural, getSyntax : _),
     Definition(_ : Tag, getDefinitionType : DefinitionType,
         getDefinee : AST, getDefinedValue : AST),
     AsPattern(_ : Tag, getName : AST, getPattern : AST),
