@@ -118,6 +118,10 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         addMixfixSyntax(tag, getRight(right), shiftInfix);
         return;
     }
+    if (isThisName(fixity, "alias")) {
+        addAlias(getLexeme(name), getRight(right));
+        return;
+    }
 
     if (!isNumber(getRight(right)))
         syntaxError("invalid syntax definition", definition);
@@ -189,16 +193,16 @@ void initSymbols(void) {
     addCoreSyntax(";", 4, 4, INFIX, R, shiftInfix, reduceNewline);
     addCoreSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
-    addCoreSyntax("\u2254", 5, 5, INFIX, N, shiftInfix, reduceDefine);
     addCoreSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    addCoreSyntax("\u2A74", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
     // reserve precedence 6 for "try"
     addCoreSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
-    addCoreSyntax("\u21A6", 7, 7, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("case", 8, 8, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addCoreSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
     addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
+    addCoreAlias("\u2254", ":=");
+    addCoreAlias("\u2A74", "::=");
+    addCoreAlias("\u21A6", "->");
 }

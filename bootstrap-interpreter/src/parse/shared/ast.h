@@ -113,8 +113,8 @@ static inline Node* UnderscoreArrow(Tag tag, Node* body) {
 static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
-    return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "::"),
-        item), list);
+    return Juxtaposition(tag, Juxtaposition(tag,
+        FixedName(tag, "::"), item), list);
 }
 
 static inline Node* Section(Tag tag, SectionVariety variety, Node* body) {
