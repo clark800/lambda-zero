@@ -90,8 +90,6 @@ static void shiftPostfix(Stack* stack, Node* operator) {
 static Node* reduceError(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
-    if (isThisName(right, "[]"))
-        return Name(renameTag(tag, "(undefined)"), 0);
     Node* exit = Name(renameTag(tag, "(exit)"), 0);
     return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
         Juxtaposition(tag, Name(renameTag(tag, "error"), 0), right)));

@@ -44,8 +44,8 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     if isUnused(getTag(name))
         scope
     projector := newProjector(tag, m, k)
-    undefined' := Name(renameTag(tag, "undefined"), 0)
-    arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined)
+    undefined' := Name(renameTag(tag, "(undefined)"), 0)
+    arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined')
     body := UnderscoreArrow(tag,
         arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
     returnType := getRight(parameter)
@@ -85,7 +85,7 @@ define applyADTDefinition(tag, left, right, scope)
     n := length(forms)
     scope' := zip(forms, naturals).fold(
         newConstructorDefinition(tag, left, n), scope)
-    undefined' := Name(renameTag(tag, "undefined"), 0)
+    undefined' := Name(renameTag(tag, "(undefined)"), 0)
     applyPlainDefinition(tag, getHead(left), undefined', scope')
 
 define applyDefinition(definition, scope)

@@ -1,6 +1,5 @@
 #* prelude.zero
 
-undefined ≔ error("")
 ⊥ ⩴ {}
 
 # function
@@ -342,5 +341,7 @@ Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
 
 # repl
 repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
+
+undefined ≔ error("undefined")
 
 #*

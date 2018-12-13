@@ -1,5 +1,3 @@
-undefined := error("")
-
 id(x) := x
 
 constant(x) := _ -> x

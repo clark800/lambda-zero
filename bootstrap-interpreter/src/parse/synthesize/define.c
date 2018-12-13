@@ -98,7 +98,7 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
     Node* getter = Underscore(tag, 1);
     for (unsigned int k = 0; k < n; ++k)
         getter = Juxtaposition(tag, getter, k == i ? projector :
-            FixedName(tag, "undefined"));
+            FixedName(tag, "(undefined)"));
     getter = UnderscoreArrow(tag, getter);
     return applyPlainDefinition(tag, name, getter, scope);
 }
@@ -150,7 +150,7 @@ Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
         scope = newConstructorDefinition(tag, getRight(node), scope, n - i, n);
 
     // define ADT name as outermost definition
-    Node* undefined = FixedName(tag, "undefined");
+    Node* undefined = FixedName(tag, "(undefined)");
     return applyPlainDefinition(tag, getHead(left), undefined, scope);
 }
 
