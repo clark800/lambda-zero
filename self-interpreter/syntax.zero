@@ -101,13 +101,6 @@ define reduceInvalid(operator, _left, _right)
     syntaxError("operator syntax undeclared", operator)
 
 
-define reduceError(operator, _left, right)
-    tag := getTag(operator)
-    if isThisName(right, "[]")
-        Name(renameTag(tag, "(undefined)"), 0)
-    Juxtaposition(tag, Name(tag, 0), right)
-
-
 define newOperator'(tag, precedence, fixity, associativity, shifter, reducer)
     Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, fixity,
         associativity, false, shifter, reducer, ""))
@@ -248,7 +241,7 @@ OPERATORS := [
     coreSyntax("case", 8, 8, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 9, 9, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("syntax", 90, 90, PREFIX, LEFT, shiftPrefix, reducePrefix),
-    coreSyntax("error", 90, 90, PREFIX, LEFT, shiftPrefix, reduceError),
+    coreSyntax("error", 90, 90, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid),
     coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
 ]

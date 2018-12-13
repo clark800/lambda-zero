@@ -59,7 +59,7 @@ define getBuiltin(tag)
             left
         left % right
 
-    define upBuiltin(argument)
+    define incrementBuiltin(argument)
         if argument >= maxInteger
             runtimeError("overflow in", tag)
         argument + 1
@@ -84,8 +84,8 @@ define getBuiltin(tag)
         (">", (2, makeComparisonBuiltin(>))),
         ("<=", (2, makeComparisonBuiltin(<=))),
         (">=", (2, makeComparisonBuiltin(>=))),
-        ("up", (1, makeUnaryBuiltin(upBuiltin))),
         ("error", (1, errorBuiltin)),
+        ("(increment)", (1, makeUnaryBuiltin(incrementBuiltin))),
         ("(undefined)", (0, closure -> undefined))
     ])
 

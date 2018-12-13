@@ -1,5 +1,5 @@
 typedef enum {NAME, REFERENCE, ARROW, JUXTAPOSITION, NUMBER, CASE, LET,
-    OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, CURLYBRACKET} ASTType;
+    OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, SETBUILDER} ASTType;
 typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
 typedef enum {PLAINDEFINITION, TRYDEFINITION, SYNTAXDEFINITION, ADTDEFINITION}
     DefinitionVariety;
@@ -25,7 +25,7 @@ static inline bool isDefinition(Node* n) {return getASTType(n) == DEFINITION;}
 static inline bool isSection(Node* n) {return getASTType(n) == SECTION;}
 static inline bool isAsPattern(Node* n) {return getASTType(n) == ASPATTERN;}
 static inline bool isCommaPair(Node* n) {return getASTType(n) == COMMAPAIR;}
-static inline bool isADT(Node* n) {return getASTType(n) == CURLYBRACKET;}
+static inline bool isSetBuilder(Node* n) {return getASTType(n) == SETBUILDER;}
 
 static inline bool isUnused(Node* n) {return getLexeme(n).start[0] == '_';}
 
@@ -94,8 +94,8 @@ static inline Node* Definition(Tag tag, DefinitionVariety variety,
     return newBranch(tag, DEFINITION, variety, left, right);
 }
 
-static inline Node* ADT(Tag tag, Node* commaList) {
-    return newBranch(tag, CURLYBRACKET, 0, VOID, commaList);
+static inline Node* SetBuilder(Tag tag, Node* commaList) {
+    return newBranch(tag, SETBUILDER, 0, VOID, commaList);
 }
 
 static inline Node* FixedName(Tag tag, const char* s) {

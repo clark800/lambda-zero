@@ -38,8 +38,8 @@ Syntax error: magnitude of numeral is too large '9223372036854775808' at line 1 
 9223372036854775807 + 0
 9223372036854775807
 ===============================================================================
-up 9223372036854775807
-\nRuntime error: overflow in 'up' at line 1 column 1
+ℕ ⩴ {0, ↑(↓ : ℕ)}\n up 9223372036854775807
+\nRuntime error: overflow in '(increment)' at line 1 column 13
 ===============================================================================
 1 // 0
 \nRuntime error: divide by zero in '//' at line 1 column 3
