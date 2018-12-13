@@ -103,19 +103,21 @@ static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
     return applyPlainDefinition(tag, name, getter, scope);
 }
 
-static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
+static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
         unsigned int i, unsigned int n) {
-    // pattern is an application of a constructor name to a number of parameters
+    // form is an application of a constructor name to a number of parameters
     // i is the index of this constructor in this algebraic data type
     // n is the total number of constructors for this algebraic data type
     // j is the index of the constructor parameter
     // m is the total number of parameters for this constructor
     // k = m - j - 1
-    unsigned int m = getArgumentCount(pattern);
-    for (unsigned int k = 0; k < m; ++k, pattern = getLeft(pattern))
-        scope = newGetterDefinition(tag, getRight(pattern), scope, i, n,
+    unsigned int m = getArgumentCount(form);
+    Node* node = form;
+    for (unsigned int k = 0; k < m; ++k, node = getLeft(node))
+        scope = newGetterDefinition(tag, getRight(node), scope, i, n,
             m - k - 1, m);
-    syntaxErrorIf(!isName(pattern), "invalid constructor name", pattern);
+    Node* name = node;
+    syntaxErrorIf(!isName(name), "invalid constructor name", name);
 
     // let p_* be constructor parameters (m total)
     // let c_* be constructor names (n total)
@@ -126,21 +128,19 @@ static Node* newConstructorDefinition(Tag tag, Node* pattern, Node* scope,
             Underscore(tag, (unsigned long long)(n + m - j)));
     for (unsigned int q = 0; q < n + m; ++q)
         constructor = UnderscoreArrow(tag, constructor);
-    return applyPlainDefinition(tag, pattern, constructor, scope);
+    return applyPlainDefinition(tag, name, constructor, scope);
 }
 
 Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
-    // define ADT name so that the symbol can't be defined twice
-    // TODO: this should be the outermost definition
-    Node* undefined = FixedName(tag, "undefined");
-    scope = applyPlainDefinition(tag, getHead(left), undefined, scope);
-    Node* t = getRight(adt);
+    // for each item in the forms tuple, define a constructor function
+    Node* form = getRight(adt), *node = form;
+    unsigned int n = getArgumentCount(form);
+    for (unsigned int i = 1; isJuxtaposition(node); ++i, node = getLeft(node))
+        scope = newConstructorDefinition(tag, getRight(node), scope, n - i, n);
 
-    // for each item in the patterns tuple, define a constructor function
-    unsigned int n = getArgumentCount(t);
-    for (unsigned int i = 1; isJuxtaposition(t); ++i, t = getLeft(t))
-        scope = newConstructorDefinition(tag, getRight(t), scope, n - i, n);
-    return scope;
+    // define ADT name as outermost definition
+    Node* undefined = FixedName(tag, "undefined");
+    return applyPlainDefinition(tag, getHead(left), undefined, scope);
 }
 
 Node* applyDefinition(Node* definition, Node* scope) {
@@ -182,6 +182,6 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
 
 Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
-    syntaxErrorIf(!isADT(right), "ADT required to right of", operator);
+    syntaxErrorIf(!isSetBuilder(right), "ADT required to right of", operator);
     return Definition(getTag(operator), ADTDEFINITION, left, right);
 }

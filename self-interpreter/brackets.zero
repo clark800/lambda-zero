@@ -71,7 +71,7 @@ define reduceCurly(open, left, patterns)
         syntaxError("missing space before", open)
     if not isThisOperator(open, "{")
         syntaxError("missing close for", open)
-    ADT(getTag(open), getCommaListElements(patterns))
+    SetBuilder(getTag(open), getCommaListElements(patterns))
 
 define reduceEOF(open, left, contents)
     if not isNull(left)

@@ -97,9 +97,9 @@ Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
     syntaxErrorIf(left != NULL, "missing space before", open);
     syntaxErrorIf(!isThisOperator(open, "{"), "missing close for", open);
     if (patterns == NULL)
-        return ADT(renameTag(getTag(open), "{}"), VOID);
+        return SetBuilder(renameTag(getTag(open), "{}"), VOID);
     syntaxErrorIf(isSection(patterns), "invalid section", patterns);
-    return ADT(getTag(open), newTuple(open, patterns));
+    return SetBuilder(getTag(open), newTuple(open, patterns));
 }
 
 Node* reduceEOF(Node* open, Node* left, Node* contents) {

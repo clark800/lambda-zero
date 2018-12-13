@@ -52,32 +52,32 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     accessor := Accessor(tag, dataType, returnType, body)
     applyPlainDefinition(tag, name, accessor, scope)
 
-define readParameterTypes(pattern)
-    if not isJuxtaposition(pattern) then []
-    readParameterTypes(getLeft(pattern)) ++ [getRight(getRight(pattern))]
+define readParameterTypes(form)
+    if not isJuxtaposition(form) then []
+    readParameterTypes(getLeft(form)) ++ [getRight(getRight(form))]
 
-define newConstructorDefinition(tag, dataType, n, (pattern, j), scope)
-    name := getHead(pattern)
+define newConstructorDefinition(tag, dataType, n, (form, j), scope)
+    name := getHead(form)
     if not isName(name)
         syntaxError("invalid constructor name", name)
-    parameters := getArguments(pattern)
+    parameters := getArguments(form)
     m := length(parameters)
     scope' := zip(parameters, naturals).fold(
         newGetterDefinition(tag, dataType, n, j, m), scope)
     arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
     base := arguments.cascade(Juxtaposition(tag), newUnderscore(tag, n - j))
     body := (UnderscoreArrow(tag) ^^ (n + m))(base)
-    parameterTypes := readParameterTypes(pattern)
+    parameterTypes := readParameterTypes(form)
     constructor := Constructor(tag, parameterTypes, dataType, body)
     applyPlainDefinition(tag, name, constructor, scope')
 
 define applyADTDefinition(tag, left, right, scope)
+    forms := getForms(right)
+    n := length(forms)
+    scope' := zip(forms, naturals).fold(
+        newConstructorDefinition(tag, left, n), scope)
     undefined' := Name(renameTag(tag, "undefined"), 0)
-    scope' := applyPlainDefinition(tag, getHead(left), undefined', scope)
-    constructors := getContents(right)
-    n := length(constructors)
-    zip(constructors, naturals).fold(
-        newConstructorDefinition(tag, left, n), scope')
+    applyPlainDefinition(tag, getHead(left), undefined', scope')
 
 define applyDefinition(definition, scope)
     tag := getTag(definition)
@@ -110,7 +110,7 @@ define reduceDefine(operator, left, right)
 define reduceADTDefine(operator, left, right)
     if not isValidPattern(left)
         syntaxError("invalid left hand side", operator)
-    if not isADT(right)
+    if not isSetBuilder(right)
         syntaxError("ADT required to right of", operator)
     Definition(getTag(operator), ADTDefinition, left, right)
 
