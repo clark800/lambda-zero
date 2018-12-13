@@ -16,7 +16,7 @@ AST ::= {
         getDefinee : AST, getDefinedValue : AST),
     AsPattern(_ : Tag, getName : AST, getPattern : AST),
     CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
-    Case(_ : Tag, getConstructors : List(Tag), getCaseBody : AST),
+    Case(_ : Tag, getConstructors : List(AST), getCaseBody : AST),
     Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
     SetBuilder(_ : Tag, getForms : List(AST)),
     Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST, _ : AST),
