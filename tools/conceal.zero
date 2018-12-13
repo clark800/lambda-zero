@@ -182,12 +182,6 @@ _|_
 |^|
 |:|
 
-# superscript operators
-a ^^
-a ^+
-a ^-
-a ^=
-
 # named operators
 contradiction
 forall
@@ -273,7 +267,7 @@ Phi
 Psi
 Omega
 
-# subscripts and primes
+# subscripts and primes (appearing inside a name)
 x'
 x''
 x'''
@@ -291,3 +285,32 @@ x_6
 x_7
 x_8
 x_9
+
+# superscript operators
+^0
+^1
+^2
+^3
+^4
+^5
+^6
+^7
+^8
+^9
+
+^n
+^i
+^j
+^k
+^+
+^-
+^=
+
+# combining characters (appearing inside a name)
+a^^
+a^_
+a^__
+a^*
+a^**
+a^~
+A^->

@@ -195,13 +195,6 @@ syntax match zeroNiceOperator "|?|" conceal cchar=⍰
 syntax match zeroNiceOperator "|^|" conceal cchar=⌺
 syntax match zeroNiceOperator "|:|" conceal cchar=⍠
 
-" superscript operators
-syntax match zeroNiceOperator "\^\^" conceal cchar=°
-syntax match zeroNiceOperator "\^+" conceal cchar=⁺
-syntax match zeroNiceOperator "\^-" conceal cchar=⁻
-syntax match zeroNiceOperator "\^=" conceal cchar=⁼
-"syntax match zeroNiceOperator "\^\*" conceal cchar=﹡ " avoid confusing with *
-
 " named operators
 syntax match zeroNiceOperator "\<contradiction\>" conceal cchar=※
 syntax match zeroNiceOperator "\<forall\>" conceal cchar=∀
@@ -290,6 +283,7 @@ syntax match lambdaZeroGreek "\<Phi\ze\(\A\|$\)" conceal contained cchar=𝚽
 syntax match lambdaZeroGreek "\<Psi\ze\(\A\|$\)" conceal contained cchar=𝚿
 syntax match lambdaZeroGreek "\<Omega\ze\(\A\|$\)" conceal contained cchar=𝛀
 
+" primes and subscripts (appearing inside a name)
 syntax match lambdaZeroPrime "''''\ze\([^']\|$\)" conceal contained cchar=⁗
 syntax match lambdaZeroPrime "'''\ze\([^']\|$\)" conceal contained cchar=‴
 syntax match lambdaZeroPrime "''\ze\([^']\|$\)" conceal contained cchar=″
@@ -307,6 +301,36 @@ syntax match lambdaZeroSubscript "_6" conceal contained cchar=₆
 syntax match lambdaZeroSubscript "_7" conceal contained cchar=₇
 syntax match lambdaZeroSubscript "_8" conceal contained cchar=₈
 syntax match lambdaZeroSubscript "_9" conceal contained cchar=₉
+
+" superscript operators
+" ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ
+syntax match zeroNiceOperator "\^<>" conceal cchar=°
+syntax match zeroNiceOperator "\^+" conceal cchar=⁺
+syntax match zeroNiceOperator "\^-" conceal cchar=⁻
+syntax match zeroNiceOperator "\^=" conceal cchar=⁼
+syntax match zeroNiceOperator "\^0" conceal cchar=⁰
+syntax match zeroNiceOperator "\^1" conceal cchar=¹
+syntax match zeroNiceOperator "\^2" conceal cchar=²
+syntax match zeroNiceOperator "\^3" conceal cchar=³
+syntax match zeroNiceOperator "\^4" conceal cchar=⁴
+syntax match zeroNiceOperator "\^5" conceal cchar=⁵
+syntax match zeroNiceOperator "\^6" conceal cchar=⁶
+syntax match zeroNiceOperator "\^7" conceal cchar=⁷
+syntax match zeroNiceOperator "\^8" conceal cchar=⁸
+syntax match zeroNiceOperator "\^9" conceal cchar=⁹
+syntax match zeroNiceOperator "\^n" conceal cchar=ⁿ
+syntax match zeroNiceOperator "\^i" conceal cchar=ⁱ
+syntax match zeroNiceOperator "\^j" conceal cchar=ʲ
+syntax match zeroNiceOperator "\^k" conceal cchar=ᵏ
+
+" combining characters (appearing inside a name)
+syntax match zeroNiceOperator "\^_" conceal cchar=̅
+syntax match zeroNiceOperator "\^\^" conceal cchar=̂
+syntax match zeroNiceOperator "\^__" conceal cchar=̿
+syntax match zeroNiceOperator "\^\~" conceal cchar=̃
+syntax match zeroNiceOperator "\^\*" conceal cchar=̇
+syntax match zeroNiceOperator "\^\*\*" conceal cchar=̈
+syntax match zeroNiceOperator "\^->" conceal cchar=⃗
 
 highlight link zeroNiceOperator Operator
 highlight! link Conceal Operator
