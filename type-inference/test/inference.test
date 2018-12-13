@@ -28,6 +28,8 @@ syntax(=) := infix(13)
 
 syntax(:) := infix(13)
 
+Natural ::= {0, up(down : Natural)}
+
 Pair(a, b) ::= {(first : a, second : b)}
 
 # p := (1, true, c(1))

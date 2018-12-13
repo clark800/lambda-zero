@@ -117,6 +117,17 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
         scope = newGetterDefinition(tag, getRight(node), scope, i, n,
             m - k - 1, m);
     Node* name = node;
+
+    if (isNumber(form) && getValue(form) == 0) {
+        Node* zero = FixedName(getTag(form), "0");
+        return applyPlainDefinition(tag, zero, form, scope);
+    }
+
+    if (isJuxtaposition(form) && isThisName(getLeft(form), "up")) {
+        Node* increment = FixedName(getTag(name), "(increment)");
+        return applyPlainDefinition(tag, name, increment, scope);
+    }
+
     syntaxErrorIf(!isName(name), "invalid constructor name", name);
 
     // let p_* be constructor parameters (m total)

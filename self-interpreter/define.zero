@@ -57,13 +57,22 @@ define readParameterTypes(form)
     readParameterTypes(getLeft(form)) ++ [getRight(getRight(form))]
 
 define newConstructorDefinition(tag, dataType, n, (form, j), scope)
-    name := getHead(form)
-    if not isName(name)
-        syntaxError("invalid constructor name", name)
     parameters := getArguments(form)
     m := length(parameters)
     scope' := zip(parameters, naturals).fold(
         newGetterDefinition(tag, dataType, n, j, m), scope)
+
+    if isNumber(form) and getNumericValue(form) = 0
+        zero := Name(renameTag(getTag(form), "0"), 0)
+        applyPlainDefinition(tag, zero, form, scope')
+    if isJuxtaposition(form) and isThisName(getLeft(form), "up")
+        name := getLeft(form)
+        increment := Name(renameTag(getTag(name), "(increment)"), 0)
+        applyPlainDefinition(tag, name, increment, scope')
+
+    name := getHead(form)
+    if not isName(name)
+        syntaxError("invalid constructor name", name)
     arguments := reverse(n + 1 .. n + m).map(newUnderscore(tag))
     base := arguments.cascade(Juxtaposition(tag), newUnderscore(tag, n - j))
     body := (UnderscoreArrow(tag) ^^ (n + m))(base)

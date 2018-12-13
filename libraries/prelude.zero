@@ -28,7 +28,7 @@ until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
 while(f, p, z) ≔ f.until((not) ∘ p, z)
 
 # math
-# ℕ ⩴ {0, ↑(↓ ∈ N)}
+ℕ ⩴ {0, ↑(↓ ∈ ℕ)}
 # (=) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
 #       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n = m)
 # (≠) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ true);
