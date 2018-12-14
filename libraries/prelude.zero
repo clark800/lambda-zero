@@ -12,7 +12,7 @@ f ∘ g ≔ x ↦ f(g(x))          # function composition
 id(x) ≔ x                      # identity function
 constant(x) ≔ _ ↦ x           # return value does not depend on parameter
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
-fix(f) ≔ (x ↦ f(x(x)))(x ↦ f(x(x)))
+fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 
 # boolean
 Boolean ⩴ {false, true}
