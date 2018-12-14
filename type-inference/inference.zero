@@ -67,10 +67,6 @@ define instantiate(Scheme(universals, type), variables, term)
     (type.rename(renaming).setSource(term), variables')
 
 
-define isFix(term)
-    isVariable(term) and getTagLexeme(getTermTag(term)) =*= "fix"
-
-
 # stack is a list of type schemes for all the lambda-bound symbols in scope
 # variables is a table that maps type variables to types (either type
 #   variables or concrete types); every type variable appears in variables
@@ -89,12 +85,6 @@ define infer(stack, variables)
             (valueType, variables') := infer(stack, variables, argument)
             stack' := valueType.generalize(variables', variables) :: stack
             infer(stack', variables', getBody(applicand))
-        if isFix(applicand) and isAbstraction(argument)
-            function := getBody(argument)
-            (functionType, variables') := variables.newTypeVariable(term)
-            stack' := Scheme([], functionType) :: stack
-            (functionType', variables'') := infer(stack', variables', function)
-            (functionType, variables''.unify((functionType', functionType)))
         (argumentType, variables') := infer(stack, variables, argument)
         (applicandType, variables'') := infer(stack, variables', applicand)
         (returnType, variables''') := variables''.newTypeVariable(term)
@@ -107,6 +97,8 @@ define infer(stack, variables)
 
 
 define inferType(stack, definition)
+    if getTagLexeme(first(definition)) =*= "fix"
+        getFixScheme(getSource(second(definition))) :: stack
     (type, variables') := infer(stack, empty, second(definition))
     type.generalize(variables', empty) :: stack
 
