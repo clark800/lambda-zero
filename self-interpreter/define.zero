@@ -49,7 +49,7 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     body := UnderscoreArrow(tag,
         arguments.cascade(Juxtaposition(tag), newUnderscore(tag, 1)))
     returnType := getRight(parameter)
-    accessor := Accessor(tag, dataType, returnType, body)
+    accessor := Accessor(tag, dataType, returnType, body, n, j + 1)
     applyPlainDefinition(tag, name, accessor, scope)
 
 define readParameterTypes(form)
@@ -77,7 +77,7 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     base := arguments.cascade(Juxtaposition(tag), newUnderscore(tag, n - j))
     body := (UnderscoreArrow(tag)^<>(n + m))(base)
     parameterTypes := readParameterTypes(form)
-    constructor := Constructor(tag, parameterTypes, dataType, body)
+    constructor := Constructor(tag, parameterTypes, dataType, body, n, j + 1)
     applyPlainDefinition(tag, name, constructor, scope')
 
 define applyADTDefinition(tag, left, right, scope)
