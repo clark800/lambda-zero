@@ -38,23 +38,23 @@ isOperation(term) := indexTerm(term) = 4
 
 
 define maybeDebruijnIndex(term)
-    if isVariable(term) then return getDebruijnIndex(term) else void
+    if isVariable(term) then just getDebruijnIndex(term) else void
 
 
 define maybeBody(term)
-    if isAbstraction(term) then return getBody(term) else void
+    if isAbstraction(term) then just getBody(term) else void
 
 
 define maybeApplicand(term)
-    if isApplication(term) then return getApplicand(term) else void
+    if isApplication(term) then just getApplicand(term) else void
 
 
 define maybeArgument(term)
-    if isApplication(term) then return getArgument(term) else void
+    if isApplication(term) then just getArgument(term) else void
 
 
 define maybeNatural(term)
-    if isNumeral(term) then return getNatural(term) else void
+    if isNumeral(term) then just getNatural(term) else void
 
 
 define maybeHead(term)
@@ -78,7 +78,7 @@ define maybeIsNil(term)
         try body := maybeBody(term)
         try body' := maybeBody(body)
         try debruijn := maybeDebruijnIndex(body')
-        if debruijn = 2 then return result else void
+        if debruijn = 2 then just result else void
 
     define ifPush(result)
         try body := maybeBody(term)
@@ -86,9 +86,9 @@ define maybeIsNil(term)
         try applicand := maybeApplicand(body')
         try applicand' := maybeApplicand(applicand)
         try debruijn := maybeDebruijnIndex(applicand')
-        if debruijn = 1 then return result else void
+        if debruijn = 1 then just result else void
 
-    ifNil(return true) ? ifPush(return false) ? void
+    ifNil(just true) ? ifPush(just false) ? void
 
 
 define showTerm

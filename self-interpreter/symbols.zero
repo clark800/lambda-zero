@@ -105,7 +105,7 @@ define lookupSyntax(operators, lexeme)
         void
     (lexeme', syntax') := head(operators)
     if lexeme =*= lexeme'
-        return syntax'
+        just syntax'
     lookupSyntax(tail(operators), lexeme)
 
 define parseOperator(tag, value, operatorSyntax)
