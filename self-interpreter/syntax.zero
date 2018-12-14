@@ -153,6 +153,13 @@ define newAlias(operators, tag, name)
     Operator(tag, 0, rules)
 
 
+define copySyntax(operators, tag, name)
+    lexeme := getTagLexeme(tag)
+    match getSyntax(newAlias(operators, tag, name))
+        case Syntax(_, l, r, f, a, s, sh, rd, p) ->
+            Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, sh, rd, p))
+
+
 define defineSyntax(operators, node, name, right)
     tag := getTag(node)
     if not isName(name)
@@ -167,6 +174,9 @@ define defineSyntax(operators, node, name, right)
         Definition(tag, SyntaxDefinition, name, operator)
     if isThisName(fixity, "alias")
         operator := newAlias(operators, getTag(name), getRight(right))
+        Definition(tag, SyntaxDefinition, name, operator)
+    if isThisName(fixity, "syntax")
+        operator := copySyntax(operators, getTag(name), getRight(right))
         Definition(tag, SyntaxDefinition, name, operator)
     if not isNumber(getRight(right))
         syntaxError("invalid syntax definition", node)

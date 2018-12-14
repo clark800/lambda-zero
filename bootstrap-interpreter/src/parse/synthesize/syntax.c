@@ -117,7 +117,11 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         return;
     }
     if (isThisName(fixity, "alias")) {
-        addAlias(getLexeme(name), getRight(right));
+        addSyntaxCopy(getLexeme(name), getRight(right), true);
+        return;
+    }
+    if (isThisName(fixity, "syntax")) {
+        addSyntaxCopy(getLexeme(name), getRight(right), false);
         return;
     }
 

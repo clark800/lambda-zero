@@ -62,7 +62,7 @@ define getComponentTypes
     case FunctionType(_, parameter, body) -> [parameter, body]
 
 
-syntax(=~=) := infix(20)
+syntax(=~=) := syntax(=)
 
 define a =~= b
     match a
