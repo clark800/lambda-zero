@@ -6,7 +6,7 @@ define findDebruijnIndex(stack, tag, depth)
 
 define bindOperation(tag)
     try (arity, optimize) := getBuiltin(tag)
-    return Operation(tag, arity, optimize)
+    just Operation(tag, arity, optimize)
 
 
 define bindName(stack, tag, depth)
@@ -75,7 +75,7 @@ define bind(node, stack)
         case Reference(tag, debruijn)
             Variable(tag, debruijn)
         case Operator(_, _, _)
-            error("internal error: Operator reached bind")
+            abort "internal error: Operator reached bind"
         case Definition(_, _, _, _)
             syntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)
@@ -101,6 +101,6 @@ define bind(node, stack)
             metadata := Metadata(Free, scheme, [])
             Abstraction(getTermTag(term), metadata, getBody(term))
         case Null(_)
-            error("internal error: Null reached bind")
+            abort "internal error: Null reached bind"
 
 #*

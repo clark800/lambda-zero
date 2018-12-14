@@ -25,6 +25,6 @@ define builtinTypes
     ])
 
 define getBuiltinType(term)
-    builtinTypes.get(getTagLexeme(getTermTag(term)), undefined).setSource(term)
+    builtinTypes.get(getTagLexeme(getTermTag(term))).setSource(term)
 
 #*

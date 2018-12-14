@@ -13,7 +13,7 @@ elicit(protoset, object) := (
         void
     element := elements[0]
     if object ~< element /\ element ~< object
-        return element
+        just element
     ((~<), tail(elements)).elicit(object)
 )
 

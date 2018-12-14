@@ -64,13 +64,13 @@ define getBuiltin(tag)
             runtimeError("overflow in", tag)
         argument + 1
 
-    define errorBuiltin(evaluate, arguments)
+    define abortBuiltin(evaluate, arguments)
         if length(arguments) < 1
             runtimeError("missing argument to", tag)
         closure := head(arguments)
         message := serializeString(evaluate, closure) ?
             runtimeError("expected string argument to", tag)
-        error(message)
+        abort message
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),
@@ -84,7 +84,7 @@ define getBuiltin(tag)
         (">", (2, makeComparisonBuiltin(>))),
         ("<=", (2, makeComparisonBuiltin(<=))),
         (">=", (2, makeComparisonBuiltin(>=))),
-        ("error", (1, errorBuiltin)),
+        ("abort", (1, abortBuiltin)),
         ("(increment)", (1, makeUnaryBuiltin(incrementBuiltin))),
         ("(undefined)", (0, closure -> undefined))
     ])

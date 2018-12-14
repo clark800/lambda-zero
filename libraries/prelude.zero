@@ -1,13 +1,13 @@
 #* prelude.zero
 
-x.f ≔ f(x)                     # uniform function call syntax
+x.f ≔ f(x)                       # uniform function call syntax
 (match) ≔ (.)
-f ‖ x ≔ f(x)                  # low precedence application
-f ∘ g ≔ x ↦ f(g(x))          # function composition
-`f(x, y) ≔ f(y, x)             # flip order of first two arguments of function
+f ‖ x ≔ f(x)                     # low precedence application
+f ∘ g ≔ x ↦ f(g(x))              # function composition
+`f(x, y) ≔ f(y, x)               # flip order of first two arguments of function
 ``f(x, y, z) ≔ f(y, z, x)
-id(x) ≔ x                      # identity function
-constant(x) ≔ _ ↦ x           # return value does not depend on parameter
+id(x) ≔ x                        # identity function
+constant(x) ≔ _ ↦ x              # result does not depend on parameter
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
 fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 
@@ -50,10 +50,9 @@ mapRight(exy, f) ≔ exy ⁇ Right ∘ f
 exy ? d ≔ exy ⁈ constant(d)
 (try) ≔ (⁈)
 (catch) ≔ (‖)
-
+(error) ≔ Left
+(just) ≔ Right
 void ≔ Left()
-(throw) ≔ Left
-(return) ≔ Right
 
 # numbers
 ℕ ⩴ {0, ↑(↓ ∈ ℕ)}
@@ -119,8 +118,8 @@ last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
 dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
     head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
-safeHead(xs) ≔ if isNil(xs) then void else return head(xs)
-safeTail(xs) ≔ if isNil(xs) then void else return tail(xs)
+safeHead(xs) ≔ if isNil(xs) then void else just head(xs)
+safeTail(xs) ≔ if isNil(xs) then void else just tail(xs)
 
 define safeIndex(xs)
     case 0 ↦ safeHead(xs)
@@ -325,7 +324,7 @@ showList(xs, showElement) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 # parsing
 parseDigit(digit, base) ≔
     if isDigit(digit) and digit - '0' < base then digit - '0' else
-    error("Invalid digit in base " ⧺ showInteger(base) ⧺ ": " ⧺ [digit])
+    abort "Invalid digit in base " ⧺ showInteger(base) ⧺ ": " ⧺ [digit]
 parseNatural(string, base) ≔
     string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(d, base), 0)
 parseInteger(string, base) ≔ if string.head = '-' then
@@ -337,6 +336,6 @@ Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
 # repl
 repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
-undefined ≔ error("undefined")
+undefined ≔ abort "undefined"
 
 #*

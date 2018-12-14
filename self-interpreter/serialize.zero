@@ -29,7 +29,7 @@ define serializeString(evaluateClosure, closure)
     term := getTerm(closure')
     try nil := maybeIsNil(term)
     if nil
-        return []
+        just []
 
     dummy := Closure(Numeral(noTag, 0), [])
     enclose := `Closure(dummy :: dummy :: getEnvironment(closure'))
@@ -40,7 +40,7 @@ define serializeString(evaluateClosure, closure)
     try tailTerm := maybeTail(term)
     try remaining := serializeString(evaluateClosure, enclose(tailTerm))
 
-    return character :: remaining
+    just character :: remaining
 
 
 #*

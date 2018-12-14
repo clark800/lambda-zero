@@ -52,7 +52,7 @@ static long long divide(long long left, long long right, Closure* operation) {
 unsigned int getArity(Term* operation) {
     switch (getOperationCode(operation)) {
         case UNDEFINED: return 0;
-        case ERROR: return 1;
+        case ABORT: return 1;
         case EXIT: return 1;
         case INCREMENT: return 1;
         case PUT: return 1;
@@ -67,7 +67,7 @@ static long long getNumericValue(Term* operation, Term* numeral) {
     return numeral == NULL ? 0 : getValue(numeral);
 }
 
-static Hold* evaluateError(Closure* operation, Closure* message) {
+static Hold* evaluateAbort(Closure* operation, Closure* message) {
     if (!TEST) {
         printRuntimeError("hit", operation);
         fputc((int)'\n', stderr);
@@ -148,7 +148,7 @@ static Hold* evaluateOperator(Closure* operation, Term* left, Term* right) {
 static Hold* evaluateOperation(Closure* operation, Term* left, Term* right) {
     switch (getOperationCode(getTerm(operation))) {
         case EXIT: return error("\n");
-        case UNDEFINED: return evaluateError(operation, NULL);
+        case UNDEFINED: return evaluateAbort(operation, NULL);
         case PUT: return makeResult(operation, evaluatePut(operation, left));
         case GET: return makeResult(operation,
                             evaluateGet(operation, left, right));
@@ -157,8 +157,8 @@ static Hold* evaluateOperation(Closure* operation, Term* left, Term* right) {
 }
 
 Hold* evaluateOperationTerm(Closure* operation, Closure* left, Closure* right) {
-    if (getOperationCode(getTerm(operation)) == ERROR)
-        return evaluateError(operation, left);
+    if (getOperationCode(getTerm(operation)) == ABORT)
+        return evaluateAbort(operation, left);
     switch (getArity(getTerm(operation))) {
         case 0: return evaluateOperation(operation, NULL, NULL);
         case 1: return evaluateOperation(operation, getTerm(left), NULL);
