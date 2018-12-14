@@ -2,11 +2,11 @@ typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, OPERATION} TermType;
 
 // names in Operations must line up with codes in OperationCode
 static const char* const Operations[] = {"+", "-", "*", "//", "%",
-    "=", "=/=", "<", ">", "<=", ">=", "error",
+    "=", "=/=", "<", ">", "<=", ">=", "abort",
     "(increment)", "(undefined)", "(exit)", "(put)", "(get)"};
 typedef enum {PLUS, MINUS, TIMES, DIVIDE, MODULO, EQUAL, NOTEQUAL,
       LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL,
-      ERROR, INCREMENT, UNDEFINED, EXIT, PUT, GET} OperationCode;
+      ABORT, INCREMENT, UNDEFINED, EXIT, PUT, GET} OperationCode;
 
 typedef Node Term;
 static inline TermType getTermType(Term* t) {return (TermType)getType(t);}

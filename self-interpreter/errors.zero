@@ -5,7 +5,7 @@ define showErrorLocation(Tag(lexeme, location))
 
 
 define throwError(message, tag)
-    error(message ++ " " ++ showErrorLocation(tag))
+    abort message ++ " " ++ showErrorLocation(tag)
 
 
 define parseError(message, tag)

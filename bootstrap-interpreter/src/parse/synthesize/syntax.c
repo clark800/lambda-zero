@@ -87,12 +87,12 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     release(operand);
 }
 
-static Node* reduceError(Node* operator, Node* left, Node* right) {
+static Node* reduceAbort(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
     Node* exit = Name(renameTag(tag, "(exit)"), 0);
     return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
-        Juxtaposition(tag, Name(renameTag(tag, "error"), 0), right)));
+        Juxtaposition(tag, Name(renameTag(tag, "abort"), 0), right)));
 }
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
@@ -204,8 +204,8 @@ void initSymbols(void) {
     addCoreSyntax("->", 10, 8, INFIX, R, shiftInfix, reduceArrow); // 9 is "try"
     addCoreSyntax("case", 11, 11, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
+    addCoreSyntax("abort", 16, 16, PREFIX, L, shiftPrefix, reduceAbort);
     addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
-    addCoreSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
     addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
     addCoreAlias("\u2254", ":=");

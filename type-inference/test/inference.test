@@ -14,7 +14,7 @@ syntax(>) := infix(13)
 
 h(x, y) := x > y
 
-Boolean ::= {false, true}
+𝔹 ::= {false, true}
 
 v(x) := true
 
@@ -26,7 +26,7 @@ syntax(=) := infix(13)
 
 syntax(:) := infix(13)
 
-Natural ::= {0, up(down : Natural)}
+ℕ ::= {0, up(down : ℕ)}
 
 Pair(a, b) ::= {(first : a, second : b)}
 
@@ -58,7 +58,7 @@ list' := [x -> x, y -> y, x -> y -> y]
 
 # string := "test"
 
-# e := if(true, 1, error("..."))
+# e := if(true, 1, abort("..."))
 
 # repeat(x) := x :: repeat(x)
 

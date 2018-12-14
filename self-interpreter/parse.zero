@@ -74,14 +74,14 @@ define parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
         case Space -> parseSymbol(operators, renameTag(tag, " "), 0)
-        case VSpace -> error("internal error: VSpace reached parseToken")
+        case VSpace -> abort "internal error: VSpace reached parseToken"
         case Newline -> parseSymbol(operators, renameTag(tag, "\n"),
             length(getTagLexeme(tag)) - 1)
         case Symbolic -> parseSymbol(operators, tag, 0)
         case Numeric -> parseNumericLiteral(tag)
         case Character -> parseCharacterLiteral(tag)
         case String -> parseStringLiteral(tag)
-        case Comment -> error("internal error: Comment reached parseToken")
+        case Comment -> abort "internal error: Comment reached parseToken"
         case Invalid -> parseError("invalid character", tag)
 
 
@@ -97,8 +97,8 @@ define parse(code)
     if stack.count((not) <> isEOF) = 0
         syntaxError("no input", head(stack))
     if length(stack) =/= 1
-        error("parser error")
-    # error(showAST(head(stack)))
+        abort "parser error"
+    # abort(showAST(head(stack)))
     bind(head(stack), [])
 
 #*

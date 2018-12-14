@@ -110,7 +110,7 @@ bindTypeVariable(typeVariable, type) := (
     isVariableType(type) /\ getTypeVariable(type) =*= typeVariable ?
         nullSubstitution
     getFreeTypeVariablesInType(type).contains(typeVariable) ?
-        error("occurs check failed")
+        abort("occurs check failed")
     newDictionary([(typeVariable, type)])
 )
 
@@ -128,7 +128,7 @@ unify(typeA, typeB) := (
                    s1.substituteInType(getBody(typeB)))
         composeSubstitutions(s1, s2)
     )
-    error("types do not unify")
+    abort("types do not unify")
 )
 
 // infer : ASTNode -> Context -> (Substitution, Type, State)
@@ -138,7 +138,7 @@ infer(node, context, state) := (
         (nullSubstitution, newIntegerType(tag), state)
     )
     isReference(node) \/ isBuiltin(node) ? (
-        scheme := context.get(getLexeme(node), error("unbound variable"))
+        scheme := context.get(getLexeme(node), abort("unbound variable"))
         (type, state') := instantiate(scheme, state)
         (nullSubstitution, type, state')
     )

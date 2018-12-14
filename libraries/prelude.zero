@@ -325,7 +325,7 @@ showList(xs, showElement) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 # parsing
 parseDigit(digit, base) ≔
     if isDigit(digit) and digit - '0' < base then digit - '0' else
-    error("Invalid digit in base " ⧺ showInteger(base) ⧺ ": " ⧺ [digit])
+    abort "Invalid digit in base " ⧺ showInteger(base) ⧺ ": " ⧺ [digit]
 parseNatural(string, base) ≔
     string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(d, base), 0)
 parseInteger(string, base) ≔ if string.head = '-' then
@@ -337,6 +337,6 @@ Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
 # repl
 repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
-undefined ≔ error("undefined")
+undefined ≔ abort "undefined"
 
 #*
