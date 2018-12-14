@@ -14,9 +14,9 @@ define newPatternArrow(tag, pattern, body)
     if isName(pattern)
         Arrow(tag, pattern, body)
     if isAsPattern(pattern)
-        Arrow(tag, getName(pattern), Juxtaposition(tag,
+        Arrow(tag, getLabel(pattern), Juxtaposition(tag,
             newPatternArrow(tag, getPattern(pattern), body),
-            Reference(getTag(getName(pattern)), 1)))
+            Reference(getTag(getLabel(pattern)), 1)))
     if isJuxtaposition(pattern)
         arguments := getArguments(pattern)
         size := length(arguments)
@@ -49,7 +49,7 @@ define newCase(tag, left, right)
     underscore := newUnderscore(tag, 1)
     if not isAsPattern(left)
         Case(tag, [constructor], Juxtaposition(tag, underscore, reconstructor))
-    wrapper := newPatternArrow(tag, getName(left), reconstructor)
+    wrapper := newPatternArrow(tag, getLabel(left), reconstructor)
     argument := Juxtaposition(tag, wrapper, underscore)
     Case(tag, [constructor], Juxtaposition(tag, underscore, argument))
 

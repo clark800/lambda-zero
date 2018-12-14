@@ -11,8 +11,9 @@ define builtinTypes
     syntax(>->) := syntax(||)
     (>->) := FunctionType(noTerm)
     bottom := BottomType(noTerm)
-    boolean := NominalType(noTerm, "𝔹", [])
-    natural := NominalType(noTerm, "ℕ", [])
+    boolean := ADT(noTerm, "𝔹", [], 2, 0)
+    natural := ADT(noTerm, "ℕ", [], 2, 0)
+    natural' := ADT(noTerm, "ℕ", [], 2, 2)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -27,7 +28,7 @@ define builtinTypes
         (">", comparison),
         ("<=", comparison),
         (">=", comparison),
-        ("(increment)", natural >-> natural),
+        ("(increment)", natural >-> natural'),
         ("(undefined)", bottom)
     ])
 

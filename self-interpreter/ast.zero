@@ -14,13 +14,15 @@ AST ::= {
     Operator(_ : Tag, getRank : Natural, getSyntax : _),
     Definition(_ : Tag, getDefinitionType : DefinitionType,
         getDefinee : AST, getDefinedValue : AST),
-    AsPattern(_ : Tag, getName : AST, getPattern : AST),
+    AsPattern(_ : Tag, getLabel : AST, getPattern : AST),
     CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
     Case(_ : Tag, getConstructors : List(AST), getCaseBody : AST),
     Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
     SetBuilder(_ : Tag, getForms : List(AST)),
-    Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST, _ : AST),
-    Accessor(_ : Tag, _dataType : AST, _returnType : AST, _ : AST),
+    Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
+        _function : AST, _count : Natural, _index : Natural),
+    Accessor(_ : Tag, _dataType : AST, _returnType : AST,
+        _function : AST, _count : Natural, _index : Natural),
     Null(_ : tag)
 }
 
@@ -37,8 +39,8 @@ define getTag
     case Case(tag, _, _) -> tag
     case Section(tag, _, _) -> tag
     case SetBuilder(tag, _) -> tag
-    case Constructor(tag, _, _, _) -> tag
-    case Accessor(tag, _, _, _) -> tag
+    case Constructor(tag, _, _, _, _, _) -> tag
+    case Accessor(tag, _, _, _, _, _) -> tag
     case Null(tag) -> tag
 
 define containsName(name)
@@ -55,8 +57,8 @@ define containsName(name)
     case Case(_, _, body) -> containsName(name, body)
     case Section(_, _, _) -> false
     case SetBuilder(_, _) -> false
-    case Constructor(_, _, _, _) -> false
-    case Accessor(_, _, _, _) -> false
+    case Constructor(_, _, _, _, _, _) -> false
+    case Accessor(_, _, _, _, _, _) -> false
     case Null(_) -> false
 
 define showAST
@@ -77,8 +79,8 @@ define showAST
     case Case(tag, _, body) -> "(case -> " ++ showAST(body) ++ ")"
     case Section(_, _, body) -> showAST(body)
     case SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
-    case Constructor(_, _, _, body) -> showAST(body)
-    case Accessor(_, _, _, body) -> showAST(body)
+    case Constructor(_, _, _, body, _, _) -> showAST(body)
+    case Accessor(_, _, _, body, _, _) -> showAST(body)
     case Null(_) -> "#NULL#"
 
 define indexAST
@@ -94,8 +96,8 @@ define indexAST
     case Case(_, _, _) -> 9
     case Section(_, _, _) -> 10
     case SetBuilder(_, _) -> 11
-    case Constructor(_, _, _, _) -> 12
-    case Accessor(_, _, _, _) -> 13
+    case Constructor(_, _, _, _, _, _) -> 12
+    case Accessor(_, _, _, _, _, _) -> 13
     case Null(_) -> 14
 
 isName(node) := indexAST(node) = 0

@@ -16,14 +16,22 @@ define bindName(stack, tag, depth)
         bindOperation(tag) ? parseError("undefined symbol", tag)
 
 
-define parseType(node, context)
+define parseParameterType(node, context)
+    # TODO: count parameter to ADTs is wrong
     if isName(node)
         name := getLexeme(node)
-        context.lookup(name) ? NominalType(noTerm, name, [])
+        context.lookup(name) ? ADT(noTerm, name, [], 0, 0)
     name := getLexeme(getHead(node))
     if context.hasKey(name)
         syntaxError("type variable not allowed in applicand position", node)
-    NominalType(noTerm, name, getArguments(node).map(`parseType(context)))
+    parameterTypes := getArguments(node).map(`parseParameterType(context))
+    ADT(noTerm, name, parameterTypes, 0, 0)
+
+
+define parseADT(node, context, count, index)
+    name := getLexeme(getHead(node))
+    parameterTypes := getArguments(node).map(context.get <> getLexeme)
+    ADT(noTerm, name, parameterTypes, count, index)
 
 
 define buildContext(dataType)
@@ -35,29 +43,30 @@ define buildContext(dataType)
     newTable((<*=), zip(components.map(getLexeme), typeVariables))
 
 
-define newConstructorType(term, parameterTypes, dataType, context)
+define newConstructorType(term, parameterTypes, dataType, context, count, index)
     # todo: check that universals are not already defined and that all other
     # names are already defined; also make sure universal name is not the
     # same as the dataType name
     if isNil(parameterTypes)
-        parseType(dataType, context)
-    parameterType := parseType(head(parameterTypes), context)
+        parseADT(dataType, context, count, index)
+    parameterType := parseParameterType(head(parameterTypes), context)
     FunctionType(term, parameterType, newConstructorType(getBody(term),
-        tail(parameterTypes), dataType, context))
+        tail(parameterTypes), dataType, context, count, index))
 
 
-define newConstructorScheme(term, parameterTypes, dataType)
+define newConstructorScheme(term, parameterTypes, dataType, count, index)
     context := buildContext(dataType)
     universals := getValues(context)
-    type := newConstructorType(term, parameterTypes, dataType, context)
+    type := newConstructorType(term, parameterTypes,
+        dataType, context, count, index)
     Scheme(universals, type)
 
 
-define newAccessorScheme(term, dataType, returnType)
+define newAccessorScheme(term, dataType, returnType, count, index)
     context := buildContext(dataType)
     universals := getValues(context)
-    type := FunctionType(term, parseType(dataType, context),
-        parseType(returnType, context))
+    type := FunctionType(term, parseADT(dataType, context, count, index),
+        parseParameterType(returnType, context))
     Scheme(universals, type)
 
 
@@ -90,14 +99,16 @@ define bind(node, stack)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
-        case Constructor(tag, parameterTypes, dataType, body)
+        case Constructor(tag, parameterTypes, dataType, body, count, index)
             term := bind(body, stack)
-            scheme := newConstructorScheme(term, parameterTypes, dataType)
+            scheme := newConstructorScheme(term, parameterTypes,
+                dataType, count, index)
             metadata := Metadata(Free, scheme, [])
             Abstraction(getTermTag(term), metadata, getBody(term))
-        case Accessor(tag, dataType, returnType, body)
+        case Accessor(tag, dataType, returnType, body, count, index)
             term := bind(body, stack)
-            scheme := newAccessorScheme(term, dataType, returnType)
+            scheme := newAccessorScheme(term, dataType, returnType,
+                count, index)
             metadata := Metadata(Free, scheme, [])
             Abstraction(getTermTag(term), metadata, getBody(term))
         case Null(_)
