@@ -1,8 +1,5 @@
 #* prelude.zero
 
-⊥ ⩴ {}
-
-# function
 x.f ≔ f(x)                     # uniform function call syntax
 (match) ≔ (.)
 f ‖ x ≔ f(x)                  # low precedence application
@@ -14,8 +11,14 @@ constant(x) ≔ _ ↦ x           # return value does not depend on parameter
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
 fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 
+# bottom
+⊥ ⩴ {}
+
+# unit
+𝕌 ⩴ {()}
+
 # boolean
-Boolean ⩴ {false, true}
+𝔹 ⩴ {false, true}
 (if b)(x, y) ≔ b.(case false ↦ y; case true ↦ x)
 (then) ≔ (‖)
 (else) ≔ (‖)
@@ -25,53 +28,7 @@ b or c ≔ if b then true else c
 until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
 while(f, p, z) ≔ f.until((not) ∘ p, z)
 
-# math
-ℕ ⩴ {0, ↑(↓ ∈ ℕ)}
-# (=) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
-#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n = m)
-# (≠) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ true);
-#       case ↑ _ ↦ (case 0 ↦ true; case ↑ m ↦ n ≠ m)
-# (<) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _↦ true);
-#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n < m)
-# (>) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ false);
-#       case ↑ n ↦ (case 0 ↦ true; case ↑ m ↦ n > m)
-# (≤) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ true);
-#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n ≤ m)
-# (≥) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
-#       case ↑ n ↦ (case 0 ↦ true; case ↑ m ↦ n ≥ m)
-# (+) ≔ case 0 ↦ m ↦ m; case ↑ n ↦ m ↦ ↑(n + m)
-# (-) ≔ case 0 ↦ (case 0 ↦ 0; case ↑ m ↦ undefined);
-#       case ↑ n ↦ (case 0 ↦ ↑ n; case ↑ m ↦ n - m)
-# (⋅) ≔ case 0 ↦ _ ↦ 0; case ↑ n ↦ m ↦ m + n ⋅ m
-# n ⫽ m ≔ if m = 0 then undefined else (if n < m then 0 else ↑((n - m) ⫽ m))
-# n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
-
-ℤ ⩴ {+(_ ∈ ℕ), -(_ ∈ ℕ)}
-ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
-positive(n) ≔ + n
-negative(n) ≔ - n
-negate ≔ (case + n ↦ - n; case - n ↦ + n)
-abs ≔ (case + n ↦ + n; case - n ↦ + n)
-abs′ ≔ (case + n ↦ n; case - n ↦ n)
-min(n, m) ≔ if n ≤ m then n else m
-max(n, m) ≔ if n ≥ m then n else m
-mod(n, m) ≔ n % m
-isEven(n) ≔ n.mod(2) = 0
-isOdd(n) ≔ n.mod(2) ≠ 0
-divides(n, m) ≔ m.mod(n) = 0
-(!) ≔ (case 0 ↦ 1; case n @ ↑(n′) ↦ n ⋅ (n′)!)
-gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
-(n)^2 := n * n
-
-define n ^ m
-    match m
-        case 0 ↦ 1
-        case ↑ m′ -> if isEven(m) then (n ^ (m ⫽ 2))^2 else n ⋅ n ^ m′
-
-f ° n ≔ n.(case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′)
-
-# tuple
-Unit ⩴ {()}
+# pair
 Pair(a, b) ⩴ {(first ∈ a, second ∈ b)}
 Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
 Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth_4 ∈ d)}
@@ -97,6 +54,50 @@ exy ? d ≔ exy ⁈ constant(d)
 void ≔ Left()
 (throw) ≔ Left
 (return) ≔ Right
+
+# numbers
+ℕ ⩴ {0, ↑(↓ ∈ ℕ)}
+ℤ ⩴ {+(_ ∈ ℕ), -(_ ∈ ℕ)}
+ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
+positive(n) ≔ + n
+negative(n) ≔ - n
+negate ≔ (case + n ↦ - n; case - n ↦ + n)
+abs ≔ (case + n ↦ + n; case - n ↦ + n)
+abs′ ≔ (case + n ↦ n; case - n ↦ n)
+min(n, m) ≔ if n ≤ m then n else m
+max(n, m) ≔ if n ≥ m then n else m
+mod(n, m) ≔ n % m
+isEven(n) ≔ n.mod(2) = 0
+isOdd(n) ≔ n.mod(2) ≠ 0
+divides(n, m) ≔ m.mod(n) = 0
+(!) ≔ (case 0 ↦ 1; case n @ ↑(n′) ↦ n ⋅ (n′)!)
+gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
+f ° n ≔ n.(case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′)
+(n)^2 := n * n
+
+define n ^ m
+    match m
+        case 0 ↦ 1
+        case ↑ m′ -> if isEven(m) then (n ^ (m ⫽ 2))^2 else n ⋅ n ^ m′
+
+# (=) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
+#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n = m)
+# (≠) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ true);
+#       case ↑ _ ↦ (case 0 ↦ true; case ↑ m ↦ n ≠ m)
+# (<) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _↦ true);
+#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n < m)
+# (>) ≔ case 0 ↦ (case 0 ↦ false; case ↑ _ ↦ false);
+#       case ↑ n ↦ (case 0 ↦ true; case ↑ m ↦ n > m)
+# (≤) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ true);
+#       case ↑ n ↦ (case 0 ↦ false; case ↑ m ↦ n ≤ m)
+# (≥) ≔ case 0 ↦ (case 0 ↦ true; case ↑ _ ↦ false);
+#       case ↑ n ↦ (case 0 ↦ true; case ↑ m ↦ n ≥ m)
+# (+) ≔ case 0 ↦ m ↦ m; case ↑ n ↦ m ↦ ↑(n + m)
+# (-) ≔ case 0 ↦ (case 0 ↦ 0; case ↑ m ↦ undefined);
+#       case ↑ n ↦ (case 0 ↦ ↑ n; case ↑ m ↦ n - m)
+# (⋅) ≔ case 0 ↦ _ ↦ 0; case ↑ n ↦ m ↦ m + n ⋅ m
+# n ⫽ m ≔ if m = 0 then undefined else (if n < m then 0 else ↑((n - m) ⫽ m))
+# n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
@@ -229,9 +230,7 @@ define primes
         case n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
     filterPrime(countFrom(2))
 
-define fibonaccis
-    f(m, n) ≔ m ∷ f(n, m + n)
-    f(0, 1)
+fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 
 # string
 define xs ≛ ys              # string equality
@@ -265,8 +264,7 @@ define split(ns, p)
         case n ∷ ns′
             if p(ns)
                 ([], ns)
-            (before, after) ≔ ns′.split(p)
-            (n ∷ before, after)
+            (n ∷ before, after) where (before, after) ≔ ns′.split(p)
 
 splitAt(xs, n) ≔ (xs.take(n), xs.drop(n))
 splitWhen(ns, p) ≔ ns.split(p ∘ head)
