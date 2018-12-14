@@ -4,7 +4,7 @@ define getFreeVariables(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             [type]
-        getFreeVariables(variables.get(type, undefined), variables)
+        getFreeVariables(variables.get(type), variables)
     join(getComponentTypes(type).map(`getFreeVariables(variables))).
         deduplicateBy((=~=))
 
@@ -16,7 +16,7 @@ define substitute(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             type
-        type' := variables.get(type, undefined).setSource(getSource(type))
+        type' := variables.get(type).setSource(getSource(type))
         if type'.getFreeVariables(empty).any((=~= type))
             recursionError(type, type, variables)
         type'.substitute(variables)

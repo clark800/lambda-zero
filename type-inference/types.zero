@@ -86,7 +86,7 @@ newTypeVariables(originals, variables) :=
     originals.map(getSource).cascadeMap(`newTypeVariable, variables)
 
 isFree(type, variables) := not variables.hasKey(type) or
-    isFreeType(variables.get(type, undefined))
+    isFreeType(variables.get(type))
 
 define mapComponents(type, f)
     match type
@@ -103,7 +103,7 @@ empty := newVariableMap([])
 
 define rename(type, variables)
     if isTypeVariable(type)
-        variables.get(type, type)
+        variables.lookup(type) ? type
     type.mapComponents(`rename(variables))
 
 #*
