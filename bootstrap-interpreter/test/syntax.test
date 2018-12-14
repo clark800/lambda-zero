@@ -20,3 +20,6 @@ Syntax error: syntax already defined ' ' at line 2 column 8
 syntax( ) := infixL(20) \n syntax(*) := infixL(20) \n a b := a * b \n 2 3
 6
 ===============================================================================
+syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n 5 ++ 5
+10
+===============================================================================

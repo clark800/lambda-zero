@@ -1,7 +1,7 @@
 #* declarations.zero
 
 define builtinTypes
-    syntax(>->) := infixR(10)
+    syntax(>->) := syntax(||)
     (>->) := FunctionType(noTerm)
     bottom := BottomType(noTerm)
     boolean := NominalType(noTerm, "𝔹", [])

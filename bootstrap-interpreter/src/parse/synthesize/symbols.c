@@ -136,15 +136,18 @@ void reduceLeft(Stack* stack, Node* operator) {
         reduceTop(stack);
 }
 
-static void appendAlias(Rules* rules, String alias) {
+static void appendSyntaxCopy(Rules* rules, String lexeme, String alias) {
     Rules* newRules = (Rules*)smalloc(sizeof(Rules));
     *newRules = *rules;
-    newRules->lexeme = alias;
+    newRules->lexeme = lexeme;
+    newRules->alias = alias;
     append(RULES, newRules);
 }
 
 static void appendSyntax(Rules rules) {
-    appendAlias(&rules, rules.lexeme);
+    Rules* newRules = (Rules*)smalloc(sizeof(Rules));
+    *newRules = rules;
+    append(RULES, newRules);
 }
 
 void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
@@ -184,12 +187,13 @@ void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
 }
 
 void addCoreAlias(const char* alias, const char* name) {
-    appendAlias(findRules(toString(name)), toString(alias));
+    Rules* rules = findRules(toString(name));
+    appendSyntaxCopy(rules, toString(alias), rules->alias);
 }
 
-void addAlias(String alias, Node* name) {
+void addSyntaxCopy(String lexeme, Node* name, bool alias) {
     syntaxErrorIf(!isName(name), "expected operator name", name);
     Rules* rules = findRules(getLexeme(name));
     syntaxErrorIf(rules == NULL, "syntax not defined", name);
-    appendAlias(rules, alias);
+    appendSyntaxCopy(rules, lexeme, alias ? rules->alias : lexeme);
 }

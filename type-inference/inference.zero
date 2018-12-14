@@ -54,7 +54,7 @@ define unifyAll(variables, types)
     zip(repeat(head(types)), tail(types)).cascade(unify, variables)
 
 define generalize(type, variables, oldVariables)
-    syntax(\\) := infix(17)
+    syntax(\\) := syntax(\)
     vs \\ vs' := vs |: (v -> not vs'.any((=~= v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\

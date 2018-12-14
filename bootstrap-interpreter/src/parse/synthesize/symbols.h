@@ -20,5 +20,5 @@ void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
     Fixity fixity, Associativity associativity, void (*shifter)(Stack*, Node*),
     Node* (*reducer)(Node*, Node*, Node*));
 void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*));
-void addAlias(String alias, Node* name);
+void addSyntaxCopy(String lexeme, Node* name, bool alias);
 void addCoreAlias(const char* alias, const char* name);

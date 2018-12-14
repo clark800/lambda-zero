@@ -117,7 +117,11 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         return;
     }
     if (isThisName(fixity, "alias")) {
-        addAlias(getLexeme(name), getRight(right));
+        addSyntaxCopy(getLexeme(name), getRight(right), true);
+        return;
+    }
+    if (isThisName(fixity, "syntax")) {
+        addSyntaxCopy(getLexeme(name), getRight(right), false);
         return;
     }
 
@@ -166,6 +170,10 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, left, right);
 }
 
+static Node* reduceWhere(Node* operator, Node* left, Node* right) {
+    return reduceNewline(operator, right, left);
+}
+
 static void shiftNewline(Stack* stack, Node* operator) {
     erase(stack, " ");
     reduceLeft(stack, operator);
@@ -189,13 +197,13 @@ void initSymbols(void) {
     addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
     addCoreSyntax(";", 4, 4, INFIX, R, shiftInfix, reduceNewline);
-    addCoreSyntax("define", 5, 5, PREFIX, N, shiftPrefix, reducePrefix);
-    addCoreSyntax(":=", 5, 5, INFIX, N, shiftInfix, reduceDefine);
-    addCoreSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    // reserve precedence 6 for "try"
-    addCoreSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
-    addCoreSyntax("case", 8, 8, PREFIX, N, shiftPrefix, reducePrefix);
-    addCoreSyntax("@", 9, 9, INFIX, N, shiftInfix, reduceAsPattern);
+    addCoreSyntax("define", 6, 6, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax(":=", 6, 6, INFIX, N, shiftInfix, reduceDefine);
+    addCoreSyntax("::=", 6, 6, INFIX, N, shiftInfix, reduceADTDefinition);
+    addCoreSyntax("where", 7, 5, INFIX, L, shiftInfix, reduceWhere);
+    addCoreSyntax("->", 10, 8, INFIX, R, shiftInfix, reduceArrow); // 9 is "try"
+    addCoreSyntax("case", 11, 11, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
     addCoreSyntax("error", 90, 90, PREFIX, L, shiftPrefix, reduceError);
     addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
