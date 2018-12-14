@@ -1,5 +1,5 @@
 ===============================================================================
-if (naturals.map(mirror((*))) |: isOdd).any((= 49)) then 1 else 0
+if (naturals.map(^2) |: isOdd).any((= 49)) then 1 else 0
 1
 ===============================================================================
 sum(naturals.take(10))
@@ -8,31 +8,31 @@ sum(naturals.take(10))
 sum((naturals |: isOdd).take(10))
 100
 ===============================================================================
-(naturals.map(mirror((*))) |: isEven)[10]
+(naturals.map(^2) |: isEven)[10]
 400
 ===============================================================================
-sum(take(naturals.map(mirror((*))), 5))
+sum(take(naturals.map(^2), 5))
 30
 ===============================================================================
-head(drop(naturals.map(mirror((*))), 5))
+head(drop(naturals.map(^2), 5))
 25
 ===============================================================================
-if naturals.map(mirror((*))).take(20).drop(1).all((> 0)) then 1 else 0
+if naturals.map(^2).take(20).drop(1).all((> 0)) then 1 else 0
 1
 ===============================================================================
 naturals.take(5).reverse[4]
 0
 ===============================================================================
-naturals.map(mirror((*))).drop(1).take(3).product
+naturals.map(^2).drop(1).take(3).product
 36
 ===============================================================================
-naturals.map(mirror((*))).take(7).reverse.drop(2).head
+naturals.map(^2).take(7).reverse.drop(2).head
 16
 ===============================================================================
-((head <> `drop(2) <> reverse)(naturals.map(mirror((*))).take(7)))
+((head <> `drop(2) <> reverse)(naturals.map(^2).take(7)))
 16
 ===============================================================================
-naturals.map(mirror((*))).map((2 *)).take(4).sum
+naturals.map(^2).map((2 *)).take(4).sum
 28
 ===============================================================================
 main(input) := showList(naturals.take(5).map(((2 + 1) *)), showNatural)
@@ -41,7 +41,7 @@ main(input) := showList(naturals.take(5).map(((2 + 1) *)), showNatural)
 main(input) := showList(naturals.take(5).map((2 * 2 +)), showNatural)
 [4, 5, 6, 7, 8]
 ===============================================================================
-maximum(take(naturals.map(mirror((*))), 7) |: isOdd)
+maximum(take(naturals.map(^2), 7) |: isOdd)
 25
 ===============================================================================
 main(input) := naturals.take(10).map(showNatural).join

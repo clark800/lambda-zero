@@ -1,13 +1,18 @@
 #* term.zero
 
+MetadataType ::= {Metadata(
+    getAnnotation : Scheme,
+    getAscription : Scheme,
+    getConstructorDebruijnIndices : List(Natural)
+)}
+
 Term ::= {
     Variable(_ : Tag, getDebruijnIndex : Natural),
-    Abstraction(_ : Tag, getScheme : Scheme, getBody : Term),
+    Abstraction(_ : Tag, getMetadata : Metadata, getBody : Term),
     Application(_ : Tag, getApplicand : Term, getArgument : Term),
     Numeral(_ :  Tag, getNatural : Natural),
     Operation(_ : Tag, getArity : Natural, getOperator : _)
 }
-
 
 define getTermTag
     case Variable(tag, _) -> tag

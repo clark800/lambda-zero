@@ -58,7 +58,8 @@ syntax(<>) ≔ infixR(23)
 
 syntax(**) ≔ infixR(24)
 syntax(^) ≔ infixR(24)
-syntax(^^) ≔ infixL(24)
+syntax(^<>) ≔ infixL(24)
+syntax(^2) := postfix(24)
 
 syntax(!) ≔ postfix(25)
 syntax(up) ≔ prefix(25)
@@ -97,7 +98,8 @@ syntax(⋅) ≔ alias(*)
 syntax(∩) ≔ alias(&)
 syntax(∘) ≔ alias(<>)
 syntax(×) ≔ alias(**)
-syntax(°) ≔ alias(^^)
+syntax(°) ≔ alias(^<>)
 syntax(↑) ≔ alias(up)
+syntax(²) := alias(^2)
 
 #*

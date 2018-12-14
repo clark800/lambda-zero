@@ -7,7 +7,7 @@ define getArguments(pattern)
 
 
 define newProjector(tag, size, index)
-    (UnderscoreArrow(tag) ^^ size)(newUnderscore(tag, size - index))
+    (UnderscoreArrow(tag)^<>(size))(newUnderscore(tag, size - index))
 
 
 define newPatternArrow(tag, pattern, body)
@@ -36,25 +36,22 @@ define getNameAndValue(f, left, right)
     getNameAndValue(f, getLeft(left), f(getRight(left), right))
 
 
-define newCasePatternArrow(tag, left, right)
+define newCaseArrow(tag, left, right)
     if isThisName(left, "()")
-        UnderscoreArrow(tag, right)
+        UnderscoreArrow(tag, right)  # TODO: add type annotation here
     newPatternArrow(tag, left, right)
 
 
-define newCaseArgument(tag, left, right)
-    pattern := if isAsPattern(left) then getPattern(left) else left
-    (_, right') := getNameAndValue(newCasePatternArrow(tag), pattern, right)
-    if not isAsPattern(left)
-        right'
-    wrapper := newPatternArrow(tag, getName(left), right')
-    Juxtaposition(tag, wrapper, newUnderscore(tag, 1))
-
-
 define newCase(tag, left, right)
-    argument := newCaseArgument(tag, left, right)
-    tag' := renameTag(tag, "_")
-    Case(tag', [], Juxtaposition(tag, newUnderscore(tag, 1), argument))
+    pattern := if isAsPattern(left) then getPattern(left) else left
+    (constructor, reconstructor) :=
+        getNameAndValue(newCaseArrow(tag), pattern, right)
+    underscore := newUnderscore(tag, 1)
+    if not isAsPattern(left)
+        Case(tag, [constructor], Juxtaposition(tag, underscore, reconstructor))
+    wrapper := newPatternArrow(tag, getName(left), reconstructor)
+    argument := Juxtaposition(tag, wrapper, underscore)
+    Case(tag, [constructor], Juxtaposition(tag, underscore, argument))
 
 
 define mergeCaseBodies(tag, left, right)
@@ -67,6 +64,6 @@ define mergeCaseBodies(tag, left, right)
 define combineCases(left, right)
     tag := renameTag(getTag(left), "_")
     body := mergeCaseBodies(tag, getCaseBody(left), getCaseBody(right))
-    Case(tag, [], body)
+    Case(tag, getConstructors(left) ++ getConstructors(right), body)
 
 #*
