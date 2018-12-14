@@ -1,5 +1,12 @@
 #* declarations.zero
 
+define getFixScheme(source)
+    syntax(>->) := syntax(||)
+    (>->) := FunctionType(source)
+    a := TypeVariable(source, 0)
+    Scheme([a], (a >-> a) >-> a)
+
+
 define builtinTypes
     syntax(>->) := syntax(||)
     (>->) := FunctionType(noTerm)
