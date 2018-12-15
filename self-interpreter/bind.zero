@@ -1,26 +1,26 @@
 #* bind.zero
 
 define findDebruijnIndex(stack, tag, depth)
-    stack.findIndices(=*= getTagLexeme(tag)).safeIndex(depth).mapRight(1 +)
+    stack.findIndices(=*= getTagLexeme(tag)).safeIndex(depth).mapJust(1 +)
 
 
 define bindOperation(tag)
-    try (arity, optimize) := getBuiltin(tag)
-    just Operation(tag, arity, optimize)
+    maybe (arity, optimize) := getBuiltin(tag)
+    just(Operation(tag, arity, optimize))
 
 
 define bindName(stack, tag, depth)
     if isUnused(tag)
         parseError("cannot reference a symbol starting with underscore", tag)
-    stack.findDebruijnIndex(tag, depth).mapRight(Variable(tag)) ?
-        bindOperation(tag) ? parseError("undefined symbol", tag)
+    stack.findDebruijnIndex(tag, depth).mapJust(Variable(tag)) ??
+        bindOperation(tag) ?? parseError("undefined symbol", tag)
 
 
 define parseParameterType(node, context)
     # TODO: count parameter to ADTs is wrong
     if isName(node)
         name := getLexeme(node)
-        context.lookup(name) ? ADT(noTerm, name, [], 0, 0)
+        context.lookup(name) ?? ADT(noTerm, name, [], 0, 0)
     name := getLexeme(getHead(node))
     if context.hasKey(name)
         syntaxError("type variable not allowed in applicand position", node)

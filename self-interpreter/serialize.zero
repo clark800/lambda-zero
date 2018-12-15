@@ -27,20 +27,20 @@ define serialize(closure)
 define serializeString(evaluateClosure, closure)
     closure' := evaluateClosure(closure)
     term := getTerm(closure')
-    try nil := maybeIsNil(term)
+    maybe nil := maybeIsNil(term)
     if nil
-        just []
+        just([])
 
     dummy := Closure(Numeral(noTag, 0), [])
     enclose := `Closure(dummy :: dummy :: getEnvironment(closure'))
 
-    try headTerm := maybeHead(term)
-    try character := maybeNatural(getTerm(evaluateClosure(enclose(headTerm))))
+    maybe headTerm := maybeHead(term)
+    maybe character := maybeNatural(getTerm(evaluateClosure(enclose(headTerm))))
 
-    try tailTerm := maybeTail(term)
-    try remaining := serializeString(evaluateClosure, enclose(tailTerm))
+    maybe tailTerm := maybeTail(term)
+    maybe remaining := serializeString(evaluateClosure, enclose(tailTerm))
 
-    just character :: remaining
+    just(character :: remaining)
 
 
 #*

@@ -38,35 +38,35 @@ isOperation(term) := indexTerm(term) = 4
 
 
 define maybeDebruijnIndex(term)
-    if isVariable(term) then just getDebruijnIndex(term) else void
+    if isVariable(term) then just(getDebruijnIndex(term)) else void
 
 
 define maybeBody(term)
-    if isAbstraction(term) then just getBody(term) else void
+    if isAbstraction(term) then just(getBody(term)) else void
 
 
 define maybeApplicand(term)
-    if isApplication(term) then just getApplicand(term) else void
+    if isApplication(term) then just(getApplicand(term)) else void
 
 
 define maybeArgument(term)
-    if isApplication(term) then just getArgument(term) else void
+    if isApplication(term) then just(getArgument(term)) else void
 
 
 define maybeNatural(term)
-    if isNumeral(term) then just getNatural(term) else void
+    if isNumeral(term) then just(getNatural(term)) else void
 
 
 define maybeHead(term)
-    try body := maybeBody(term)
-    try body' := maybeBody(body)
-    try applicand := maybeApplicand(body')
+    maybe body := maybeBody(term)
+    maybe body' := maybeBody(body)
+    maybe applicand := maybeApplicand(body')
     maybeArgument(applicand)
 
 
 define maybeTail(term)
-    try body := maybeBody(term)
-    try body' := maybeBody(body)
+    maybe body := maybeBody(term)
+    maybe body' := maybeBody(body)
     maybeArgument(body')
 
 
@@ -75,20 +75,20 @@ define maybeIsNil(term)
     # term should be (n -> p -> n) or (n -> p -> ((p c) cs))
 
     define ifNil(result)
-        try body := maybeBody(term)
-        try body' := maybeBody(body)
-        try debruijn := maybeDebruijnIndex(body')
-        if debruijn = 2 then just result else void
+        maybe body := maybeBody(term)
+        maybe body' := maybeBody(body)
+        maybe debruijn := maybeDebruijnIndex(body')
+        if debruijn = 2 then just(result) else void
 
     define ifPush(result)
-        try body := maybeBody(term)
-        try body' := maybeBody(body)
-        try applicand := maybeApplicand(body')
-        try applicand' := maybeApplicand(applicand)
-        try debruijn := maybeDebruijnIndex(applicand')
-        if debruijn = 1 then just result else void
+        maybe body := maybeBody(term)
+        maybe body' := maybeBody(body)
+        maybe applicand := maybeApplicand(body')
+        maybe applicand' := maybeApplicand(applicand)
+        maybe debruijn := maybeDebruijnIndex(applicand')
+        if debruijn = 1 then just(result) else void
 
-    ifNil(just true) ? ifPush(just false) ? void
+    ifNil(just(true)) ?? ifPush(just(false)) ?? void
 
 
 define showTerm

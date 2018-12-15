@@ -1,19 +1,17 @@
 #* operators.zero
 
+syntax(maybe) ≔ prefix(9)
 syntax(try) ≔ prefix(9)
 syntax(catch) ≔ mixfix(try _)
-syntax(?!) ≔ infixL(9)
-syntax(??) ≔ infixL(9)
-
 syntax(||) ≔ infixR(13)
 syntax(match) ≔ prefix(13)
-
 syntax(if) ≔ prefix(14)
 syntax(then) ≔ mixfix(if _)
 syntax(else) ≔ mixfix(if _ then _)
-syntax(?) ≔ infixR(15)
+syntax(??) ≔ infixR(15)
+syntax(?!) ≔ infixR(15)
+syntax(ok) ≔ prefix(16)
 syntax(error) ≔ prefix(16)
-syntax(just) ≔ prefix(16)
 
 syntax(or) ≔ infixR(17)
 syntax(and) ≔ infixR(18)
@@ -62,6 +60,7 @@ syntax(^2) := postfix(80)
 syntax(**) ≔ infixR(80)
 
 syntax(!) ≔ postfix(90)
+syntax(?) ≔ postfix(90)
 syntax(up) ≔ prefix(90)
 
 syntax(.) ≔ infixL(95)

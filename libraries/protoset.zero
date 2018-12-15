@@ -13,11 +13,11 @@ elicit(protoset, object) := (
         void
     element := elements[0]
     if object ~< element /\ element ~< object
-        just element
+        just(element)
     ((~<), tail(elements)).elicit(object)
 )
 
-object in protoset := bool(protoset.elicit(object))
+object in protoset := not isVoid(protoset.elicit(object))
 
 mapElements(protoset, f) := (
     ((~<), elements) := protoset

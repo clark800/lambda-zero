@@ -17,6 +17,20 @@ fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 # unit
 𝕌 ⩴ {()}
 
+# pair
+Pair(a, b) ⩴ {(first ∈ a, second ∈ b)}
+pair(a, b) ≔ (a, b)
+swap((x, y)) ≔ (y, x)
+mapFirst(xy, f) ≔ (f(first(xy)), second(xy))
+mapSecond(xy, f) ≔ (first(xy), f(second(xy)))
+mapPair(xx, f) ≔ (f(first(xx)), f(second(xx)))
+curry(f) ≔ x ↦ y ↦ f((x, y))
+uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
+
+# more tuples
+Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
+Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth_4 ∈ d)}
+
 # boolean
 𝔹 ⩴ {false, true}
 (if b)(x, y) ≔ b.(case false ↦ y; case true ↦ x)
@@ -28,31 +42,25 @@ b or c ≔ if b then true else c
 until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
 while(f, p, z) ≔ f.until((not) ∘ p, z)
 
-# pair
-Pair(a, b) ⩴ {(first ∈ a, second ∈ b)}
-Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
-Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth_4 ∈ d)}
-pair(a, b) ≔ (a, b)
-swap((x, y)) ≔ (y, x)
-mapFirst(xy, f) ≔ (f(first(xy)), second(xy))
-mapSecond(xy, f) ≔ (first(xy), f(second(xy)))
-mapPair(xx, f) ≔ (f(first(xx)), f(second(xx)))
-curry(f) ≔ x ↦ y ↦ f((x, y))
-uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
+# maybe
+a ? ::= {void, just(_ : a)}
+isVoid := (case void -> true; case just(_) -> false)
+onJust(mx, f) := mx.(case void -> void; case just(x) -> f(x))
+mapJust(mx, f) := onJust(mx, just <> f)
+mx ?? x := mx.(case void -> x; case just(x') -> x')
 
 # either
 Either(a, b) ⩴ {Left(_ : a), Right(_ : b)}
-exy ⁇ f ≔ exy.(case Left(x) ↦ Left(x); case Right(y) ↦ f(y))
-exy ⁈ f ≔ exy.(case Left(x) ↦ f(x); case Right(y) ↦ y)
-bool ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
-mapLeft(exy, f) ≔ exy ⁈ Left ∘ f
-mapRight(exy, f) ≔ exy ⁇ Right ∘ f
-exy ? d ≔ exy ⁈ constant(d)
-(try) ≔ (⁈)
+isLeft ≔ (case Left(_) ↦ true; case Right(_) ↦ false)
+isRight ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
+onLeft(exy, f) ≔ exy.(case Left(x) ↦ f(x); case Right(y) ↦ y)
+onRight(exy, f) ≔ exy.(case Left(x) ↦ Left(x); case Right(y) ↦ f(y))
+mapLeft(exy, f) ≔ onLeft(exy, Left <> f)
+mapRight(exy, f) ≔ onRight(exy, Right ∘ f)
+(try) ≔ onLeft
 (catch) ≔ (‖)
-(error) ≔ Left
-(just) ≔ Right
-void ≔ Left()
+exy ?! y ≔ try exy catch constant(y)
+toMaybe := (case Left(_) -> void; case Right(y) -> just(y))
 
 # numbers
 ℕ ⩴ {0, ↑(↓ ∈ ℕ)}
@@ -118,13 +126,13 @@ last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
 dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
     head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
-safeHead(xs) ≔ if isNil(xs) then void else just head(xs)
-safeTail(xs) ≔ if isNil(xs) then void else just tail(xs)
+safeHead(xs) ≔ if isNil(xs) then void else just(head(xs))
+safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
 
 define safeIndex(xs)
     case 0 ↦ safeHead(xs)
     case up n'
-        try xs' ≔ safeTail(xs)
+        maybe xs' ≔ safeTail(xs)
         safeIndex(xs', n')
 
 define dropIf(ns, p)
@@ -193,7 +201,7 @@ countFrom ≔ iterate(↑)
 naturals ≔ countFrom(0)
 
 find(xs, p) ≔ safeHead(xs ¦ p)
-contains(xs, p) ≔ bool(xs.find(p))
+contains(xs, p) ≔ not isVoid(xs.find(p))
 findIndices(xs, p) ≔ (zip(naturals, xs) ¦ p ∘ second).map(first)
 findIndex(xs, p) ≔ safeHead(findIndices(xs, p))
 

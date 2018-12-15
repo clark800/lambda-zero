@@ -6,8 +6,12 @@ define getHead(node)
 define applyPlainDefinition(tag, name, value, scope)
     Let(tag, newPatternArrow(tag, name, scope), value)
 
+define applyMaybeDefinition(tag, name, value, scope)
+    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust"), 0),
+        value), newPatternArrow(tag, name, scope))
+
 define applyTryDefinition(tag, name, value, scope)
-    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "??"), 0),
+    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onRight"), 0),
         value), newPatternArrow(tag, name, scope))
 
 define transformRecursion(name, value)
@@ -94,6 +98,7 @@ define applyDefinition(definition, scope)
     value := getDefinedValue(definition)
     match getDefinitionType(definition)
         case PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
+        case MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
         case TryDefinition -> applyTryDefinition(tag, name, value, scope)
         case SyntaxDefinition -> scope
         case ADTDefinition -> applyADTDefinition(tag, name, value, scope)
@@ -110,6 +115,8 @@ define reduceDefine'(tag, definitionType, left, right)
 
 define reduceDefine(operator, left, right)
     tag := getTag(operator)
+    if isKeyphrase(left, "maybe")
+        reduceDefine'(tag, MaybeDefinition, getRight(left), right)
     if isKeyphrase(left, "try")
         reduceDefine'(tag, TryDefinition, getRight(left), right)
     if isKeyphrase(left, "syntax")

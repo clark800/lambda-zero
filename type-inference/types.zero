@@ -109,7 +109,7 @@ empty := newVariableMap([])
 
 define rename(type, variables)
     if isTypeVariable(type)
-        variables.lookup(type) ? type
+        variables.lookup(type) ?? type
     type.mapComponents(`rename(variables))
 
 #*

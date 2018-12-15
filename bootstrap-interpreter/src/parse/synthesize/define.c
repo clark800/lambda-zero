@@ -15,10 +15,15 @@ Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     return Let(tag, newPatternLambda(tag, left, scope), right);
 }
 
+Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope) {
+    return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
+            right), newPatternLambda(tag, left, scope));
+}
+
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
-    // try a := b; c --> b ? (a -> c) --> (((?) b) (a -> c))
-    return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "??"), right),
-            newPatternLambda(tag, left, scope));
+    // try a := b; c --> onRight(b, (a -> c)) --> (((onRight) b) (a -> c))
+    return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
+            right), newPatternLambda(tag, left, scope));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -161,6 +166,8 @@ Node* applyDefinition(Node* definition, Node* scope) {
     switch ((DefinitionVariety)getVariety(definition)) {
         case PLAINDEFINITION:
             return applyPlainDefinition(tag, name, value, scope);
+        case MAYBEDEFINITION:
+            return applyMaybeDefinition(tag, name, value, scope);
         case TRYDEFINITION:
             return applyTryDefinition(tag, name, value, scope);
         case SYNTAXDEFINITION:
@@ -175,12 +182,15 @@ Node* applyDefinition(Node* definition, Node* scope) {
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     DefinitionVariety variety = PLAINDEFINITION;
-    if (isKeyphrase(left, "try")) {
+    if (isKeyphrase(left, "maybe")) {
+        variety = MAYBEDEFINITION;
+        left = getRight(left);
+    } else if (isKeyphrase(left, "try")) {
         variety = TRYDEFINITION;
         left = getRight(left);
-    }
-    if (isKeyphrase(left, "syntax"))
+    } else if (isKeyphrase(left, "syntax"))
         return Definition(tag, SYNTAXDEFINITION, left, right);
+
     if (isTuple(left) || isAsPattern(left))
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))
