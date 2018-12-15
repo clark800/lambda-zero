@@ -105,7 +105,7 @@ define lookupSyntax(operators, lexeme)
         void
     (lexeme', syntax') := head(operators)
     if lexeme =*= lexeme'
-        just syntax'
+        just(syntax')
     lookupSyntax(tail(operators), lexeme)
 
 define parseOperator(tag, value, operatorSyntax)
@@ -113,9 +113,9 @@ define parseOperator(tag, value, operatorSyntax)
 
 define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapRight(parseOperator(tag, value)) ?
+    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
         (if lexeme =*= " " then (operators.lookupSyntax("( )").
-            mapRight(Operator(tag, value)) ? Name(tag, 0)) else
+            mapJust(Operator(tag, value)) ?? Name(tag, 0)) else
             Name(tag, 0))
 
 #*

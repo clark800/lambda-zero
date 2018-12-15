@@ -5,7 +5,7 @@ define getBuiltin(tag)
     maxInteger := 9223372036854775807
 
     define checkNatural(term)
-        maybeNatural(term) ? runtimeError("expected numeric argument to", tag)
+        maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
 
     define newBoolean(b)
         Abstraction(tag', Free, Abstraction(tag', Free,
@@ -68,7 +68,7 @@ define getBuiltin(tag)
         if length(arguments) < 1
             runtimeError("missing argument to", tag)
         closure := head(arguments)
-        message := serializeString(evaluate, closure) ?
+        message := serializeString(evaluate, closure) ??
             runtimeError("expected string argument to", tag)
         abort message
 

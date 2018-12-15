@@ -139,7 +139,7 @@ define reduceMixfix(operator, left, right)
 
 define newMixfixOperator(operators, tag, prior)
     precedence := getRightPrecedence(
-        lookupSyntax(operators, getLexeme(prior)) ?
+        lookupSyntax(operators, getLexeme(prior)) ??
             syntaxError("syntax not defined", prior))
     Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, INFIX,
         LEFT, false, shiftInfix, reduceMixfix, getLexeme(prior)))
@@ -148,7 +148,7 @@ define newMixfixOperator(operators, tag, prior)
 define newAlias(operators, tag, name)
     if not isName(name)
         syntaxError("expected operator name", name)
-    rules := lookupSyntax(operators, getLexeme(name)) ?
+    rules := lookupSyntax(operators, getLexeme(name)) ??
         syntaxError("syntax not defined", name)
     Operator(tag, 0, rules)
 

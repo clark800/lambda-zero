@@ -1,8 +1,8 @@
 typedef enum {NAME, REFERENCE, ARROW, JUXTAPOSITION, NUMBER, CASE, LET,
     OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, SETBUILDER} ASTType;
 typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
-typedef enum {PLAINDEFINITION, TRYDEFINITION, SYNTAXDEFINITION, ADTDEFINITION}
-    DefinitionVariety;
+typedef enum {PLAINDEFINITION, MAYBEDEFINITION, TRYDEFINITION,
+    SYNTAXDEFINITION, ADTDEFINITION} DefinitionVariety;
 
 static inline ASTType getASTType(Node* n) {return (ASTType)getType(n);}
 static inline String getLexeme(Node* n) {return getTag(n).lexeme;}

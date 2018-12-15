@@ -1,8 +1,8 @@
 #* ast.zero
 
 CoupleType ::= {JuxtapositionCouple, LetCouple}
-DefinitionType ::=
-    {PlainDefinition, TryDefinition, SyntaxDefinition, ADTDefinition}
+DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
+    SyntaxDefinition, ADTDefinition}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
@@ -128,12 +128,13 @@ Let(tag, left, right) := Couple(tag, LetCouple, left, right)
 
 define indexDefinitionType
     case PlainDefinition -> 0
-    case TryDefinition -> 1
-    case SyntaxDefinition -> 2
-    case ADTDefinition -> 3
+    case MaybeDefinition -> 1
+    case TryDefinition -> 2
+    case SyntaxDefinition -> 3
+    case ADTDefinition -> 4
 
 isSyntaxDefinition(node) :=
-    isDefinition(node) and indexDefinitionType(getDefinitionType(node)) = 2
+    isDefinition(node) and indexDefinitionType(getDefinitionType(node)) = 3
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
