@@ -249,8 +249,8 @@ OPERATORS := [
     coreAlias("≔", ":=", 6, 6, INFIX, NEITHER, shiftInfix, reduceDefine),
     coreSyntax("::=", 6, 6, INFIX, NEITHER, shiftInfix, reduceADTDefine),
     coreAlias("⩴", "::=", 6, 6, INFIX, NEITHER, shiftInfix, reduceADTDefine),
-    coreSyntax("where", 7, 5, INFIX, LEFT, shiftInfix, reduceWhere),
-    coreSyntax("->", 10, 8, INFIX, RIGHT, shiftInfix, reduceArrow), # 9 is try
+    coreSyntax("where", 8, 5, INFIX, LEFT, shiftInfix, reduceWhere),
+    coreSyntax("->", 10, 7, INFIX, RIGHT, shiftInfix, reduceArrow), # 9 is try
     coreAlias("↦", "->", 10, 8, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreSyntax("case", 11, 11, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),

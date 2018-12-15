@@ -200,8 +200,8 @@ void initSymbols(void) {
     addCoreSyntax("define", 6, 6, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax(":=", 6, 6, INFIX, N, shiftInfix, reduceDefine);
     addCoreSyntax("::=", 6, 6, INFIX, N, shiftInfix, reduceADTDefinition);
-    addCoreSyntax("where", 7, 5, INFIX, L, shiftInfix, reduceWhere);
-    addCoreSyntax("->", 10, 8, INFIX, R, shiftInfix, reduceArrow); // 9 is "try"
+    addCoreSyntax("where", 8, 5, INFIX, L, shiftInfix, reduceWhere);
+    addCoreSyntax("->", 10, 7, INFIX, R, shiftInfix, reduceArrow); // 9 is "try"
     addCoreSyntax("case", 11, 11, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 16, 16, PREFIX, L, shiftPrefix, reduceAbort);

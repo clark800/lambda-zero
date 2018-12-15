@@ -131,9 +131,7 @@ safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
 
 define safeIndex(xs)
     case 0 ↦ safeHead(xs)
-    case up n'
-        maybe xs' ≔ safeTail(xs)
-        safeIndex(xs', n')
+    case up n' -> safeIndex(xs', n') where maybe xs' ≔ safeTail(xs)
 
 define dropIf(ns, p)
     match ns
