@@ -1,7 +1,6 @@
 #* prelude.zero
 
-x.f ≔ f(x)                       # uniform function call syntax
-(match) ≔ (.)
+(match x)(f) ≔ f(x)
 f ‖ x ≔ f(x)                     # low precedence application
 f ∘ g ≔ x ↦ f(g(x))              # function composition
 `f(x, y) ≔ f(y, x)               # flip order of first two arguments of function

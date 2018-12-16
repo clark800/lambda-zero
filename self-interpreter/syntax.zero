@@ -17,6 +17,10 @@ define reducePostfix(operator, left, _right)
     reduceApply(operator, Name(getTag(operator), 0), left)
 
 
+define reducePeriod(operator, left, right)
+    reduceApply(operator, right, left)
+
+
 define reduceArrow(operator, left, right)
     if isKeyphrase(left, "case")
         newCase(getTag(left), getRight(left), right)
@@ -256,6 +260,7 @@ OPERATORS := [
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 16, 16, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax("syntax", 90, 90, PREFIX, LEFT, shiftPrefix, reducePrefix),
+    coreSyntax(".", 95, 95, INFIX, LEFT, shiftInfix, reducePeriod),
     coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid),
     coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
 ]

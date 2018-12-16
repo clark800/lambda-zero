@@ -121,4 +121,4 @@ function run {
     summarize "$failures"
 }
 
-run
+time run

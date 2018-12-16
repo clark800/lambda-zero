@@ -65,7 +65,6 @@ syntax(...) ≔ postfix(90)
 syntax(up) ≔ prefix(90)
 syntax(down) ≔ prefix(90)
 
-syntax(.) ≔ infixL(95)
 syntax(`) ≔ prefix(95)
 syntax(``) ≔ prefix(95)
 
