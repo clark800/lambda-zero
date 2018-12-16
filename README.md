@@ -25,11 +25,11 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Factorial
 
-    n ! ≔ n | case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !
+    n ! ≔ n | 0 ↦ 1; ↑ n′ ↦ n ⋅ n′ !
 
 ### Quicksort
 
-    sort ≔ case [] ↦ []; case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
+    sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
 
 ### Infinite list of natural numbers
 
@@ -43,7 +43,7 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Infinite list of prime numbers
 
-    primes ≔ p(2 …) | p ≔ case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
+    primes ≔ p(2 …) | p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 # Motivation
 

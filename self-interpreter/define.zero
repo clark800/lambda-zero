@@ -15,12 +15,11 @@ define applyTryDefinition(tag, name, value, scope)
         value), newPatternArrow(tag, name, scope))
 
 define transformRecursion(name, value)
-    if not isName(name) or (not isArrow(value) and not isCase(value)) or
-            not containsName(name, value)
+    if not isName(name) or not isArrow(value) or not containsName(name, value)
         value
     tag := getTag(name)
     fix' := Name(renameTag(tag, "fix"), 0)
-    Juxtaposition(tag, fix', Arrow(tag, Name(tag, 0), value))
+    Juxtaposition(tag, fix', LockedArrow(tag, Name(tag, 0), value))
 
 define isTupleConstructor(node)
     isName(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
@@ -97,11 +96,11 @@ define applyDefinition(definition, scope)
     name := getDefinee(definition)
     value := getDefinedValue(definition)
     match getDefinitionType(definition)
-        case PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
-        case MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
-        case TryDefinition -> applyTryDefinition(tag, name, value, scope)
-        case SyntaxDefinition -> scope
-        case ADTDefinition -> applyADTDefinition(tag, name, value, scope)
+        PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
+        MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
+        TryDefinition -> applyTryDefinition(tag, name, value, scope)
+        SyntaxDefinition -> scope
+        ADTDefinition -> applyADTDefinition(tag, name, value, scope)
 
 define reduceDefine'(tag, definitionType, left, right)
     if isTuple(left)

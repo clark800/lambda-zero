@@ -74,8 +74,10 @@ define bind(node, stack)
     match node
         case Name(tag, depth)
             stack.bindName(tag, depth)
-        case Arrow(tag, parameter, body)
-            Abstraction(getTag(parameter), Metadata(Free, Free, []),
+        case Arrow(tag, _, constructors, parameter, body)
+            metadata := Metadata(Free, Free,
+                constructors.map(`bind(stack)).map(getDebruijnIndex))
+            Abstraction(getTag(parameter), metadata,
                 bind(body, getLexeme(parameter) :: stack))
         case Couple(tag, _, left, right)
             Application(tag, bind(left, stack), bind(right, stack))
@@ -91,10 +93,6 @@ define bind(node, stack)
             syntaxError("as pattern not in parameter position", node)
         case CommaPair(_, _, _)
             syntaxError("comma not inside brackets", node)
-        case Case(tag, constructors, body)
-            metadata := Metadata(Free, Free,
-                constructors.map(`bind(stack)).map(getDebruijnIndex))
-            Abstraction(tag, metadata, bind(body, getTagLexeme(tag) :: stack))
         case Section(_, _, _)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)

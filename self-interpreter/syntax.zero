@@ -22,9 +22,7 @@ define reducePeriod(operator, left, right)
 
 
 define reduceArrow(operator, left, right)
-    if isKeyphrase(left, "case")
-        newCase(getTag(left), getRight(left), right)
-    newPatternArrow(getTag(operator), left, right)
+    newStrictArrow(getTag(operator), left, right)
 
 
 define reduceAsPattern(operator, left, right)
@@ -43,9 +41,9 @@ define reduceNewline(operator, left, right)
     if isKeyphrase(left, "define")
         reduceDefine(getLeft(left), getRight(left), right)
     if isCase(left) and isCase(right)
-        combineCases(left, right)
+        combineCases(getTag(operator), left, right)
     if isKeyphrase(left, "case")
-        reduceArrow(operator, left, right)
+        reduceArrow(operator, getRight(left), right)
     reduceApply(operator, left, right)
 
 
@@ -160,7 +158,7 @@ define newAlias(operators, tag, name)
 define copySyntax(operators, tag, name)
     lexeme := getTagLexeme(tag)
     match getSyntax(newAlias(operators, tag, name))
-        case Syntax(_, l, r, f, a, s, sh, rd, p) ->
+        Syntax(_, l, r, f, a, s, sh, rd, p) ->
             Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, sh, rd, p))
 
 

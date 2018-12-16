@@ -105,13 +105,13 @@ define inferType(stack, definition)
 
 
 define getDefinitions
-    case Variable(_, _) -> []
-    case Abstraction(_, _, _) -> []
-    case Application(_, applicand, argument)
-        if not isAbstraction(applicand) then []
+    Variable(_, _) -> []
+    Abstraction(_, _, _) -> []
+    Application(_, applicand, argument) ->
+        if not isAbstraction(applicand) then [] else
         (getTermTag(applicand), argument) :: getDefinitions(getBody(applicand))
-    case Numeral(_, _) -> []
-    case Operation(_, _, _) -> []
+    Numeral(_, _) -> []
+    Operation(_, _, _) -> []
 
 
 define main(input)

@@ -15,19 +15,19 @@ Term ::= {
 }
 
 define getTermTag
-    case Variable(tag, _) -> tag
-    case Abstraction(tag, _, _) -> tag
-    case Application(tag, _, _) -> tag
-    case Numeral(tag, _) -> tag
-    case Operation(tag, _, _) -> tag
+    Variable(tag, _) -> tag
+    Abstraction(tag, _, _) -> tag
+    Application(tag, _, _) -> tag
+    Numeral(tag, _) -> tag
+    Operation(tag, _, _) -> tag
 
 
 define indexTerm
-    case Variable(_, _) -> 0
-    case Abstraction(_, _, _) -> 1
-    case Application(_, _, _) -> 2
-    case Numeral(_, _) -> 3
-    case Operation(_, _, _) -> 4
+    Variable(_, _) -> 0
+    Abstraction(_, _, _) -> 1
+    Application(_, _, _) -> 2
+    Numeral(_, _) -> 3
+    Operation(_, _, _) -> 4
 
 
 isVariable(term) := indexTerm(term) = 0
@@ -92,13 +92,13 @@ define maybeIsNil(term)
 
 
 define showTerm
-    case Variable(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
-    case Abstraction(tag, _, body)
+    Variable(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
+    Abstraction(tag, _, body) ->
         "(" ++ showTag(tag) ++ " -> " ++ showTerm(body) ++ ")"
-    case Application(_, applicand, argument)
+    Application(_, applicand, argument) ->
         "(" ++ showTerm(applicand) ++ " " ++ showTerm(argument) ++ ")"
-    case Numeral(_, n) -> showNatural(n)
-    case Operation(tag, _, _) -> showTag(tag)
+    Numeral(_, n) -> showNatural(n)
+    Operation(tag, _, _) -> showTag(tag)
 
 noTerm := Variable(noTag, 0)
 isNoTerm(term) := isVariable(term) and getDebruijnIndex(term) = 0

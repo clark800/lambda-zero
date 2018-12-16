@@ -29,11 +29,11 @@ static Node* newTuple(Node* open, Node* commaList) {
 }
 
 static Node* wrapLeftSection(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, "*."), 0), body);
+    return LockedArrow(tag, Name(renameTag(tag, "*."), 0), body);
 }
 
 static Node* wrapRightSection(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, ".*"), 0), body);
+    return LockedArrow(tag, Name(renameTag(tag, ".*"), 0), body);
 }
 
 static Node* wrapSection(Tag tag, Node* section) {
@@ -67,6 +67,8 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
         return applyToCommaList(tag, function, contents);
     if (isCommaPair(contents))
         return newTuple(open, contents);
+    if (isArrow(contents))
+        setVariety(contents, LOCKEDARROW);
     if (isJuxtaposition(contents))
         setTag(contents, tag);
     return contents;

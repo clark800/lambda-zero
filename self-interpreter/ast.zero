@@ -3,11 +3,13 @@
 CoupleType ::= {JuxtapositionCouple, LetCouple}
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
+ArrowType ::= {Simple, Strict, Locked}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
     Name(_ : Tag, _depth : Natural),
-    Arrow(_ : Tag, getArrowLeft : AST, getArrowRight : AST),
+    Arrow(_ : Tag, getArrowType : ArrowType, getConstructors : List(AST),
+        getArrowLeft : AST, getArrowRight : AST),
     Couple(_ : Tag, getCoupleType : CoupleType, getLeft : AST, getRight : AST),
     Number(_ : Tag, getNumericValue : Natural),
     Reference(_ : Tag, _ : Natural),
@@ -16,7 +18,6 @@ AST ::= {
         getDefinee : AST, getDefinedValue : AST),
     AsPattern(_ : Tag, getLabel : AST, getPattern : AST),
     CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
-    Case(_ : Tag, getConstructors : List(AST), getCaseBody : AST),
     Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
     SetBuilder(_ : Tag, getForms : List(AST)),
     Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
@@ -26,79 +27,92 @@ AST ::= {
     Null(_ : tag)
 }
 
+define lockArrow
+    Name(_, _) -> undefined
+    Arrow(tag, _, constructors, left, right) ->
+        Arrow(tag, Locked, constructors, left, right)
+    Couple(_, _, _, _) -> undefined
+    Number(_, _) -> undefined
+    Reference(_, _) -> undefined
+    Operator(_, _, _) -> undefined
+    Definition(_, _, _, _) -> undefined
+    AsPattern(_, _, _) -> undefined
+    CommaPair(_, _, _) -> undefined
+    Section(_, _, _) -> undefined
+    SetBuilder(_, _) -> undefined
+    Constructor(_, _, _, _, _, _) -> undefined
+    Accessor(_, _, _, _, _, _) -> undefined
+    Null(_) -> undefined
+
 define getTag
-    case Name(tag, _) -> tag
-    case Arrow(tag, _, _) -> tag
-    case Couple(tag, _, _, _) -> tag
-    case Number(tag, _) -> tag
-    case Reference(tag, _) -> tag
-    case Operator(tag, _, _) -> tag
-    case Definition(tag, _, _, _) -> tag
-    case AsPattern(tag, _, _) -> tag
-    case CommaPair(tag, _, _) -> tag
-    case Case(tag, _, _) -> tag
-    case Section(tag, _, _) -> tag
-    case SetBuilder(tag, _) -> tag
-    case Constructor(tag, _, _, _, _, _) -> tag
-    case Accessor(tag, _, _, _, _, _) -> tag
-    case Null(tag) -> tag
+    Name(tag, _) -> tag
+    Arrow(tag, _, _, _, _) -> tag
+    Couple(tag, _, _, _) -> tag
+    Number(tag, _) -> tag
+    Reference(tag, _) -> tag
+    Operator(tag, _, _) -> tag
+    Definition(tag, _, _, _) -> tag
+    AsPattern(tag, _, _) -> tag
+    CommaPair(tag, _, _) -> tag
+    Section(tag, _, _) -> tag
+    SetBuilder(tag, _) -> tag
+    Constructor(tag, _, _, _, _, _) -> tag
+    Accessor(tag, _, _, _, _, _) -> tag
+    Null(tag) -> tag
 
 define containsName(name)
-    case Name(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
-    case Arrow(_, _, body) -> containsName(name, body)
-    case Couple(_, _, left, right) ->
+    Name(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
+    Arrow(_, _, _, _, body) -> containsName(name, body)
+    Couple(_, _, left, right) ->
         containsName(name, left) or containsName(name, right)
-    case Number(_, _) -> false
-    case Reference(_, _) -> false
-    case Operator(_, _, _) -> false
-    case Definition(_, _, _, _) -> false
-    case AsPattern(_, _, _) -> false
-    case CommaPair(_, _, _) -> false
-    case Case(_, _, body) -> containsName(name, body)
-    case Section(_, _, _) -> false
-    case SetBuilder(_, _) -> false
-    case Constructor(_, _, _, _, _, _) -> false
-    case Accessor(_, _, _, _, _, _) -> false
-    case Null(_) -> false
+    Number(_, _) -> false
+    Reference(_, _) -> false
+    Operator(_, _, _) -> false
+    Definition(_, _, _, _) -> false
+    AsPattern(_, _, _) -> false
+    CommaPair(_, _, _) -> false
+    Section(_, _, _) -> false
+    SetBuilder(_, _) -> false
+    Constructor(_, _, _, _, _, _) -> false
+    Accessor(_, _, _, _, _, _) -> false
+    Null(_) -> false
 
 define showAST
-    case Name(tag, _) -> showTag(tag)
-    case Arrow(tag, parameter, body) ->
+    Name(tag, _) -> showTag(tag)
+    Arrow(tag, _, _, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
-    case Couple(tag, _, left, right) ->
+    Couple(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
-    case Number(tag, value) -> showNatural(value)
-    case Reference(tag, debruijn) -> showTag(tag)
-    case Operator(tag, rank, rules) -> showTag(tag)
-    case Definition(tag, _, left, right) ->
+    Number(tag, value) -> showNatural(value)
+    Reference(tag, debruijn) -> showTag(tag)
+    Operator(tag, rank, rules) -> showTag(tag)
+    Definition(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
-    case AsPattern(tag, name, pattern) ->
+    AsPattern(tag, name, pattern) ->
         "(" ++ showAST(name) ++ ")@(" ++ showAST(pattern) ++ ")"
-    case CommaPair(tag, left, right) ->
+    CommaPair(tag, left, right) ->
         "(" ++ showAST(left) ++ ", " ++ showAST(right) ++ ")"
-    case Case(tag, _, body) -> "(case -> " ++ showAST(body) ++ ")"
-    case Section(_, _, body) -> showAST(body)
-    case SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
-    case Constructor(_, _, _, body, _, _) -> showAST(body)
-    case Accessor(_, _, _, body, _, _) -> showAST(body)
-    case Null(_) -> "#NULL#"
+    Section(_, _, body) -> showAST(body)
+    SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
+    Constructor(_, _, _, body, _, _) -> showAST(body)
+    Accessor(_, _, _, body, _, _) -> showAST(body)
+    Null(_) -> "#NULL#"
 
 define indexAST
-    case Name(_, _) -> 0
-    case Arrow(_, _, _) -> 1
-    case Couple(_, _, _, _) -> 2
-    case Number(_, _) -> 3
-    case Reference(_, _) -> 4
-    case Operator(_, _, _) -> 5
-    case Definition(_, _, _, _) -> 6
-    case AsPattern(_, _, _) -> 7
-    case CommaPair(_, _, _) -> 8
-    case Case(_, _, _) -> 9
-    case Section(_, _, _) -> 10
-    case SetBuilder(_, _) -> 11
-    case Constructor(_, _, _, _, _, _) -> 12
-    case Accessor(_, _, _, _, _, _) -> 13
-    case Null(_) -> 14
+    Name(_, _) -> 0
+    Arrow(_, _, _, _, _) -> 1
+    Couple(_, _, _, _) -> 2
+    Number(_, _) -> 3
+    Reference(_, _) -> 4
+    Operator(_, _, _) -> 5
+    Definition(_, _, _, _) -> 6
+    AsPattern(_, _, _) -> 7
+    CommaPair(_, _, _) -> 8
+    Section(_, _, _) -> 9
+    SetBuilder(_, _) -> 10
+    Constructor(_, _, _, _, _, _) -> 11
+    Accessor(_, _, _, _, _, _) -> 12
+    Null(_) -> 13
 
 isName(node) := indexAST(node) = 0
 isArrow(node) := indexAST(node) = 1
@@ -109,29 +123,40 @@ isOperator(node) := indexAST(node) = 5
 isDefinition(node) := indexAST(node) = 6
 isAsPattern(node) := indexAST(node) = 7
 isCommaPair(node) := indexAST(node) = 8
-isCase(node) := indexAST(node) = 9
-isSection(node) := indexAST(node) = 10
-isSetBuilder(node) := indexAST(node) = 11
-isConstructor(node) := indexAST(node) = 12
-isAccessor(node) := indexAST(node) = 13
-isNull(node) := indexAST(node) = 14
+isSection(node) := indexAST(node) = 9
+isSetBuilder(node) := indexAST(node) = 10
+isConstructor(node) := indexAST(node) = 11
+isAccessor(node) := indexAST(node) = 12
+isNull(node) := indexAST(node) = 13
 
 define indexCoupleType
-    case JuxtapositionCouple -> 0
-    case LetCouple -> 1
+    JuxtapositionCouple -> 0
+    LetCouple -> 1
 
-isJuxtaposition(node) := indexAST(node) = 2 and
+isJuxtaposition(node) := isCouple(node) and
     indexCoupleType(getCoupleType(node)) = 0
-isLet(node) := indexAST(node) = 2 and indexCoupleType(getCoupleType(node)) = 1
+isLet(node) := isCouple(node) and indexCoupleType(getCoupleType(node)) = 1
+
+define indexArrowType
+    Simple -> 0
+    Strict -> 1
+    Locked -> 2
+
+isSimpleArrow(node) := isArrow(node) and indexArrowType(getArrowType(node)) = 0
+isCase(node) := isArrow(node) and indexArrowType(getArrowType(node)) =/= 2
+
 Juxtaposition(tag, left, right) := Couple(tag, JuxtapositionCouple, left, right)
 Let(tag, left, right) := Couple(tag, LetCouple, left, right)
+SimpleArrow(tag) := Arrow(tag, Simple, [])
+StrictArrow(tag) := Arrow(tag, Strict)
+LockedArrow(tag) := Arrow(tag, Locked, [])
 
 define indexDefinitionType
-    case PlainDefinition -> 0
-    case MaybeDefinition -> 1
-    case TryDefinition -> 2
-    case SyntaxDefinition -> 3
-    case ADTDefinition -> 4
+    PlainDefinition -> 0
+    MaybeDefinition -> 1
+    TryDefinition -> 2
+    SyntaxDefinition -> 3
+    ADTDefinition -> 4
 
 isSyntaxDefinition(node) :=
     isDefinition(node) and indexDefinitionType(getDefinitionType(node)) = 3
@@ -144,7 +169,8 @@ isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
-UnderscoreArrow(tag, body) := Arrow(tag, Name(renameTag(tag, "_"), 0), body)
+UnderscoreArrow(tag, body) :=
+    LockedArrow(tag, Name(renameTag(tag, "_"), 0), body)
 newUnderscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn)
 newNil(tag) := Name(renameTag(tag, "[]"), 0)
 prependList(tag, item, list) := Juxtaposition(tag,
@@ -155,8 +181,10 @@ newRightPlaceholder(tag) :=
     Section(tag, LeftSection, Name(renameTag(tag, "*."), 0))
 isLeftPlaceholder(node) :=
     isSection(node) and isThisName(getSectionBody(node), ".*")
-wrapLeftSection(tag, body) := Arrow(tag, Name(renameTag(tag, "*."), 0), body)
-wrapRightSection(tag, body) := Arrow(tag, Name(renameTag(tag, ".*"), 0), body)
+wrapLeftSection(tag, body) :=
+    LockedArrow(tag, Name(renameTag(tag, "*."), 0), body)
+wrapRightSection(tag, body) :=
+    LockedArrow(tag, Name(renameTag(tag, ".*"), 0), body)
 
 define wrapSection(tag, section)
     body := getSectionBody(section)

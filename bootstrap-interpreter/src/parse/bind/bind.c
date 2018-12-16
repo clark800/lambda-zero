@@ -45,7 +45,6 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
         case REFERENCE: setType(node, VARIABLE); break;
         case NAME: bindName(node, parameters, length(globals)); break;
         case ARROW:
-        case CASE:
             append(parameters, getParameter(node));
             bindWith(getBody(node), parameters, globals);
             unappend(parameters);

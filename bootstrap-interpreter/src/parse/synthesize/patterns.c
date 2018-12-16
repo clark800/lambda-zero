@@ -16,63 +16,64 @@ Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
     return projector;
 }
 
-Node* newPatternLambda(Tag tag, Node* left, Node* right) {
+Node* newLazyArrow(Tag tag, Node* left, Node* right) {
     if (isName(left))
-        return Arrow(tag, left, right);
+        return LockedArrow(tag, left, right);
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
     if (isAsPattern(left))
-        return Arrow(tag, getLeft(left), Juxtaposition(tag,
-            newPatternLambda(tag, getRight(left), right),
+        return LockedArrow(tag, getLeft(left), Juxtaposition(tag,
+            newLazyArrow(tag, getRight(left), right),
             Reference(getTag(getLeft(left)), 1)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     syntaxErrorIf(!isJuxtaposition(left), "invalid parameter", left);
     Node* body = right;
     for (Node* items = left; isJuxtaposition(items); items = getLeft(items))
-        body = newPatternLambda(tag, getRight(items), body);
+        body = newLazyArrow(tag, getRight(items), body);
     for (unsigned int i = 0, size = getArgumentCount(left); i < size; ++i)
         body = Juxtaposition(tag, body, Juxtaposition(tag,
             Underscore(tag, 1), newProjector(tag, size, i)));
     return UnderscoreArrow(tag, body);
 }
 
-Node* newCasePatternLambda(Tag tag, Node* pattern, Node* body) {
-    // Unit is a special case because it's the only type where you know
-    // the exact form of any instance of the type, so you can actually
-    // pattern match against a value instead of a variable
-    pattern = isThisName(pattern, "()") ?
-        Name(renameTag(tag, "_"), 0) : pattern;
-    return newPatternLambda(tag, pattern, body);
-}
-
-Node* reduceCase(Node* operator, Node* left, Node* right) {
-    // strict pattern matching
+Node* newStrictArrow(Tag tag, Node* left, Node* right) {
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
-    Tag tag = getTag(operator);
+    if (isName(left))
+        return SimpleArrow(tag, left, right);
     Node* body = right;
     Node* items = isAsPattern(left) ? getRight(left) : left;
     for (; isJuxtaposition(items); items = getLeft(items))
-        body = newCasePatternLambda(tag, getRight(items), body);
+        body = newLazyArrow(tag, getRight(items), body);
     if (isAsPattern(left))
         // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
-        body = Juxtaposition(tag, newPatternLambda(tag, getLeft(left), body),
+        body = Juxtaposition(tag, newLazyArrow(tag, getLeft(left), body),
             Underscore(tag, 1));
     // discard left, which is now just the constructor
-    return Case(tag, Juxtaposition(tag, Underscore(tag, 1), body));
+    Node* parameter = Name(renameTag(tag, "_"), 0);
+    body = Juxtaposition(tag, Underscore(tag, 1), body);
+    return StrictArrow(tag, parameter, body);
 }
 
-static Node* mergeCaseBodies(Tag tag, Node* left, Node* right) {
-    if (!isJuxtaposition(right))
-        return left;
-    Node* merged = mergeCaseBodies(tag, left, getLeft(right));
-    return Juxtaposition(tag, merged, getRight(right));
+static Node* addCases(Tag tag, Node* base, Node* extension) {
+    if (!isJuxtaposition(extension))
+        return base;
+    Node* merged = addCases(tag, base, getLeft(extension));
+    return Juxtaposition(tag, merged, getRight(extension));
 }
 
-Node* combineCases(Node* left, Node* right) {
+static Node* newCaseBody(Tag tag, Node* left, Node* right) {
+    // left and right are either simple arrows or strict arrows
     // left == c1(a1) -> b1     -->   _ -> _ (a1 -> b1)
     // right == c2(a2) -> b2    -->   _ -> _ (a2 -> b2)
     // result == _ -> _ (a1 -> b1) (a2 -> b2)
-    Tag tag = renameTag(getTag(left), "_");
-    return Case(tag, mergeCaseBodies(tag, getRight(left), getRight(right)));
+    Node* base = isSimpleArrow(left) ?
+        Juxtaposition(tag, Underscore(tag, 1), getRight(left)) : getRight(left);
+    return isSimpleArrow(right) ? Juxtaposition(tag, base, getRight(right)) :
+        addCases(tag, base, getRight(right));
+}
+
+Node* combineCases(Tag tag, Node* left, Node* right) {
+    Node* underscore = Name(renameTag(tag, "_"), 0);
+    return StrictArrow(tag, underscore, newCaseBody(tag, left, right));
 }

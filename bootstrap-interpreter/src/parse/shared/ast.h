@@ -1,6 +1,7 @@
-typedef enum {NAME, REFERENCE, ARROW, JUXTAPOSITION, NUMBER, CASE, LET,
+typedef enum {NAME, REFERENCE, ARROW, JUXTAPOSITION, NUMBER, LET,
     OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, SETBUILDER} ASTType;
 typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
+typedef enum {SIMPLEARROW, STRICTARROW, LOCKEDARROW} ArrowVariety;
 typedef enum {PLAINDEFINITION, MAYBEDEFINITION, TRYDEFINITION,
     SYNTAXDEFINITION, ADTDEFINITION} DefinitionVariety;
 
@@ -18,7 +19,6 @@ static inline bool isJuxtaposition(Node* n) {
     return getASTType(n) == JUXTAPOSITION;
 }
 static inline bool isNumber(Node* n) {return getASTType(n) == NUMBER;}
-static inline bool isCase(Node* n) {return getASTType(n) == CASE;}
 static inline bool isLet(Node* n) {return getASTType(n) == LET;}
 static inline bool isOperator(Node* n) {return getASTType(n) == OPERATOR;}
 static inline bool isDefinition(Node* n) {return getASTType(n) == DEFINITION;}
@@ -26,6 +26,15 @@ static inline bool isSection(Node* n) {return getASTType(n) == SECTION;}
 static inline bool isAsPattern(Node* n) {return getASTType(n) == ASPATTERN;}
 static inline bool isCommaPair(Node* n) {return getASTType(n) == COMMAPAIR;}
 static inline bool isSetBuilder(Node* n) {return getASTType(n) == SETBUILDER;}
+
+static inline bool isSimpleArrow(Node* n) {
+    return getASTType(n) == ARROW && getVariety(n) == SIMPLEARROW;
+}
+
+static inline bool isCase(Node* n) {
+    return getASTType(n) == ARROW &&
+        (getVariety(n) == SIMPLEARROW || getVariety(n) == STRICTARROW);
+}
 
 static inline bool isUnused(Node* n) {return getLexeme(n).start[0] == '_';}
 
@@ -60,17 +69,23 @@ static inline Node* Operator(Tag tag, long long value, void* rules) {
     return newLeaf(tag, OPERATOR, value, rules);
 }
 
-static inline Node* Arrow(Tag tag, Node* parameter, Node* body) {
+static inline Node* SimpleArrow(Tag tag, Node* parameter, Node* body) {
     assert(isName(parameter));
-    return newBranch(tag, ARROW, 0, parameter, body);
+    return newBranch(tag, ARROW, SIMPLEARROW, parameter, body);
+}
+
+static inline Node* StrictArrow(Tag tag, Node* parameter, Node* body) {
+    assert(isName(parameter));
+    return newBranch(tag, ARROW, STRICTARROW, parameter, body);
+}
+
+static inline Node* LockedArrow(Tag tag, Node* parameter, Node* body) {
+    assert(isName(parameter));
+    return newBranch(tag, ARROW, LOCKEDARROW, parameter, body);
 }
 
 static inline Node* Juxtaposition(Tag tag, Node* left, Node* right) {
     return newBranch(tag, JUXTAPOSITION, 0, left, right);
-}
-
-static inline Node* Case(Tag tag, Node* body) {
-    return newBranch(tag, CASE, 0, Name(renameTag(tag, "_"), 0), body);
 }
 
 static inline Node* AsPattern(Tag tag, Node* left, Node* right) {
@@ -107,7 +122,7 @@ static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
-    return Arrow(tag, Name(renameTag(tag, "_"), 0), body);
+    return LockedArrow(tag, Name(renameTag(tag, "_"), 0), body);
 }
 
 static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}
