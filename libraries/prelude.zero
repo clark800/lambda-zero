@@ -43,15 +43,15 @@ while(f, p, z) ≔ f.until((not) ∘ p, z)
 
 # maybe
 a ? ::= {void, just(_ : a)}
-isVoid := (case void -> true; case just(_) -> false)
+isVoid := case void -> true; case just(_) -> false
 onJust(mx, f) := mx.(case void -> void; case just(x) -> f(x))
 mapJust(mx, f) := onJust(mx, just <> f)
 mx ?? x := mx.(case void -> x; case just(x') -> x')
 
 # either
 Either(a, b) ⩴ {Left(_ : a), Right(_ : b)}
-isLeft ≔ (case Left(_) ↦ true; case Right(_) ↦ false)
-isRight ≔ (case Left(_) ↦ false; case Right(_) ↦ true)
+isLeft ≔ case Left(_) ↦ true; case Right(_) ↦ false
+isRight ≔ case Left(_) ↦ false; case Right(_) ↦ true
 onLeft(exy, f) ≔ exy.(case Left(x) ↦ f(x); case Right(y) ↦ y)
 onRight(exy, f) ≔ exy.(case Left(x) ↦ Left(x); case Right(y) ↦ f(y))
 mapLeft(exy, f) ≔ onLeft(exy, Left <> f)
@@ -59,7 +59,7 @@ mapRight(exy, f) ≔ onRight(exy, Right ∘ f)
 (try) ≔ onLeft
 (catch) ≔ (‖)
 exy ?! y ≔ try exy catch constant(y)
-toMaybe := (case Left(_) -> void; case Right(y) -> just(y))
+toMaybe := case Left(_) -> void; case Right(y) -> just(y)
 
 # numbers
 ℕ ⩴ {0, ↑((↓) ∈ ℕ)}
@@ -67,9 +67,9 @@ toMaybe := (case Left(_) -> void; case Right(y) -> just(y))
 ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
 positive(n) ≔ + n
 negative(n) ≔ - n
-negate ≔ (case + n ↦ - n; case - n ↦ + n)
-abs ≔ (case + n ↦ + n; case - n ↦ + n)
-abs′ ≔ (case + n ↦ n; case - n ↦ n)
+negate ≔ case + n ↦ - n; case - n ↦ + n
+abs ≔ case + n ↦ + n; case - n ↦ + n
+abs′ ≔ case + n ↦ n; case - n ↦ n
 min(n, m) ≔ if n ≤ m then n else m
 max(n, m) ≔ if n ≥ m then n else m
 mod(n, m) ≔ n % m
@@ -108,7 +108,7 @@ define n ^ m
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ `(∷)
-isNil ≔ (case [] ↦ true; case _ ∷ _ ↦ false)    # note: isEmpty is for sets
+isNil ≔ case [] ↦ true; case _ ∷ _ ↦ false    # note: isEmpty is for sets
 fold(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
 cascade(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ cascade(xs′, f, f(z, x)))
 xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
@@ -206,9 +206,7 @@ findIndex(xs, p) ≔ safeHead(findIndices(xs, p))
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
 
-define sort
-    case [] ↦ []
-    case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
+sort ≔ case [] ↦ []; case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
 
 define deduplicateBy(xs, (≟))
     match xs
@@ -225,7 +223,7 @@ product ≔ ∏
 minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
 
-primes := p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0)))
+primes := p(2 …) where p ≔ case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 
@@ -312,7 +310,7 @@ define showNatural(n)
         if m = 0 then [] else ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
     if n = 0 then "0" else reverse(showReversedNatural(n))
 
-showSign ≔ (case + _ ↦ "+" ; case - _ ↦ "-")
+showSign ≔ case + _ ↦ "+"; case - _ ↦ "-"
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
 define showPair(xsxs, showFirst, showSecond)
