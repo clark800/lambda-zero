@@ -26,6 +26,10 @@ static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, Name(getTag(operator), 0), left);
 }
 
+static Node* reducePeriod(Node* operator, Node* left, Node* right) {
+    return reduceApply(operator, right, left);
+}
+
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     if (isKeyphrase(left, "case"))
         return reduceCase(operator, getRight(left), right);
@@ -206,6 +210,7 @@ void initSymbols(void) {
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 16, 16, PREFIX, L, shiftPrefix, reduceAbort);
     addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
+    addCoreSyntax(".", 95, 95, INFIX, L, shiftInfix, reducePeriod);
     addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
     addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
     addCoreAlias("\u2254", ":=");
