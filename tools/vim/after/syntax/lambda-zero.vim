@@ -90,11 +90,11 @@ syntax match zeroNiceOperator "===" conceal cchar=≣
 syntax match zeroNiceOperator "\~=\~" conceal cchar=≍
 
 " arrow operators
+syntax match zeroNiceOperator "->" conceal cchar=↦
+syntax match zeroNiceOperator "<-" conceal cchar=↤
 syntax match zeroNiceOperator "-->" conceal cchar=→
 syntax match zeroNiceOperator "<--" conceal cchar=←
 syntax match zeroNiceOperator "<-->" conceal cchar=↔
-syntax match zeroNiceOperator "->" conceal cchar=↦
-syntax match zeroNiceOperator "<-" conceal cchar=↤
 syntax match zeroNiceOperator ":->" conceal cchar=⧴
 syntax match zeroNiceOperator "=>" conceal cchar=⇒
 "syntax match zeroNiceOperator "<=" conceal cchar=⇐     " less than or equal
@@ -102,14 +102,16 @@ syntax match zeroNiceOperator "\~>" conceal cchar=↝
 syntax match zeroNiceOperator "<\~" conceal cchar=↜
 syntax match zeroNiceOperator ">->" conceal cchar=↣
 syntax match zeroNiceOperator "<-<" conceal cchar=↢
+syntax match zeroNiceOperator ">+>" conceal cchar=⤔
 syntax match zeroNiceOperator ">>" conceal cchar=≫
 syntax match zeroNiceOperator "<<" conceal cchar=≪
-syntax match zeroNiceOperator "->>" conceal cchar=↠
-syntax match zeroNiceOperator "<<-" conceal cchar=↞
+syntax match zeroNiceOperator "->>" conceal cchar=⤅
 syntax match zeroNiceOperator "<<<" conceal cchar=⋘
 syntax match zeroNiceOperator ">>>" conceal cchar=⋙
 syntax match zeroNiceOperator "=>>" conceal cchar=⇉
 syntax match zeroNiceOperator "<<=" conceal cchar=⇇
+syntax match zeroNiceOperator "|=>" conceal cchar=⤇
+syntax match zeroNiceOperator "<=|" conceal cchar=⤆
 syntax match zeroNiceOperator "==>" conceal cchar=⇛
 syntax match zeroNiceOperator "<==" conceal cchar=⇚
 syntax match zeroNiceOperator "<==>" conceal cchar=⇔

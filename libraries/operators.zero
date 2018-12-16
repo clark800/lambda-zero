@@ -1,7 +1,7 @@
 #* operators.zero
 
-syntax(maybe) ≔ prefix(9)
-syntax(try) ≔ prefix(9)
+syntax(maybe) ≔ prefix(12)
+syntax(try) ≔ prefix(10)
 syntax(catch) ≔ mixfix(try _)
 syntax(||) ≔ infixR(13)
 syntax(match) ≔ prefix(13)
