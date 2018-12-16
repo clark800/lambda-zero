@@ -12,7 +12,7 @@ mapKeys(table, f) := table.mapElements((key, value) -> (f(key), value))
 mapValues(table, f) := table.mapElements((key, value) -> (key, f(value)))
 
 newDictionary := newTable((<*=))
-newRegistry(items) := newTable((<=), zip(naturals, items))
+newRegistry(items) := newTable((<=), zip(0..., items))
 register(registry, item) :=
     (cardinality(registry), registry.insert(cardinality(registry), item))
 

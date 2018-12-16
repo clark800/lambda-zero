@@ -61,7 +61,9 @@ syntax(**) ≔ infixR(80)
 
 syntax(!) ≔ postfix(90)
 syntax(?) ≔ postfix(90)
+syntax(...) ≔ postfix(90)
 syntax(up) ≔ prefix(90)
+syntax(down) ≔ prefix(90)
 
 syntax(.) ≔ infixL(95)
 syntax(`) ≔ prefix(95)
@@ -99,6 +101,8 @@ syntax(∘) ≔ alias(<>)
 syntax(×) ≔ alias(**)
 syntax(°) ≔ alias(^<>)
 syntax(↑) ≔ alias(up)
+syntax(↓) ≔ alias(down)
 syntax(²) := alias(^2)
+syntax(…) := alias(...)
 
 #*

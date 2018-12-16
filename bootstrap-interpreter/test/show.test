@@ -50,3 +50,6 @@ main(input) := showList(pairs([1,2,3]), x -> showPair(x, showNatural, showNatura
 main(input) := showList(pairs([]), id)
 []
 ===============================================================================
+main(input) := showList(5..1, showNatural)
+[]
+===============================================================================
