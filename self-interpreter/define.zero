@@ -63,7 +63,7 @@ define readParameterTypes(form)
 define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     parameters := getArguments(form)
     m := length(parameters)
-    scope' := zip(parameters, naturals).fold(
+    scope' := zip(parameters, 0...).fold(
         newGetterDefinition(tag, dataType, n, j, m), scope)
 
     if isNumber(form) and getNumericValue(form) = 0
@@ -87,7 +87,7 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
 define applyADTDefinition(tag, left, right, scope)
     forms := getForms(right)
     n := length(forms)
-    scope' := zip(forms, naturals).fold(
+    scope' := zip(forms, 0...).fold(
         newConstructorDefinition(tag, left, n), scope)
     undefined' := Name(renameTag(tag, "(undefined)"), 0)
     applyPlainDefinition(tag, getHead(left), undefined', scope')

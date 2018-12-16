@@ -25,7 +25,7 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Factorial
 
-    (!) ≔ (case 0 ↦ 1; case n @ ↑(n′) ↦ n ⋅ (n′)!)
+    n ! ≔ n.(case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !)
 
 ### Quicksort
 
@@ -36,16 +36,16 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 ### Infinite list of natural numbers
 
     iterate(f, x) ≔ x ∷ iterate(f, f(x))
-    countFrom ≔ iterate(↑)
-    naturals ≔ countFrom(0)
+    (…) ≔ iterate(↑)
+    naturals ≔ 0 …
+
+### Infinite list of Fibonacci numbers
+
+    fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 
 ### Infinite list of prime numbers
 
-    define primes
-        define filterPrime
-            case [] ↦ []
-            case n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
-        filterPrime(countFrom(2))
+    primes ≔ p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0)))
 
 # Motivation
 

@@ -63,7 +63,7 @@ exy ?! y ≔ try exy catch constant(y)
 toMaybe := (case Left(_) -> void; case Right(y) -> just(y))
 
 # numbers
-ℕ ⩴ {0, ↑(↓ ∈ ℕ)}
+ℕ ⩴ {0, ↑((↓) ∈ ℕ)}
 ℤ ⩴ {+(_ ∈ ℕ), -(_ ∈ ℕ)}
 ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
 positive(n) ≔ + n
@@ -77,7 +77,7 @@ mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
-(!) ≔ (case 0 ↦ 1; case n @ ↑(n′) ↦ n ⋅ (n′)!)
+n ! ≔ n.(case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !)
 gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
 f ° n ≔ n.(case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′)
 (n)^2 := n * n
@@ -195,20 +195,17 @@ repeat(x) ≔ x ∷ repeat(x)                  # infinitely repeat one element
 replicate(x, n) ≔ ((x ∷) ° n)([])         # replicate one element n times
 cycle(xs) ≔ xs ⧺ cycle(xs)                 # infinitely cycle list
 
-countFrom ≔ iterate(↑)
-naturals ≔ countFrom(0)
+n ‥ m ≔ if n > m then [] else n ∷ (↑ n ‥ m)
+(…) ≔ iterate(↑)
 
 find(xs, p) ≔ safeHead(xs ¦ p)
 contains(xs, p) ≔ not isVoid(xs.find(p))
-findIndices(xs, p) ≔ (zip(naturals, xs) ¦ p ∘ second).map(first)
+findIndices(xs, p) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
 findIndex(xs, p) ≔ safeHead(findIndices(xs, p))
 
 # cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
-
-# integer list
-n ‥ m ≔ if n > m then [] else n ∷ (n + 1 ‥ m)
 
 define sort
     case [] ↦ []
@@ -229,11 +226,7 @@ product ≔ ∏
 minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
 
-define primes
-    define filterPrime
-        case [] ↦ []
-        case n ∷ ns ↦ n ∷ filterPrime(ns ¦ (% n ≠ 0))
-    filterPrime(countFrom(2))
+primes := p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0)))
 
 fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 
