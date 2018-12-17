@@ -115,6 +115,8 @@ define reduceDefine'(tag, definitionType, left, right)
 
 define reduceDefine(operator, left, right)
     tag := getTag(operator)
+    if isDefinition(right)   # todo: remove after converting exceptions
+        syntaxError("missing scope for definition", right)
     if isKeyphrase(left, "maybe")
         reduceDefine'(tag, MaybeDefinition, getRight(left), right)
     if isKeyphrase(left, "try")
