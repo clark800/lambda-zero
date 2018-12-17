@@ -1,13 +1,16 @@
 #* operators.zero
 
+syntax(match) ≔ prefix(10)
+syntax(maybe) ≔ prefix(10)
 syntax(try) ≔ prefix(10)
 syntax(catch) ≔ mixfix(try _)
-syntax(match) := prefix(12)
-syntax(if) ≔ prefix(14)
+#syntax(@) ≔ infix(12)
+syntax(if) ≔ prefix(13)
 syntax(then) ≔ mixfix(if _)
 syntax(else) ≔ mixfix(if _ then _)
-syntax(??) ≔ infixR(15)
-syntax(?!) ≔ infixR(15)
+syntax(??) ≔ infixR(14)
+syntax(?!) ≔ infixR(14)
+#syntax(abort) ≔ prefix(15)
 syntax(of) := infixL(16)
 
 syntax(or) ≔ infixR(17)
@@ -34,7 +37,6 @@ syntax(in) ≔ infix(20)
 syntax(|:) ≔ infixL(30)
 syntax(..) ≔ infix(30)
 
-syntax(<:>) ≔ infixR(40)
 syntax(::) ≔ infixR(40)
 syntax(++) ≔ infixR(40)
 
@@ -50,20 +52,21 @@ syntax(%) ≔ infix(60)
 syntax(*) ≔ infixL(70)
 syntax(&) ≔ infixL(70)
 syntax(<>) ≔ infixR(70)
+syntax(<:>) ≔ infixR(70)
 
 syntax(^) ≔ infixR(80)
 syntax(^<>) ≔ infixL(80)
-syntax(^2) := postfix(80)
 syntax(**) ≔ infixR(80)
 
+syntax(^2) := postfix(90)
 syntax(!) ≔ postfix(90)
 syntax(?) ≔ postfix(90)
 syntax(...) ≔ postfix(90)
 syntax(up) ≔ prefix(90)
 syntax(down) ≔ prefix(90)
 
-syntax(`) ≔ prefix(95)
-syntax(``) ≔ prefix(95)
+syntax(`) ≔ prefix(97)
+syntax(``) ≔ prefix(97)
 
 syntax(⁈) ≔ alias(?!)
 syntax(⁇) ≔ alias(??)

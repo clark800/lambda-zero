@@ -84,7 +84,7 @@ a := ((+)(1) \n 2)
 Syntax error: missing scope for definition ':=' at line 1 column 3
 ===============================================================================
 a := b := 1 \n 0
-Syntax error: operator is non-associative ':=' at line 1 column 3
+Syntax error: missing scope for definition ':=' at line 1 column 8
 ===============================================================================
 f(x -> x, y) := y \n f(0)
 Syntax error: invalid parameter '->' at line 1 column 5

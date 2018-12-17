@@ -3,7 +3,7 @@
 id(x) ≔ x                        # identity function
 constant(x) ≔ _ ↦ x              # constant function
 f of x ≔ f(x)                    # function application
-(match x)(f) ≔ f(x)              # pattern matching
+match x; f ≔ f(x)                # pattern matching
 f ∘ g ≔ x ↦ f(g(x))              # function composition
 `f(x, y) ≔ f(y, x)               # flip order of first two arguments of function
 ``f(x, y, z) ≔ f(y, z, x)        # rotate order of first three arguments
@@ -130,7 +130,7 @@ safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
 
 define safeIndex(xs)
     case 0 ↦ safeHead(xs)
-    case up n' -> safeIndex(xs', n') | maybe xs' ≔ safeTail(xs)
+    case up n' -> (safeIndex(xs', n') | maybe xs' ≔ safeTail(xs))
 
 define dropIf(ns, p)
     match ns
