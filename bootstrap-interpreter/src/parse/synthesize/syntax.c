@@ -197,7 +197,7 @@ void initSymbols(void) {
     addCoreSyntax("]", 0, 90, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
     addCoreSyntax("{", 90, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
     addCoreSyntax("}", 0, 90, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
-    addCoreSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
+    addCoreSyntax("||", 1, 1, INFIX, N, shiftInfix, reduceReserved);
     addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
     addCoreSyntax(";;", 4, 4, INFIX, R, shiftInfix, reduceNewline);
@@ -205,9 +205,11 @@ void initSymbols(void) {
     addCoreSyntax(":=", 6, 6, INFIX, N, shiftInfix, reduceDefine);
     addCoreSyntax("::=", 6, 6, INFIX, N, shiftInfix, reduceADTDefinition);
     addCoreSyntax(";", 7, 7, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax("|", 9, 5, INFIX, L, shiftInfix, reduceWhere);
     addCoreSyntax("where", 9, 5, INFIX, L, shiftInfix, reduceWhere);
     addCoreSyntax("->", 11, 8, INFIX, R, shiftInfix, reduceArrow); // 10 is try
     addCoreSyntax("case", 12, 12, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax("maybe", 12, 12, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 13, 13, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 16, 16, PREFIX, L, shiftPrefix, reduceAbort);
     addCoreSyntax("syntax", 90, 90, PREFIX, L, shiftPrefix, reducePrefix);
@@ -217,4 +219,5 @@ void initSymbols(void) {
     addCoreAlias("\u2254", ":=");
     addCoreAlias("\u2A74", "::=");
     addCoreAlias("\u21A6", "->");
+    addCoreAlias("\u2016", "||");
 }

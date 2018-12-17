@@ -1,14 +1,14 @@
 #* prelude.zero
 
-(match x)(f) ≔ f(x)
-f ‖ x ≔ f(x)                     # low precedence application
+id(x) ≔ x                        # identity function
+constant(x) ≔ _ ↦ x              # constant function
+f of x ≔ f(x)                    # function application
+(match x)(f) ≔ f(x)              # pattern matching
 f ∘ g ≔ x ↦ f(g(x))              # function composition
 `f(x, y) ≔ f(y, x)               # flip order of first two arguments of function
-``f(x, y, z) ≔ f(y, z, x)
-id(x) ≔ x                        # identity function
-constant(x) ≔ _ ↦ x              # result does not depend on parameter
+``f(x, y, z) ≔ f(y, z, x)        # rotate order of first three arguments
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
-fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
+fix(f) ≔ 𝛚(f ∘ 𝛚) | 𝛚(x) ≔ x(x)  # fixpoint combinator (Y combinator)
 
 # bottom
 ⊥ ⩴ {}
@@ -32,9 +32,9 @@ Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth
 
 # boolean
 𝔹 ⩴ {false, true}
-(if b)(x, y) ≔ b.(case false ↦ y; case true ↦ x)
-(then) ≔ (‖)
-(else) ≔ (‖)
+(if b)(x, y) ≔ b | case false ↦ y; case true ↦ x
+(then) ≔ (of)
+(else) ≔ (of)
 not b ≔ if b then false else true
 b and c ≔ if b then c else false
 b or c ≔ if b then true else c
@@ -42,24 +42,24 @@ until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
 while(f, p, z) ≔ f.until((not) ∘ p, z)
 
 # maybe
-a ? ::= {void, just(_ : a)}
-isVoid := case void -> true; case just(_) -> false
-onJust(mx, f) := mx.(case void -> void; case just(x) -> f(x))
-mapJust(mx, f) := onJust(mx, just <> f)
-mx ?? x := mx.(case void -> x; case just(x') -> x')
+a ? ⩴ {void, just(_ : a)}
+isVoid ≔ case void -> true; case just(_) -> false
+onJust(mx, f) ≔ mx | case void -> void; case just(x) -> f(x)
+mapJust(mx, f) ≔ onJust(mx, just <> f)
+mx ?? x ≔ mx | case void -> x; case just(x') -> x'
 
 # either
 Either(a, b) ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ case Left(_) ↦ true; case Right(_) ↦ false
 isRight ≔ case Left(_) ↦ false; case Right(_) ↦ true
-onLeft(exy, f) ≔ exy.(case Left(x) ↦ f(x); case Right(y) ↦ y)
-onRight(exy, f) ≔ exy.(case Left(x) ↦ Left(x); case Right(y) ↦ f(y))
+onLeft(exy, f) ≔ exy | case Left(x) ↦ f(x); case Right(y) ↦ y
+onRight(exy, f) ≔ exy | case Left(x) ↦ Left(x); case Right(y) ↦ f(y)
 mapLeft(exy, f) ≔ onLeft(exy, Left <> f)
 mapRight(exy, f) ≔ onRight(exy, Right ∘ f)
 (try) ≔ onLeft
-(catch) ≔ (‖)
+(catch) ≔ (of)
 exy ?! y ≔ try exy catch constant(y)
-toMaybe := case Left(_) -> void; case Right(y) -> just(y)
+toMaybe ≔ case Left(_) -> void; case Right(y) -> just(y)
 
 # numbers
 ℕ ⩴ {0, ↑((↓) ∈ ℕ)}
@@ -76,10 +76,10 @@ mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
-n ! ≔ n.(case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !)
+n ! ≔ n | case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !
 gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
-f ° n ≔ n.(case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′)
-(n)^2 := n * n
+f ° n ≔ n | case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′
+(n)^2 ≔ n * n
 
 define n ^ m
     match m
@@ -109,16 +109,16 @@ define n ^ m
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ `(∷)
 isNil ≔ case [] ↦ true; case _ ∷ _ ↦ false    # note: isEmpty is for sets
-fold(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(xs′, f, z)))
-cascade(xs, f, z) ≔ xs.(case [] ↦ z; case x ∷ xs′ ↦ cascade(xs′, f, f(z, x)))
+fold(xs, f, z) ≔ xs | case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(xs′, f, z))
+cascade(xs, f, z) ≔ xs | case [] ↦ z; case x ∷ xs′ ↦ cascade(xs′, f, f(z, x))
 xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
 join(xss) ≔ xss.fold((⧺), [])            # concatenate list of lists
 length(xs) ≔ xs.fold(constant(↑), 0)         # get length of list
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(xs, n) ≔ n.(case 0 ↦ xs; case ↑ n' ↦
-    if isNil(xs) then xs else tail(xs).drop(n'))
-take(xs, n) ≔ n.(case 0 ↦ []; case ↑ n′ ↦
-    if isNil(xs) then xs else head(xs) ∷ tail(xs).take(n′))
+drop(xs, n) ≔ n |
+    case 0 ↦ xs; case ↑ n' ↦ if isNil(xs) then xs else tail(xs).drop(n')
+take(xs, n) ≔ n | case 0 ↦ []; case ↑ n′ ↦
+    if isNil(xs) then xs else head(xs) ∷ tail(xs).take(n′)
 xs[n] ≔ head(xs.drop(n))          # get element of list at index
 xs[start, end] ≔ xs.drop(start).take(end - start)
 last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
@@ -130,7 +130,7 @@ safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
 
 define safeIndex(xs)
     case 0 ↦ safeHead(xs)
-    case up n' -> safeIndex(xs', n') where maybe xs' ≔ safeTail(xs)
+    case up n' -> safeIndex(xs', n') | maybe xs' ≔ safeTail(xs)
 
 define dropIf(ns, p)
     match ns
@@ -223,9 +223,9 @@ product ≔ ∏
 minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
 
-primes := p(2 …) where p ≔ case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
+primes ≔ p(2 …) | p ≔ case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
-fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
+fibonaccis ≔ f(0, 1) | f(m, n) ≔ m ∷ f(n, m + n)
 
 # string
 define xs ≛ ys              # string equality
@@ -259,7 +259,7 @@ define split(ns, p)
         case n ∷ ns′
             if p(ns)
                 ([], ns)
-            (n ∷ before, after) where (before, after) ≔ ns′.split(p)
+            (n ∷ before, after) | (before, after) ≔ ns′.split(p)
 
 splitAt(xs, n) ≔ (xs.take(n), xs.drop(n))
 splitWhen(ns, p) ≔ ns.split(p ∘ head)

@@ -1,14 +1,14 @@
 #* declarations.zero
 
 define getFixScheme(source)
-    syntax(>->) := syntax(||)
+    syntax(>->) := syntax(++)
     (>->) := FunctionType(source)
     a := TypeVariable(source, 0)
     Scheme([a], (a >-> a) >-> a)
 
 
 define builtinTypes
-    syntax(>->) := syntax(||)
+    syntax(>->) := syntax(++)
     (>->) := FunctionType(noTerm)
     bottom := BottomType(noTerm)
     boolean := ADT(noTerm, "𝔹", [], 2, 0)
