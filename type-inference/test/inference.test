@@ -69,6 +69,8 @@ syntax(-) := infixL(21)
 fix := x -> x  # dummy definition
 r(n, m) := r(n - 1, r(n, n))
 
+f(x) := x | 0 -> 1; up(n) -> 2
+
 # r(x) := (
 #     (y, z) := r(x + 1)
 #     (x, y)

@@ -1,9 +1,10 @@
 #* evaluate.zero
 
 define expandNatural(tag, n)
-    Abstraction(tag, Free, Abstraction(tag, Free,
+    metadata := Metadata(Free, Free, [])
+    Abstraction(tag, metadata, Abstraction(tag, metadata,
         if n = 0 then Variable(tag, 2) else
-            Application(tag, Variable(tag, 1), Numeral(tag, n - 1))))
+            Application(tag, false, Variable(tag, 1), Numeral(tag, n - 1))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
@@ -13,7 +14,7 @@ define evaluate(closure @ Closure(term, environment), stack)
         case Abstraction(_, _, body)
             if isNil(stack) then closure else
                 evaluate(Closure(body, stack[0] :: environment), tail(stack))
-        case Application(_, applicand, argument)
+        case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
         case Numeral(tag, n)

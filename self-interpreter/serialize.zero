@@ -9,7 +9,7 @@ define serialize(closure)
             case Abstraction(tag, _, body)
                 "(" ++ showTag(tag) ++ " -> " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Application(_, applicand, argument)
+            case Application(_, _, applicand, argument)
                 "(" ++
                 serialize'(Closure(applicand, environment), depth) ++ " " ++
                 serialize'(Closure(argument, environment), depth) ++ ")"

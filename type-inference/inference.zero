@@ -67,6 +67,41 @@ define instantiate(Scheme(universals, type), variables, term)
     (type.rename(renaming).setSource(term), variables')
 
 
+define getConstructorSchemes(stack, metadata)
+    getConstructorDebruijnIndices(metadata).map(k -> stack[k - 1])
+
+
+define getConstructionType(constructorType)
+    if isADT(constructorType)
+        constructorType
+    if isFunctionType(constructorType)
+        getConstructionType(getBodyType(constructorType))
+    abort "Type error: invalid constructor at " ++
+        showTypeLocation(constructorType)
+
+
+define validateConstructorSchemes(schemes, term)
+    if isNil(schemes)
+        id
+    types := schemes.map(getType)
+    adtTypes := types.map(getConstructionType)
+    tag := getTermTag(term)
+    if not adtTypes.all(isADT)
+        throwError("Type error: invalid cases:", tag)
+    names := deduplicateBy(adtTypes.map(getName), (=*=))
+    counts := deduplicate(adtTypes.map(getCount))
+    if length(names) =/= 1 or length(counts) =/= 1
+        throwError("Type error: inconsistent cases:", tag)
+    count := head(counts)
+    indices := adtTypes.map(getIndex)
+    if length(indices) < count
+        throwError("Type error: missing case:", tag)
+    if length(indices) > count
+        throwError("Type error: too many cases:", tag)
+    if not indices =*= sort(indices)
+        throwError("Type error: cases out of order:", tag)
+    id
+
 # stack is a list of type schemes for all the lambda-bound symbols in scope
 # variables is a table that maps type variables to types (either type
 #   variables or concrete types); every type variable appears in variables
@@ -76,12 +111,14 @@ define infer(stack, variables)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
             getAscription(metadata).instantiate(empty, term)
+        constructorSchemes := getConstructorSchemes(stack, metadata)
+        validateConstructorSchemes(constructorSchemes, term)
         (parameterType, variables') := variables.newTypeVariable(term)
         stack' := Scheme([], parameterType) :: stack
         (bodyType, variables'') := infer(stack', variables', body)
         (FunctionType(term, parameterType, bodyType), variables'')
-    case term @ Application(_, applicand, argument)
-        if isAbstraction(applicand)     # treat this as a let
+    case term @ Application(_, isLet, applicand, argument)
+        if isLet
             (valueType, variables') := infer(stack, variables, argument)
             stack' := valueType.generalize(variables', variables) :: stack
             infer(stack', variables', getBody(applicand))
@@ -107,9 +144,9 @@ define inferType(stack, definition)
 define getDefinitions
     Variable(_, _) -> []
     Abstraction(_, _, _) -> []
-    Application(_, applicand, argument) ->
-        if not isAbstraction(applicand) then [] else
-        (getTermTag(applicand), argument) :: getDefinitions(getBody(applicand))
+    Application(_, isLet, applicand, argument) ->
+        if isLet then (getTermTag(applicand), argument) ::
+            getDefinitions(getBody(applicand)) else []
     Numeral(_, _) -> []
     Operation(_, _, _) -> []
 
