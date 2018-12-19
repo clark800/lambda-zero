@@ -135,7 +135,8 @@ define indexCoupleType
 
 isJuxtaposition(node) := isCouple(node) and
     indexCoupleType(getCoupleType(node)) = 0
-isLet(node) := isCouple(node) and indexCoupleType(getCoupleType(node)) = 1
+isLetCouple(node) := isCouple(node) and
+    indexCoupleType(getCoupleType(node)) = 1
 
 define indexArrowType
     Simple -> 0

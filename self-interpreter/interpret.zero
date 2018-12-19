@@ -12,7 +12,8 @@ define isMain(term)
 
 
 define newNilTerm(tag)
-    Abstraction(tag, Free, Abstraction(tag, Free, Variable(tag, 2)))
+    metadata := Metadata(Free, Free, [])
+    Abstraction(tag, metadata, Abstraction(tag, metadata, Variable(tag, 2)))
 
 
 define constructString(tag, string)
@@ -23,7 +24,7 @@ define constructString(tag, string)
 define evaluateMain(Closure(main, environment), input)
     # todo: use tag for "input" parameter to main
     tag := getTermTag(main)
-    term := Application(tag, main, constructString(tag, input))
+    term := Application(tag, false, main, constructString(tag, input))
     serializeString(evaluateClosure, Closure(term, environment)) ??
         runtimeError("expected string from", tag)
 

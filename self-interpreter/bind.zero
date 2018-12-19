@@ -75,12 +75,13 @@ define bind(node, stack)
         case Name(tag, depth)
             stack.bindName(tag, depth)
         case Arrow(tag, _, constructors, parameter, body)
-            metadata := Metadata(Free, Free,
-                constructors.map(`bind(stack)).map(getDebruijnIndex))
+            indices := constructors.map(`bind(stack)).map(getDebruijnIndex)
+            metadata := Metadata(Free, Free, indices)
             Abstraction(getTag(parameter), metadata,
                 bind(body, getLexeme(parameter) :: stack))
         case Couple(tag, _, left, right)
-            Application(tag, bind(left, stack), bind(right, stack))
+            Application(tag, isLetCouple(node),
+                bind(left, stack), bind(right, stack))
         case Number(tag, value)
             Numeral(renameTag(tag, "_"), value)
         case Reference(tag, debruijn)

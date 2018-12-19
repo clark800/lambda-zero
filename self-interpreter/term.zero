@@ -9,7 +9,8 @@ MetadataType ::= {Metadata(
 Term ::= {
     Variable(_ : Tag, getDebruijnIndex : Natural),
     Abstraction(_ : Tag, getMetadata : Metadata, getBody : Term),
-    Application(_ : Tag, getApplicand : Term, getArgument : Term),
+    Application(_ : Tag, isLet : Boolean,
+        getApplicand : Term, getArgument : Term),
     Numeral(_ :  Tag, getNatural : Natural),
     Operation(_ : Tag, getArity : Natural, getOperator : _)
 }
@@ -17,7 +18,7 @@ Term ::= {
 define getTermTag
     Variable(tag, _) -> tag
     Abstraction(tag, _, _) -> tag
-    Application(tag, _, _) -> tag
+    Application(tag, _, _, _) -> tag
     Numeral(tag, _) -> tag
     Operation(tag, _, _) -> tag
 
@@ -25,7 +26,7 @@ define getTermTag
 define indexTerm
     Variable(_, _) -> 0
     Abstraction(_, _, _) -> 1
-    Application(_, _, _) -> 2
+    Application(_, _, _, _) -> 2
     Numeral(_, _) -> 3
     Operation(_, _, _) -> 4
 
@@ -95,7 +96,7 @@ define showTerm
     Variable(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
     Abstraction(tag, _, body) ->
         "(" ++ showTag(tag) ++ " -> " ++ showTerm(body) ++ ")"
-    Application(_, applicand, argument) ->
+    Application(_, _, applicand, argument) ->
         "(" ++ showTerm(applicand) ++ " " ++ showTerm(argument) ++ ")"
     Numeral(_, n) -> showNatural(n)
     Operation(tag, _, _) -> showTag(tag)
