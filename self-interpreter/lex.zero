@@ -114,15 +114,15 @@ define createToken(tag @ Tag(lexeme, _), nextTag)
 
 define getTokenCodeNumber(tokenCode)
     match tokenCode
-        case Space -> 0
-        case VSpace -> 1
-        case Newline -> 2
-        case Symbolic -> 3
-        case Numeric -> 4
-        case Character -> 5
-        case String -> 6
-        case Comment -> 7
-        case Invalid -> 8
+        Space -> 0
+        VSpace -> 1
+        Newline -> 2
+        Symbolic -> 3
+        Numeric -> 4
+        Character -> 5
+        String -> 6
+        Comment -> 7
+        Invalid -> 8
 
 define isElided(token)
     code := getTokenCodeNumber(getTokenCode(token))
@@ -143,15 +143,15 @@ define lex(string)
 define showFullToken(token)
     showFullTag(getTokenTag(token)) ++ " " ++ (
         match getTokenCode(token)
-            case Space -> "Space"
-            case VSpace -> "VSpace"
-            case Newline -> "Newline"
-            case Symbolic -> "Symbolic"
-            case Numeric -> "Numeric"
-            case Character -> "Character"
-            case String -> "String"
-            case Comment -> "Comment"
-            case Invalid -> "Invalid"
+            Space -> "Space"
+            VSpace -> "VSpace"
+            Newline -> "Newline"
+            Symbolic -> "Symbolic"
+            Numeric -> "Numeric"
+            Character -> "Character"
+            String -> "String"
+            Comment -> "Comment"
+            Invalid -> "Invalid"
     )
 
 #main(input) := scan(input).map(showTag).joinWith("\n")

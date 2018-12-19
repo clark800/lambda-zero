@@ -23,6 +23,7 @@ void setRight(Node* branchNode, Node* right);
 char getType(Node* node);
 void setType(Node* node, char type);
 char getVariety(Node* node);
+void setVariety(Node* node, char variety);
 long long getValue(Node* leafNode);
 void setValue(Node* leafNode, long long value);
 void* getData(Node* leafNode);

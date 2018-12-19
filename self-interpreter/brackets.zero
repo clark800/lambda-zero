@@ -42,6 +42,8 @@ define reduceParentheses(open, function, contents)
         applyToCommaList(tag, function, contents')
     if isCommaPair(contents')
         newTuple(tag, contents')
+    if isArrow(contents')
+        lockArrow(contents')
     if isJuxtaposition(contents')
         Juxtaposition(tag, getLeft(contents'), getRight(contents'))
     contents'

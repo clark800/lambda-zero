@@ -12,18 +12,18 @@ Node* getHead(Node* node) {
 
 Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    return Let(tag, newPatternLambda(tag, left, scope), right);
+    return Let(tag, newLazyArrow(tag, left, scope), right);
 }
 
 Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
-            right), newPatternLambda(tag, left, scope));
+            right), newLazyArrow(tag, left, scope));
 }
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> onRight(b, (a -> c)) --> (((onRight) b) (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
-            right), newPatternLambda(tag, left, scope));
+            right), newLazyArrow(tag, left, scope));
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -66,12 +66,12 @@ static bool hasRecursiveCalls(Node* node, Node* name) {
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
-    if (!isName(name) || (!isArrow(value) && !isCase(value)) ||
-            !hasRecursiveCalls(value, name))
+    if (!isName(name) || !isArrow(value) || !hasRecursiveCalls(value, name))
         return value;
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);
-    return Juxtaposition(tag, FixedName(tag, "fix"), Arrow(tag, name, value));
+    Node* fix = FixedName(tag, "fix");
+    return Juxtaposition(tag, fix, LockedArrow(tag, name, value));
 }
 
 static inline bool isValidPattern(Node* node) {
@@ -194,7 +194,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     if (isTuple(left) || isAsPattern(left))
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))
-        right = newPatternLambda(tag, getRight(left), right);
+        right = newLazyArrow(tag, getRight(left), right);
     syntaxErrorIf(!isName(left), "invalid left hand side", operator);
     if (isThisName(left, "main"))
         return applyPlainDefinition(tag, left, right, newMainCall(left));

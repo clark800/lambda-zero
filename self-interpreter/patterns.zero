@@ -12,9 +12,9 @@ define newProjector(tag, size, index)
 
 define newPatternArrow(tag, pattern, body)
     if isName(pattern)
-        Arrow(tag, pattern, body)
+        LockedArrow(tag, pattern, body)
     if isAsPattern(pattern)
-        Arrow(tag, getLabel(pattern), Juxtaposition(tag,
+        LockedArrow(tag, getLabel(pattern), Juxtaposition(tag,
             newPatternArrow(tag, getPattern(pattern), body),
             Reference(getTag(getLabel(pattern)), 1)))
     if isJuxtaposition(pattern)
@@ -36,34 +36,49 @@ define getNameAndValue(f, left, right)
     getNameAndValue(f, getLeft(left), f(getRight(left), right))
 
 
-define newCaseArrow(tag, left, right)
-    if isThisName(left, "()")
-        UnderscoreArrow(tag, right)  # TODO: add type annotation here
-    newPatternArrow(tag, left, right)
-
-
-define newCase(tag, left, right)
+define newStrictArrow(tag, left, right)
+    if (isName(left))
+        SimpleArrow(tag, left, right)
     pattern := if isAsPattern(left) then getPattern(left) else left
-    (constructor, reconstructor) :=
-        getNameAndValue(newCaseArrow(tag), pattern, right)
+    (name, reconstructor) :=
+        getNameAndValue(newPatternArrow(tag), pattern, right)
+    constructor := Name(getTag(name), 0)  # name could be a number
     underscore := newUnderscore(tag, 1)
+    parameter := Name(renameTag(tag, "_"), 0)
     if not isAsPattern(left)
-        Case(tag, [constructor], Juxtaposition(tag, underscore, reconstructor))
+        StrictArrow(tag, [constructor], parameter,
+            Juxtaposition(tag, underscore, reconstructor))
     wrapper := newPatternArrow(tag, getLabel(left), reconstructor)
     argument := Juxtaposition(tag, wrapper, underscore)
-    Case(tag, [constructor], Juxtaposition(tag, underscore, argument))
+    StrictArrow(tag, [constructor], parameter,
+        Juxtaposition(tag, underscore, argument))
 
 
-define mergeCaseBodies(tag, left, right)
-    if not isJuxtaposition(right)
-        left
-    merged := mergeCaseBodies(tag, left, getLeft(right))
-    Juxtaposition(tag, merged, getRight(right))
+define addCases(tag, base, extension)
+    if not isJuxtaposition(extension)
+        base
+    merged := addCases(tag, base, getLeft(extension))
+    Juxtaposition(tag, merged, getRight(extension))
 
 
-define combineCases(left, right)
-    tag := renameTag(getTag(left), "_")
-    body := mergeCaseBodies(tag, getCaseBody(left), getCaseBody(right))
-    Case(tag, getConstructors(left) ++ getConstructors(right), body)
+define newCaseBody(tag, left, right)
+    base := if isSimpleArrow(left) then
+        Juxtaposition(tag, newUnderscore(tag, 1), getArrowRight(left)) else
+        getArrowRight(left)
+    if isSimpleArrow(right)
+        Juxtaposition(tag, base, getArrowRight(right))
+    addCases(tag, base, getArrowRight(right))
+
+
+define getCaseConstructors(arrow)
+    if isSimpleArrow(arrow)
+        [getArrowLeft(arrow)]
+    getConstructors(arrow)
+
+
+define combineCases(tag, left, right)
+    underscore := Name(renameTag(tag, "_"), 0)
+    constructors := getCaseConstructors(left) ++ getCaseConstructors(right)
+    StrictArrow(tag, constructors, underscore, newCaseBody(tag, left, right))
 
 #*

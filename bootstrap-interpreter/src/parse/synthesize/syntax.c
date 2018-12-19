@@ -31,9 +31,7 @@ static Node* reducePeriod(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
-    if (isKeyphrase(left, "case"))
-        return reduceCase(operator, getRight(left), right);
-    return newPatternLambda(getTag(operator), left, right);
+    return newStrictArrow(getTag(operator), left, right);
 }
 
 static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
@@ -168,9 +166,9 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
     if (isKeyphrase(left, "define"))
         return reduceDefine(getLeft(left), getRight(left), right);
     if (isCase(left) && isCase(right))
-        return combineCases(left, right);
+        return combineCases(getTag(operator), left, right);
     if (isKeyphrase(left, "case"))
-        return reduceArrow(operator, left, right);
+        return reduceArrow(operator, getRight(left), right);
     return reduceApply(operator, left, right);
 }
 

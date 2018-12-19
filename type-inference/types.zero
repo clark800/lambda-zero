@@ -1,30 +1,30 @@
 #* types.zero
 
 define getSource
-    case FreeType -> undefined
-    case BottomType(source) -> source
-    case TypeVariable(source, _) -> source
-    case FunctionType(source, _, _) -> source
-    case ADT(source, _, _, _, _) -> source
+    FreeType -> undefined
+    BottomType(source) -> source
+    TypeVariable(source, _) -> source
+    FunctionType(source, _, _) -> source
+    ADT(source, _, _, _, _) -> source
 
 
 define setSource(type, source)
     match type
-        case FreeType -> FreeType
-        case BottomType(_) -> BottomType(source)
-        case TypeVariable(_, index) -> TypeVariable(source, index)
-        case FunctionType(_, parameter, body) ->
+        FreeType -> FreeType
+        BottomType(_) -> BottomType(source)
+        TypeVariable(_, index) -> TypeVariable(source, index)
+        FunctionType(_, parameter, body) ->
             FunctionType(source, parameter, body)
-        case ADT(_, name, parameters, count, index) ->
+        ADT(_, name, parameters, count, index) ->
             ADT(source, name, parameters, count, index)
 
 
 define indexType
-    case FreeType -> 0
-    case BottomType(_) -> 1
-    case TypeVariable(_, _) -> 2
-    case FunctionType(_, _, _) -> 3
-    case ADT(_, _, _, _, _) -> 4
+    FreeType -> 0
+    BottomType(_) -> 1
+    TypeVariable(_, _) -> 2
+    FunctionType(_, _, _) -> 3
+    ADT(_, _, _, _, _) -> 4
 
 
 isFreeType(type) := indexType(type) = 0
@@ -48,9 +48,9 @@ define getSuffix(count, index)
 
 
 define showType
-    case FreeType -> "_"
-    case BottomType(_) ->"⊥"
-    case TypeVariable(_, index) -> getVariableName(index)
+    case FreeType; "_"
+    case BottomType(_); "⊥"
+    case TypeVariable(_, index); getVariableName(index)
     case FunctionType(_, parameter, body)
         if isFunctionType(parameter)
             "(" ++ showType(parameter) ++ ")" ++ " → " ++ showType(body)
@@ -62,25 +62,25 @@ define showType
 
 
 define getComponentTypes
-    case FreeType -> []
-    case BottomType(_) -> []
-    case TypeVariable(_, _) -> []
-    case FunctionType(_, parameter, body) -> [parameter, body]
-    case ADT(_, _, parameters, _, _) -> parameters
+    FreeType -> []
+    BottomType(_) -> []
+    TypeVariable(_, _) -> []
+    FunctionType(_, parameter, body) -> [parameter, body]
+    ADT(_, _, parameters, _, _) -> parameters
 
 
 syntax(=~=) := syntax(=)
 
 define a =~= b
     match a
-        case FreeType -> undefined
-        case BottomType(_) -> isBottomType(b)
-        case TypeVariable(_, _) -> isTypeVariable(b) and
+        FreeType -> undefined
+        BottomType(_) -> isBottomType(b)
+        TypeVariable(_, _) -> isTypeVariable(b) and
             getTypeVariableIndex(a) = getTypeVariableIndex(b)
-        case FunctionType(_, _, _) -> isFunctionType(b) and
+        FunctionType(_, _, _) -> isFunctionType(b) and
             getParameterType(a) =~= getParameterType(b) and
             getBodyType(a) =~= getBodyType(b)
-        case ADT(_, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
+        ADT(_, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
             all(zipWith(getComponentTypes(a), (=~=), getComponentTypes(b)), id)
 
 
@@ -96,12 +96,12 @@ isFree(type, variables) := not variables.hasKey(type) or
 
 define mapComponents(type, f)
     match type
-        case FreeType -> type
-        case BottomType(_) -> type
-        case TypeVariable(_, _) -> type
-        case FunctionType(source, parameter, body) ->
+        FreeType -> type
+        BottomType(_) -> type
+        TypeVariable(_, _) -> type
+        FunctionType(source, parameter, body) ->
             FunctionType(source, f(parameter), f(body))
-        case ADT(source, name, parameters, count, index) ->
+        ADT(source, name, parameters, count, index) ->
             ADT(source, name, parameters.map(f), count, index)
 
 newVariableMap(mappings) := newTable((<=).on(getTypeVariableIndex), mappings)

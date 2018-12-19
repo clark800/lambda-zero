@@ -29,6 +29,7 @@ void setTag(Node* node, Tag tag) {node->tag = tag;}
 char getType(Node* node) {return node->type;}
 void setType(Node* node, char type) {node->type = type;}
 char getVariety(Node* node) {return (char)(node->isBranch - 1);}
+void setVariety(Node* node, char variety) {node->isBranch = ++variety;}
 Node* getLeft(Node* node) {return node->left.child;}
 Node* getRight(Node* node) {return node->right.child;}
 long long getValue(Node* node) {return node->left.value;}
