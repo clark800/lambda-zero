@@ -67,10 +67,6 @@ define instantiate(Scheme(universals, type), variables, term)
     (type.rename(renaming).setSource(term), variables')
 
 
-define getConstructorSchemes(stack, metadata)
-    getConstructorDebruijnIndices(metadata).map(k -> stack[k - 1])
-
-
 define getConstructionType(constructorType)
     if isADT(constructorType)
         constructorType
@@ -80,12 +76,26 @@ define getConstructionType(constructorType)
         showTypeLocation(constructorType)
 
 
-define validateConstructorSchemes(schemes, term)
+define convertConstructorType(variable, type)
+    if isADT(type)
+        variable
+    if isFunctionType(type)
+        FunctionType(getSource(type), getParameterType(type),
+            convertConstructorType(variable, getBodyType(type)))
+    abort "Type error: invalid constructor at " ++ showTypeLocation(type)
+
+
+define constructInnerParameterType(types, variable, term)
+    types' := types.map(convertConstructorType(variable))
+    types'.fold(FunctionType(term), variable)
+
+
+define constructParameterType(variables, schemes, term)
+    tag := getTermTag(term)
     if isNil(schemes)
-        id
+        throwError("Type error: no cases:", tag)
     types := schemes.map(getType)
     adtTypes := types.map(getConstructionType)
-    tag := getTermTag(term)
     if not adtTypes.all(isADT)
         throwError("Type error: invalid cases:", tag)
     names := deduplicateBy(adtTypes.map(getName), (=*=))
@@ -100,7 +110,30 @@ define validateConstructorSchemes(schemes, term)
         throwError("Type error: too many cases:", tag)
     if not indices =*= sort(indices)
         throwError("Type error: cases out of order:", tag)
-    id
+
+    # note: all schemes should have the same universals
+    universals := getUniversals(head(schemes))
+    variable := TypeVariable(term, length(universals))
+    universals' := variable :: universals
+
+    outerType := head(adtTypes)   # todo: set index to zero
+    innerType := constructInnerParameterType(types, variable, term)
+
+    # note: the variables in inner and outer must be instantiated together
+    # so we use a trick of packaging them together in a FunctionType
+    scheme := Scheme(universals', FunctionType(term, outerType, innerType))
+    (polarType, variables') := scheme.instantiate(variables, term)
+    (getParameterType(polarType), getBodyType(polarType), variables')
+
+
+define inferParameterType(stack, variables, term)
+    metadata := getMetadata(term)
+    schemes := getConstructorDebruijnIndices(metadata).map(k -> stack[k - 1])
+    if isNil(schemes)
+        (parameterType, variables') := variables.newTypeVariable(term)
+        (parameterType, parameterType, variables')
+    constructParameterType(variables, schemes, term)
+
 
 # stack is a list of type schemes for all the lambda-bound symbols in scope
 # variables is a table that maps type variables to types (either type
@@ -111,12 +144,11 @@ define infer(stack, variables)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
             getAscription(metadata).instantiate(empty, term)
-        constructorSchemes := getConstructorSchemes(stack, metadata)
-        validateConstructorSchemes(constructorSchemes, term)
-        (parameterType, variables') := variables.newTypeVariable(term)
-        stack' := Scheme([], parameterType) :: stack
+        (outerParameterType, innerParameterType, variables') :=
+            inferParameterType(stack, variables, term)
+        stack' := Scheme([], innerParameterType) :: stack
         (bodyType, variables'') := infer(stack', variables', body)
-        (FunctionType(term, parameterType, bodyType), variables'')
+        (FunctionType(term, outerParameterType, bodyType), variables'')
     case term @ Application(_, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
