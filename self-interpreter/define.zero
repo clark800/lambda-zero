@@ -1,9 +1,16 @@
 #* define.zero
 
-define getHead(node)
-    if isJuxtaposition(node) then getHead(getLeft(node)) else node
+define isTupleConstructor(node)
+    isName(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
+
+define isTuple(node)
+    if isJuxtaposition(node)
+        isTuple(getLeft(node))
+    isTupleConstructor(node)
 
 define applyPlainDefinition(tag, name, value, scope)
+    if isJuxtaposition(name) and isTuple(name)
+        Juxtaposition(tag, newPatternArrow(tag, name, scope), value)
     Let(tag, newPatternArrow(tag, name, scope), value)
 
 define applyMaybeDefinition(tag, name, value, scope)
@@ -20,14 +27,6 @@ define transformRecursion(name, value)
     tag := getTag(name)
     fix' := Name(renameTag(tag, "fix"), 0)
     Juxtaposition(tag, fix', LockedArrow(tag, Name(tag, 0), value))
-
-define isTupleConstructor(node)
-    isName(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
-
-define isTuple(node)
-    if isJuxtaposition(node)
-        isTuple(getLeft(node))
-    isTupleConstructor(node)
 
 define isValidPattern(node)
     isName(node) or (isJuxtaposition(node) and
