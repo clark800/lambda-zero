@@ -39,7 +39,7 @@ define buildContext(dataType)
     components := getArguments(dataType)
     if not components.all(isName)
         syntaxError("all components should be names", dataType)
-    typeVariables := (0 .. length(components)).map(TypeVariable(noTerm))
+    typeVariables := (0 .. length(components) - 1).map(TypeVariable(noTerm))
     newTable((<*=), zip(components.map(getLexeme), typeVariables))
 
 
