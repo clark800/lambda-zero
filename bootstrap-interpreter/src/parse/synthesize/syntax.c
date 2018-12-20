@@ -199,12 +199,12 @@ void initSymbols(void) {
     addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
     addCoreSyntax(";;", 4, 4, INFIX, R, shiftInfix, reduceNewline);
-    addCoreSyntax("::=", 5, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    addCoreSyntax(":=", 5, 5, INFIX, R, shiftInfix, reduceDefine);
-    addCoreSyntax("|", 5, 5, INFIX, R, shiftInfix, reduceWhere);
-    addCoreSyntax("where", 5, 5, INFIX, R, shiftInfix, reduceWhere);
-    addCoreSyntax(";", 6, 6, INFIX, R, shiftInfix, reduceNewline);
-    addCoreSyntax("->", 7, 7, INFIX, R, shiftInfix, reduceArrow);
+    addCoreSyntax("::=", 7, 5, INFIX, N, shiftInfix, reduceADTDefinition);
+    addCoreSyntax(":=", 7, 5, INFIX, N, shiftInfix, reduceDefine);
+    addCoreSyntax("|", 6, 6, INFIX, L, shiftInfix, reduceWhere);
+    addCoreSyntax("where", 6, 6, INFIX, L, shiftInfix, reduceWhere);
+    addCoreSyntax(";", 8, 8, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax("->", 9, 9, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("define", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
