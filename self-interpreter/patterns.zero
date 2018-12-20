@@ -1,5 +1,9 @@
 #* patterns.zero
 
+define getHead(node)
+    if isJuxtaposition(node) then getHead(getLeft(node)) else node
+
+
 define getArguments(pattern)
     if not isJuxtaposition(pattern)
         []
@@ -18,13 +22,16 @@ define newPatternArrow(tag, pattern, body)
             newPatternArrow(tag, getPattern(pattern), body),
             Reference(getTag(getLabel(pattern)), 1)))
     if isJuxtaposition(pattern)
+        constructor := getHead(pattern)
         arguments := getArguments(pattern)
         size := length(arguments)
         underscore := newUnderscore(tag, 1)
         function := arguments.fold(newPatternArrow(tag), body)
         projectors := (0 .. size - 1).map(newProjector(tag, size))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        UnderscoreArrow(tag, projections.cascade(Juxtaposition(tag), function))
+        parameter := Name(renameTag(tag, "_"), 0)
+        lockArrow(StrictArrow(tag, [constructor], parameter,
+            projections.cascade(Juxtaposition(tag), function)))
     syntaxError("invalid parameter", pattern)
 
 
