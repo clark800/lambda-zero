@@ -7,8 +7,8 @@ Type ::= {
     BottomType(_source : Term),
     TypeVariable(_source : Term, getTypeVariableIndex : Natural),
     FunctionType(_source : Term, getParameterType : Type, getBodyType : Type),
-    ADT(_source : Term, getName : List(Natural), getParameters : List(Type),
-        getCount : Natural, getIndex : Natural)
+    ADT(_source : Term, getName : List(Natural), getNameFixity : Natural,
+        getParameters : List(Type), getCount : Natural, getIndex : Natural)
 }
 
 TypeScheme ::= {Scheme(getUniversals : List(Type), getType : Type)}

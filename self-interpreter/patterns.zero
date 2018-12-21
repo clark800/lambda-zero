@@ -18,9 +18,10 @@ define newPatternArrow(tag, pattern, body)
     if isName(pattern)
         LockedArrow(tag, pattern, body)
     if isAsPattern(pattern)
-        LockedArrow(tag, getLabel(pattern), Juxtaposition(tag,
+        label := getLabel(pattern)
+        LockedArrow(tag, label, Juxtaposition(tag,
             newPatternArrow(tag, getPattern(pattern), body),
-            Reference(getTag(getLabel(pattern)), 1)))
+            Reference(getTag(label), 1, 0, getReferenceFixity(label))))
     if isJuxtaposition(pattern)
         constructor := getHead(pattern)
         arguments := getArguments(pattern)
@@ -29,7 +30,7 @@ define newPatternArrow(tag, pattern, body)
         function := arguments.fold(newPatternArrow(tag), body)
         projectors := (0 .. size - 1).map(newProjector(tag, size))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        parameter := Name(renameTag(tag, "_"), 0)
+        parameter := Name(renameTag(tag, "_"))
         lockArrow(StrictArrow(tag, [constructor], parameter,
             projections.cascade(Juxtaposition(tag), function)))
     syntaxError("invalid parameter", pattern)
@@ -49,9 +50,9 @@ define newStrictArrow(tag, left, right)
     pattern := if isAsPattern(left) then getPattern(left) else left
     (name, reconstructor) :=
         getNameAndValue(newPatternArrow(tag), pattern, right)
-    constructor := Name(getTag(name), 0)  # name could be a number
+    constructor := Name(getTag(name))  # name could be a number
     underscore := newUnderscore(tag, 1)
-    parameter := Name(renameTag(tag, "_"), 0)
+    parameter := Name(renameTag(tag, "_"))
     if not isAsPattern(left)
         StrictArrow(tag, [constructor], parameter,
             Juxtaposition(tag, underscore, reconstructor))
@@ -84,7 +85,7 @@ define getCaseConstructors(arrow)
 
 
 define combineCases(tag, left, right)
-    underscore := Name(renameTag(tag, "_"), 0)
+    underscore := Name(renameTag(tag, "_"))
     constructors := getCaseConstructors(left) ++ getCaseConstructors(right)
     StrictArrow(tag, constructors, underscore, newCaseBody(tag, left, right))
 

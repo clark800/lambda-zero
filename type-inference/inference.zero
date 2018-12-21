@@ -159,7 +159,7 @@ define infer(stack, variables)
         (returnType, variables'''.unify((applicandType, functionType)))
     case term @ Numeral(_, value)
         index := if value = 0 then 1 else 2
-        (ADT(term, "ℕ", [], 2, index), variables)
+        (ADT(term, "ℕ", NOFIX, [], 2, index), variables)
     case term @ Operation(_, _, _)
         (getBuiltinType(term), variables)
 

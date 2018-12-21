@@ -32,7 +32,7 @@ static Node* newChurchPair(Tag tag, Node* left, Node* right) {
 }
 
 Node* Printer(Tag tag) {
-    Node* put = Name(renameTag(tag, "(put)"), 0);
+    Node* put = FixedName(tag, "(put)");
     Node* fold = FixedName(tag, "fold");
     Node* unit = FixedName(tag, "()");
     Node* under = Underscore(tag, 1);
@@ -44,7 +44,7 @@ static Node* newMainCall(Node* name) {
     isIO = true;
     Tag tag = getTag(name);
     Node* print = Printer(tag);
-    Node* get = Name(renameTag(tag, "(get)"), 0);
+    Node* get = FixedName(tag, "(get)");
     Node* get0 = Juxtaposition(tag, get, Number(tag, 0));
     Node* operators = newChurchPair(tag,
         FixedName(tag, "[]"), FixedName(tag, "::"));

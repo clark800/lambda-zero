@@ -1,4 +1,4 @@
-typedef enum {NAME, REFERENCE, ARROW, JUXTAPOSITION, NUMBER, LET,
+typedef enum {REFERENCE, ARROW, JUXTAPOSITION, NUMBER, LET,
     OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, SETBUILDER} ASTType;
 typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
 typedef enum {SIMPLEARROW, STRICTARROW, LOCKEDARROW} ArrowVariety;
@@ -12,8 +12,8 @@ static inline bool isSameLexeme(Node* a, Node* b) {
     return isSameString(getLexeme(a), getLexeme(b));
 }
 
-static inline bool isName(Node* n) {return getASTType(n) == NAME;}
 static inline bool isReference(Node* n) {return getASTType(n) == REFERENCE;}
+static inline bool isName(Node* n) {return isReference(n) && getValue(n) == 0;}
 static inline bool isArrow(Node* n) {return getASTType(n) == ARROW;}
 static inline bool isJuxtaposition(Node* n) {
     return getASTType(n) == JUXTAPOSITION;
@@ -57,13 +57,11 @@ static inline bool isKeyphrase(Node* n, const char* key) {
 static inline bool isEOF(Node* n) {return isThisOperator(n, "\0");}
 static inline bool isUnderscore(Node* n) {return isThisName(n, "_");}
 
-static inline Node* Reference(Tag tag, long long value) {
-    return newLeaf(tag, REFERENCE, value, NULL);
+static inline Node* Reference(Tag tag, long long value, long long depth) {
+    return newLeaf(tag, REFERENCE, value, (void*)depth);
 }
 
-static inline Node* Name(Tag tag, long long depth) {
-    return newLeaf(tag, NAME, depth, NULL);
-}
+static inline Node* Name(Tag tag) {return Reference(tag, 0, 0);}
 
 static inline Node* Operator(Tag tag, long long value, void* rules) {
     return newLeaf(tag, OPERATOR, value, rules);
@@ -114,15 +112,15 @@ static inline Node* SetBuilder(Tag tag, Node* commaList) {
 }
 
 static inline Node* FixedName(Tag tag, const char* s) {
-    return Name(renameTag(tag, s), 0);
+    return Name(renameTag(tag, s));
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
-    return Reference(renameTag(tag, "_"), (long long)debruijn);
+    return Reference(renameTag(tag, "_"), (long long)debruijn, 0);
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
-    return LockedArrow(tag, Name(renameTag(tag, "_"), 0), body);
+    return LockedArrow(tag, FixedName(tag, "_"), body);
 }
 
 static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}
@@ -137,11 +135,11 @@ static inline Node* Section(Tag tag, SectionVariety variety, Node* body) {
 }
 
 static inline Node* LeftPlaceholder(Tag tag) {
-    return Section(tag, RIGHTSECTION, Name(renameTag(tag, ".*"), 0));
+    return Section(tag, RIGHTSECTION, FixedName(tag, ".*"));
 }
 
 static inline Node* RightPlaceholder(Tag tag) {
-    return Section(tag, LEFTSECTION, Name(renameTag(tag, "*."), 0));
+    return Section(tag, LEFTSECTION, FixedName(tag, "*."));
 }
 
 static inline bool isLeftPlaceholder(Node* node) {
