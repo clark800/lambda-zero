@@ -53,8 +53,8 @@ define showType
     case TypeVariable(_, index); getVariableName(index)
     case FunctionType(_, parameter, body)
         if isFunctionType(parameter)
-            "(" ++ showType(parameter) ++ ")" ++ " → " ++ showType(body)
-        showType(parameter) ++ " → " ++ showType(body)
+            "(" ++ showType(parameter) ++ ")" ++ " ⇒ " ++ showType(body)
+        showType(parameter) ++ " ⇒ " ++ showType(body)
     case ADT(_, name, parameters, count, index)
         suffix := "" # getSuffix(count, index)
         if isNil(parameters) then name ++ suffix else name ++ "(" ++
