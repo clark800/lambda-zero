@@ -69,19 +69,14 @@ define getComponentTypes
     ADT(_, _, parameters, _, _) -> parameters
 
 
-syntax(=~=) := syntax(=)
-
-define a =~= b
+define sameRoot(a, b)
     match a
-        FreeType -> undefined
+        FreeType -> false
         BottomType(_) -> isBottomType(b)
         TypeVariable(_, _) -> isTypeVariable(b) and
             getTypeVariableIndex(a) = getTypeVariableIndex(b)
-        FunctionType(_, _, _) -> isFunctionType(b) and
-            getParameterType(a) =~= getParameterType(b) and
-            getBodyType(a) =~= getBodyType(b)
-        ADT(_, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
-            all(zipWith(getComponentTypes(a), (=~=), getComponentTypes(b)), id)
+        FunctionType(_, _, _) -> isFunctionType(b)
+        ADT(_, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b)
 
 
 define newTypeVariable(variables, source)

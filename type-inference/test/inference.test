@@ -78,7 +78,7 @@ pp'(x) := (
     a + b
 )
 
-abort' := abort 0
+abort' := abort "0"
 
 # r(x) := (
 #     (y, z) := r(x + 1)
