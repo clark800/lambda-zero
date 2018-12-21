@@ -5,10 +5,12 @@
 #include "parse/shared/ast.h"
 
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
+    if (isUnused(name))
+       syntaxError("cannot reference a symbol starting with underscore", name);
     long long depth = 0;
     for (unsigned long long i = 1; i <= length(parameters); ++i)
         if (isSameLexeme(elementAt(parameters, length(parameters) - i), name))
-            if (depth++ == getValue(name))
+            if (depth++ == (long long)getData(name))
                 return i;
     return 0;
 }
@@ -20,30 +22,28 @@ static int findOperationCode(Node* name) {
     return -1;
 }
 
-static void bindName(Node* name, Array* parameters, size_t globalDepth) {
-    if (isUnused(name))
-       syntaxError("cannot reference a symbol starting with underscore", name);
-    unsigned long long index = findDebruijnIndex(name, parameters);
+static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
+    unsigned long long i = (unsigned long long)getValue(node);
+    unsigned long long index = i > 0 ? i : findDebruijnIndex(node, parameters);
     if (index > 0) {
         unsigned long long localDepth = length(parameters) - globalDepth;
-        setValue(name, index <= localDepth ? (long long)index :
+        setValue(node, index <= localDepth ? (long long)index :
             (long long)(index - length(parameters) - 1));
-        setType(name, VARIABLE);
+        setType(node, VARIABLE);
         return;
     }
-    int code = findOperationCode(name);
+    int code = findOperationCode(node);
     if (code >= 0) {
-        setValue(name, code);
-        setType(name, OPERATION);
+        setValue(node, code);
+        setType(node, OPERATION);
         return;
     }
-    syntaxError("undefined symbol", name);
+    syntaxError("undefined symbol", node);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     switch (getASTType(node)) {
-        case REFERENCE: setType(node, VARIABLE); break;
-        case NAME: bindName(node, parameters, length(globals)); break;
+        case REFERENCE: bindReference(node, parameters, length(globals)); break;
         case ARROW:
             append(parameters, getParameter(node));
             bindWith(getBody(node), parameters, globals);

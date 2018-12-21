@@ -17,7 +17,7 @@ fix(f) ≔ 𝛚(f ∘ 𝛚) | 𝛚(x) ≔ x(x)  # fixpoint combinator (Y combina
 𝕌 ⩴ {()}
 
 # pair
-Pair(a, b) ⩴ {(first ∈ a, second ∈ b)}
+a ⊓ b ⩴ {(first ∈ a, second ∈ b)}
 pair(a, b) ≔ (a, b)
 swap((x, y)) ≔ (y, x)
 mapFirst(xy, f) ≔ (f(first(xy)), second(xy))
@@ -49,7 +49,7 @@ mapJust(mx, f) ≔ onJust(mx, just ∘ f)
 mx ⁇ x ≔ mx | void ↦ x; just(x′) ↦ x′
 
 # either
-Either(a, b) ⩴ {Left(_ : a), Right(_ : b)}
+a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ Left(_) ↦ true; Right(_) ↦ false
 isRight ≔ Left(_) ↦ false; Right(_) ↦ true
 onLeft(exy, f) ≔ exy | Left(x) ↦ f(x); Right(y) ↦ y

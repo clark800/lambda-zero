@@ -1,12 +1,5 @@
 #* symbols.zero
 
-NOFIX := 0
-PREFIX := 1
-INFIX := 2
-POSTFIX := 3
-OPENFIX := 4
-CLOSEFIX := 5
-
 LEFT := 0
 RIGHT := 1
 RIGHTVALUE := 2
@@ -115,7 +108,6 @@ define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
     operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
         (if lexeme =*= " " then (operators.lookupSyntax("( )").
-            mapJust(Operator(tag, value)) ?? Name(tag, 0)) else
-            Name(tag, 0))
+            mapJust(Operator(tag, value)) ?? Name(tag)) else Name(tag))
 
 #*

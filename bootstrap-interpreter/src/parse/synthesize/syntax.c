@@ -13,17 +13,17 @@ static Node* reduceApply(Node* operator, Node* left, Node* right) {
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceApply(operator,
-        Name(getTag(operator), 0), left), right);
+        Name(getTag(operator)), left), right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
-    return reduceApply(operator, Name(getTag(operator), 0), right);
+    return reduceApply(operator, Name(getTag(operator)), right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
-    return reduceApply(operator, Name(getTag(operator), 0), left);
+    return reduceApply(operator, Name(getTag(operator)), left);
 }
 
 static Node* reducePeriod(Node* operator, Node* left, Node* right) {
@@ -92,9 +92,9 @@ static void shiftPostfix(Stack* stack, Node* operator) {
 static Node* reduceAbort(Node* operator, Node* left, Node* right) {
     (void)left;
     Tag tag = getTag(operator);
-    Node* exit = Name(renameTag(tag, "(exit)"), 0);
+    Node* exit = FixedName(tag, "(exit)");
     return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
-        Juxtaposition(tag, Name(renameTag(tag, "abort"), 0), right)));
+        Juxtaposition(tag, FixedName(tag, "abort"), right)));
 }
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
@@ -107,8 +107,6 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     syntaxErrorIf(!isJuxtaposition(left), "invalid left operand", left);
     Node* name = getRight(left);
     syntaxErrorIf(!isName(name), "expected symbol operand to", getLeft(left));
-    if (contains(getLexeme(name), '_'))
-       syntaxError("invalid underscore in operator name", name);
     if (!isJuxtaposition(right))
         syntaxError("invalid syntax definition", definition);
 

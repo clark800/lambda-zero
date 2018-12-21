@@ -6,15 +6,15 @@ define reduceApply(operator, left, right)
 
 define reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
-        Name(getTag(operator), 0), left), right)
+        OperatorName(getTag(operator), INFIX), left), right)
 
 
 define reducePrefix(operator, _left, right)
-    reduceApply(operator, Name(getTag(operator), 0), right)
+    reduceApply(operator, OperatorName(getTag(operator), PREFIX), right)
 
 
 define reducePostfix(operator, left, _right)
-    reduceApply(operator, Name(getTag(operator), 0), left)
+    reduceApply(operator, OperatorName(getTag(operator), POSTFIX), left)
 
 
 define reducePeriod(operator, left, right)
@@ -166,8 +166,6 @@ define defineSyntax(operators, node, name, right)
     tag := getTag(node)
     if not isName(name)
         syntaxError("expected name operand to", node)
-    if getLexeme(name).any(= '_')
-        syntaxError("invalid underscore in operator name", name)
     if not isJuxtaposition(right)
         syntaxError("invalid syntax definition", node)
     fixity := getLeft(right)

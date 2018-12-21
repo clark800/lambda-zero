@@ -1,5 +1,12 @@
 #* ast.zero
 
+NOFIX := 0
+PREFIX := 1
+INFIX := 2
+POSTFIX := 3
+OPENFIX := 4
+CLOSEFIX := 5
+
 CoupleType ::= {JuxtapositionCouple, LetCouple}
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
@@ -7,12 +14,12 @@ ArrowType ::= {Simple, Strict, Locked}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
-    Name(_ : Tag, _depth : Natural),
+    Reference(_ : Tag, getReferenceIndex : Natural,
+        getReferenceDepth : Natural, getReferenceFixity : Natural),
     Arrow(_ : Tag, getArrowType : ArrowType, getConstructors : List(AST),
         getArrowLeft : AST, getArrowRight : AST),
     Couple(_ : Tag, getCoupleType : CoupleType, getLeft : AST, getRight : AST),
     Number(_ : Tag, getNumericValue : Natural),
-    Reference(_ : Tag, _ : Natural),
     Operator(_ : Tag, getRank : Natural, getSyntax : _),
     Definition(_ : Tag, getDefinitionType : DefinitionType,
         getDefinee : AST, getDefinedValue : AST),
@@ -28,12 +35,11 @@ AST ::= {
 }
 
 define lockArrow
-    Name(_, _) -> undefined
+    Reference(_, _, _, _) -> undefined
     Arrow(tag, _, constructors, left, right) ->
         Arrow(tag, Locked, constructors, left, right)
     Couple(_, _, _, _) -> undefined
     Number(_, _) -> undefined
-    Reference(_, _) -> undefined
     Operator(_, _, _) -> undefined
     Definition(_, _, _, _) -> undefined
     AsPattern(_, _, _) -> undefined
@@ -45,11 +51,10 @@ define lockArrow
     Null(_) -> undefined
 
 define getTag
-    Name(tag, _) -> tag
+    Reference(tag, _, _, _) -> tag
     Arrow(tag, _, _, _, _) -> tag
     Couple(tag, _, _, _) -> tag
     Number(tag, _) -> tag
-    Reference(tag, _) -> tag
     Operator(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
     AsPattern(tag, _, _) -> tag
@@ -61,12 +66,11 @@ define getTag
     Null(tag) -> tag
 
 define containsName(name)
-    Name(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
+    Reference(tag, _, _, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, body) -> containsName(name, body)
     Couple(_, _, left, right) ->
         containsName(name, left) or containsName(name, right)
     Number(_, _) -> false
-    Reference(_, _) -> false
     Operator(_, _, _) -> false
     Definition(_, _, _, _) -> false
     AsPattern(_, _, _) -> false
@@ -78,13 +82,12 @@ define containsName(name)
     Null(_) -> false
 
 define showAST
-    Name(tag, _) -> showTag(tag)
+    Reference(tag, _, _, _) -> showTag(tag)
     Arrow(tag, _, _, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
     Couple(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
     Number(tag, value) -> showNatural(value)
-    Reference(tag, debruijn) -> showTag(tag)
     Operator(tag, rank, rules) -> showTag(tag)
     Definition(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
@@ -99,35 +102,33 @@ define showAST
     Null(_) -> "#NULL#"
 
 define indexAST
-    Name(_, _) -> 0
+    Reference(_, _, _, _) -> 0
     Arrow(_, _, _, _, _) -> 1
     Couple(_, _, _, _) -> 2
     Number(_, _) -> 3
-    Reference(_, _) -> 4
-    Operator(_, _, _) -> 5
-    Definition(_, _, _, _) -> 6
-    AsPattern(_, _, _) -> 7
-    CommaPair(_, _, _) -> 8
-    Section(_, _, _) -> 9
-    SetBuilder(_, _) -> 10
-    Constructor(_, _, _, _, _, _) -> 11
-    Accessor(_, _, _, _, _, _) -> 12
-    Null(_) -> 13
+    Operator(_, _, _) -> 4
+    Definition(_, _, _, _) -> 5
+    AsPattern(_, _, _) -> 6
+    CommaPair(_, _, _) -> 7
+    Section(_, _, _) -> 8
+    SetBuilder(_, _) -> 9
+    Constructor(_, _, _, _, _, _) -> 10
+    Accessor(_, _, _, _, _, _) -> 11
+    Null(_) -> 12
 
-isName(node) := indexAST(node) = 0
+isReference(node) := indexAST(node) = 0
 isArrow(node) := indexAST(node) = 1
 isCouple(node) := indexAST(node) = 2
 isNumber(node) := indexAST(node) = 3
-isReference(node) := indexAST(node) = 4
-isOperator(node) := indexAST(node) = 5
-isDefinition(node) := indexAST(node) = 6
-isAsPattern(node) := indexAST(node) = 7
-isCommaPair(node) := indexAST(node) = 8
-isSection(node) := indexAST(node) = 9
-isSetBuilder(node) := indexAST(node) = 10
-isConstructor(node) := indexAST(node) = 11
-isAccessor(node) := indexAST(node) = 12
-isNull(node) := indexAST(node) = 13
+isOperator(node) := indexAST(node) = 4
+isDefinition(node) := indexAST(node) = 5
+isAsPattern(node) := indexAST(node) = 6
+isCommaPair(node) := indexAST(node) = 7
+isSection(node) := indexAST(node) = 8
+isSetBuilder(node) := indexAST(node) = 9
+isConstructor(node) := indexAST(node) = 10
+isAccessor(node) := indexAST(node) = 11
+isNull(node) := indexAST(node) = 12
 
 define indexCoupleType
     JuxtapositionCouple -> 0
@@ -146,6 +147,9 @@ define indexArrowType
 isSimpleArrow(node) := isArrow(node) and indexArrowType(getArrowType(node)) = 0
 isCase(node) := isArrow(node) and indexArrowType(getArrowType(node)) =/= 2
 
+Name(tag) := Reference(tag, 0, 0, NOFIX)
+isName(node) := isReference(node) and getReferenceIndex(node) = 0
+OperatorName(tag, fixity) := Reference(tag, 0, 0, fixity)
 Juxtaposition(tag, left, right) := Couple(tag, JuxtapositionCouple, left, right)
 Let(tag, left, right) := Couple(tag, LetCouple, left, right)
 SimpleArrow(tag) := Arrow(tag, Simple, [])
@@ -171,21 +175,22 @@ isUnused(tag) := getTagLexeme(tag).startsWith("_")
 isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
 UnderscoreArrow(tag, body) :=
-    LockedArrow(tag, Name(renameTag(tag, "_"), 0), body)
-newUnderscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn)
-newNil(tag) := Name(renameTag(tag, "[]"), 0)
+    LockedArrow(tag, Name(renameTag(tag, "_")), body)
+newUnderscore(tag, debruijn) :=
+    Reference(renameTag(tag, "_"), debruijn, 0, NOFIX)
+newNil(tag) := Name(renameTag(tag, "[]"))
 prependList(tag, item, list) := Juxtaposition(tag,
-    Juxtaposition(tag, Name(renameTag(tag, "::"), 0), item), list)
+    Juxtaposition(tag, OperatorName(renameTag(tag, "::"), INFIX), item), list)
 newLeftPlaceholder(tag) :=
-    Section(tag, RightSection, Name(renameTag(tag, ".*"), 0))
+    Section(tag, RightSection, Name(renameTag(tag, ".*")))
 newRightPlaceholder(tag) :=
-    Section(tag, LeftSection, Name(renameTag(tag, "*."), 0))
+    Section(tag, LeftSection, Name(renameTag(tag, "*.")))
 isLeftPlaceholder(node) :=
     isSection(node) and isThisName(getSectionBody(node), ".*")
 wrapLeftSection(tag, body) :=
-    LockedArrow(tag, Name(renameTag(tag, "*."), 0), body)
+    LockedArrow(tag, Name(renameTag(tag, "*.")), body)
 wrapRightSection(tag, body) :=
-    LockedArrow(tag, Name(renameTag(tag, ".*"), 0), body)
+    LockedArrow(tag, Name(renameTag(tag, ".*")), body)
 
 define wrapSection(tag, section)
     body := getSectionBody(section)

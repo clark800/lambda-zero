@@ -24,7 +24,7 @@ Node* newLazyArrow(Tag tag, Node* left, Node* right) {
     if (isAsPattern(left))
         return LockedArrow(tag, getLeft(left), Juxtaposition(tag,
             newLazyArrow(tag, getRight(left), right),
-            Reference(getTag(getLeft(left)), 1)));
+            Reference(getTag(getLeft(left)), 1, 0)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     syntaxErrorIf(!isJuxtaposition(left), "invalid parameter", left);
@@ -50,9 +50,8 @@ Node* newStrictArrow(Tag tag, Node* left, Node* right) {
         body = Juxtaposition(tag, newLazyArrow(tag, getLeft(left), body),
             Underscore(tag, 1));
     // discard left, which is now just the constructor
-    Node* parameter = Name(renameTag(tag, "_"), 0);
     body = Juxtaposition(tag, Underscore(tag, 1), body);
-    return StrictArrow(tag, parameter, body);
+    return StrictArrow(tag, FixedName(tag, "_"), body);
 }
 
 static Node* addCases(Tag tag, Node* base, Node* extension) {
@@ -74,6 +73,5 @@ static Node* newCaseBody(Tag tag, Node* left, Node* right) {
 }
 
 Node* combineCases(Tag tag, Node* left, Node* right) {
-    Node* underscore = Name(renameTag(tag, "_"), 0);
-    return StrictArrow(tag, underscore, newCaseBody(tag, left, right));
+    return StrictArrow(tag, FixedName(tag, "_"), newCaseBody(tag, left, right));
 }

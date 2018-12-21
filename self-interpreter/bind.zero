@@ -16,22 +16,28 @@ define bindName(stack, tag, depth)
         bindOperation(tag) ?? parseError("undefined symbol", tag)
 
 
+define getADTFixity(root)
+    if isReference(root) then getReferenceFixity(root) else NOFIX
+
+
 define parseParameterType(node, context)
     # TODO: count parameter to ADTs is wrong
     if isName(node)
         name := getLexeme(node)
-        context.lookup(name) ?? ADT(noTerm, name, [], 0, 0)
-    name := getLexeme(getHead(node))
+        context.lookup(name) ?? ADT(noTerm, name, getADTFixity(node), [], 0, 0)
+    root := getHead(node)
+    name := getLexeme(root)
     if context.hasKey(name)
         syntaxError("type variable not allowed in applicand position", node)
     parameterTypes := getArguments(node).map(`parseParameterType(context))
-    ADT(noTerm, name, parameterTypes, 0, 0)
+    ADT(noTerm, name, getADTFixity(root), parameterTypes, 0, 0)
 
 
 define parseADT(node, context, count, index)
-    name := getLexeme(getHead(node))
+    root := getHead(node)
+    name := getLexeme(root)
     parameterTypes := getArguments(node).map(context.get <> getLexeme)
-    ADT(noTerm, name, parameterTypes, count, index)
+    ADT(noTerm, name, getADTFixity(root), parameterTypes, count, index)
 
 
 define buildContext(dataType)
@@ -72,8 +78,10 @@ define newAccessorScheme(term, dataType, returnType, count, index)
 
 define bind(node, stack)
     match node
-        case Name(tag, depth)
-            stack.bindName(tag, depth)
+        case Reference(tag, debruijn, depth, fixity)
+            if debruijn = 0
+                stack.bindName(tag, depth)
+            Variable(tag, debruijn)
         case Arrow(tag, _, constructors, parameter, body)
             indices := constructors.map(`bind(stack)).map(getDebruijnIndex)
             metadata := Metadata(Free, Free, indices)
@@ -84,8 +92,6 @@ define bind(node, stack)
                 bind(left, stack), bind(right, stack))
         case Number(tag, value)
             Numeral(renameTag(tag, "_"), value)
-        case Reference(tag, debruijn)
-            Variable(tag, debruijn)
         case Operator(_, _, _)
             abort "internal error: Operator reached bind"
         case Definition(_, _, _, _)
