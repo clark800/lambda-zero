@@ -6,18 +6,18 @@ define getFreeVariables(type, variables)
             [type]
         getFreeVariables(variables.get(type), variables)
     join(getComponentTypes(type).map(`getFreeVariables(variables))).
-        deduplicateBy((=~=))
+        deduplicateBy(sameRoot)
 
 define getAllFreeVariables(variables, variables')
     join(variables.getKeys.map(`getFreeVariables(variables'))).
-        deduplicateBy((=~=))
+        deduplicateBy(sameRoot)
 
 define substitute(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             type
         type' := variables.get(type).setSource(getSource(type))
-        if type'.getFreeVariables(empty).any((=~= type))
+        if type'.getFreeVariables(empty).any(sameRoot(type))
             recursionError(type, type, variables)
         type'.substitute(variables)
 
@@ -33,15 +33,13 @@ define unify'(originals, variables, (left, right))
         unify'(originals, variables, (left, right.substitute(variables)))
     if isBottomType(left) or isBottomType(right)
         variables
-    if left =~= right
-        variables
+    if sameRoot(left, right)
+        zip(getComponentTypes(left), getComponentTypes(right)).
+            cascade(unify'(originals), variables)
     if isTypeVariable(left)
         variables.insert(left, right)
     if isTypeVariable(right)
         variables.insert(right, left)
-    if indexType(left) = indexType(right)
-        zip(getComponentTypes(left), getComponentTypes(right)).
-            cascade(unify'(originals), variables)
     unificationError(originals.mapPair(`substitute(variables)),
         left.substitute(variables), right.substitute(variables))
 
@@ -55,7 +53,7 @@ define unifyAll(variables, types)
 
 define generalize(type, variables, oldVariables)
     syntax(\\) := syntax(\)
-    vs \\ vs' := vs |: (v -> not vs'.any((=~= v)))
+    vs \\ vs' := vs |: (v -> not vs'.any(sameRoot(v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
         oldVariables.getAllFreeVariables(variables)

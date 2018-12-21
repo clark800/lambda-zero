@@ -53,8 +53,8 @@ define showType
     case TypeVariable(_, index); getVariableName(index)
     case FunctionType(_, parameter, body)
         if isFunctionType(parameter)
-            "(" ++ showType(parameter) ++ ")" ++ " → " ++ showType(body)
-        showType(parameter) ++ " → " ++ showType(body)
+            "(" ++ showType(parameter) ++ ")" ++ " ⇒ " ++ showType(body)
+        showType(parameter) ++ " ⇒ " ++ showType(body)
     case ADT(_, name, parameters, count, index)
         suffix := "" # getSuffix(count, index)
         if isNil(parameters) then name ++ suffix else name ++ "(" ++
@@ -69,19 +69,14 @@ define getComponentTypes
     ADT(_, _, parameters, _, _) -> parameters
 
 
-syntax(=~=) := syntax(=)
-
-define a =~= b
+define sameRoot(a, b)
     match a
-        FreeType -> undefined
+        FreeType -> false
         BottomType(_) -> isBottomType(b)
         TypeVariable(_, _) -> isTypeVariable(b) and
             getTypeVariableIndex(a) = getTypeVariableIndex(b)
-        FunctionType(_, _, _) -> isFunctionType(b) and
-            getParameterType(a) =~= getParameterType(b) and
-            getBodyType(a) =~= getBodyType(b)
-        ADT(_, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
-            all(zipWith(getComponentTypes(a), (=~=), getComponentTypes(b)), id)
+        FunctionType(_, _, _) -> isFunctionType(b)
+        ADT(_, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b)
 
 
 define newTypeVariable(variables, source)
