@@ -10,7 +10,7 @@ define showTypeAndLocation(type)
 
 define showVariableMap(variables)
     variables.getElements.map((key, value) ->
-        showAST(getSource(key)) ++ " = " ++ showAST(getSource(value)) ++
+        showTerm(getSource(key)) ++ " = " ++ showTerm(getSource(value)) ++
         "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)

@@ -65,13 +65,8 @@ define instantiate(Scheme(universals, type), variables, term)
     (type.rename(renaming).setSource(term), variables')
 
 
-define getConstructionType(constructorType)
-    if isADT(constructorType)
-        constructorType
-    if isFunctionType(constructorType)
-        getConstructionType(getBodyType(constructorType))
-    abort "Type error: invalid constructor at " ++
-        showTypeLocation(constructorType)
+define getResultType(type)
+    if isFunctionType(type) then getResultType(getBodyType(type)) else type
 
 
 define convertConstructorType(variable, type)
@@ -93,7 +88,7 @@ define constructParameterType(variables, schemes, term)
     if isNil(schemes)
         throwError("Type error: no cases:", tag)
     types := schemes.map(getType)
-    adtTypes := types.map(getConstructionType)
+    adtTypes := types.map(getResultType)
     if not adtTypes.all(isADT)
         throwError("Type error: invalid cases:", tag)
     names := deduplicateBy(adtTypes.map(getName), (=*=))
@@ -121,7 +116,11 @@ define constructParameterType(variables, schemes, term)
     # so we use a trick of packaging them together in a FunctionType
     scheme := Scheme(universals', FunctionType(term, outerType, innerType))
     (polarType, variables') := scheme.instantiate(variables, term)
-    (getParameterType(polarType), getBodyType(polarType), variables')
+    outerType := getParameterType(polarType)
+    innerType := getBodyType(polarType)
+    universal := getResultType(innerType)
+    innerScheme := Scheme([universal], innerType)
+    (outerType, innerScheme, variables')
 
 
 define inferParameterType(stack, variables, term)
@@ -129,7 +128,7 @@ define inferParameterType(stack, variables, term)
     schemes := getConstructorDebruijnIndices(metadata).map(k -> stack[k - 1])
     if isNil(schemes)
         (parameterType, variables') := variables.newTypeVariable(term)
-        (parameterType, parameterType, variables')
+        (parameterType, Scheme([], parameterType), variables')
     constructParameterType(variables, schemes, term)
 
 
@@ -142,9 +141,9 @@ define infer(stack, variables)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
             getAscription(metadata).instantiate(empty, term)
-        (outerParameterType, innerParameterType, variables') :=
+        (outerParameterType, innerParameterScheme, variables') :=
             inferParameterType(stack, variables, term)
-        stack' := Scheme([], innerParameterType) :: stack
+        stack' := innerParameterScheme :: stack
         (bodyType, variables'') := infer(stack', variables', body)
         (FunctionType(term, outerParameterType, bodyType), variables'')
     case term @ Application(_, isLet, applicand, argument)

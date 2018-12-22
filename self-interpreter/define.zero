@@ -102,7 +102,7 @@ define applyDefinition(definition, scope)
         ADTDefinition -> applyADTDefinition(tag, name, value, scope)
 
 define reduceDefine'(tag, definitionType, left, right)
-    if isTuple(left)
+    if isTuple(left) or isAsPattern(left)
         Definition(tag, definitionType, left, right)
     (name, value) := getNameAndValue(newPatternArrow(tag), left, right)
     if not isName(name)

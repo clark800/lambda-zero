@@ -5,13 +5,13 @@
 Type ::= {
     FreeType,
     BottomType(_source : Term),
-    TypeVariable(_source : Term, getTypeVariableIndex : Natural),
+    TypeVariable(_source : Term, getTypeVariableIndex : ℕ),
     FunctionType(_source : Term, getParameterType : Type, getBodyType : Type),
-    ADT(_source : Term, getName : List(Natural), getNameFixity : Natural,
-        getParameters : List(Type), getCount : Natural, getIndex : Natural)
+    ADT(_source : Term, getName : List(ℕ), getNameFixity : ℕ,
+        getParameters : List(Type), getCount : ℕ, getIndex : ℕ)
 }
 
-TypeScheme ::= {Scheme(getUniversals : List(Type), getType : Type)}
+SchemeType ::= {Scheme(getUniversals : List(Type), getType : Type)}
 
 Free := Scheme([], FreeType)
 

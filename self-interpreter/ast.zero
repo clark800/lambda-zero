@@ -14,24 +14,25 @@ ArrowType ::= {Simple, Strict, Locked}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 AST ::= {
-    Reference(_ : Tag, getReferenceIndex : Natural,
-        getReferenceDepth : Natural, getReferenceFixity : Natural),
-    Arrow(_ : Tag, getArrowType : ArrowType, getConstructors : List(AST),
+    Reference(_ : TagType, getReferenceIndex : ℕ,
+        getReferenceDepth : ℕ, getReferenceFixity : ℕ),
+    Arrow(_ : TagType, getArrowType : ArrowType, getConstructors : List(AST),
         getArrowLeft : AST, getArrowRight : AST),
-    Couple(_ : Tag, getCoupleType : CoupleType, getLeft : AST, getRight : AST),
-    Number(_ : Tag, getNumericValue : Natural),
-    Operator(_ : Tag, getRank : Natural, getSyntax : _),
-    Definition(_ : Tag, getDefinitionType : DefinitionType,
+    Couple(_ : TagType, getCoupleType : CoupleType,
+        getLeft : AST, getRight : AST),
+    Number(_ : TagType, getNumericValue : ℕ),
+    Operator(_ : TagType, getRank : ℕ, getSyntax : _),
+    Definition(_ : TagType, getDefinitionType : DefinitionType,
         getDefinee : AST, getDefinedValue : AST),
-    AsPattern(_ : Tag, getLabel : AST, getPattern : AST),
-    CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
-    Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
-    SetBuilder(_ : Tag, getForms : List(AST)),
-    Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
-        _function : AST, _count : Natural, _index : Natural),
-    Accessor(_ : Tag, _dataType : AST, _returnType : AST,
-        _function : AST, _count : Natural, _index : Natural),
-    Null(_ : tag)
+    AsPattern(_ : TagType, getLabel : AST, getPattern : AST),
+    CommaPair(_ : TagType, getCommaLeft : AST, getCommaRight : AST),
+    Section(_ :  TagType, getSide : SectionSide, getSectionBody : AST),
+    SetBuilder(_ : TagType, getForms : List(AST)),
+    Constructor(_ : TagType, _parameterTypes : List(AST), _dataType : AST,
+        _function : AST, _count : ℕ, _index : ℕ),
+    Accessor(_ : TagType, _dataType : AST, _returnType : AST,
+        _function : AST, _count : ℕ, _index : ℕ),
+    Null(_ : TagType)
 }
 
 define lockArrow
