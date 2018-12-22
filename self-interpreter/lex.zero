@@ -1,7 +1,7 @@
 #* lex.zero
 
-LocationType ::= {Location(_file : String, _line : Natural, _column : Natural)}
-TagType ::= {Tag(getTagLexeme : List(Integer), getTagLocation : LocationType)}
+LocationType ::= {Location(_file : List(ℕ), _line : ℕ, _column : ℕ)}
+TagType ::= {Tag(getTagLexeme : List(ℕ), getTagLocation : LocationType)}
 
 renameTag(Tag(_, location), lexeme) := Tag(lexeme, location)
 
@@ -92,7 +92,7 @@ TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
     Comment, Invalid
 }
-TokenType ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
+TokenType ::= {Token(getTokenTag : TagType, getTokenCode : TokenCode)}
 
 define createLineFeedToken(tag, _ @ Tag(nextLexeme, _))
     if isNil(nextLexeme) or

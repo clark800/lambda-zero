@@ -1,18 +1,18 @@
 #* term.zero
 
 MetadataType ::= {Metadata(
-    getAnnotation : Scheme,
-    getAscription : Scheme,
-    getConstructorDebruijnIndices : List(Natural)
+    getAnnotation : SchemeType,
+    getAscription : SchemeType,
+    getConstructorDebruijnIndices : List(ℕ)
 )}
 
 Term ::= {
-    Variable(_ : Tag, getDebruijnIndex : Natural),
-    Abstraction(_ : Tag, getMetadata : Metadata, getBody : Term),
-    Application(_ : Tag, isLet : Boolean,
+    Variable(_ : TagType, getDebruijnIndex : ℕ),
+    Abstraction(_ : TagType, getMetadata : MetadataType, getBody : Term),
+    Application(_ : TagType, isLet : 𝔹,
         getApplicand : Term, getArgument : Term),
-    Numeral(_ :  Tag, getNatural : Natural),
-    Operation(_ : Tag, getArity : Natural, getOperator : _)
+    Numeral(_ :  TagType, getNatural : ℕ),
+    Operation(_ : TagType, getArity : ℕ, getOperator : _)
 }
 
 define getTermTag

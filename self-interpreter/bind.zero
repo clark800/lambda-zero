@@ -23,6 +23,8 @@ define getADTFixity(root)
 define parseParameterType(node, context)
     # TODO: count parameter to ADTs is wrong
     if isName(node)
+        if isUnderscore(getTag(node))
+            BottomType(noTerm)        # todo: remove after implementing (=>)
         name := getLexeme(node)
         context.lookup(name) ?? ADT(noTerm, name, getADTFixity(node), [], 0, 0)
     root := getHead(node)

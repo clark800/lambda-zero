@@ -6,20 +6,20 @@ RIGHTVALUE := 2
 NEITHER := 3
 
 SyntaxType ::= {Syntax(
-    getAlias : List(Natural),
-    getLeftPrecedence : Natural,
-    getRightPrecedence : Natural,
-    getFixity : Natural,
-    getAssociativity : Natural,
-    getSpecial : Boolean,
+    getAlias : List(ℕ),
+    getLeftPrecedence : ℕ,
+    getRightPrecedence : ℕ,
+    getFixity : ℕ,
+    getAssociativity : ℕ,
+    getSpecial : 𝔹,
     getShift : _,
     getReduce : _,
-    getPrior : List(Natural)
+    getPrior : List(ℕ)
 )}
 
 StateType ::= {State(
-    getStack : List(Node(ASTData)),
-    getOperators : List(Pair(List(N), SyntaxType))
+    getStack : List(AST),
+    getOperators : List(List(ℕ) && SyntaxType)
 )}
 
 define isSpecial(node)

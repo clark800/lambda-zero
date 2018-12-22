@@ -52,12 +52,12 @@ mx ⁇ x ≔ mx | void ↦ x; just(x′) ↦ x′
 a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ Left(_) ↦ true; Right(_) ↦ false
 isRight ≔ Left(_) ↦ false; Right(_) ↦ true
-onLeft(exy, f) ≔ exy | Left(x) ↦ f(x); Right(y) ↦ y
+(try)(exy, f) ≔ exy | Left(x) ↦ f(x); Right(y) ↦ y
+(catch) ≔ (of)
+onLeft(exy, f) ≔ exy | Left(x) -> f(x); Right(y) -> Right(y)
 onRight(exy, f) ≔ exy | Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(exy, f) ≔ onLeft(exy, Left ∘ f)
 mapRight(exy, f) ≔ onRight(exy, Right ∘ f)
-(try) ≔ onLeft
-(catch) ≔ (of)
 exy ⁈ y ≔ try exy catch constant(y)
 toMaybe ≔ Left(_) ↦ void; Right(y) ↦ just(y)
 
