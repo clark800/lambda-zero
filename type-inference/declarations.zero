@@ -11,10 +11,10 @@ define builtinTypes
     syntax(>->) := syntax(++)
     (>->) := FunctionType(noTerm)
     bottom := BottomType(noTerm)
-    boolean := ADT(noTerm, "𝔹", NOFIX, [], 2, 0)
-    natural := ADT(noTerm, "ℕ", NOFIX, [], 2, 0)
-    string := ADT(noTerm, "List", NOFIX, [natural], 2, 0)
-    natural' := ADT(noTerm, "ℕ", NOFIX, [], 2, 2)
+    boolean := ADT(noTerm, "𝔹", NOFIX, [], FreeType, 2, 0)
+    natural := ADT(noTerm, "ℕ", NOFIX, [], FreeType, 2, 0)
+    string := ADT(noTerm, "List", NOFIX, [natural], FreeType, 2, 0)
+    natural' := ADT(noTerm, "ℕ", NOFIX, [], FreeType, 2, 2)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([

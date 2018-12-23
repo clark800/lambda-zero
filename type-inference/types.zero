@@ -5,7 +5,7 @@ define getSource
     BottomType(source) -> source
     TypeVariable(source, _) -> source
     FunctionType(source, _, _) -> source
-    ADT(source, _, _, _, _, _) -> source
+    ADT(source, _, _, _, _, _, _) -> source
 
 
 define setSource(type, source)
@@ -15,8 +15,18 @@ define setSource(type, source)
         TypeVariable(_, index) -> TypeVariable(source, index)
         FunctionType(_, parameter, body) ->
             FunctionType(source, parameter, body)
-        ADT(_, name, fixity, parameters, count, index) ->
-            ADT(source, name, fixity, parameters, count, index)
+        ADT(_, name, fixity, parameters, type, count, index) ->
+            ADT(source, name, fixity, parameters, type, count, index)
+
+
+define setMatchType(adtType, type)
+    match adtType
+        FreeType -> undefined
+        BottomType(_) -> undefined
+        TypeVariable(_, index) -> undefined
+        FunctionType(_, parameter, body) -> undefined
+        ADT(source, name, fixity, parameters, _, count, index) ->
+            ADT(source, name, fixity, parameters, type, count, index)
 
 
 define indexType
@@ -24,7 +34,7 @@ define indexType
     BottomType(_) -> 1
     TypeVariable(_, _) -> 2
     FunctionType(_, _, _) -> 3
-    ADT(_, _, _, _, _, _) -> 4
+    ADT(_, _, _, _, _, _, _) -> 4
 
 
 isFreeType(type) := indexType(type) = 0
@@ -67,7 +77,7 @@ define showType
         if isFunctionType(parameter)
             "(" ++ showType(parameter) ++ ")" ++ " ⇒ " ++ showType(body)
         showType(parameter) ++ " ⇒ " ++ showType(body)
-    case ADT(_, name, fixity, parameters, count, index)
+    case ADT(_, name, fixity, parameters, type, count, index)
         showADT(name, fixity, parameters.map(showType))
 
 
@@ -76,7 +86,15 @@ define getComponentTypes
     BottomType(_) -> []
     TypeVariable(_, _) -> []
     FunctionType(_, parameter, body) -> [parameter, body]
-    ADT(_, _, _, parameters, _, _) -> parameters
+    ADT(_, _, _, parameters, _, _, _) -> parameters
+
+
+define getInternalTypes
+    FreeType -> []
+    BottomType(_) -> []
+    TypeVariable(_, _) -> []
+    FunctionType(_, parameter, body) -> [parameter, body]
+    ADT(_, _, _, parameters, type, _, _) -> type :: parameters
 
 
 define sameRoot(a, b)
@@ -86,7 +104,8 @@ define sameRoot(a, b)
         TypeVariable(_, _) -> isTypeVariable(b) and
             getTypeVariableIndex(a) = getTypeVariableIndex(b)
         FunctionType(_, _, _) -> isFunctionType(b)
-        ADT(_, _, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b)
+        ADT(_, _, _, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
+            length(getParameters(a)) = length(getParameters(b))
 
 
 define newTypeVariable(variables, source)
@@ -99,15 +118,15 @@ newTypeVariables(originals, variables) :=
 isFree(type, variables) := not variables.hasKey(type) or
     isFreeType(variables.get(type))
 
-define mapComponents(type, f)
+define mapInternalTypes(type, f)
     match type
         FreeType -> type
         BottomType(_) -> type
         TypeVariable(_, _) -> type
         FunctionType(source, parameter, body) ->
             FunctionType(source, f(parameter), f(body))
-        ADT(source, name, fixity, parameters, count, index) ->
-            ADT(source, name, fixity, parameters.map(f), count, index)
+        ADT(source, name, fixity, parameters, type, count, index) ->
+            ADT(source, name, fixity, parameters.map(f), f(type), count, index)
 
 newVariableMap(mappings) := newTable((<=).on(getTypeVariableIndex), mappings)
 empty := newVariableMap([])
@@ -115,6 +134,6 @@ empty := newVariableMap([])
 define rename(type, variables)
     if isTypeVariable(type)
         variables.lookup(type) ?? type
-    type.mapComponents(`rename(variables))
+    type.mapInternalTypes(`rename(variables))
 
 #*
