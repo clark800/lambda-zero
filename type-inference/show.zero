@@ -12,10 +12,9 @@ define showTypeAndLocation(type)
     showType(type) ++ (if isNoTerm(getSource(type)) then "" else
         " at " ++ showTypeLocation(type))
 
-define showVariableMap(variables)
-    variables.getElements.map((key, value) ->
-        showSource(key) ++ " = " ++ showSource(value) ++
-        "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
+define showVariables(variables)
+    variables.getDump.map((address, value) ->
+        getVariableName(address) ++ " := " ++ showType(value)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
     if isTypeVariable(type)
@@ -26,7 +25,9 @@ define addRenaming((renaming, variables), type)
     getComponentTypes(type).cascade(addRenaming, (renaming, variables))
 
 define makeRenaming(type)
-    first(addRenaming((empty, empty), type))
+    renaming := newRenaming([])
+    variables := newStore([])
+    first(addRenaming((renaming, variables), type))
 
 define showTypeWithRenaming(type, renaming)
     showType(type.rename(renaming))

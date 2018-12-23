@@ -5,7 +5,7 @@
 Type ::= {
     FreeType,
     BottomType(_source : Term),
-    TypeVariable(_source : Term, getTypeVariableIndex : ℕ),
+    TypeVariable(_source : Term, getAddress : ℕ),
     FunctionType(_source : Term, getParameterType : Type, getBodyType : Type),
     ADT(_source : Term, getName : List(ℕ), getNameFixity : ℕ,
         getParameters : List(Type), getMatchType : Type,
