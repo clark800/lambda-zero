@@ -8,7 +8,11 @@ Type ::= {
     TypeVariable(_source : Term, getTypeVariableIndex : ℕ),
     FunctionType(_source : Term, getParameterType : Type, getBodyType : Type),
     ADT(_source : Term, getName : List(ℕ), getNameFixity : ℕ,
-        getParameters : List(Type), getCount : ℕ, getIndex : ℕ)
+        getParameters : List(Type), getMatchType : Type,
+        getCount : ℕ, getIndex : ℕ)
+        # when getMatchType=FreeType, it can't be applied as a function;
+        # ADT instances can only be applied as functions in the desugared
+        # form of case expressions
 }
 
 SchemeType ::= {Scheme(getUniversals : List(Type), getType : Type)}

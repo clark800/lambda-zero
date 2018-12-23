@@ -5,7 +5,7 @@ define getFreeVariables(type, variables)
         if type.isFree(variables)
             [type]
         getFreeVariables(variables.get(type), variables)
-    join(getComponentTypes(type).map(`getFreeVariables(variables))).
+    join(getInternalTypes(type).map(`getFreeVariables(variables))).
         deduplicateBy(sameRoot)
 
 define getAllFreeVariables(variables, variables')
@@ -21,16 +21,16 @@ define substitute(type, variables)
             recursionError(type, type, variables)
         type'.substitute(variables)
 
-    type.mapComponents(`substitute(variables))
+    type.mapInternalTypes(`substitute(variables))
 
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
 define unify'(originals, variables, (left, right))
     if isTypeVariable(left) and not left.isFree(variables)
-        unify'(originals, variables, (left.substitute(variables), right))
+        unify'(originals, variables, (variables.get(left), right))
     if isTypeVariable(right) and not right.isFree(variables)
-        unify'(originals, variables, (left, right.substitute(variables)))
+        unify'(originals, variables, (left, variables.get(right)))
     if isBottomType(left) or isBottomType(right)
         variables
     if sameRoot(left, right)
@@ -40,6 +40,8 @@ define unify'(originals, variables, (left, right))
         variables.insert(left, right)
     if isTypeVariable(right)
         variables.insert(right, left)
+    if isADT(left) and not isFreeType(getMatchType(left))
+        unify'(originals, variables, (getMatchType(left), right))
     unificationError(originals.mapPair(`substitute(variables)),
         left.substitute(variables), right.substitute(variables))
 
@@ -117,10 +119,11 @@ define constructParameterType(variables, schemes, term)
     scheme := Scheme(universals', FunctionType(term, outerType, innerType))
     (polarType, variables') := scheme.instantiate(variables, term)
     outerType := getParameterType(polarType)
-    innerType := getBodyType(polarType)
-    universal := getResultType(innerType)
-    innerScheme := Scheme([universal], innerType)
-    (outerType, innerScheme, variables')
+    matchType := getBodyType(polarType)
+    fullType := setMatchType(outerType, matchType)
+    universal := getResultType(matchType)
+    fullScheme := Scheme([universal], fullType)
+    (outerType, fullScheme, variables')
 
 
 define inferParameterType(stack, variables, term)
@@ -141,11 +144,9 @@ define infer(stack, variables)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
             getAscription(metadata).instantiate(empty, term)
-        (outerParameterType, innerParameterScheme, variables') :=
-            inferParameterType(stack, variables, term)
-        stack' := innerParameterScheme :: stack
-        (bodyType, variables'') := infer(stack', variables', body)
-        (FunctionType(term, outerParameterType, bodyType), variables'')
+        (type, scheme, variables') := inferParameterType(stack, variables, term)
+        (bodyType, variables'') := infer(scheme :: stack, variables', body)
+        (FunctionType(term, type, bodyType), variables'')
     case term @ Application(_, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
@@ -158,14 +159,14 @@ define infer(stack, variables)
         (returnType, variables'''.unify((applicandType, functionType)))
     case term @ Numeral(_, value)
         index := if value = 0 then 1 else 2
-        (ADT(term, "ℕ", NOFIX, [], 2, index), variables)
+        (ADT(term, "ℕ", NOFIX, [], FreeType, 2, index), variables)
     case term @ Operation(_, _, _)
         (getBuiltinType(term), variables)
 
 
 define inferType(stack, definition)
     if getTagLexeme(first(definition)) =*= "fix"
-        getFixScheme(getSource(second(definition))) :: stack
+        getFixScheme(second(definition)) :: stack
     (type, variables') := infer(stack, empty, second(definition))
     type.generalize(variables', empty) :: stack
 

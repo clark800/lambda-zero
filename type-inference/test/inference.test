@@ -80,6 +80,8 @@ pp'(x) := (
 
 abort' := abort "0"
 
+factorial := 0 -> 1; n @ up(n') -> n * n'
+
 # r(x) := (
 #     (y, z) := r(x + 1)
 #     (x, y)

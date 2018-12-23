@@ -1,8 +1,12 @@
 #* show.zero
 
 define showTypeLocation(type)
+    if isFreeType(type)
+        "VOID"
     showLocation(getTagLocation(getTermTag(getSource(type))))
 
+define showSource(type)
+    if isFreeType(type) then "VOID" else showTerm(getSource(type))
 
 define showTypeAndLocation(type)
     showType(type) ++ (if isNoTerm(getSource(type)) then "" else
@@ -10,7 +14,7 @@ define showTypeAndLocation(type)
 
 define showVariableMap(variables)
     variables.getElements.map((key, value) ->
-        showTerm(getSource(key)) ++ " = " ++ showTerm(getSource(value)) ++
+        showSource(key) ++ " = " ++ showSource(value) ++
         "\n" ++ showType(key) ++ " := " ++ showType(value)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
@@ -31,7 +35,7 @@ define showUniversals(universals, renaming)
     universals.map(universal ->
         "∀" ++ showTypeWithRenaming(universal, renaming) ++ " ").join
 
-define showScheme((universals, type))
+define showScheme(Scheme(universals, type))
     renaming := makeRenaming(type)
     showUniversals(universals, renaming) ++ showTypeWithRenaming(type, renaming)
 
