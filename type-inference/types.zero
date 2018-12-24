@@ -72,7 +72,7 @@ define showADT(name, fixity, arguments)
 define showType
     case FreeType; "_"
     case BottomType(_); "⊥"
-    case TypeVariable(_, index); getVariableName(index)
+    case TypeVariable(_, address); getVariableName(address)
     case FunctionType(_, parameter, body)
         if isFunctionType(parameter)
             "(" ++ showType(parameter) ++ ")" ++ " ⇒ " ++ showType(body)
@@ -102,21 +102,23 @@ define sameRoot(a, b)
         FreeType -> false
         BottomType(_) -> isBottomType(b)
         TypeVariable(_, _) -> isTypeVariable(b) and
-            getTypeVariableIndex(a) = getTypeVariableIndex(b)
+            getAddress(a) = getAddress(b)
         FunctionType(_, _, _) -> isFunctionType(b)
         ADT(_, _, _, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
             length(getParameters(a)) = length(getParameters(b))
 
 
 define newTypeVariable(variables, source)
-    type := TypeVariable(source, cardinality(variables))
-    (type, variables.insert(type, FreeType))
+    (address, variables') := variables.allocate(FreeType)
+    (TypeVariable(source, address), variables')
 
 newTypeVariables(originals, variables) :=
     originals.map(getSource).cascadeMap(`newTypeVariable, variables)
 
-isFree(type, variables) := not variables.hasKey(type) or
-    isFreeType(variables.get(type))
+define isFree(type, variables)
+    match variables.seek(getAddress(type))
+        void -> true
+        just(type') -> isFreeType(type')
 
 define mapInternalTypes(type, f)
     match type
@@ -128,12 +130,11 @@ define mapInternalTypes(type, f)
         ADT(source, name, fixity, parameters, type, count, index) ->
             ADT(source, name, fixity, parameters.map(f), f(type), count, index)
 
-newVariableMap(mappings) := newTable((<=).on(getTypeVariableIndex), mappings)
-empty := newVariableMap([])
+newRenaming(mappings) := newTable(id, (<=).on(getAddress), mappings)
 
-define rename(type, variables)
+define rename(type, renaming)
     if isTypeVariable(type)
-        variables.lookup(type) ?? type
-    type.mapInternalTypes(`rename(variables))
+        renaming.lookup(type) ?? type
+    type.mapInternalTypes(`rename(renaming))
 
 #*

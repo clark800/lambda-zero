@@ -4,20 +4,21 @@ define getFreeVariables(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             [type]
-        getFreeVariables(variables.get(type), variables)
+        getFreeVariables(variables.dereference(getAddress(type)), variables)
     join(getInternalTypes(type).map(`getFreeVariables(variables))).
         deduplicateBy(sameRoot)
 
 define getAllFreeVariables(variables, variables')
-    join(variables.getKeys.map(`getFreeVariables(variables'))).
-        deduplicateBy(sameRoot)
+    join(variables.getAddresses.map(TypeVariable(noTerm)).map(
+        `getFreeVariables(variables'))).deduplicateBy(sameRoot)
 
 define substitute(type, variables)
     if isTypeVariable(type)
         if type.isFree(variables)
             type
-        type' := variables.get(type).setSource(getSource(type))
-        if type'.getFreeVariables(empty).any(sameRoot(type))
+        type' := variables.dereference(getAddress(type)).
+            setSource(getSource(type))
+        if type'.getFreeVariables(newStore([])).any(sameRoot(type))
             recursionError(type, type, variables)
         type'.substitute(variables)
 
@@ -28,18 +29,20 @@ define substitute(type, variables)
 # by Krystof Hoder and Andrei Voronkov
 define unify'(originals, variables, (left, right))
     if isTypeVariable(left) and not left.isFree(variables)
-        unify'(originals, variables, (variables.get(left), right))
+        unify'(originals, variables,
+            (variables.dereference(getAddress(left)), right))
     if isTypeVariable(right) and not right.isFree(variables)
-        unify'(originals, variables, (left, variables.get(right)))
+        unify'(originals, variables,
+            (left, variables.dereference(getAddress(right))))
     if isBottomType(left) or isBottomType(right)
         variables
     if sameRoot(left, right)
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
     if isTypeVariable(left)
-        variables.insert(left, right)
+        variables.assign(getAddress(left), right)
     if isTypeVariable(right)
-        variables.insert(right, left)
+        variables.assign(getAddress(right), left)
     if isADT(left) and not isFreeType(getMatchType(left))
         unify'(originals, variables, (getMatchType(left), right))
     unificationError(originals.mapPair(`substitute(variables)),
@@ -63,7 +66,8 @@ define generalize(type, variables, oldVariables)
 
 define instantiate(Scheme(universals, type), variables, term)
     (freshVariables, variables') := newTypeVariables(universals, variables)
-    renaming := newVariableMap(zip(universals, freshVariables))
+    mappings := zip(universals, freshVariables)
+    renaming := newRenaming(mappings)
     (type.rename(renaming).setSource(term), variables')
 
 
@@ -143,7 +147,7 @@ define infer(stack, variables)
         stack[debruijn - 1].instantiate(variables, term)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
-            getAscription(metadata).instantiate(empty, term)
+            getAscription(metadata).instantiate(newStore([]), term)
         (type, scheme, variables') := inferParameterType(stack, variables, term)
         (bodyType, variables'') := infer(scheme :: stack, variables', body)
         (FunctionType(term, type, bodyType), variables'')
@@ -167,8 +171,8 @@ define infer(stack, variables)
 define inferType(stack, definition)
     if getTagLexeme(first(definition)) =*= "fix"
         getFixScheme(second(definition)) :: stack
-    (type, variables') := infer(stack, empty, second(definition))
-    type.generalize(variables', empty) :: stack
+    (type, variables') := infer(stack, newStore([]), second(definition))
+    type.generalize(variables', newStore([])) :: stack
 
 
 define getDefinitions

@@ -1,56 +1,48 @@
 #* protoset.zero
-# todo: store size in data structure for constant time cardinality
-# totally preordered set (total proset)
 
-newProtoset((~<), elements) := ((~<), elements)
+KVP(k, v) ::= {KeyValuePair(getKey : k, getValue : v)}
 
-getElements := second
-cardinality := length <> getElements
+ProtosetType(k, v) ::= {
+    Protoset(_hash : _, _compare : _, _data : List(KVP(k, v)))
+}
 
-elicit(protoset, object) := (
-    ((~<), elements) := protoset
-    if elements.isNil
+makeKVP(hash, object) := KeyValuePair(hash(object), object)
+newProtoset(hash, (~<), elements) :=
+    Protoset(hash, (~<), elements.map(makeKVP(hash)))
+Protoset(_, _, data).getElements := data.map(getValue)
+Protoset(_, _, data).cardinality := length(data)
+
+
+define search(key, (~<), data)
+    if data.isNil
         void
-    element := elements[0]
-    if object ~< element /\ element ~< object
-        just(element)
-    ((~<), tail(elements)).elicit(object)
-)
+    _ @ KeyValuePair(key', object) := head(data)
+    if key ~< key' and key' ~< key
+        just(object)
+    search(key, (~<), tail(data))
+
+
+Protoset(hash, (~<), data).elicit(object) := search(hash(object), (~<), data)
 
 object in protoset := not isVoid(protoset.elicit(object))
 
-mapElements(protoset, f) := (
-    ((~<), elements) := protoset
-    ((~<), elements.map(f))
-)
+Protoset(hash, (~<), data).mapElements(f) :=
+    Protoset(hash, (~<), data.map(makeKVP(hash) <> f <> getValue))
 
-filterElements(protoset, p) := (
-    ((~<), elements) := protoset
-    ((~<), elements |: p)
-)
+Protoset(hash, (~<), data).filterElements(p) :=
+    Protoset(hash, (~<), data |: p <> getValue)
 
-add(protoset, object) := (
-    if object in protoset
-        protoset
-    ((~<), elements) := protoset
-    ((~<), object :: elements)
-)
+(protoset @ Protoset(hash, (~<), data)).add(object) :=
+    if object in protoset then protoset else
+        Protoset(hash, (~<), makeKVP(hash, object) :: data)
 
-remove(protoset, object) := (
-    ((~<), elements) := protoset
-    a ~ b := a ~< b /\ b ~< a
-    protoset.filterElements((not) <> (~ object))
-)
+Protoset(hash, (~<), data).remove(object) :=
+    Protoset(hash, (~<), data |: (not) <> (~ hash(object)) <> getKey) |
+        a ~ b := a ~< b /\ b ~< a
 
-protoset U protoset' := (
-    (order', elements') := protoset'
-    if elements'.isNil
-        protoset
-    if elements'[0] in protoset
-        protoset U (order', tail(elements'))
-    (order, elements) := protoset
-    (order, elements'[0] :: elements) U (order', tail(elements'))
-)
+protoset U Protoset(hash, order, data) :=
+    if data.isNil then protoset else
+        protoset.add(getValue(head(data))) U Protoset(hash, order, tail(data))
 
 protoset \ protoset' := protoset.filterElements((not) <> (in protoset'))
 

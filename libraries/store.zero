@@ -1,0 +1,48 @@
+#* store.zero
+
+StoreType(a) ::= {Store(_nextAddress : ℕ, _data : List(ℕ && a))}
+
+
+define newStore(elements)
+    Store(length(elements), zip(0 ..., elements))
+
+
+define Store(_, data).getAddresses
+    data.map(first)
+
+
+define Store(_, data).getDump
+    data
+
+
+define Store(_, data).seek(address)
+    define seek'(address, data)
+        if data.isNil
+            void
+        (address', object) := head(data)
+        if address = address' then just(object) else seek'(address, tail(data))
+
+    seek'(address, data)
+
+
+define store.dereference(address)
+    store.seek(address) ?? undefined
+
+
+define store.isAllocated(address)
+    not isVoid(store.seek(address))
+
+
+define Store(nextAddress, data).allocate(object)
+    (nextAddress, Store(up(nextAddress), (nextAddress, object) :: data))
+
+
+define Store(nextAddress, data).assign(address, value)
+    Store(nextAddress, data.map(datum @ (address', _) ->
+        if address' = address then (address, value) else datum))
+
+
+define Store(nextAddress, data).deallocate(address')
+    Store(nextAddress, data |: (=/= address') <> first)
+
+#*
