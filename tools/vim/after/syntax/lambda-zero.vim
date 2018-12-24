@@ -59,14 +59,16 @@ syntax match zeroNiceOperator ">\~" conceal cchar=≿
 syntax match zeroNiceOperator "<\*=" conceal cchar=⩿   " string compare
 syntax match zeroNiceOperator ">\*=" conceal cchar=⪀   " string compare
 
-syntax match zeroNiceOperator "<|" conceal cchar=⊲
-syntax match zeroNiceOperator "|>" conceal cchar=⊳
-syntax match zeroNiceOperator "<||" conceal cchar=⧏
-syntax match zeroNiceOperator "||>" conceal cchar=⧐
-syntax match zeroNiceOperator "=<|" conceal cchar=⊴
-syntax match zeroNiceOperator "|>=" conceal cchar=⊵
-syntax match zeroNiceOperator "=/<|" conceal cchar=⋬
-syntax match zeroNiceOperator "|>/=" conceal cchar=⋭
+syntax match zeroNiceOperator "<|" conceal cchar=⦉
+syntax match zeroNiceOperator "|>" conceal cchar=⦊
+syntax match zeroNiceOperator "<<|" conceal cchar=⊲
+syntax match zeroNiceOperator "|>>" conceal cchar=⊳
+syntax match zeroNiceOperator "<<||" conceal cchar=⧏
+syntax match zeroNiceOperator "||>>" conceal cchar=⧐
+syntax match zeroNiceOperator "=<<|" conceal cchar=⊴
+syntax match zeroNiceOperator "|>>=" conceal cchar=⊵
+syntax match zeroNiceOperator "=/<<|" conceal cchar=⋬
+syntax match zeroNiceOperator "|>>/=" conceal cchar=⋭
 
 syntax match zeroNiceOperator "\~:" conceal cchar=∻     " or ⩪ ?
 syntax match zeroNiceOperator "/\~" conceal cchar=≁

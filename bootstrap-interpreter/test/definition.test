@@ -125,3 +125,6 @@ Syntax error: undefined symbol 'x' at line 1 column 6
 x.f(y) := x + y\n f(5, 6)
 11
 ==========================================================================
+f(x) := x where (y -> y + 1)
+Syntax error: expected definition to right of 'where' at line 1 column 11
+==========================================================================

@@ -8,7 +8,7 @@ f ∘ g ≔ x ↦ f(g(x))              # function composition
 `f(x, y) ≔ f(y, x)               # flip order of first two arguments of function
 ``f(x, y, z) ≔ f(y, z, x)        # rotate order of first three arguments
 on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
-fix(f) ≔ 𝛚(f ∘ 𝛚) | 𝛚(x) ≔ x(x)  # fixpoint combinator (Y combinator)
+fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)  # fixpoint combinator (Y combinator)
 
 # bottom
 ⊥ ⩴ {}
@@ -32,7 +32,7 @@ Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth
 
 # boolean
 𝔹 ⩴ {false, true}
-(if b)(x, y) ≔ b | false ↦ y; true ↦ x
+(if b)(x, y) ≔ b ⦊ false ↦ y; true ↦ x
 (then) ≔ (of)
 (else) ≔ (of)
 not b ≔ if b then false else true
@@ -44,18 +44,18 @@ while(f, p, z) ≔ f.until((not) ∘ p, z)
 # maybe
 a ? ⩴ {void, just(_ : a)}
 isVoid ≔ void ↦ true; just(_) ↦ false
-onJust(mx, f) ≔ mx | void ↦ void; just(x) ↦ f(x)
+onJust(mx, f) ≔ mx ⦊ void ↦ void; just(x) ↦ f(x)
 mapJust(mx, f) ≔ onJust(mx, just ∘ f)
-mx ⁇ x ≔ mx | void ↦ x; just(x′) ↦ x′
+mx ⁇ x ≔ mx ⦊ void ↦ x; just(x′) ↦ x′
 
 # either
 a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ Left(_) ↦ true; Right(_) ↦ false
 isRight ≔ Left(_) ↦ false; Right(_) ↦ true
-(try)(exy, f) ≔ exy | Left(x) ↦ f(x); Right(y) ↦ y
+(try)(exy, f) ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
 (catch) ≔ (of)
-onLeft(exy, f) ≔ exy | Left(x) -> f(x); Right(y) -> Right(y)
-onRight(exy, f) ≔ exy | Left(x) ↦ Left(x); Right(y) ↦ f(y)
+onLeft(exy, f) ≔ exy ⦊ Left(x) -> f(x); Right(y) -> Right(y)
+onRight(exy, f) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(exy, f) ≔ onLeft(exy, Left ∘ f)
 mapRight(exy, f) ≔ onRight(exy, Right ∘ f)
 exy ⁈ y ≔ try exy catch constant(y)
@@ -76,11 +76,11 @@ mod(n, m) ≔ n % m
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, m) ≔ m.mod(n) = 0
-n ! ≔ n | 0 ↦ 1; ↑ n′ ↦ n ⋅ n′ !
+n ! ≔ n ⦊ 0 ↦ 1; ↑ n′ ↦ n ⋅ n′ !
 gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
-f ° n ≔ n | 0 ↦ id; ↑ n′ ↦ f ∘ f ° n′
+f ° n ≔ n ⦊ 0 ↦ id; ↑ n′ ↦ f ∘ f ° n′
 (n)² ≔ n ⋅ n
-n ^ m ≔ m | 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′
+n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′
 
 # (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false); ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
 # (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true); ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
@@ -98,14 +98,14 @@ n ^ m ≔ m | 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n �
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ `(∷)
 isNil ≔ [] ↦ true; _ ∷ _ ↦ false    # note: isEmpty is for sets
-fold(xs, f, z) ≔ xs | [] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z))
-cascade(xs, f, z) ≔ xs | [] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x))
+fold(xs, f, z) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z))
+cascade(xs, f, z) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x))
 xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
 join(xss) ≔ xss.fold((⧺), [])            # concatenate list of lists
 length(xs) ≔ xs.fold(constant(↑), 0)         # get length of list
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(xs, n) ≔ n | 0 ↦ xs; ↑ n′ ↦ if isNil(xs) then xs else tail(xs).drop(n′)
-take(xs, n) ≔ n | 0 ↦ []; ↑ n′ ↦
+drop(xs, n) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ if isNil(xs) then xs else tail(xs).drop(n′)
+take(xs, n) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦
     if isNil(xs) then xs else head(xs) ∷ tail(xs).take(n′)
 xs[n] ≔ head(xs.drop(n))          # get element of list at index
 xs[start, end] ≔ xs.drop(start).take(end - start)
@@ -116,11 +116,11 @@ reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
 safeHead(xs) ≔ if isNil(xs) then void else just(head(xs))
 safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
 safeIndex(xs) ≔ 0 ↦ safeHead(xs);
-    ↑ n′ ↦ (safeIndex(xs′, n′) | maybe xs′ ≔ safeTail(xs))
-dropIf(ns, p) ≔ ns | [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
-takeWhile(xs, p) ≔ xs | [] ↦ [];
+    ↑ n′ ↦ (safeIndex(xs′, n′) where maybe xs′ ≔ safeTail(xs))
+dropIf(ns, p) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
+takeWhile(xs, p) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(xs′, p) else []
-dropWhile(xs, p) ≔ xs | [] ↦ [];
+dropWhile(xs, p) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if p(x) then dropWhile(xs′, p) else xs
 xs ¦ p ≔ fold(xs, x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
 filter ≔ (¦)
@@ -136,13 +136,13 @@ define filterMap(xs, f)
                 Left(_) ↦ ys
                 Right(y) ↦ y ∷ ys
 
-zipWith(xs, f, ys) ≔ xs |
-    [] ↦ []; x ∷ xs′ ↦ (ys | [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(xs′, f, ys′))
+zipWith(xs, f, ys) ≔ xs ⦊
+    [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(xs′, f, ys′))
 
 zip(xs, ys) ≔ zipWith(xs, pair, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
 pairs(xs) ≔ zip(xs, tail(xs))
-interleave(xs, y) ≔ xs | [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′) |
+interleave(xs, y) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′) where
     interleave′ ≔ [] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
 joinWith(xss, ys) ≔ join(interleave(xss, ys))
 bisect(xs, p) ≔ (xs ¦ p, xs ¦ (not) ∘ p)
@@ -168,7 +168,7 @@ cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
 
 sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
 
-deduplicateBy(xs, (≟)) ≔ xs | [] ↦ [];
+deduplicateBy(xs, (≟)) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ x ∷ deduplicateBy(xs′ ¦ (not) ∘ (≟ x), (≟))
 deduplicate(xs) ≔ deduplicateBy(xs, (=))
 
@@ -180,30 +180,30 @@ product ≔ ∏
 minimum(ns) ≔ ns.reduce(min)
 maximum(ns) ≔ ns.reduce(max)
 
-fibonaccis ≔ f(0, 1) | f(m, n) ≔ m ∷ f(n, m + n)
-primes ≔ p(2 …) | p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
+fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
+primes ≔ p(2 …) where p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 # string
 define xs ≛ ys              # string equality
     match xs
         [] ↦ isNil(ys)
-        x ∷ xs′ ↦ (ys | [] ↦ false; y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
+        x ∷ xs′ ↦ (ys ⦊ [] ↦ false; y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
 
 define ns ⩿ ms      # string comparison
     match ns
         [] ↦ true
-        n ∷ ns′ ↦ (ms | [] ↦ false; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
+        n ∷ ns′ ↦ (ms ⦊ [] ↦ false; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
 
 
 define startsWith(ns, ks)
     match ks
         [] ↦ true
-        k ∷ ks′ ↦ (ns | [] ↦ false; n ∷ ns′ ↦ n = k and startsWith(ns′, ks′))
+        k ∷ ks′ ↦ (ns ⦊ [] ↦ false; n ∷ ns′ ↦ n = k and startsWith(ns′, ks′))
 
 define split(ns, p)
     match ns
         [] ↦ ([], [])
-        n ∷ ns′ ↦ (if p(ns) then ([], ns) else (n ∷ before, after) |
+        n ∷ ns′ ↦ (if p(ns) then ([], ns) else (n ∷ before, after) where
                   (before, after) ≔ ns′.split(p))
 
 splitAt(xs, n) ≔ (xs.take(n), xs.drop(n))

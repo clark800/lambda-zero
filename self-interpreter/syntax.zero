@@ -17,7 +17,7 @@ define reducePostfix(operator, left, _right)
     reduceApply(operator, OperatorName(getTag(operator), POSTFIX), left)
 
 
-define reducePeriod(operator, left, right)
+define reducePipeline(operator, left, right)
     reduceApply(operator, right, left)
 
 
@@ -48,7 +48,9 @@ define reduceNewline(operator, left, right)
 
 
 define reduceWhere(operator, left, right)
-    reduceNewline(operator, right, left)
+    if not isDefinition(right)
+        syntaxError("expected definition to right of", operator)
+    applyDefinition(right, left)
 
 
 define shiftPrefix(state, operator)
@@ -240,25 +242,27 @@ OPERATORS := [
     coreSyntax("]", 0, 95, CLOSEFIX, RIGHT, shiftClose, reduceSquare),
     coreSyntax("{", 95, 0, OPENFIX, RIGHT, shiftOpen, reduceUnmatched),
     coreSyntax("}", 0, 95, CLOSEFIX, RIGHT, shiftClose, reduceCurly),
-    coreSyntax("||", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
-    coreAlias("‖", "||", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
+    coreSyntax("|", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
     coreSyntax("\n", 3, 3, INFIX, RIGHTVALUE, shiftNewline, reduceNewline),
     coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftInfix, reduceNewline),
-    coreSyntax("::=", 7, 5, INFIX, NEITHER, shiftInfix, reduceADTDefine),
-    coreAlias("⩴", "::=", 7, 5, INFIX, NEITHER, shiftInfix, reduceADTDefine),
-    coreSyntax(":=", 7, 5, INFIX, NEITHER, shiftInfix, reduceDefine),
-    coreAlias("≔", ":=", 7, 5, INFIX, NEITHER, shiftInfix, reduceDefine),
-    coreSyntax("|", 6, 6, INFIX, LEFT, shiftInfix, reduceWhere),
-    coreSyntax("where", 6, 6, INFIX, LEFT, shiftInfix, reduceWhere),
-    coreSyntax(";", 8, 8, INFIX, RIGHT, shiftInfix, reduceNewline),
-    coreSyntax("->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
-    coreAlias("↦", "->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
+    coreSyntax(":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
+    coreAlias("≔", ":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
+    coreSyntax("::=", 5, 5, INFIX, RIGHT, shiftInfix, reduceADTDefine),
+    coreAlias("⩴", "::=", 5, 5, INFIX, RIGHT, shiftInfix, reduceADTDefine),
+    coreSyntax("where", 5, 5, INFIX, RIGHT, shiftInfix, reduceWhere),
+    coreSyntax("|>", 6, 6, INFIX, LEFT, shiftInfix, reducePipeline),
+    coreAlias("⦊", "|>", 6, 6, INFIX, LEFT, shiftInfix, reducePipeline),
+    coreSyntax("<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
+    coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
+    coreSyntax(";", 7, 7, INFIX, RIGHT, shiftInfix, reduceNewline),
+    coreSyntax("->", 8, 8, INFIX, RIGHT, shiftInfix, reduceArrow),
+    coreAlias("↦", "->", 8, 8, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreSyntax("define", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
-    coreSyntax(".", 97, 97, INFIX, LEFT, shiftInfix, reducePeriod),
+    coreSyntax(".", 97, 97, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid),
     coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
 ]

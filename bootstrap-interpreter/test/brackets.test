@@ -29,6 +29,6 @@ Syntax error: missing right operand for ',' at line 1 column 4
 [1,2,3][]
 Syntax error: missing argument to '[' at line 1 column 8
 ===============================================================================
-f(x, y || z)
-Syntax error: reserved operator '||' at line 1 column 8
+f(x, y | z)
+Syntax error: reserved operator '|' at line 1 column 8
 ===============================================================================

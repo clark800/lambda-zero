@@ -25,7 +25,7 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Factorial
 
-    n ! ≔ n | 0 ↦ 1; ↑ n′ ↦ n ⋅ n′ !
+    n ! ≔ n ⦊ 0 ↦ 1; ↑ n′ ↦ n ⋅ n′ !
 
 ### Quicksort
 
@@ -39,11 +39,11 @@ And the whole language can be interpreted with just over 2000 lines of C code!
 
 ### Infinite list of Fibonacci numbers
 
-    fibonaccis ≔ f(0, 1) | f(m, n) ≔ m ∷ f(n, m + n)
+    fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 
 ### Infinite list of prime numbers
 
-    primes ≔ p(2 …) | p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
+    primes ≔ p(2 …) where p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 # Motivation
 
