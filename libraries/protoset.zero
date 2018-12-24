@@ -37,7 +37,7 @@ Protoset(hash, (~<), data).filterElements(p) :=
         Protoset(hash, (~<), makeKVP(hash, object) :: data)
 
 Protoset(hash, (~<), data).remove(object) :=
-    Protoset(hash, (~<), data |: (not) <> (~ hash(object)) <> getKey) |
+    Protoset(hash, (~<), data |: (not) <> (~ hash(object)) <> getKey) where
         a ~ b := a ~< b /\ b ~< a
 
 protoset U Protoset(hash, order, data) :=

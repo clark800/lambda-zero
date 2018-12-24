@@ -26,7 +26,7 @@ static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, Name(getTag(operator)), left);
 }
 
-static Node* reducePeriod(Node* operator, Node* left, Node* right) {
+static Node* reducePipeline(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, right, left);
 }
 
@@ -171,7 +171,9 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceWhere(Node* operator, Node* left, Node* right) {
-    return reduceNewline(operator, right, left);
+    if (!isDefinition(right))
+        syntaxError("expected definition to right of", operator);
+    return applyDefinition(right, left);
 }
 
 static void shiftNewline(Stack* stack, Node* operator) {
@@ -193,25 +195,27 @@ void initSymbols(void) {
     addCoreSyntax("]", 0, 95, CLOSEFIX, R, shiftClose, reduceSquareBrackets);
     addCoreSyntax("{", 95, 0, OPENFIX, R, shiftOpen, reduceUnmatched);
     addCoreSyntax("}", 0, 95, CLOSEFIX, R, shiftClose, reduceCurlyBrackets);
-    addCoreSyntax("||", 1, 1, INFIX, N, shiftInfix, reduceReserved);
+    addCoreSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
     addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
     addCoreSyntax(";;", 4, 4, INFIX, R, shiftInfix, reduceNewline);
-    addCoreSyntax("::=", 7, 5, INFIX, N, shiftInfix, reduceADTDefinition);
-    addCoreSyntax(":=", 7, 5, INFIX, N, shiftInfix, reduceDefine);
-    addCoreSyntax("|", 6, 6, INFIX, L, shiftInfix, reduceWhere);
-    addCoreSyntax("where", 6, 6, INFIX, L, shiftInfix, reduceWhere);
-    addCoreSyntax(";", 8, 8, INFIX, R, shiftInfix, reduceNewline);
-    addCoreSyntax("->", 9, 9, INFIX, R, shiftInfix, reduceArrow);
+    addCoreSyntax(":=", 5, 5, INFIX, R, shiftInfix, reduceDefine);
+    addCoreSyntax("::=", 5, 5, INFIX, R, shiftInfix, reduceADTDefinition);
+    addCoreSyntax("where", 5, 5, INFIX, R, shiftInfix, reduceWhere);
+    addCoreSyntax("|>", 6, 6, INFIX, L, shiftInfix, reducePipeline);
+    addCoreSyntax("<|", 6, 6, INFIX, R, shiftInfix, reduceApply);
+    addCoreSyntax(";", 7, 7, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax("->", 8, 8, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("define", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 15, 15, PREFIX, L, shiftPrefix, reduceAbort);
-    addCoreSyntax(".", 97, 97, INFIX, L, shiftInfix, reducePeriod);
+    addCoreSyntax(".", 97, 97, INFIX, L, shiftInfix, reducePipeline);
     addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
     addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
     addCoreAlias("\u2254", ":=");
     addCoreAlias("\u2A74", "::=");
     addCoreAlias("\u21A6", "->");
-    addCoreAlias("\u2016", "||");
+    addCoreAlias("\u298A", "|>");
+    addCoreAlias("\u2989", "<|");
 }
