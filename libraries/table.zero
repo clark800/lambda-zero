@@ -10,10 +10,6 @@ getKeys(table) := table.getElements.map(first)
 getValues(table) := table.getElements.map(second)
 mapKeys(table, f) := table.mapElements((key, value) -> (f(key), value))
 mapValues(table, f) := table.mapElements((key, value) -> (key, f(value)))
-
 newDictionary := newTable(id, (<*=))
-newRegistry(items) := newTable(id, (<=), zip(0..., items))
-register(registry, item) :=
-    (cardinality(registry), registry.insert(cardinality(registry), item))
 
 #*

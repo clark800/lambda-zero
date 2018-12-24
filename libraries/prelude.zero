@@ -272,7 +272,17 @@ parseInteger(string, base) ≔ if string.head = '-' then
     - parseNatural(tail(string), base) else + parseNatural(string, base)
 
 # trees
-Tree(a) ⩴ {Node(getData ∈ a, getChildren ∈ List(Tree(a)))}
+Tree(a) ⩴ {Node(_datum ∈ a, _children ∈ List(Tree(a)))}
+
+BinaryTree(a) ::= {
+    Leaf,
+    Branch(_datum : a, _left : BinaryTree(a), _right : BinaryTree(a))
+}
+
+define flattenBinaryTree
+    Leaf -> []
+    Branch(value, left, right) ->
+        flattenBinaryTree(left) ++ [value] ++ flattenBinaryTree(right)
 
 # repl
 repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
