@@ -140,7 +140,8 @@ define constructParameterType(variables, schemes, term)
 
 define inferParameterType(stack, variables, term)
     metadata := getMetadata(term)
-    schemes := getConstructorDebruijnIndices(metadata).map(k -> stack[k - 1])
+    schemes := getConstructorDebruijnIndices(metadata).map(k ->
+        stack.peek(k - 1) ?? undefined)
     if isNil(schemes)
         (parameterType, variables') := variables.newTypeVariable(term)
         (parameterType, Scheme([], parameterType), variables')
@@ -152,17 +153,18 @@ define inferParameterType(stack, variables, term)
 #   variables or concrete types); every type variable appears in variables
 define infer(stack, variables)
     case term @ Variable(_, debruijn)
-        stack[debruijn - 1].instantiate(variables, term)
+        scheme := stack.peek(debruijn - 1) ?? Free
+        scheme.instantiate(variables, term)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
             getAscription(metadata).instantiate(newStore, term)
         (type, scheme, variables') := inferParameterType(stack, variables, term)
-        (bodyType, variables'') := infer(scheme :: stack, variables', body)
+        (bodyType, variables'') := infer(stack.push(scheme), variables', body)
         (FunctionType(term, type, bodyType), variables'')
     case term @ Application(_, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
-            stack' := valueType.generalize(variables', variables) :: stack
+            stack' := stack.push(valueType.generalize(variables', variables))
             infer(stack', variables', getBody(applicand))
         (argumentType, variables') := infer(stack, variables, argument)
         (applicandType, variables'') := infer(stack, variables', applicand)
@@ -178,9 +180,9 @@ define infer(stack, variables)
 
 define inferType(stack, definition)
     if getTagLexeme(first(definition)) =*= "fix"
-        getFixScheme(second(definition)) :: stack
+        stack.push(getFixScheme(second(definition)))
     (type, variables') := infer(stack, newStore, second(definition))
-    type.generalize(variables', newStore) :: stack
+    stack.push(type.generalize(variables', newStore))
 
 
 define getDefinitions
@@ -196,7 +198,8 @@ define getDefinitions
 define main(input)
     term := parse(input)
     definitions := getDefinitions(term)
-    schemes := reverse(definitions.cascade(inferType, []))
+    stack := definitions.cascade(inferType, newStore)
+    schemes := stack.getDump.map(second)
     (names, _) := unzip(definitions)
     showTypings(zip(names, schemes))
 
