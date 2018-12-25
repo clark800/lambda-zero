@@ -4,35 +4,42 @@ define reduceApply(operator, left, right)
     Juxtaposition(getTag(operator), left, right)
 
 
+define isValidPrior(operator, node)
+    prior := getPrior(getSyntax(operator))
+    isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
+
+
+define isValidInfixPrior(operator, left, right)
+    syntax := getSyntax(operator)
+    prior := getPrior(syntax)
+    if isNil(prior)
+        true
+    associativity := getAssociativity(syntax)
+    node := if associativity = LEFT then left else right
+    isJuxtaposition(node) and getLexeme(node) =*= prior
+
+
 define reduceInfix(operator, left, right)
+    if not isValidInfixPrior(operator, left, right)
+        syntaxError("operator syntax error", operator)
     reduceApply(operator, reduceApply(operator,
         OperatorName(getTag(operator), INFIX), left), right)
 
 
 define reducePrefix(operator, _left, right)
+    if not isValidPrior(operator, right)
+        syntaxError("operator syntax error", operator)
     reduceApply(operator, OperatorName(getTag(operator), PREFIX), right)
 
 
 define reducePostfix(operator, left, _right)
+    if not isValidPrior(operator, left)
+        syntaxError("operator syntax error", operator)
     reduceApply(operator, OperatorName(getTag(operator), POSTFIX), left)
-
-
-define reducePipeline(operator, left, right)
-    reduceApply(operator, right, left)
 
 
 define reduceArrow(operator, left, right)
     newStrictArrow(getTag(operator), left, right)
-
-
-define reduceAsPattern(operator, left, right)
-    if not isName(left)
-        syntaxError("expected name to left of", operator)
-    AsPattern(getTag(operator), left, right)
-
-
-define reduceCommaPair(operator, left, right)
-    CommaPair(getTag(operator), left, right)
 
 
 define reduceNewline(operator, left, right)
@@ -45,6 +52,26 @@ define reduceNewline(operator, left, right)
     if isKeyphrase(left, "case")
         reduceArrow(operator, getRight(left), right)
     reduceApply(operator, left, right)
+
+
+define reduceAffix(operator, left, right)
+    if not isValidInfixPrior(operator, left, right)
+        syntaxError("operator syntax error", operator)
+    reduceNewline(operator, left, right)
+
+
+define reducePipeline(operator, left, right)
+    reduceApply(operator, right, left)
+
+
+define reduceAsPattern(operator, left, right)
+    if not isName(left)
+        syntaxError("expected name to left of", operator)
+    AsPattern(getTag(operator), left, right)
+
+
+define reduceCommaPair(operator, left, right)
+    CommaPair(getTag(operator), left, right)
 
 
 define reduceWhere(operator, left, right)
@@ -109,44 +136,35 @@ define reduceInvalid(operator, _left, _right)
     syntaxError("operator syntax undeclared", operator)
 
 
-define newOperator'(tag, precedence, fixity, associativity, shifter, reducer)
+define newOperator'(tag, prior, precedence, fixity, associativity,
+        shifter, reducer)
+    special := not isNil(prior)
     Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, fixity,
-        associativity, false, shifter, reducer, ""))
+        associativity, special, shifter, reducer, prior))
 
 
-define newSyntaxOperator(tag, precedence, fixity)
+define newSyntaxOperator(tag, precedence, fixity, prior)
+    p := precedence
     if getTagLexeme(tag) =*= "()"
-        if not(getLexeme(fixity) =*= "infixL")
-            syntaxError("syntax must be infixL", fixity)
         tag' := renameTag(tag, " ")
-        newOperator'(tag', precedence, INFIX, LEFT, shiftSpace, reduceInfix)
+        if getLexeme(fixity) =*= "infixL"
+            newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceInfix)
+        if getLexeme(fixity) =*= "affix"
+            newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceAffix)
+        syntaxError("syntax must be infixL or affix", fixity)
     if getLexeme(fixity) =*= "infix"
-        newOperator'(tag, precedence, INFIX, NEITHER, shiftInfix, reduceInfix)
+        newOperator'(tag, prior, p, INFIX, NEITHER, shiftInfix, reduceInfix)
     if getLexeme(fixity) =*= "infixL"
-        newOperator'(tag, precedence, INFIX, LEFT, shiftInfix, reduceInfix)
+        newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceInfix)
     if getLexeme(fixity) =*= "infixR"
-        newOperator'(tag, precedence, INFIX, RIGHT, shiftInfix, reduceInfix)
+        newOperator'(tag, prior, p, INFIX, RIGHT, shiftInfix, reduceInfix)
+    if getLexeme(fixity) =*= "affix"
+        newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceAffix)
     if getLexeme(fixity) =*= "prefix"
-        newOperator'(tag, precedence, PREFIX, LEFT, shiftPrefix, reducePrefix)
+        newOperator'(tag, prior, p, PREFIX, LEFT, shiftPrefix, reducePrefix)
     if getLexeme(fixity) =*= "postfix"
-        newOperator'(tag, precedence, POSTFIX, LEFT,
-            shiftPostfix, reducePostfix)
+        newOperator'(tag, prior, p, POSTFIX, LEFT, shiftPostfix, reducePostfix)
     syntaxError("invalid fixity", fixity)
-
-
-define reduceMixfix(operator, left, right)
-    prior := getPrior(getSyntax(operator))
-    if not isJuxtaposition(left) or not getLexeme(left) =*= prior
-        syntaxError("mixfix syntax error", operator)
-    reduceInfix(operator, left, right)
-
-
-define newMixfixOperator(operators, tag, prior)
-    precedence := getRightPrecedence(
-        lookupSyntax(operators, getLexeme(prior)) ??
-            syntaxError("syntax not defined", prior))
-    Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, INFIX,
-        LEFT, false, shiftInfix, reduceMixfix, getLexeme(prior)))
 
 
 define newAlias(operators, tag, name)
@@ -164,6 +182,22 @@ define copySyntax(operators, tag, name)
             Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, sh, rd, p))
 
 
+define findPrecedence(operators, node)
+    syntax := lookupSyntax(operators, getLexeme(node)) ??
+        syntaxError("syntax not defined", node)
+    if getLeftPrecedence(syntax) =/= getRightPrecedence(syntax)
+        syntaxError("operator not supported", node)
+    getLeftPrecedence(syntax)
+
+
+define parsePrecedence(operators, node)
+    precedence := if isNumber(node) then
+        getNumericValue(node) else findPrecedence(operators, node)
+    if precedence > 99
+        syntaxError("invalid precedence", node)
+    precedence
+
+
 define defineSyntax(operators, node, name, right)
     tag := getTag(node)
     if not isName(name)
@@ -171,21 +205,16 @@ define defineSyntax(operators, node, name, right)
     if not isJuxtaposition(right)
         syntaxError("invalid syntax definition", node)
     fixity := getLeft(right)
-    if isThisName(fixity, "mixfix")
-        operator := newMixfixOperator(operators, getTag(name), getRight(right))
-        Definition(tag, SyntaxDefinition, name, operator)
     if isThisName(fixity, "alias")
         operator := newAlias(operators, getTag(name), getRight(right))
         Definition(tag, SyntaxDefinition, name, operator)
     if isThisName(fixity, "syntax")
         operator := copySyntax(operators, getTag(name), getRight(right))
         Definition(tag, SyntaxDefinition, name, operator)
-    if not isNumber(getRight(right))
-        syntaxError("invalid syntax definition", node)
-    precedence := getNumericValue(getRight(right))
-    if precedence < 0 or precedence > 99
-        syntaxError("invalid precedence", getRight(right))
-    operator := newSyntaxOperator(getTag(name), precedence, fixity)
+    argument := getRight(right)
+    precedence := parsePrecedence(operators, argument)
+    prior := if isNumber(argument) then "" else getLexeme(argument)
+    operator := newSyntaxOperator(getTag(name), precedence, fixity, prior)
     Definition(tag, SyntaxDefinition, name, operator)
 
 
@@ -246,6 +275,7 @@ OPERATORS := [
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
     coreSyntax("\n", 3, 3, INFIX, RIGHTVALUE, shiftNewline, reduceNewline),
     coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftInfix, reduceNewline),
+    coreSyntax("define", 5, 5, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
     coreAlias("≔", ":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
     coreSyntax("::=", 5, 5, INFIX, RIGHT, shiftInfix, reduceADTDefine),
@@ -255,10 +285,9 @@ OPERATORS := [
     coreAlias("⦊", "|>", 6, 6, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
     coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
-    coreSyntax(";", 7, 7, INFIX, RIGHT, shiftInfix, reduceNewline),
-    coreSyntax("->", 8, 8, INFIX, RIGHT, shiftInfix, reduceArrow),
-    coreAlias("↦", "->", 8, 8, INFIX, RIGHT, shiftInfix, reduceArrow),
-    coreSyntax("define", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
+    coreSyntax(";", 8, 8, INFIX, RIGHT, shiftInfix, reduceNewline),
+    coreSyntax("->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
+    coreAlias("↦", "->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),

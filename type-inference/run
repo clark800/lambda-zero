@@ -39,4 +39,4 @@ chmod -f +w meta.tmp || true
 # note: also have to avoid erasing file markers
 cat ${files[@]} | sed -e 's/^[ ]*# .*$//' > meta.tmp
 chmod -w meta.tmp
-"$DIR/../bootstrap-interpreter/main" $* meta.tmp && rm -f meta.tmp
+time "$DIR/../bootstrap-interpreter/main" $* meta.tmp && rm -f meta.tmp
