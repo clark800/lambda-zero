@@ -32,6 +32,11 @@ declare -a files=(
     "$DIR/inference.zero"
 )
 chmod -f +w meta.tmp || true
-cat ${files[@]} > meta.tmp
+
+# cat sources files and erase lines containing only comments to speed parsing
+# note: can't remove blank lines because it would change line numbers in errors
+# note: can't safely remove inline comments because they could be inside quotes
+# note: also have to avoid erasing file markers
+cat ${files[@]} | sed -e 's/^[ ]*# .*$//' > meta.tmp
 chmod -w meta.tmp
 "$DIR/../bootstrap-interpreter/main" $* meta.tmp && rm -f meta.tmp
