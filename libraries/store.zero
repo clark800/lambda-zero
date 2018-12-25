@@ -47,10 +47,13 @@ Store(_, data).getDump := flattenBinaryTree(data)
 Store(_, data).getAddresses := flattenBinaryTree(data).map(first)
 Store(size, data).register(value) :=
     (size, Store(size', allocate(data, size, value))) where size' := up(size)
+store.push(value) := second(store.register(value))
 Store(size, data).access(address) :=
     if address >= size then void else readAddress(data, address)
 Store(size, data).assign(address, value) :=
     Store(size, writeAddress(data, address, value))
+Store(size, data).peek(depth) :=
+    if depth >= size then void else readAddress(data, size - depth - 1)
 
 define showStore(Store(_, data))
     define showTree(data)
