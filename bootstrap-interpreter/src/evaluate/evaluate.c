@@ -1,3 +1,4 @@
+#include <signal.h>
 #include "shared/lib/tree.h"
 #include "shared/lib/array.h"
 #include "shared/lib/stack.h"
@@ -5,6 +6,8 @@
 #include "closure.h"
 #include "exception.h"
 #include "operations.h"
+
+static volatile bool INTERRUPT = false;
 
 typedef const Array Globals;
 static Hold* evaluateClosure(Closure* closure, Globals* globals);
@@ -118,11 +121,15 @@ static Term* expandNumeral(Term* numeral) {
     return Abstraction(tag, Abstraction(tag, body));
 }
 
+static void interrupt(int parameter) {(void)parameter, INTERRUPT = true;}
+
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     while (true) {
         //#include "debug.h"
         //extern void debugState(Closure* closure, Stack* stack);
         //debugState(closure, stack);
+        if (INTERRUPT)
+            runtimeError("interrupted", closure);
         switch (getTermType(getTerm(closure))) {
             case APPLICATION: evaluateApplication(closure, stack); break;
             case VARIABLE: evaluateReference(closure, stack, globals); break;
@@ -153,7 +160,9 @@ static Hold* evaluateClosure(Closure* closure, Globals* globals) {
 Hold* evaluateTerm(Term* term, Globals* globals) {
     INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, VOID, VOID));
+    signal(SIGINT, interrupt);
     Hold* result = evaluateClosure(getNode(closure), globals);
+    signal(SIGINT, SIG_DFL);
     release(closure);
     deleteStack(INPUT_STACK);
     return result;

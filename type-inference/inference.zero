@@ -1,10 +1,20 @@
 #* inference.zero
 
+
+define getValue(variables, variable)
+    variables.access(getAddress(variable)) ?? FreeType
+
+
+define isFree(variable, variables)
+    isFreeType(getValue(variables, variable))
+
+
 define getFreeVariables(type, variables)
     if isTypeVariable(type)
-        if type.isFree(variables)
+        type' := variables.getValue(type)
+        if isFreeType(type')
             [type]
-        getFreeVariables(variables.dereference(getAddress(type)), variables)
+        getFreeVariables(type', variables)
     join(getInternalTypes(type).map(`getFreeVariables(variables))).
         deduplicateBy(sameRoot)
 
@@ -14,13 +24,13 @@ define getAllFreeVariables(variables, variables')
 
 define substitute(type, variables)
     if isTypeVariable(type)
-        if type.isFree(variables)
+        type' := variables.getValue(type)
+        if isFreeType(type')
             type
-        type' := variables.dereference(getAddress(type)).
-            setSource(getSource(type))
-        if type'.getFreeVariables(newStore([])).any(sameRoot(type))
+        type'' := type'.setSource(getSource(type))
+        if type''.getFreeVariables(newStore).any(sameRoot(type))
             recursionError(type, type, variables)
-        type'.substitute(variables)
+        type''.substitute(variables)
 
     type.mapInternalTypes(`substitute(variables))
 
@@ -29,11 +39,9 @@ define substitute(type, variables)
 # by Krystof Hoder and Andrei Voronkov
 define unify'(originals, variables, (left, right))
     if isTypeVariable(left) and not left.isFree(variables)
-        unify'(originals, variables,
-            (variables.dereference(getAddress(left)), right))
+        unify'(originals, variables, (variables.getValue(left), right))
     if isTypeVariable(right) and not right.isFree(variables)
-        unify'(originals, variables,
-            (left, variables.dereference(getAddress(right))))
+        unify'(originals, variables, (left, variables.getValue(right)))
     if isBottomType(left) or isBottomType(right)
         variables
     if sameRoot(left, right)
@@ -147,7 +155,7 @@ define infer(stack, variables)
         stack[debruijn - 1].instantiate(variables, term)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
-            getAscription(metadata).instantiate(newStore([]), term)
+            getAscription(metadata).instantiate(newStore, term)
         (type, scheme, variables') := inferParameterType(stack, variables, term)
         (bodyType, variables'') := infer(scheme :: stack, variables', body)
         (FunctionType(term, type, bodyType), variables'')
@@ -171,8 +179,8 @@ define infer(stack, variables)
 define inferType(stack, definition)
     if getTagLexeme(first(definition)) =*= "fix"
         getFixScheme(second(definition)) :: stack
-    (type, variables') := infer(stack, newStore([]), second(definition))
-    type.generalize(variables', newStore([])) :: stack
+    (type, variables') := infer(stack, newStore, second(definition))
+    type.generalize(variables', newStore) :: stack
 
 
 define getDefinitions

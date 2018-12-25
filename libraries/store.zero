@@ -1,48 +1,69 @@
 #* store.zero
 
-StoreType(a) ::= {Store(_nextAddress : ℕ, _data : List(ℕ && a))}
+StoreType(a) ::= {Store(_size : ℕ, _data : BinaryTree(ℕ && a))}
 
 
-define newStore(elements)
-    Store(length(elements), zip(0 ..., elements))
+define multiplicity(d, n)
+    if n ≠ 0 and divides(d, n) then ↑ multiplicity(d, n ⫽ d) else 0
 
 
-define Store(_, data).getAddresses
-    data.map(first)
+define allocate(tree, address, value)
+    # tree is assumed to already contain all addresses up to 'address'
+    match tree
+        case Leaf
+            Branch((address, value), Leaf, Leaf)
+        case tree @ Branch(branchDatum @ (branchAddress, _), left, right)
+            if multiplicity(2, address) > multiplicity(2, branchAddress)
+                Branch((address, value), tree, Leaf)
+            Branch(branchDatum, left, allocate(right, address, value))
 
 
-define Store(_, data).getDump
-    data
-
-
-define Store(_, data).seek(address)
-    define seek'(address, data)
-        if data.isNil
+define readAddress(tree, address)
+    match tree
+        case Leaf
             void
-        (address', object) := head(data)
-        if address = address' then just(object) else seek'(address, tail(data))
-
-    seek'(address, data)
-
-
-define store.dereference(address)
-    store.seek(address) ?? undefined
+        case Branch((branchAddress, value), left, right)
+            if address < branchAddress
+                readAddress(left, address)
+            if address > branchAddress
+                readAddress(right, address)
+            just(value)
 
 
-define store.isAllocated(address)
-    not isVoid(store.seek(address))
+define writeAddress(tree, address, value)
+    match tree
+        case Leaf
+            Branch((address, value), Leaf, Leaf)
+        case Branch(branchDatum @ (branchAddress, _), left, right)
+            if address < branchAddress
+                Branch(branchDatum, writeAddress(left, address, value), right)
+            if address > branchAddress
+                Branch(branchDatum, left, writeAddress(right, address, value))
+            Branch((address, value), left, right)
 
 
-define Store(nextAddress, data).allocate(object)
-    (nextAddress, Store(up(nextAddress), (nextAddress, object) :: data))
+newStore := Store(0, Leaf)
+Store(_, data).getDump := flattenBinaryTree(data)
+Store(_, data).getAddresses := flattenBinaryTree(data).map(first)
+Store(size, data).register(value) :=
+    (size, Store(size', allocate(data, size, value))) where size' := up(size)
+Store(size, data).access(address) :=
+    if address >= size then void else readAddress(data, address)
+Store(size, data).assign(address, value) :=
+    Store(size, writeAddress(data, address, value))
+
+define showStore(Store(_, data))
+    define showTree(data)
+        match data
+            Leaf -> ""
+            Branch((n, m), left, right) ->
+                showNatural(n) ++ "=" ++ showNatural(m) ++
+                "(" ++ showTree(left) ++ "," ++ showTree(right) ++ ")"
+    showTree(data)
 
 
-define Store(nextAddress, data).assign(address, value)
-    Store(nextAddress, data.map(datum @ (address', _) ->
-        if address' = address then (address, value) else datum))
-
-
-define Store(nextAddress, data).deallocate(address')
-    Store(nextAddress, data |: (=/= address') <> first)
+#define main(input)
+#    store := (1..15).cascade(s -> v -> second(register(s, v)), newStore)
+#    showStore(store)
 
 #*

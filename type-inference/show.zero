@@ -26,7 +26,7 @@ define addRenaming((renaming, variables), type)
 
 define makeRenaming(type)
     renaming := newRenaming([])
-    variables := newStore([])
+    variables := newStore
     first(addRenaming((renaming, variables), type))
 
 define showTypeWithRenaming(type, renaming)

@@ -109,16 +109,11 @@ define sameRoot(a, b)
 
 
 define newTypeVariable(variables, source)
-    (address, variables') := variables.allocate(FreeType)
+    (address, variables') := variables.register(FreeType)
     (TypeVariable(source, address), variables')
 
 newTypeVariables(originals, variables) :=
     originals.map(getSource).cascadeMap(`newTypeVariable, variables)
-
-define isFree(type, variables)
-    match variables.seek(getAddress(type))
-        void -> true
-        just(type') -> isFreeType(type')
 
 define mapInternalTypes(type, f)
     match type

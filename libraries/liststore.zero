@@ -1,0 +1,22 @@
+#* liststore.zero
+
+StoreType(a) ::= {Store(_size : ℕ, _data : List(ℕ && a))}
+
+define readAddress(address, data)
+    match data
+        [] -> void
+        (address', value) :: data' -> if address = address' then
+            just(value) else readAddress(address, data')
+
+newStore := Store(0, [])
+Store(_, data).getAddresses := data.map(first)
+Store(_, data).getDump := data
+Store(size, data).register(value) :=
+    (size, Store(size', (size, value) :: data)) where size' := up size
+Store(size, data).access(address) :=
+    if address >= size then void else readAddress(address, data)
+Store(size, data).assign(address, value) :=
+    Store(size, data.map(datum @ (address', _) ->
+        if address' = address then (address, value) else datum))
+
+#*
