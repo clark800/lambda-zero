@@ -1,14 +1,14 @@
 #* prelude.zero
 
-id(x) ≔ x                        # identity function
-constant(x) ≔ _ ↦ x              # constant function
-f of x ≔ f(x)                    # function application
-match x to f ≔ f(x)              # pattern matching
-f ∘ g ≔ x ↦ f(g(x))              # function composition
-`f(x, y) ≔ f(y, x)               # flip order of first two arguments of function
-``f(x, y, z) ≔ f(y, z, x)        # rotate order of first three arguments
-on(f, g) ≔ x ↦ y ↦ f(g(x), g(y)) # apply binary f with unary g applied first
-fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)  # fixpoint combinator (Y combinator)
+id(x) ≔ x
+constant(x) ≔ _ ↦ x
+f of x ≔ f(x)
+match x to f ≔ f(x)
+f ∘ g ≔ x ↦ f(g(x))
+`f(x, y) ≔ f(y, x)
+``f(x, y, z) ≔ f(y, z, x)
+on(f, g) ≔ x ↦ y ↦ f(g(x), g(y))
+fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 
 # bottom
 ⊥ ⩴ {}
@@ -94,19 +94,20 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ `(∷)
-isNil ≔ [] ↦ true; _ ∷ _ ↦ false    # note: isEmpty is for sets
+isNil ≔ [] ↦ true; _ ∷ _ ↦ false
 fold(xs, f, z) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z))
 cascade(xs, f, z) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x))
-xs ⧺ ys ≔ xs.fold((∷), ys)                   # concatenate two lists
-join(xss) ≔ xss.fold((⧺), [])            # concatenate list of lists
-length(xs) ≔ xs.fold(constant(↑), 0)         # get length of list
+xs ⧺ ys ≔ xs.fold((∷), ys)
+join(xss) ≔ xss.fold((⧺), [])
+length(xs) ≔ xs.fold(constant(↑), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(xs, n) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ if isNil(xs) then xs else tail(xs).drop(n′)
-take(xs, n) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦
-    if isNil(xs) then xs else head(xs) ∷ tail(xs).take(n′)
-xs[n] ≔ head(xs.drop(n))          # get element of list at index
-xs[start, end] ≔ xs.drop(start).take(end - start)
-last(xs) ≔ tail.until(isNil ∘ tail, xs).head    # get last element of list
+drop(xs, n) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ xs′.drop(n′))
+take(xs, n) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
+xs[n] ≔ head(xs.drop(n))
+at(xs, n) ≔ xs[n]
+xs[n, n′] ≔ if n ≥ n′ then [] else xs.drop(n).take(n′ - n)
+slice(xs, n, n′) := xs[n, n′]
+last(xs) ≔ tail.until(isNil ∘ tail, xs).head
 dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
     head(xs) ∷ dropLast(tail(xs))
 reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
@@ -121,21 +122,12 @@ dropWhile(xs, p) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if p(x) then dropWhile(xs′, p) else xs
 xs ¦ p ≔ fold(xs, x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
 filter ≔ (¦)
-map(xs, f) ≔ fold(xs, (∷) ∘ f, [])          # map function over list
+map(xs, f) ≔ fold(xs, (∷) ∘ f, [])
 (<:>) ≔ `map
-
-define filterMap(xs, f)
-    match xs
-        [] ↦ []
-        case x ∷ xs′
-            ys ≔ filterMap(xs′, f)
-            match f(x)
-                Left(_) ↦ ys
-                Right(y) ↦ y ∷ ys
-
+filterMap(xs, f) := xs |> [] ↦ []; x ∷ xs′ ->
+    (f(x) |> void ↦ xs''; just(x') ↦ x' ∷ xs'' where xs'' ≔ filterMap(xs′, f))
 zipWith(xs, f, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(xs′, f, ys′))
-
 zip(xs, ys) ≔ zipWith(xs, pair, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
 pairs(xs) ≔ zip(xs, tail(xs))
@@ -143,15 +135,14 @@ interleave(xs, y) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs�
     interleave′ ≔ [] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
 joinWith(xss, ys) ≔ join(interleave(xss, ys))
 bisect(xs, p) ≔ (xs ¦ p, xs ¦ (not) ∘ p)
-any(xs, p) ≔ xs.map(p).fold((or), false)     # test if any element satisfies p
-all(xs, p) ≔ xs.map(p).fold((and), true)      # test if all elements satisfy p
+any(xs, p) ≔ xs.map(p).fold((or), false)
+all(xs, p) ≔ xs.map(p).fold((and), true)
 count(xs, p) ≔ length(xs ¦ p)
 
-# generic list constructors
-iterate(f, x) ≔ x ∷ iterate(f, f(x))       # iteratively apply f
-repeat(x) ≔ x ∷ repeat(x)                  # infinitely repeat one element
-replicate(x, n) ≔ ((x ∷) ° n)([])         # replicate one element n times
-cycle(xs) ≔ xs ⧺ cycle(xs)                 # infinitely cycle list
+iterate(f, x) ≔ x ∷ iterate(f, f(x))
+repeat(x) ≔ x ∷ repeat(x)
+replicate(x, n) ≔ ((x ∷) ° n)([])
+cycle(xs) ≔ xs ⧺ cycle(xs)
 n ‥ m ≔ if n > m then [] else n ∷ (↑ n ‥ m)
 (…) ≔ iterate(↑)
 find(xs, p) ≔ safeHead(xs ¦ p)
@@ -159,7 +150,7 @@ contains(xs, p) ≔ not isVoid(xs.find(p))
 findIndices(xs, p) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
 findIndex(xs, p) ≔ safeHead(findIndices(xs, p))
 
-# cascadeMap : a[] => (a => s => b ** s) => s => (b[], s)
+# cascadeMap : List(a) => (a => s => (b && s)) => s => (List(b) && s)
 cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
 
@@ -181,12 +172,12 @@ fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 primes ≔ p(2 …) where p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 # string
-define xs ≛ ys              # string equality
+define xs ≛ ys
     match xs
         [] ↦ isNil(ys)
         x ∷ xs′ ↦ (ys ⦊ [] ↦ false; y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
 
-define ns ⩿ ms      # string comparison
+define ns ⩿ ms
     match ns
         [] ↦ true
         n ∷ ns′ ↦ (ms ⦊ [] ↦ false; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
@@ -267,10 +258,12 @@ parseNatural(string, base) ≔
     string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(d, base), 0)
 parseInteger(string, base) ≔ if string.head = '-' then
     - parseNatural(tail(string), base) else + parseNatural(string, base)
+repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
-# trees
+# tree
 Tree(a) ⩴ {Node(_datum ∈ a, _children ∈ List(Tree(a)))}
 
+# binary tree
 BinaryTree(a) ::= {
     Leaf,
     Branch(_datum : a, _left : BinaryTree(a), _right : BinaryTree(a))
@@ -281,9 +274,7 @@ define flattenBinaryTree
     Branch(value, left, right) ->
         flattenBinaryTree(left) ++ [value] ++ flattenBinaryTree(right)
 
-# repl
-repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
-
+# undefined
 undefined ≔ abort "undefined"
 
 #*
