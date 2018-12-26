@@ -162,6 +162,8 @@ void addSyntax(Tag tag, String prior, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
     bool special = prior.length != 0;
+    if (special && associativity == N)
+        tokenErrorIf(true, "expected numeric precedence", tag);
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
     appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, leftPrecedence,
         rightPrecedence, fixity, associativity, special, shifter, reducer});

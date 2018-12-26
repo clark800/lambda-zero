@@ -7,33 +7,42 @@
 #include "define.h"
 #include "brackets.h"
 
-static void checkPrior(Node* operator, Node* node) {
+static Node* validatePrior(Node* operator, Node* node) {
     String prior = getPrior(operator);
     if (prior.length > 0)
         if (!isJuxtaposition(node) || !isSameString(getLexeme(node), prior))
             syntaxError("operator syntax error", operator);
+    return operator;
 }
 
 static Node* reduceApply(Node* operator, Node* left, Node* right) {
     return Juxtaposition(getTag(operator), left, right);
 }
 
+static Node* reduceAdfix(Node* operator, Node* argument) {
+    return reduceApply(operator, Name(getTag(operator)), argument);
+}
+
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
-    checkPrior(operator, getAssociativity(operator) == L ? left : right);
-    return reduceApply(operator, reduceApply(operator,
-        Name(getTag(operator)), left), right);
+    return reduceApply(operator, reduceAdfix(operator, left), right);
+}
+
+static Node* reduceInfixL(Node* operator, Node* left, Node* right) {
+    return reduceInfix(validatePrior(operator, left), left, right);
+}
+
+static Node* reduceInfixR(Node* operator, Node* left, Node* right) {
+    return reduceInfix(validatePrior(operator, right), left, right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
-    checkPrior(operator, right);
-    return reduceApply(operator, Name(getTag(operator)), right);
+    return reduceAdfix(validatePrior(operator, right), right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
-    checkPrior(operator, left);
-    return reduceApply(operator, Name(getTag(operator)), left);
+    return reduceAdfix(validatePrior(operator, left), left);
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
@@ -53,8 +62,7 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceInterfix(Node* operator, Node* left, Node* right) {
-    checkPrior(operator, getAssociativity(operator) == L ? left : right);
-    return reduceNewline(operator, left, right);
+    return reduceNewline(validatePrior(operator, left), left, right);
 }
 
 static Node* reduceWhere(Node* operator, Node* left, Node* right) {
@@ -132,7 +140,7 @@ static Node* reduceAbort(Node* operator, Node* left, Node* right) {
 
 static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
     (void)left, (void)right;
-    syntaxError("operator syntax undeclared", operator);
+    syntaxError("missing operator", operator);
     return NULL;
 }
 
@@ -168,7 +176,7 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     if (isThisName(name, "()")) {
         tag = renameTag(tag, " ");
         if (isThisName(fixity, "infixL"))
-            addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceInfix);
+            addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceInfixL);
         else if (isThisName(fixity, "interfix"))
             addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceInterfix);
         else syntaxError("syntax must be infixL or interfix", fixity);
@@ -176,9 +184,9 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     else if (isThisName(fixity, "infix"))
         addSyntax(tag, prior, p, p, INFIX, N, shiftInfix, reduceInfix);
     else if (isThisName(fixity, "infixL"))
-        addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceInfix);
+        addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceInfixL);
     else if (isThisName(fixity, "infixR"))
-        addSyntax(tag, prior, p, p, INFIX, R, shiftInfix, reduceInfix);
+        addSyntax(tag, prior, p, p, INFIX, R, shiftInfix, reduceInfixR);
     else if (isThisName(fixity, "interfix"))
         addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceInterfix);
     else if (isThisName(fixity, "prefix"))
