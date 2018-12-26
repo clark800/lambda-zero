@@ -54,7 +54,7 @@ define reduceNewline(operator, left, right)
     reduceApply(operator, left, right)
 
 
-define reduceAffix(operator, left, right)
+define reduceInterfix(operator, left, right)
     if not isValidInfixPrior(operator, left, right)
         syntaxError("operator syntax error", operator)
     reduceNewline(operator, left, right)
@@ -149,17 +149,18 @@ define newSyntaxOperator(tag, precedence, fixity, prior)
         tag' := renameTag(tag, " ")
         if getLexeme(fixity) =*= "infixL"
             newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceInfix)
-        if getLexeme(fixity) =*= "affix"
-            newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceAffix)
-        syntaxError("syntax must be infixL or affix", fixity)
+        if getLexeme(fixity) =*= "interfix"
+            newOperator'(tag', prior, p, INFIX, LEFT,
+                shiftSpace, reduceInterfix)
+        syntaxError("syntax must be infixL or interfix", fixity)
     if getLexeme(fixity) =*= "infix"
         newOperator'(tag, prior, p, INFIX, NEITHER, shiftInfix, reduceInfix)
     if getLexeme(fixity) =*= "infixL"
         newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceInfix)
     if getLexeme(fixity) =*= "infixR"
         newOperator'(tag, prior, p, INFIX, RIGHT, shiftInfix, reduceInfix)
-    if getLexeme(fixity) =*= "affix"
-        newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceAffix)
+    if getLexeme(fixity) =*= "interfix"
+        newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceInterfix)
     if getLexeme(fixity) =*= "prefix"
         newOperator'(tag, prior, p, PREFIX, LEFT, shiftPrefix, reducePrefix)
     if getLexeme(fixity) =*= "postfix"

@@ -9,7 +9,7 @@ syntax(+) := infixL(20) \n 1 + 2
 0
 ===============================================================================
 syntax( ) := infixR(20) \n 0
-Syntax error: syntax must be infixL or affix 'infixR' at line 1 column 14
+Syntax error: syntax must be infixL or interfix 'infixR' at line 1 column 14
 ===============================================================================
 syntax( ) := infixL(20) \n syntax( ) := infixL(20) \n 0
 Syntax error: syntax already defined ' ' at line 2 column 8

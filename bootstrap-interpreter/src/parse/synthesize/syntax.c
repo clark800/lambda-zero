@@ -52,7 +52,7 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, left, right);
 }
 
-static Node* reduceAffix(Node* operator, Node* left, Node* right) {
+static Node* reduceInterfix(Node* operator, Node* left, Node* right) {
     checkPrior(operator, getAssociativity(operator) == L ? left : right);
     return reduceNewline(operator, left, right);
 }
@@ -169,9 +169,9 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         tag = renameTag(tag, " ");
         if (isThisName(fixity, "infixL"))
             addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceInfix);
-        else if (isThisName(fixity, "affix"))
-            addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceAffix);
-        else syntaxError("syntax must be infixL or affix", fixity);
+        else if (isThisName(fixity, "interfix"))
+            addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceInterfix);
+        else syntaxError("syntax must be infixL or interfix", fixity);
     }
     else if (isThisName(fixity, "infix"))
         addSyntax(tag, prior, p, p, INFIX, N, shiftInfix, reduceInfix);
@@ -179,8 +179,8 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceInfix);
     else if (isThisName(fixity, "infixR"))
         addSyntax(tag, prior, p, p, INFIX, R, shiftInfix, reduceInfix);
-    else if (isThisName(fixity, "affix"))
-        addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceAffix);
+    else if (isThisName(fixity, "interfix"))
+        addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceInterfix);
     else if (isThisName(fixity, "prefix"))
         addSyntax(tag, prior, p, p, PREFIX, L, shiftPrefix, reducePrefix);
     else if (isThisName(fixity, "postfix"))
