@@ -264,15 +264,26 @@ repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ promp
 Tree(a) ⩴ {Node(_datum ∈ a, _children ∈ List(Tree(a)))}
 
 # binary tree
-BinaryTree(a) ::= {
+BinaryTree(a) ⩴ {
     Leaf,
-    Branch(_datum : a, _left : BinaryTree(a), _right : BinaryTree(a))
+    Branch(_datum ∈ a, _left ∈ BinaryTree(a), _right ∈ BinaryTree(a))
 }
 
-define flattenBinaryTree
-    Leaf -> []
-    Branch(value, left, right) ->
-        flattenBinaryTree(left) ++ [value] ++ flattenBinaryTree(right)
+define search((≾), datum, tree)
+    match tree
+        case Leaf; void
+        case Branch(datum′, left, right)
+            if datum ≾ datum′
+                if datum′ ≾ datum
+                    just(datum′)
+                search((≾), datum, left)
+            search((≾), datum, right)
+
+define flatten(tree)
+    match tree
+        Leaf ↦ []
+        Branch(value, left, right) ↦ flatten(left) ⧺ [value] ⧺ flatten(right)
+
 
 # undefined
 undefined ≔ abort "undefined"

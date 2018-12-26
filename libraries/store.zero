@@ -43,8 +43,8 @@ define writeAddress(tree, address, value)
 
 
 newStore := Store(0, Leaf)
-Store(_, data).getDump := flattenBinaryTree(data)
-Store(_, data).getAddresses := flattenBinaryTree(data).map(first)
+Store(_, data).getDump := flatten(data)
+Store(_, data).getAddresses := flatten(data).map(first)
 Store(size, data).register(value) :=
     (size, Store(size', allocate(data, size, value))) where size' := up(size)
 store.push(value) := second(store.register(value))
