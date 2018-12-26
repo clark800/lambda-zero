@@ -9,7 +9,7 @@ syntax(+) := infixL(20) \n 1 + 2
 0
 ===============================================================================
 syntax( ) := infixR(20) \n 0
-Syntax error: syntax must be infixL 'infixR' at line 1 column 14
+Syntax error: syntax must be infixL or affix 'infixR' at line 1 column 14
 ===============================================================================
 syntax( ) := infixL(20) \n syntax( ) := infixL(20) \n 0
 Syntax error: syntax already defined ' ' at line 2 column 8
@@ -19,4 +19,7 @@ syntax( ) := infixL(20) \n syntax(*) := infixL(20) \n a b := a * b \n 2 3
 ===============================================================================
 syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n 5 ++ 5
 10
+===============================================================================
+syntax(if) := prefix(10)\nsyntax(then) := infixL(if _)\n1 then 0
+Syntax error: operator syntax error 'then' at line 3 column 3
 ===============================================================================

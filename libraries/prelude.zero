@@ -3,7 +3,7 @@
 id(x) ≔ x                        # identity function
 constant(x) ≔ _ ↦ x              # constant function
 f of x ≔ f(x)                    # function application
-match x; f ≔ f(x)                # pattern matching
+match x to f ≔ f(x)              # pattern matching
 f ∘ g ≔ x ↦ f(g(x))              # function composition
 `f(x, y) ≔ f(y, x)               # flip order of first two arguments of function
 ``f(x, y, z) ≔ f(y, z, x)        # rotate order of first three arguments
@@ -32,9 +32,7 @@ Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth
 
 # boolean
 𝔹 ⩴ {false, true}
-(if b)(x, y) ≔ b ⦊ false ↦ y; true ↦ x
-(then) ≔ (of)
-(else) ≔ (of)
+if b then x else y ≔ b ⦊ false ↦ y; true ↦ x
 not b ≔ if b then false else true
 b and c ≔ if b then c else false
 b or c ≔ if b then true else c
@@ -52,8 +50,7 @@ mx ⁇ x ≔ mx ⦊ void ↦ x; just(x′) ↦ x′
 a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ Left(_) ↦ true; Right(_) ↦ false
 isRight ≔ Left(_) ↦ false; Right(_) ↦ true
-(try)(exy, f) ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
-(catch) ≔ (of)
+try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
 onLeft(exy, f) ≔ exy ⦊ Left(x) -> f(x); Right(y) -> Right(y)
 onRight(exy, f) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(exy, f) ≔ onLeft(exy, Left ∘ f)

@@ -7,31 +7,64 @@
 #include "define.h"
 #include "brackets.h"
 
+static void checkPrior(Node* operator, Node* node) {
+    String prior = getPrior(operator);
+    if (prior.length > 0)
+        if (!isJuxtaposition(node) || !isSameString(getLexeme(node), prior))
+            syntaxError("operator syntax error", operator);
+}
+
 static Node* reduceApply(Node* operator, Node* left, Node* right) {
     return Juxtaposition(getTag(operator), left, right);
 }
 
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
+    checkPrior(operator, getAssociativity(operator) == L ? left : right);
     return reduceApply(operator, reduceApply(operator,
         Name(getTag(operator)), left), right);
 }
 
 static Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
+    checkPrior(operator, right);
     return reduceApply(operator, Name(getTag(operator)), right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
+    checkPrior(operator, left);
     return reduceApply(operator, Name(getTag(operator)), left);
-}
-
-static Node* reducePipeline(Node* operator, Node* left, Node* right) {
-    return reduceApply(operator, right, left);
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     return newStrictArrow(getTag(operator), left, right);
+}
+
+static Node* reduceNewline(Node* operator, Node* left, Node* right) {
+    if (isDefinition(left))
+        return applyDefinition(left, right);
+    if (isKeyphrase(left, "define"))
+        return reduceDefine(getLeft(left), getRight(left), right);
+    if (isCase(left) && isCase(right))
+        return combineCases(getTag(operator), left, right);
+    if (isKeyphrase(left, "case"))
+        return reduceArrow(operator, getRight(left), right);
+    return reduceApply(operator, left, right);
+}
+
+static Node* reduceAffix(Node* operator, Node* left, Node* right) {
+    checkPrior(operator, getAssociativity(operator) == L ? left : right);
+    return reduceNewline(operator, left, right);
+}
+
+static Node* reduceWhere(Node* operator, Node* left, Node* right) {
+    if (!isDefinition(right))
+        syntaxError("expected definition to right of", operator);
+    return applyDefinition(right, left);
+}
+
+static Node* reducePipeline(Node* operator, Node* left, Node* right) {
+    return reduceApply(operator, right, left);
 }
 
 static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
@@ -103,6 +136,13 @@ static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
+static Precedence parsePrecedence(Node* node) {
+    Precedence precedence = isNumber(node) ?
+        (Precedence)getValue(node) : findPrecedence(node);
+    syntaxErrorIf(precedence > 99, "invalid precedence", node);
+    return precedence;
+}
+
 static void defineSyntax(Node* definition, Node* left, Node* right) {
     syntaxErrorIf(!isJuxtaposition(left), "invalid left operand", left);
     Node* name = getRight(left);
@@ -112,10 +152,6 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
 
     Tag tag = getTag(name);
     Node* fixity = getLeft(right);
-    if (isThisName(fixity, "mixfix")) {
-        addMixfixSyntax(tag, getRight(right), shiftInfix);
-        return;
-    }
     if (isThisName(fixity, "alias")) {
         addSyntaxCopy(getLexeme(name), getRight(right), true);
         return;
@@ -125,29 +161,30 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         return;
     }
 
-    if (!isNumber(getRight(right)))
-        syntaxError("invalid syntax definition", definition);
-    long long precedence = getValue(getRight(right));
-    if (precedence < 0 || precedence > 99)
-        syntaxError("invalid precedence", getRight(right));
-    Precedence p = (Precedence)precedence;
+    Node* argument = getRight(right);
+    Precedence p = parsePrecedence(argument);
+    String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
 
     if (isThisName(name, "()")) {
         tag = renameTag(tag, " ");
-        if (!isThisName(fixity, "infixL"))
-            syntaxError("syntax must be infixL", fixity);
-        addSyntax(tag, p, p, INFIX, L, shiftSpace, reduceInfix);
+        if (isThisName(fixity, "infixL"))
+            addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceInfix);
+        else if (isThisName(fixity, "affix"))
+            addSyntax(tag, prior, p, p, INFIX, L, shiftSpace, reduceAffix);
+        else syntaxError("syntax must be infixL or affix", fixity);
     }
     else if (isThisName(fixity, "infix"))
-        addSyntax(tag, p, p, INFIX, N, shiftInfix, reduceInfix);
+        addSyntax(tag, prior, p, p, INFIX, N, shiftInfix, reduceInfix);
     else if (isThisName(fixity, "infixL"))
-        addSyntax(tag, p, p, INFIX, L, shiftInfix, reduceInfix);
+        addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceInfix);
     else if (isThisName(fixity, "infixR"))
-        addSyntax(tag, p, p, INFIX, R, shiftInfix, reduceInfix);
+        addSyntax(tag, prior, p, p, INFIX, R, shiftInfix, reduceInfix);
+    else if (isThisName(fixity, "affix"))
+        addSyntax(tag, prior, p, p, INFIX, L, shiftInfix, reduceAffix);
     else if (isThisName(fixity, "prefix"))
-        addSyntax(tag, p, p, PREFIX, L, shiftPrefix, reducePrefix);
+        addSyntax(tag, prior, p, p, PREFIX, L, shiftPrefix, reducePrefix);
     else if (isThisName(fixity, "postfix"))
-        addSyntax(tag, p, p, POSTFIX, L, shiftPostfix, reducePostfix);
+        addSyntax(tag, prior, p, p, POSTFIX, L, shiftPostfix, reducePostfix);
     else syntaxError("invalid fixity", fixity);
 
     // add special case prefix operators for "+" and "-"
@@ -156,24 +193,6 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         addCoreSyntax("(+)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
     if (isThisName(name, "-"))
         addCoreSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
-}
-
-static Node* reduceNewline(Node* operator, Node* left, Node* right) {
-    if (isDefinition(left))
-        return applyDefinition(left, right);
-    if (isKeyphrase(left, "define"))
-        return reduceDefine(getLeft(left), getRight(left), right);
-    if (isCase(left) && isCase(right))
-        return combineCases(getTag(operator), left, right);
-    if (isKeyphrase(left, "case"))
-        return reduceArrow(operator, getRight(left), right);
-    return reduceApply(operator, left, right);
-}
-
-static Node* reduceWhere(Node* operator, Node* left, Node* right) {
-    if (!isDefinition(right))
-        syntaxError("expected definition to right of", operator);
-    return applyDefinition(right, left);
 }
 
 static void shiftNewline(Stack* stack, Node* operator) {
@@ -199,14 +218,14 @@ void initSymbols(void) {
     addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
     addCoreSyntax(";;", 4, 4, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax("define", 5, 5, PREFIX, L, shiftPrefix, reducePrefix);
     addCoreSyntax(":=", 5, 5, INFIX, R, shiftInfix, reduceDefine);
     addCoreSyntax("::=", 5, 5, INFIX, R, shiftInfix, reduceADTDefinition);
     addCoreSyntax("where", 5, 5, INFIX, R, shiftInfix, reduceWhere);
     addCoreSyntax("|>", 6, 6, INFIX, L, shiftInfix, reducePipeline);
     addCoreSyntax("<|", 6, 6, INFIX, R, shiftInfix, reduceApply);
-    addCoreSyntax(";", 7, 7, INFIX, R, shiftInfix, reduceNewline);
-    addCoreSyntax("->", 8, 8, INFIX, R, shiftInfix, reduceArrow);
-    addCoreSyntax("define", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax(";", 8, 8, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax("->", 9, 9, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 15, 15, PREFIX, L, shiftPrefix, reduceAbort);

@@ -24,9 +24,9 @@ static Rules* getRules(Node* node) {
     return (Rules*)getData(node);
 }
 
-Fixity getFixity(Node* operator) {
-    return getRules(operator)->fixity;
-}
+Fixity getFixity(Node* op) {return getRules(op)->fixity;}
+Associativity getAssociativity(Node* op) {return getRules(op)->associativity;}
+String getPrior(Node* op) {return getRules(op)->prior;}
 
 void erase(Stack* stack, const char* lexeme) {
     if (!isEmpty(stack) && isThisOperator(peek(stack, 0), lexeme))
@@ -107,6 +107,14 @@ static Rules* findRules(String lexeme) {
     return NULL;
 }
 
+Precedence findPrecedence(Node* node) {
+    Rules* rules = findRules(getLexeme(node));
+    syntaxErrorIf(rules == NULL, "syntax not defined", node);
+    if (rules->leftPrecedence != rules->rightPrecedence)
+        syntaxError("operator not supported", node);
+    return rules->leftPrecedence;
+}
+
 Node* parseSymbol(Tag tag, long long value) {
     Rules* rules = findRules(tag.lexeme);
     if (rules == NULL && isThisString(tag.lexeme, " "))
@@ -150,12 +158,13 @@ static void appendSyntax(Rules rules) {
     append(RULES, newRules);
 }
 
-void addSyntax(Tag tag, Precedence leftPrecedence, Precedence rightPrecedence,
-        Fixity fixity, Associativity associativity,
+void addSyntax(Tag tag, String prior, Precedence leftPrecedence,
+        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
         void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
+    bool special = prior.length != 0;
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
-    appendSyntax((Rules){tag.lexeme, tag.lexeme, {"", 0}, leftPrecedence,
-        rightPrecedence, fixity, associativity, false, shifter, reducer});
+    appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, leftPrecedence,
+        rightPrecedence, fixity, associativity, special, shifter, reducer});
 }
 
 void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
@@ -167,23 +176,6 @@ void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
     appendSyntax((Rules){lexeme, lexeme, {"", 0}, leftPrecedence,
         rightPrecedence, fixity, associativity, special, shifter, reducer});
-}
-
-static Node* reduceMixfix(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(operator);
-    String prior = getRules(operator)->prior;
-    if (!isJuxtaposition(left) || !isSameString(getLexeme(left), prior))
-        syntaxError("mixfix syntax error", operator);
-    return Juxtaposition(tag, Juxtaposition(tag, Name(tag), left), right);
-}
-
-void addMixfixSyntax(Tag tag, Node* prior, void (*shifter)(Stack*, Node*)) {
-    tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
-    Rules* rules = findRules(getLexeme(prior));
-    syntaxErrorIf(rules == NULL, "syntax not defined", prior);
-    Precedence p = rules->rightPrecedence;
-    appendSyntax((Rules){tag.lexeme, tag.lexeme, getLexeme(prior),
-        p, p, INFIX, L, false, shifter, reduceMixfix});
 }
 
 void addCoreAlias(const char* alias, const char* name) {
