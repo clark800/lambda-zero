@@ -23,3 +23,9 @@ syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n 5 ++ 5
 syntax(if) := prefix(10)\nsyntax(then) := infixL(if _)\n1 then 0
 Syntax error: operator syntax error 'then' at line 3 column 3
 ===============================================================================
+syntax(=) := infix(20)\nsyntax(==) := infix(_ = _)\n0
+Syntax error: expected numeric precedence '==' at line 2 column 8
+===============================================================================
+1 2
+Syntax error: missing operator ' ' at line 1 column 2
+===============================================================================

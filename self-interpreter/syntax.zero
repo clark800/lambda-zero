@@ -9,21 +9,21 @@ define isValidPrior(operator, node)
     isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
 
 
-define isValidInfixPrior(operator, left, right)
-    syntax := getSyntax(operator)
-    prior := getPrior(syntax)
-    if isNil(prior)
-        true
-    associativity := getAssociativity(syntax)
-    node := if associativity = LEFT then left else right
-    isJuxtaposition(node) and getLexeme(node) =*= prior
-
-
 define reduceInfix(operator, left, right)
-    if not isValidInfixPrior(operator, left, right)
-        syntaxError("operator syntax error", operator)
     reduceApply(operator, reduceApply(operator,
         OperatorName(getTag(operator), INFIX), left), right)
+
+
+define reduceInfixL(operator, left, right)
+    if not isValidPrior(operator, left)
+        syntaxError("operator syntax error", operator)
+    reduceInfix(operator, left, right)
+
+
+define reduceInfixR(operator, left, right)
+    if not isValidPrior(operator, right)
+        syntaxError("operator syntax error", operator)
+    reduceInfix(operator, left, right)
 
 
 define reducePrefix(operator, _left, right)
@@ -55,7 +55,7 @@ define reduceNewline(operator, left, right)
 
 
 define reduceInterfix(operator, left, right)
-    if not isValidInfixPrior(operator, left, right)
+    if not isValidPrior(operator, left)
         syntaxError("operator syntax error", operator)
     reduceNewline(operator, left, right)
 
@@ -133,12 +133,14 @@ define reduceReserved(operator, _left, _right)
 
 
 define reduceInvalid(operator, _left, _right)
-    syntaxError("operator syntax undeclared", operator)
+    syntaxError("missing operator", operator)
 
 
 define newOperator'(tag, prior, precedence, fixity, associativity,
         shifter, reducer)
     special := not isNil(prior)
+    if special and associativity = NEITHER
+        parseError("expected numeric precedence", tag)
     Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, fixity,
         associativity, special, shifter, reducer, prior))
 
@@ -148,7 +150,7 @@ define newSyntaxOperator(tag, precedence, fixity, prior)
     if getTagLexeme(tag) =*= "()"
         tag' := renameTag(tag, " ")
         if getLexeme(fixity) =*= "infixL"
-            newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceInfix)
+            newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceInfixL)
         if getLexeme(fixity) =*= "interfix"
             newOperator'(tag', prior, p, INFIX, LEFT,
                 shiftSpace, reduceInterfix)
@@ -156,9 +158,9 @@ define newSyntaxOperator(tag, precedence, fixity, prior)
     if getLexeme(fixity) =*= "infix"
         newOperator'(tag, prior, p, INFIX, NEITHER, shiftInfix, reduceInfix)
     if getLexeme(fixity) =*= "infixL"
-        newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceInfix)
+        newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceInfixL)
     if getLexeme(fixity) =*= "infixR"
-        newOperator'(tag, prior, p, INFIX, RIGHT, shiftInfix, reduceInfix)
+        newOperator'(tag, prior, p, INFIX, RIGHT, shiftInfix, reduceInfixR)
     if getLexeme(fixity) =*= "interfix"
         newOperator'(tag, prior, p, INFIX, LEFT, shiftInfix, reduceInterfix)
     if getLexeme(fixity) =*= "prefix"
