@@ -21,7 +21,7 @@ define addRenaming((renaming, variables), type)
         if renaming.hasKey(type)
             (renaming, variables)
         (type', variables') := variables.newTypeVariable(getSource(type))
-        (renaming.insert(type, type'), variables')
+        (renaming.set(type, type'), variables')
     getComponentTypes(type).cascade(addRenaming, (renaming, variables))
 
 define makeRenaming(type)

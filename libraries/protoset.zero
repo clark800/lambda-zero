@@ -3,47 +3,28 @@
 KVP(k, v) ::= {KeyValuePair(getKey : k, getValue : v)}
 
 ProtosetType(k, v) ::= {
-    Protoset(_hash : _, _compare : _, _data : List(KVP(k, v)))
+    Protoset(_hash : _, _compare : _,
+        _data : BinaryTree(AADatumType(KVP(k, v))))
 }
 
 makeKVP(hash, object) := KeyValuePair(hash(object), object)
-newProtoset(hash, (~<), elements) :=
-    Protoset(hash, (~<), elements.map(makeKVP(hash)))
-Protoset(_, _, data).getElements := data.map(getValue)
-Protoset(_, _, data).cardinality := length(data)
 
+newProtoset(hash, (~<), elements) := Protoset(hash, (~<), data) where
+    data := extendAA((~<).on(getKey), elements.map(makeKVP(hash)), Leaf)
 
-define search(key, (~<), data)
-    if data.isNil
-        void
-    _ @ KeyValuePair(key', object) := head(data)
-    if key ~< key' and key' ~< key
-        just(object)
-    search(key, (~<), tail(data))
+Protoset(_, _, data).getElements := flattenAA(data).map(getValue)
 
+Protoset(_, _, data).cardinality := length(flattenAA(data))
 
-Protoset(hash, (~<), data).elicit(object) := search(hash(object), (~<), data)
+Protoset(hash, (~<), data).elicit(object) :=
+    searchAA((~<).on(getKey), makeKVP(hash, object), data).mapJust(getValue)
 
 object in protoset := not isVoid(protoset.elicit(object))
 
-Protoset(hash, (~<), data).mapElements(f) :=
-    Protoset(hash, (~<), data.map(makeKVP(hash) <> f <> getValue))
+Protoset(hash, (~<), data).add(object) :=
+    Protoset(hash, (~<), insertAA((~<).on(getKey), makeKVP(hash, object), data))
 
-Protoset(hash, (~<), data).filterElements(p) :=
-    Protoset(hash, (~<), data |: p <> getValue)
-
-(protoset @ Protoset(hash, (~<), data)).add(object) :=
-    if object in protoset then protoset else
-        Protoset(hash, (~<), makeKVP(hash, object) :: data)
-
-Protoset(hash, (~<), data).remove(object) :=
-    Protoset(hash, (~<), data |: (not) <> (~ hash(object)) <> getKey) where
-        a ~ b := a ~< b /\ b ~< a
-
-protoset U Protoset(hash, order, data) :=
-    if data.isNil then protoset else
-        protoset.add(getValue(head(data))) U Protoset(hash, order, tail(data))
-
-protoset \ protoset' := protoset.filterElements((not) <> (in protoset'))
+Protoset(hash, (~<), data) U Protoset(_, _, data') :=
+    Protoset(hash, (~<), mergeAA((~<).on(getKey), data, data'))
 
 #*

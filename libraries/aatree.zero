@@ -1,0 +1,64 @@
+#* aatree.zero
+
+AADatumType(a) ::= {AADatum(_level : ℕ, getValueAA : a)}
+
+
+define getLevelAA(tree)
+    match tree
+        Leaf -> 0
+        Branch(AADatum(n, _), _, _) -> n
+
+
+define skewAA(tree)
+    match tree
+        case Leaf; Leaf
+        case Branch(datum @ AADatum(n, _), left, right)
+            match left
+                case Leaf; tree
+                case Branch(datum' @ AADatum(n', _), left', right')
+                    if n =/= n'
+                        tree
+                    Branch(datum', left', Branch(datum, right', right))
+
+
+define splitAA(tree)
+    match tree
+        case Leaf; Leaf
+        case Branch(datum @ AADatum(n, _), left, right)
+            match right
+                case Leaf; tree
+                case Branch(AADatum(n', value'), left', right')
+                    if getLevelAA(right') =/= n
+                        tree
+                    datum' := AADatum(up n', value')
+                    Branch(datum', Branch(datum, left, left'), right')
+
+
+define insertAA((~<), value, tree)
+    ss := splitAA <> skewAA
+    match tree
+        case Leaf; Branch(AADatum(1, value), Leaf, Leaf)
+        case Branch(datum @ AADatum(n, value'), left, right)
+            if value ~< value'
+                if value' ~< value
+                    Branch(AADatum(n, value), left, right)
+                ss(Branch(datum, insertAA((~<), value, left), right))
+            ss(Branch(datum, left, insertAA((~<), value, right)))
+
+
+define searchAA((~<), value, tree)
+    search((~<).on(getValueAA), AADatum(0, value), tree).mapJust(getValueAA)
+
+
+define flattenAA(tree)
+    flatten(tree).map(getValueAA)
+
+
+define extendAA((~<), values, tree)
+    values.fold(insertAA(~<), tree)
+
+
+define mergeAA((~<), tree', tree)
+    extendAA((~<), flattenAA(tree'), tree)
+
+#*

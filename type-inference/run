@@ -8,6 +8,7 @@ declare -a files=(
     "$LIB/operators.zero"
     "$LIB/prelude.zero"
     "$LIB/store.zero"
+    "$LIB/aatree.zero"
     "$LIB/protoset.zero"
     "$LIB/table.zero"
     "$PARSER/lex.zero"

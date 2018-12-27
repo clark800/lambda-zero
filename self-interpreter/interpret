@@ -6,6 +6,7 @@ LIB="$DIR/../libraries"
 declare -a files=(
     "$LIB/operators.zero"
     "$LIB/prelude.zero"
+    "$LIB/aatree.zero"
     "$LIB/protoset.zero"
     "$LIB/table.zero"
     "$DIR/lex.zero"
