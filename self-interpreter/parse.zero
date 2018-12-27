@@ -99,6 +99,6 @@ define parse(code)
     if length(stack) =/= 1
         abort "parser error"
     # abort(showAST(head(stack)))
-    bind(head(stack), [])
+    bindAST(head(stack))
 
 #*
