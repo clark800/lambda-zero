@@ -19,7 +19,7 @@ SyntaxType ::= {Syntax(
 
 StateType ::= {State(
     getStack : List(AST),
-    getOperators : List(List(ℕ) && SyntaxType)
+    getOperators : List(ProtosetType(List(ℕ), List(ℕ) && SyntaxType))
 )}
 
 define isSpecial(node)
@@ -93,21 +93,13 @@ define shouldReduceTop(operator, State(stack, _operators))
 define reduceLeft(state, operator)
     reduceTop.while(shouldReduceTop(operator), state)
 
-define lookupSyntax(operators, lexeme)
-    if isNil(operators)
-        void
-    (lexeme', syntax') := head(operators)
-    if lexeme =*= lexeme'
-        just(syntax')
-    lookupSyntax(tail(operators), lexeme)
-
 define parseOperator(tag, value, operatorSyntax)
     Operator(renameTag(tag, getAlias(operatorSyntax)), value, operatorSyntax)
 
 define parseSymbol(operators, tag, value)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
-        (if lexeme =*= " " then (operators.lookupSyntax("( )").
+    head(operators).lookup(lexeme).mapJust(parseOperator(tag, value)) ??
+        (if lexeme =*= " " then (head(operators).lookup("( )").
             mapJust(Operator(tag, value)) ?? Name(tag)) else Name(tag))
 
 #*

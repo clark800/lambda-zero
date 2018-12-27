@@ -173,7 +173,7 @@ define newSyntaxOperator(tag, precedence, fixity, prior)
 define newAlias(operators, tag, name)
     if not isName(name)
         syntaxError("expected operator name", name)
-    rules := lookupSyntax(operators, getLexeme(name)) ??
+    rules := head(operators).lookup(getLexeme(name)) ??
         syntaxError("syntax not defined", name)
     Operator(tag, 0, rules)
 
@@ -186,7 +186,7 @@ define copySyntax(operators, tag, name)
 
 
 define findPrecedence(operators, node)
-    syntax := lookupSyntax(operators, getLexeme(node)) ??
+    syntax := head(operators).lookup(getLexeme(node)) ??
         syntaxError("syntax not defined", node)
     if getLeftPrecedence(syntax) =/= getRightPrecedence(syntax)
         syntaxError("operator not supported", node)
@@ -222,18 +222,19 @@ define defineSyntax(operators, node, name, right)
 
 
 define addSyntax(operators, operator)
-    if operators.map(first).any(=*= getLexeme(operator))
+    if head(operators).hasKey(getLexeme(operator))
         syntaxError("syntax already defined", operator)
-    operators' := (getLexeme(operator), getSyntax(operator)) :: operators
+    dictionary' := head(operators).set(getLexeme(operator), getSyntax(operator))
+    operators' :=  dictionary' :: operators
     p := getLeftPrecedence(getSyntax(operator))
     if isThisOperator(operator, "+")
         s := Syntax("(+)", p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix,
             "")
-        ("(+)", s) :: operators'
+        head(operators').set("(+)", s) :: operators'
     if isThisOperator(operator, "-")
         s := Syntax("(-)", p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix,
             "")
-        ("(-)", s) :: operators'
+        head(operators').set("(-)", s) :: operators'
     operators'
 
 
@@ -266,7 +267,7 @@ define coreSyntax(lexeme, leftPrecedence, rightPrecedence, fixity,
         associativity, shifter, reducer)
 
 
-OPERATORS := [
+OPERATORS := [newDictionary([
     coreSyntax("\0", 0, 0, CLOSEFIX, RIGHT, shiftClose, reduceEOF),
     coreSyntax("(", 95, 0, OPENFIX, RIGHT, shiftOpen, reduceUnmatched),
     coreSyntax(")", 0, 95, CLOSEFIX, RIGHT, shiftClose, reduceParentheses),
@@ -297,6 +298,6 @@ OPERATORS := [
     coreSyntax(".", 97, 97, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid),
     coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
-]
+])]
 
 #*
