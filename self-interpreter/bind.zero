@@ -1,7 +1,7 @@
 #* bind.zero
 
-define findDebruijnIndex(stack, tag, depth)
-    stack.findIndices(=*= getTagLexeme(tag)).safeIndex(depth).mapJust(1 +)
+define findDebruijnIndex(level, stack, lexeme)
+    head(stack).lookup(lexeme).mapJust(level -)
 
 
 define bindOperation(tag)
@@ -9,10 +9,10 @@ define bindOperation(tag)
     just(Operation(tag, arity, optimize))
 
 
-define bindName(stack, tag, depth)
+define bindName(level, stack, tag)
     if isUnused(tag)
         parseError("cannot reference a symbol starting with underscore", tag)
-    stack.findDebruijnIndex(tag, depth).mapJust(Variable(tag)) ??
+    findDebruijnIndex(level, stack, getTagLexeme(tag)).mapJust(Variable(tag)) ??
         bindOperation(tag) ?? parseError("undefined symbol", tag)
 
 
@@ -80,20 +80,22 @@ define newAccessorScheme(term, dataType, returnType, count, index)
     Scheme(universals, type)
 
 
-define bind(node, stack)
+define bind(level, stack, node)
     match node
-        case Reference(tag, debruijn, depth, fixity)
+        case Reference(tag, debruijn, _depth, fixity)
             if debruijn = 0
-                stack.bindName(tag, depth)
+                bindName(level, stack, tag)
             Variable(tag, debruijn)
         case Arrow(tag, _, constructors, parameter, body)
-            indices := constructors.map(`bind(stack)).map(getDebruijnIndex)
+            constructors' := constructors.map(bind(level, stack))
+            indices := constructors'.map(getDebruijnIndex)
             metadata := Metadata(Free, Free, indices)
-            Abstraction(getTag(parameter), metadata,
-                bind(body, getLexeme(parameter) :: stack))
+            stack' := head(stack).set(getLexeme(parameter), level) :: stack
+            body' := bind(up level, stack', body)
+            Abstraction(getTag(parameter), metadata, body')
         case Couple(tag, _, left, right)
             Application(tag, isLetCouple(node),
-                bind(left, stack), bind(right, stack))
+                bind(level, stack, left), bind(level, stack, right))
         case Number(tag, value)
             Numeral(renameTag(tag, "_"), value)
         case Operator(_, _, _)
@@ -109,18 +111,23 @@ define bind(node, stack)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
         case Constructor(tag, parameterTypes, dataType, body, count, index)
-            term := bind(body, stack)
+            term := bind(level, stack, body)
             scheme := newConstructorScheme(term, parameterTypes,
                 dataType, count, index)
             metadata := Metadata(Free, scheme, [])
             Abstraction(getTermTag(term), metadata, getBody(term))
         case Accessor(tag, dataType, returnType, body, count, index)
-            term := bind(body, stack)
+            term := bind(level, stack, body)
             scheme := newAccessorScheme(term, dataType, returnType,
                 count, index)
             metadata := Metadata(Free, scheme, [])
             Abstraction(getTermTag(term), metadata, getBody(term))
         case Null(_)
             abort "internal error: Null reached bind"
+
+
+define bindAST(node)
+    stack := [newDictionary([])]
+    bind(0, stack, node)
 
 #*
