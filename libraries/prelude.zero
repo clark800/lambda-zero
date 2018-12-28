@@ -80,15 +80,15 @@ f ° n ≔ n ⦊ 0 ↦ id; ↑ n′ ↦ f ∘ f ° n′
 n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′
 
 # (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false); ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
-# (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true); ↑ _ ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
-# (<) ≔ 0 ↦ (0 ↦ false; ↑ _↦ true); ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
+# (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true); ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
+# (<) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true); ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
 # (>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false); ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
 # (≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true); ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
 # (≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false); ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
 # (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
-# (-) ≔ 0 ↦ (0 ↦ 0; ↑ m ↦ undefined); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
+# (-) ≔ 0 ↦ (0 ↦ 0; ↑ n ↦ up n); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
 # (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
-# n ⫽ m ≔ if m = 0 then undefined else (if n < m then 0 else ↑((n - m) ⫽ m))
+# n ⫽ m ≔ if m = 0 or n < m then 0 else ↑((n - m) ⫽ m)
 # n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 # list
