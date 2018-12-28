@@ -6,13 +6,19 @@ MetadataType ::= {Metadata(
     getConstructorDebruijnIndices : List(ℕ)
 )}
 
+ClosureT(term) ::= {
+    Closure(getTerm : term, getEnvironment : List(ClosureT(term)))
+}
+
 Term ::= {
     Variable(_ : TagType, getDebruijnIndex : ℕ),
     Abstraction(_ : TagType, getMetadata : MetadataType, getBody : Term),
     Application(_ : TagType, isLet : 𝔹,
         getApplicand : Term, getArgument : Term),
     Numeral(_ :  TagType, getNatural : ℕ),
-    Operation(_ : TagType, getArity : ℕ, getOperator : _)
+    Operation(_ : TagType, getArity : ℕ,
+        getOperator : ((ClosureT(Term) => ClosureT(Term)) =>
+            List(ClosureT(Term)) => ClosureT(Term)))
 }
 
 define getTermTag

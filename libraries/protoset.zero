@@ -3,7 +3,7 @@
 KVP(k, v) ::= {KeyValuePair(getKey : k, getValue : v)}
 
 ProtosetType(k, v) ::= {
-    Protoset(_hash : _, _compare : _,
+    Protoset(_hash : (v => k), _compare : (k => k => 𝔹),
         _data : BinaryTree(AADatumType(KVP(k, v))))
 }
 

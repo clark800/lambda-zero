@@ -1,5 +1,0 @@
-#* closure.zero
-
-ClosureT ::= {Closure(getTerm : Term, getEnvironment : List(ClosureT))}
-
-#*

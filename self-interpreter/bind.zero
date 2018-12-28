@@ -33,6 +33,10 @@ define parseParameterType(node, context)
     if context.hasKey(name)
         syntaxError("type variable not allowed in applicand position", node)
     parameterTypes := getArguments(node).map(`parseParameterType(context))
+    if name =*= "=>"
+        if length(parameterTypes) =/= 2
+            syntaxError("(=>) requires two arguments", node)
+        FunctionType(noTerm, parameterTypes[0], parameterTypes[1])
     ADT(noTerm, name, getADTFixity(root), parameterTypes, FreeType, 0, 0)
 
 
