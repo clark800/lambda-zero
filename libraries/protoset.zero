@@ -1,30 +1,22 @@
 #* protoset.zero
 
-KVP(k, v) ::= {KeyValuePair(getKey : k, getValue : v)}
-
-ProtosetType(k, v) ::= {
-    Protoset(_hash : (v => k), _compare : (k => k => 𝔹),
-        _data : BinaryTree(AADatumType(KVP(k, v))))
+ProtosetType(a) ::= {
+    Protoset(_compare : (a => a => 𝔹), _data : BinaryTree(AADatumType(a)))
 }
 
-makeKVP(hash, object) := KeyValuePair(hash(object), object)
+newProtoset((~<), elements) := Protoset((~<), extendAA((~<), elements, Leaf))
 
-newProtoset(hash, (~<), elements) := Protoset(hash, (~<), data) where
-    data := extendAA((~<).on(getKey), elements.map(makeKVP(hash)), Leaf)
+Protoset(_, data).getElements := flattenAA(data)
 
-Protoset(_, _, data).getElements := flattenAA(data).map(getValue)
+Protoset(_, data).cardinality := length(flattenAA(data))
 
-Protoset(_, _, data).cardinality := length(flattenAA(data))
-
-Protoset(hash, (~<), data).elicit(object) :=
-    searchAA((~<).on(getKey), makeKVP(hash, object), data).mapJust(getValue)
+Protoset((~<), data).elicit(object) := searchAA((~<), object, data)
 
 object in protoset := not isVoid(protoset.elicit(object))
 
-Protoset(hash, (~<), data).add(object) :=
-    Protoset(hash, (~<), insertAA((~<).on(getKey), makeKVP(hash, object), data))
+Protoset((~<), data).add(object) := Protoset((~<), insertAA((~<), object, data))
 
-Protoset(hash, (~<), data) U Protoset(_, _, data') :=
-    Protoset(hash, (~<), mergeAA((~<).on(getKey), data, data'))
+Protoset((~<), data) U Protoset(_, data') :=
+    Protoset((~<), mergeAA((~<), data, data'))
 
 #*

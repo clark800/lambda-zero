@@ -125,7 +125,7 @@ define mapInternalTypes(type, f)
         ADT(source, name, fixity, parameters, type, count, index) ->
             ADT(source, name, fixity, parameters.map(f), f(type), count, index)
 
-newRenaming(mappings) := newTable(id, (<=).on(getAddress), mappings)
+newRenaming(mappings) := newTable((<=).on(getAddress), mappings)
 
 define rename(type, renaming)
     if isTypeVariable(type)
