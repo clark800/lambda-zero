@@ -1,6 +1,6 @@
 #* table.zero
 
-newTable(hash, (=<), entries) := newProtoset(hash <> first, (=<), entries)
+newTable((=<), entries) := newProtoset((=<).on(first), entries)
 lookup(table, key) := table.elicit((key, undefined)).mapJust(second)
 hasKey(table, key) := (key, undefined) in table
 get(table, key) := table.lookup(key) ?? undefined
@@ -8,6 +8,6 @@ set(table, key, value) := table.add((key, value))
 getKeys(table) := getElements(table).map(first)
 getValues(table) := getElements(table).map(second)
 
-newDictionary := newTable(id, (<*=))
+newDictionary := newTable((<*=))
 
 #*

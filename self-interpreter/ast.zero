@@ -15,7 +15,7 @@ SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 StateType(ast, syntax) ::= {State(
     getStack : List(ast),
-    getOperators : List(ProtosetType(List(ℕ), List(ℕ) && syntax))
+    getOperators : List(ProtosetType(List(ℕ) && syntax))
 )}
 
 SyntaxType(ast) ::= {Syntax(
