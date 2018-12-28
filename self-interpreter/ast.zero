@@ -13,6 +13,24 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
 ArrowType ::= {Simple, Strict, Locked}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
+StateType(ast, syntax) ::= {State(
+    getStack : List(ast),
+    getOperators : List(ProtosetType(List(ℕ), List(ℕ) && syntax))
+)}
+
+SyntaxType(ast) ::= {Syntax(
+    getAlias : List(ℕ),
+    getLeftPrecedence : ℕ,
+    getRightPrecedence : ℕ,
+    getFixity : ℕ,
+    getAssociativity : ℕ,
+    getSpecial : 𝔹,
+    getShift : (StateType(ast, SyntaxType(ast)) =>
+        ast => StateType(ast, SyntaxType(ast))),
+    getReduce : (ast => ast => ast => ast),
+    getPrior : List(ℕ)
+)}
+
 AST ::= {
     Reference(_ : TagType, getReferenceIndex : ℕ,
         getReferenceDepth : ℕ, getReferenceFixity : ℕ),
@@ -21,7 +39,7 @@ AST ::= {
     Couple(_ : TagType, getCoupleType : CoupleType,
         getLeft : AST, getRight : AST),
     Number(_ : TagType, getNumericValue : ℕ),
-    Operator(_ : TagType, getRank : ℕ, getSyntax : _),
+    Operator(_ : TagType, getRank : ℕ, getSyntax : SyntaxType(AST)),
     Definition(_ : TagType, getDefinitionType : DefinitionType,
         getDefinee : AST, getDefinedValue : AST),
     AsPattern(_ : TagType, getLabel : AST, getPattern : AST),

@@ -19,7 +19,6 @@ declare -a files=(
     "$DIR/define.zero"
     "$DIR/brackets.zero"
     "$DIR/syntax.zero"
-    "$DIR/closure.zero"
     "$DIR/serialize.zero"
     "$DIR/builtins.zero"
     "$DIR/bind.zero"

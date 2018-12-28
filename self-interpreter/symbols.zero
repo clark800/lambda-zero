@@ -5,23 +5,6 @@ RIGHT := 1
 RIGHTVALUE := 2
 NEITHER := 3
 
-SyntaxType ::= {Syntax(
-    getAlias : List(ℕ),
-    getLeftPrecedence : ℕ,
-    getRightPrecedence : ℕ,
-    getFixity : ℕ,
-    getAssociativity : ℕ,
-    getSpecial : 𝔹,
-    getShift : _,
-    getReduce : _,
-    getPrior : List(ℕ)
-)}
-
-StateType ::= {State(
-    getStack : List(AST),
-    getOperators : List(ProtosetType(List(ℕ), List(ℕ) && SyntaxType))
-)}
-
 define isSpecial(node)
     getSpecial(getSyntax(node))
 

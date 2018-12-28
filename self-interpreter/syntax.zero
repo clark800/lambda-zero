@@ -292,6 +292,8 @@ OPERATORS := [newDictionary([
     coreSyntax(";", 8, 8, INFIX, RIGHT, shiftInfix, reduceNewline),
     coreSyntax("->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreAlias("↦", "->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
+    coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
+    coreAlias("⇒", "=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
