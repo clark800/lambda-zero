@@ -161,19 +161,19 @@ Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
 
 Node* applyDefinition(Node* definition, Node* scope) {
     Tag tag = getTag(definition);
-    Node* name = getLeft(definition);
-    Node* value = getRight(definition);
+    Node* definiendum = getLeft(definition);
+    Node* definiens = getRight(definition);
     switch ((DefinitionVariety)getVariety(definition)) {
         case PLAINDEFINITION:
-            return applyPlainDefinition(tag, name, value, scope);
+            return applyPlainDefinition(tag, definiendum, definiens, scope);
         case MAYBEDEFINITION:
-            return applyMaybeDefinition(tag, name, value, scope);
+            return applyMaybeDefinition(tag, definiendum, definiens, scope);
         case TRYDEFINITION:
-            return applyTryDefinition(tag, name, value, scope);
+            return applyTryDefinition(tag, definiendum, definiens, scope);
         case SYNTAXDEFINITION:
             return scope;
         case ADTDEFINITION:
-            return applyADTDefinition(tag, name, value, scope);
+            return applyADTDefinition(tag, definiendum, definiens, scope);
     }
     assert(false);
     return NULL;
