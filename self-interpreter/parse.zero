@@ -65,19 +65,19 @@ define parseNumericLiteral(tag)
     if natural.length > maxNatural.length
         parseError("magnitude of numeral is too large", tag)
     if natural.length = maxNatural.length and
-            zipWith(natural, (>), maxNatural).any(id)
+            zipWith((>), natural, maxNatural).any(id)
         parseError("magnitude of numeral is too large", tag)
-    Number(tag, parseNatural(lexeme, 10))
+    Number(tag, parseNatural(10, lexeme))
 
 
 define parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
-        Space -> parseSymbol(operators, renameTag(tag, " "), 0)
+        Space -> operators.parseSymbol(renameTag(tag, " "), 0)
         VSpace -> abort "internal error: VSpace reached parseToken"
-        Newline -> parseSymbol(operators, renameTag(tag, "\n"),
+        Newline -> operators.parseSymbol(renameTag(tag, "\n"),
             length(getTagLexeme(tag)) - 1)
-        Symbolic -> parseSymbol(operators, tag, 0)
+        Symbolic -> operators.parseSymbol(tag, 0)
         Numeric -> parseNumericLiteral(tag)
         Character -> parseCharacterLiteral(tag)
         String -> parseStringLiteral(tag)

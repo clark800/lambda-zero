@@ -15,11 +15,11 @@ define applyPlainDefinition(tag, name, value, scope)
 
 define applyMaybeDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust")),
-        value), newPatternArrow(tag, name, scope))
+        newPatternArrow(tag, name, scope)), value)
 
 define applyTryDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onRight")),
-        value), newPatternArrow(tag, name, scope))
+        newPatternArrow(tag, name, scope)), value)
 
 define transformRecursion(name, value)
     if not isName(name) or not isArrow(value) or not containsName(name, value)

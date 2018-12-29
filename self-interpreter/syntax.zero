@@ -297,9 +297,9 @@ OPERATORS := [newDictionary([
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
-    coreSyntax(".", 97, 97, INFIX, LEFT, shiftInfix, reducePipeline),
-    coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid),
-    coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
+    coreSyntax(".", 92, 92, INFIX, LEFT, shiftInfix, reducePipeline),
+    coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved),
+    coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid)
 ])]
 
 #*

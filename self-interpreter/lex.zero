@@ -65,7 +65,7 @@ define advanceLocation(Location(file, line, column), lexeme)
         Location(file, line + 1, length(lexeme))
     Location(file, line, column + length(lexeme))
 
-define splitLexemes(string, splitter, location)
+define splitLexemes(splitter, location, string)
     if string.isNil
         []
     (lexeme, remaining) := splitter(string)

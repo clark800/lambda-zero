@@ -74,12 +74,12 @@ define shouldReduceTop(operator, State(stack, _operators))
     not isOperator(stack[0]) and isHigherPrecedence(stack[1], operator)
 
 define reduceLeft(state, operator)
-    reduceTop.while(shouldReduceTop(operator), state)
+    while(shouldReduceTop(operator), reduceTop, state)
 
 define parseOperator(tag, value, operatorSyntax)
     Operator(renameTag(tag, getAlias(operatorSyntax)), value, operatorSyntax)
 
-define parseSymbol(operators, tag, value)
+define parseSymbol(tag, value, operators)
     lexeme := getTagLexeme(tag)
     head(operators).lookup(lexeme).mapJust(parseOperator(tag, value)) ??
         (if lexeme =*= " " then (head(operators).lookup("( )").

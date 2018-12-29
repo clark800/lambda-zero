@@ -8,15 +8,14 @@ define getSource
     ADT(source, _, _, _, _, _, _) -> source
 
 
-define setSource(type, source)
-    match type
-        FreeType -> FreeType
-        BottomType(_) -> BottomType(source)
-        TypeVariable(_, index) -> TypeVariable(source, index)
-        FunctionType(_, parameter, body) ->
-            FunctionType(source, parameter, body)
-        ADT(_, name, fixity, parameters, type, count, index) ->
-            ADT(source, name, fixity, parameters, type, count, index)
+define setSource(source)
+    FreeType -> FreeType
+    BottomType(_) -> BottomType(source)
+    TypeVariable(_, index) -> TypeVariable(source, index)
+    FunctionType(_, parameter, body) ->
+        FunctionType(source, parameter, body)
+    ADT(_, name, fixity, parameters, type, count, index) ->
+        ADT(source, name, fixity, parameters, type, count, index)
 
 
 define setMatchType(adtType, type)
@@ -108,14 +107,14 @@ define sameRoot(a, b)
             length(getParameters(a)) = length(getParameters(b))
 
 
-define newTypeVariable(variables, source)
+define newTypeVariable(source, variables)
     (address, variables') := variables.register(FreeType)
     (TypeVariable(source, address), variables')
 
 newTypeVariables(originals, variables) :=
-    originals.map(getSource).cascadeMap(`newTypeVariable, variables)
+    originals.map(getSource).cascadeMap(newTypeVariable, variables)
 
-define mapInternalTypes(type, f)
+define mapInternalTypes(f, type)
     match type
         FreeType -> type
         BottomType(_) -> type
@@ -127,9 +126,9 @@ define mapInternalTypes(type, f)
 
 newRenaming(mappings) := newTable((<=).on(getAddress), mappings)
 
-define rename(type, renaming)
+define rename(renaming, type)
     if isTypeVariable(type)
         renaming.lookup(type) ?? type
-    type.mapInternalTypes(`rename(renaming))
+    type.mapInternalTypes(rename(renaming))
 
 #*

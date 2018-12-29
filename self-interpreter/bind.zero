@@ -43,7 +43,7 @@ define parseParameterType(node, context)
 define parseADT(node, context, count, index)
     root := getHead(node)
     name := getLexeme(root)
-    parameterTypes := getArguments(node).map(context.get <> getLexeme)
+    parameterTypes := getArguments(node).map(`get(context) <> getLexeme)
     fixity := getADTFixity(root)
     ADT(noTerm, name, fixity, parameterTypes, FreeType, count, index)
 

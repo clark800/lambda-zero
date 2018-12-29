@@ -7,7 +7,7 @@ match x to f ≔ f(x)
 f ∘ g ≔ x ↦ f(g(x))
 `f(x, y) ≔ f(y, x)
 ``f(x, y, z) ≔ f(y, z, x)
-on(f, g) ≔ x ↦ y ↦ f(g(x), g(y))
+on(f, g) ≔ x ↦ y ↦ g(f(x), f(y))
 fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 
 # bottom
@@ -20,9 +20,9 @@ fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 a ⊓ b ⩴ {(first ∈ a, second ∈ b)}
 pair(a, b) ≔ (a, b)
 swap((x, y)) ≔ (y, x)
-mapFirst(xy, f) ≔ (f(first(xy)), second(xy))
-mapSecond(xy, f) ≔ (first(xy), f(second(xy)))
-mapPair(xx, f) ≔ (f(first(xx)), f(second(xx)))
+mapFirst(f, xy) ≔ (f(first(xy)), second(xy))
+mapSecond(f, xy) ≔ (first(xy), f(second(xy)))
+mapPair(f, xx) ≔ (f(first(xx)), f(second(xx)))
 curry(f) ≔ x ↦ y ↦ f((x, y))
 uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
@@ -36,14 +36,14 @@ if b then x else y ≔ b ⦊ false ↦ y; true ↦ x
 not b ≔ if b then false else true
 b and c ≔ if b then c else false
 b or c ≔ if b then true else c
-until(f, p, z) ≔ if p(z) then z else f.until(p, f(z))
-while(f, p, z) ≔ f.until((not) ∘ p, z)
+until(p, f, z) ≔ if p(z) then z else until(p, f, f(z))
+while(p, f, z) ≔ until((not) ∘ p, f, z)
 
 # maybe
-a ? ⩴ {void, just(_ : a)}
+(a)? ⩴ {void, just(_ : a)}
 isVoid ≔ void ↦ true; just(_) ↦ false
-onJust(mx, f) ≔ mx ⦊ void ↦ void; just(x) ↦ f(x)
-mapJust(mx, f) ≔ onJust(mx, just ∘ f)
+onJust(f, mx) ≔ mx ⦊ void ↦ void; just(x) ↦ f(x)
+mapJust(f, mx) ≔ mx.onJust(just ∘ f)
 mx ⁇ x ≔ mx ⦊ void ↦ x; just(x′) ↦ x′
 
 # either
@@ -51,10 +51,10 @@ a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ Left(_) ↦ true; Right(_) ↦ false
 isRight ≔ Left(_) ↦ false; Right(_) ↦ true
 try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
-onLeft(exy, f) ≔ exy ⦊ Left(x) -> f(x); Right(y) -> Right(y)
-onRight(exy, f) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
-mapLeft(exy, f) ≔ onLeft(exy, Left ∘ f)
-mapRight(exy, f) ≔ onRight(exy, Right ∘ f)
+onLeft(f, exy) ≔ exy ⦊ Left(x) -> f(x); Right(y) -> Right(y)
+onRight(f, exy) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
+mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
+mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
 exy ⁈ y ≔ try exy catch constant(y)
 toMaybe ≔ Left(_) ↦ void; Right(y) ↦ just(y)
 
@@ -69,10 +69,10 @@ abs ≔ + n ↦ + n; - n ↦ + n
 abs′ ≔ + n ↦ n; - n ↦ n
 min(n, m) ≔ if n ≤ m then n else m
 max(n, m) ≔ if n ≥ m then n else m
-mod(n, m) ≔ n % m
+mod(d, n) ≔ n % d
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
-divides(n, m) ≔ m.mod(n) = 0
+divides(n, d) ≔ n.mod(d) = 0
 n ! ≔ n ⦊ 0 ↦ 1; ↑ n′ ↦ n ⋅ n′ !
 gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
 f ° n ≔ n ⦊ 0 ↦ id; ↑ n′ ↦ f ∘ f ° n′
@@ -95,70 +95,70 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ `(∷)
 isNil ≔ [] ↦ true; _ ∷ _ ↦ false
-fold(xs, f, z) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(xs′, f, z))
-cascade(xs, f, z) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(xs′, f, f(z, x))
+fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
+cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
 xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
 length(xs) ≔ xs.fold(constant(↑), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(xs, n) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ xs′.drop(n′))
-take(xs, n) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
+drop(n, xs) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ xs′.drop(n′))
+take(n, xs) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
 xs[n] ≔ head(xs.drop(n))
-at(xs, n) ≔ xs[n]
+at(n, xs) ≔ xs[n]
 xs[n, n′] ≔ if n ≥ n′ then [] else xs.drop(n).take(n′ - n)
-slice(xs, n, n′) := xs[n, n′]
-last(xs) ≔ tail.until(isNil ∘ tail, xs).head
+slice(n, n′, xs) := xs[n, n′]
+last(xs) ≔ until(isNil ∘ tail, tail, xs).head
 dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
     head(xs) ∷ dropLast(tail(xs))
-reduce(xs, f) ≔ tail(xs).cascade(f, xs[0])
+reduce(f, xs) ≔ tail(xs).cascade(f, xs[0])
 safeHead(xs) ≔ if isNil(xs) then void else just(head(xs))
 safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
 safeIndex(xs) ≔ 0 ↦ safeHead(xs);
     ↑ n′ ↦ (safeIndex(xs′, n′) where maybe xs′ ≔ safeTail(xs))
-dropIf(ns, p) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
-takeWhile(xs, p) ≔ xs ⦊ [] ↦ [];
-    x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(xs′, p) else []
-dropWhile(xs, p) ≔ xs ⦊ [] ↦ [];
-    x ∷ xs′ ↦ if p(x) then dropWhile(xs′, p) else xs
-xs ¦ p ≔ fold(xs, x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
-filter ≔ (¦)
-map(xs, f) ≔ fold(xs, (∷) ∘ f, [])
-(<:>) ≔ `map
-filterMap(xs, f) := xs |> [] ↦ []; x ∷ xs′ ->
-    (f(x) |> void ↦ xs''; just(x') ↦ x' ∷ xs'' where xs'' ≔ filterMap(xs′, f))
-zipWith(xs, f, ys) ≔ xs ⦊
-    [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(xs′, f, ys′))
-zip(xs, ys) ≔ zipWith(xs, pair, ys)
+dropIf(p, ns) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
+takeWhile(p, xs) ≔ xs ⦊ [] ↦ [];
+    x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(p, xs′) else []
+dropWhile(p, xs) ≔ xs ⦊ [] ↦ [];
+    x ∷ xs′ ↦ if p(x) then dropWhile(p, xs′) else xs
+filter(p, xs) ≔ xs.fold(x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
+xs ¦ p ≔ filter(p, xs)
+map(f, xs) ≔ xs.fold((∷) ∘ f, [])
+(⬫) ≔ map
+filterMap(f, xs) := xs |> [] ↦ []; x ∷ xs′ ->
+    (f(x) |> void ↦ xs''; just(x') ↦ x' ∷ xs'' where xs'' ≔ filterMap(f, xs′))
+zipWith(f, xs, ys) ≔ xs ⦊
+    [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
+zip(xs, ys) ≔ zipWith(pair, xs, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
 pairs(xs) ≔ zip(xs, tail(xs))
-interleave(xs, y) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′) where
+interleave(y, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′) where
     interleave′ ≔ [] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
-joinWith(xss, ys) ≔ join(interleave(xss, ys))
-bisect(xs, p) ≔ (xs ¦ p, xs ¦ (not) ∘ p)
-any(xs, p) ≔ xs.map(p).fold((or), false)
-all(xs, p) ≔ xs.map(p).fold((and), true)
-count(xs, p) ≔ length(xs ¦ p)
+joinWith(ys, xss) ≔ join(interleave(ys, xss))
+bisect(p, xs) ≔ (xs ¦ p, xs ¦ (not) ∘ p)
+any(p, xs) ≔ xs.map(p).fold((or), false)
+all(p, xs) ≔ xs.map(p).fold((and), true)
+count(p, xs) ≔ length(xs ¦ p)
 
 iterate(f, x) ≔ x ∷ iterate(f, f(x))
 repeat(x) ≔ x ∷ repeat(x)
-replicate(x, n) ≔ ((x ∷) ° n)([])
+replicate(n, x) ≔ ((x ∷) ° n)([])
 cycle(xs) ≔ xs ⧺ cycle(xs)
 n ‥ m ≔ if n > m then [] else n ∷ (↑ n ‥ m)
 (…) ≔ iterate(↑)
-find(xs, p) ≔ safeHead(xs ¦ p)
-contains(xs, p) ≔ not isVoid(xs.find(p))
-findIndices(xs, p) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
-findIndex(xs, p) ≔ safeHead(findIndices(xs, p))
+find(p, xs) ≔ safeHead(xs ¦ p)
+contains(p, xs) ≔ not isVoid(xs.find(p))
+findIndices(p, xs) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
+findIndex(p, xs) ≔ safeHead(findIndices(xs, p))
 
-# cascadeMap : List(a) => (a => s => (b && s)) => s => (List(b) && s)
-cascadeMap(xs, f, z) ≔ xs.cascade((ys, s) ↦ x ↦
+# cascadeMap : (a => s => (b && s)) => s => List(a) => (List(b) && s)
+cascadeMap(f, z, xs) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
 
 sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
 
-deduplicateBy(xs, (≟)) ≔ xs ⦊ [] ↦ [];
-    x ∷ xs′ ↦ x ∷ deduplicateBy(xs′ ¦ (not) ∘ (≟ x), (≟))
-deduplicate(xs) ≔ deduplicateBy(xs, (=))
+deduplicateBy((≟), xs) ≔ xs ⦊ [] ↦ [];
+    x ∷ xs′ ↦ x ∷ deduplicateBy((≟), xs′ ¦ (not) ∘ (≟ x))
+deduplicate(xs) ≔ deduplicateBy((=), xs)
 
 ∑(ns) ≔ ns.cascade((+), 0)
 ∏(ns) ≔ ns.cascade((⋅), 1)
@@ -183,40 +183,40 @@ define ns ⩿ ms
         n ∷ ns′ ↦ (ms ⦊ [] ↦ false; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
 
 
-define startsWith(ns, ks)
+define startsWith(ks, ns)
     match ks
         [] ↦ true
-        k ∷ ks′ ↦ (ns ⦊ [] ↦ false; n ∷ ns′ ↦ n = k and startsWith(ns′, ks′))
+        k ∷ ks′ ↦ (ns ⦊ [] ↦ false; n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))
 
-define split(ns, p)
+define split(p, ns)
     match ns
         [] ↦ ([], [])
         n ∷ ns′ ↦ (if p(ns) then ([], ns) else (n ∷ before, after) where
                   (before, after) ≔ ns′.split(p))
 
-splitAt(xs, n) ≔ (xs.take(n), xs.drop(n))
-splitWhen(ns, p) ≔ ns.split(p ∘ head)
-splitOn(ns, delimiter) ≔ ns.split(`startsWith(delimiter))
+splitAt(n, xs) ≔ (xs.take(n), xs.drop(n))
+splitWhen(p, ns) ≔ ns.split(p ∘ head)
+splitOn(delimiter, ns) ≔ ns.split(startsWith(delimiter))
 
-define splitWith(ns, splitter)
+define splitWith(splitter, ns)
     (before, after) ≔ splitter(ns)
     if before.isNil
         ([], ns)
     (before′, after′) ≔ after.splitWith(splitter)
     (before ⧺ before′, after′)
 
-define partition(ns, splitter)
+define partition(splitter, ns)
     if ns.isNil
         []
     (before, after) ≔ splitter(ns)
-    before ∷ partition(after, splitter)
+    before ∷ after.partition(splitter)
 
-dropPrefix(ns, prefix) ≔ if ns.startsWith(prefix) then
-    ns.drop(length(prefix)) else ns
+dropPrefix(prefix, ns) ≔
+    if ns.startsWith(prefix) then ns.drop(length(prefix)) else ns
 
-partitionBy(ns, p) ≔ ns.partition(`splitWhen(p) ∘ `dropIf(p))
-partitionOn(ns, delimiter) ≔ ns.partition(
-    `splitOn(delimiter) ∘ `dropPrefix(delimiter))
+partitionBy(p, ns) ≔ ns.partition(splitWhen(p) ∘ dropIf(p))
+partitionOn(delimiter, ns) ≔
+    ns.partition(splitOn(delimiter) ∘ dropPrefix(delimiter))
 
 words(ns) ≔ (ns.partitionOn(" ") ¦ (not) ∘ isNil)
 lines(ns) ≔ ns.partitionOn("\n")
@@ -246,19 +246,19 @@ define showNatural(n)
 showSign ≔ + _ ↦ "+"; - _ ↦ "-"
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
-define showPair(xsxs, showFirst, showSecond)
+define showPair(showFirst, showSecond, xsxs)
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
-showList(xs, showElement) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
+showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 # parsing
-parseDigit(digit, base) ≔
+parseDigit(base, digit) ≔
     if isDigit(digit) and digit - '0' < base then digit - '0' else
     abort "Invalid digit in base " ⧺ showNatural(base) ⧺ ": " ⧺ [digit]
-parseNatural(string, base) ≔
-    string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(d, base), 0)
-parseInteger(string, base) ≔ if string.head = '-' then
-    - parseNatural(tail(string), base) else + parseNatural(string, base)
-repl(input, prompt, f) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
+parseNatural(base, string) ≔
+    string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(base, d), 0)
+parseInteger(base, string) ≔ if string.head = '-' then
+    - parseNatural(base, tail(string)) else + parseNatural(base, string)
+repl(prompt, f, input) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
 # tree
 Tree(a) ⩴ {Node(_datum ∈ a, _children ∈ List(Tree(a)))}

@@ -4,7 +4,7 @@ StoreType(a) ::= {Store(_size : ℕ, _data : BinaryTree(ℕ && a))}
 
 
 define multiplicity(d, n)
-    if n ≠ 0 and divides(d, n) then ↑ multiplicity(d, n ⫽ d) else 0
+    if n ≠ 0 and d.divides(n) then ↑ multiplicity(d, n ⫽ d) else 0
 
 
 define allocate(tree, address, value)

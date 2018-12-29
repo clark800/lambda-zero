@@ -1,12 +1,12 @@
 #* table.zero
 
 newTable((=<), entries) := newProtoset((=<).on(first), entries)
-lookup(table, key) := table.elicit((key, undefined)).mapJust(second)
-hasKey(table, key) := (key, undefined) in table
-get(table, key) := table.lookup(key) ?? undefined
-set(table, key, value) := table.add((key, value))
-getKeys(table) := getElements(table).map(first)
-getValues(table) := getElements(table).map(second)
+table.lookup(key) := table.elicit((key, undefined)).mapJust(second)
+table.hasKey(key) := (key, undefined) in table
+table.get(key) := table.lookup(key) ?? undefined
+table.set(key, value) := table.add((key, value))
+table.getKeys := getElements(table).map(first)
+table.getValues := getElements(table).map(second)
 
 newDictionary := newTable((<*=))
 

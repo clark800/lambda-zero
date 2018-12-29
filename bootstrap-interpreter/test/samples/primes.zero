@@ -1,1 +1,1 @@
-main(input) := showList(primes, showNatural)
+main(input) := showList(showNatural, primes)

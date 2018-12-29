@@ -1,28 +1,28 @@
 #* inference.zero
 
 
-define getValue(variables, variable)
+define getValue(variable, variables)
     variables.access(getAddress(variable)) ?? FreeType
 
 
 define isFree(variable, variables)
-    isFreeType(getValue(variables, variable))
+    isFreeType(variables.getValue(variable))
 
 
-define getFreeVariables(type, variables)
+define getFreeVariables(variables, type)
     if isTypeVariable(type)
         type' := variables.getValue(type)
         if isFreeType(type')
             [type]
-        getFreeVariables(type', variables)
-    join(getInternalTypes(type).map(`getFreeVariables(variables))).
+        getFreeVariables(variables, type')
+    join(getInternalTypes(type).map(getFreeVariables(variables))).
         deduplicateBy(sameRoot)
 
 define getAllFreeVariables(variables, variables')
     join(variables.getAddresses.map(TypeVariable(noTerm)).map(
-        `getFreeVariables(variables'))).deduplicateBy(sameRoot)
+        getFreeVariables(variables'))).deduplicateBy(sameRoot)
 
-define substitute(type, variables)
+define substitute(variables, type)
     if isTypeVariable(type)
         type' := variables.getValue(type)
         if isFreeType(type')
@@ -32,15 +32,15 @@ define substitute(type, variables)
             recursionError(type, type, variables)
         type''.substitute(variables)
 
-    type.mapInternalTypes(`substitute(variables))
+    type.mapInternalTypes(substitute(variables))
 
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
 define unify'(originals, variables, (left, right))
-    if isTypeVariable(left) and not left.isFree(variables)
+    if isTypeVariable(left) and not isFree(left, variables)
         unify'(originals, variables, (variables.getValue(left), right))
-    if isTypeVariable(right) and not right.isFree(variables)
+    if isTypeVariable(right) and not isFree(right, variables)
         unify'(originals, variables, (left, variables.getValue(right)))
     if isBottomType(left) or isBottomType(right)
         variables
@@ -53,7 +53,7 @@ define unify'(originals, variables, (left, right))
         variables.assign(getAddress(right), left)
     if isADT(left) and not isFreeType(getMatchType(left))
         unify'(originals, variables, (getMatchType(left), right))
-    unificationError(originals.mapPair(`substitute(variables)),
+    unificationError(originals.mapPair(substitute(variables)),
         left.substitute(variables), right.substitute(variables))
 
 define unify(variables, types)
@@ -64,15 +64,15 @@ define unifyAll(variables, types)
         variables
     zip(repeat(head(types)), tail(types)).cascade(unify, variables)
 
-define generalize(type, variables, oldVariables)
+define generalize(variables, oldVariables, type)
     syntax(\\) := syntax(\)
     vs \\ vs' := vs |: (v -> not vs'.any(sameRoot(v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
-        oldVariables.getAllFreeVariables(variables)
+        variables.getAllFreeVariables(oldVariables)
     Scheme(universals, type')
 
-define instantiate(Scheme(universals, type), variables, term)
+define instantiate(variables, term, Scheme(universals, type))
     (freshVariables, variables') := newTypeVariables(universals, variables)
     mappings := zip(universals, freshVariables)
     renaming := newRenaming(mappings)
@@ -105,7 +105,7 @@ define constructParameterType(variables, schemes, term)
     adtTypes := types.map(getResultType)
     if not adtTypes.all(isADT)
         throwError("Type error: invalid cases:", tag)
-    names := deduplicateBy(adtTypes.map(getName), (=*=))
+    names := deduplicateBy((=*=), adtTypes.map(getName))
     counts := deduplicate(adtTypes.map(getCount))
     if length(names) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
@@ -170,7 +170,7 @@ define infer(stack, variables)
         (applicandType, variables'') := infer(stack, variables', applicand)
         (returnType, variables''') := variables''.newTypeVariable(term)
         functionType := FunctionType(noTerm, argumentType, returnType)
-        (returnType, variables'''.unify((applicandType, functionType)))
+        (returnType, unify(variables''', (applicandType, functionType)))
     case term @ Numeral(_, value)
         index := if value = 0 then 1 else 2
         (ADT(term, "ℕ", NOFIX, [], FreeType, 2, index), variables)
