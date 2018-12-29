@@ -26,14 +26,14 @@ define getBuiltin(tag)
             runtimeError("missing argument to", tag)
         left := evaluate(arguments[0])
         right := evaluate(arguments[1])
-        Closure(Numeral(tag', f.compute(left, right)), [])
+        Closure(Numeral(tag', compute(f, left, right)), [])
 
     define makeComparisonBuiltin(f, evaluate, arguments)
         if length(arguments) < 2
             runtimeError("missing argument to", tag)
         left := evaluate(arguments[0])
         right := evaluate(arguments[1])
-        Closure(newBoolean(f.compute(left, right)), [])
+        Closure(newBoolean(compute(f, left, right)), [])
 
     define addBuiltin(left, right)
         if left > maxInteger - right

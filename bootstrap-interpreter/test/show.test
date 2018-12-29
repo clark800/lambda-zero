@@ -11,45 +11,45 @@ main(input) := showString(deduplicate("abc" ++ "bbd"))
 main(input) := showString(deduplicate("acbbcda"))
 "acbd"
 ===============================================================================
-main(input) := (0..10).map(positive)[3, 7].showList(showInteger)
+main(input) := ((0..10).map(positive))[3, 7].showList(showInteger)
 [+3, +4, +5, +6]
 ===============================================================================
-main(input) := showPair(" 12 3  4 ".split((= '3') <> head), showString, showString)
+main(input) := " 12 3  4 ".split((= '3') <> head).showPair(showString, showString)
 (" 12 ", "3  4 ")
 ===============================================================================
-main(input) := showPair(" 12 3  4 ".splitOn("3"), showString, showString)
+main(input) := " 12 3  4 ".splitOn("3").showPair(showString, showString)
 (" 12 ", "3  4 ")
 ===============================================================================
-main(input) := showList(" 12 3  4 ".partitionOn(" "), showString)
+main(input) := " 12 3  4 ".partitionOn(" ").showList(showString)
 ["12", "3", "", "4", ""]
 ===============================================================================
-main(input) := showList("12 3  4".partitionBy((= ' ')), showString)
+main(input) := "12 3  4".partitionBy(= ' ').showList(showString)
 ["12", "3", "", "4"]
 ===============================================================================
-main(input) := showList("a..b...c....d..".partitionOn(".."), showString)
+main(input) := "a..b...c....d..".partitionOn("..").showList(showString)
 ["a", "b", ".c", "", "d", ""]
 ===============================================================================
-main(input) := showList(words(" 12 3  4 "), `showList(showNatural))
+main(input) := words(" 12 3  4 ").showList(showList(showNatural))
 [[49, 50], [51], [52]]
 ===============================================================================
 main(input) := showString("   12 3  4 ".dropWhile((= ' ')))
 "12 3  4 "
 ===============================================================================
-main(input) := showList((5..9).map(positive), showInteger)
+main(input) := (5..9).map(positive).showList(showInteger)
 [+5, +6, +7, +8, +9]
 ===============================================================================
-main(input) := showList(second(splitWhen((1 .. 5), (>= 3))), showNatural)
+main(input) := second(splitWhen((>= 3), (1 .. 5))).showList(showNatural)
 [3, 4, 5]
 ===============================================================================
-main(input) := showList(sort([5, 88, 43, 22, 91, 17]), showNatural)
+main(input) := sort([5, 88, 43, 22, 91, 17]).showList(showNatural)
 [5, 17, 22, 43, 88, 91]
 ===============================================================================
-main(input) := showList(pairs([1,2,3]), x -> showPair(x, showNatural, showNatural))
+main(input) := pairs([1,2,3]).showList(showPair(showNatural, showNatural))
 [(1, 2), (2, 3)]
 ===============================================================================
-main(input) := showList(pairs([]), id)
+main(input) := pairs([]).showList(id)
 []
 ===============================================================================
-main(input) := showList(5..1, showNatural)
+main(input) := (5..1).showList(showNatural)
 []
 ===============================================================================

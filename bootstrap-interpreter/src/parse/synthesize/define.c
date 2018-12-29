@@ -17,13 +17,13 @@ Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
 
 Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
-            right), newLazyArrow(tag, left, scope));
+            newLazyArrow(tag, left, scope)), right);
 }
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> onRight(b, (a -> c)) --> (((onRight) b) (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
-            right), newLazyArrow(tag, left, scope));
+            newLazyArrow(tag, left, scope)), right);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -37,7 +37,7 @@ Node* Printer(Tag tag) {
     Node* unit = FixedName(tag, "()");
     Node* under = Underscore(tag, 1);
     return UnderscoreArrow(tag, Juxtaposition(tag,
-        Juxtaposition(tag, Juxtaposition(tag, fold, under), put), unit));
+        Juxtaposition(tag, Juxtaposition(tag, fold, put), unit), under));
 }
 
 static Node* newMainCall(Node* name) {

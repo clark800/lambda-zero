@@ -238,9 +238,9 @@ void initSymbols(void) {
     addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 15, 15, PREFIX, L, shiftPrefix, reduceAbort);
-    addCoreSyntax(".", 97, 97, INFIX, L, shiftInfix, reducePipeline);
-    addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
+    addCoreSyntax(".", 92, 92, INFIX, L, shiftInfix, reducePipeline);
     addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);
+    addCoreSyntax("( )", 99, 99, INFIX, L, shiftSpace, reduceInvalid);
     addCoreAlias("\u2254", ":=");
     addCoreAlias("\u2A74", "::=");
     addCoreAlias("\u21A6", "->");

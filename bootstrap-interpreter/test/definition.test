@@ -101,7 +101,7 @@ Syntax error: invalid parameter '->' at line 1 column 5
 $x := 0 \n 0
 Syntax error: reserved operator '$' at line 1 column 1
 ===============================================================================
-`f(x, y) := f(y, x) \n mod(x, y) := x % y \n 15 - 3.(`mod)(5) * 7
+`f(x, y) := f(y, x) \n mod(x, y) := x % y \n 15 - 5.(`mod)(3) * 7
 1
 ===============================================================================
 10.(2 *)
