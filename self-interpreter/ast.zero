@@ -41,7 +41,7 @@ AST ::= {
     Number(_ : TagType, getNumericValue : ℕ),
     Operator(_ : TagType, getRank : ℕ, getSyntax : SyntaxType(AST)),
     Definition(_ : TagType, getDefinitionType : DefinitionType,
-        getDefinee : AST, getDefinedValue : AST),
+        getDefiniendum : AST, getDefiniens : AST),
     AsPattern(_ : TagType, getLabel : AST, getPattern : AST),
     CommaPair(_ : TagType, getCommaLeft : AST, getCommaRight : AST),
     Section(_ :  TagType, getSide : SectionSide, getSectionBody : AST),

@@ -247,8 +247,8 @@ define shiftNewline(state, operator)
     top := head(stack')
     if isSyntaxDefinition(top)
         definition := defineSyntax(operators', top,
-            getDefinee(top), getDefinedValue(top))
-        operators'' := addSyntax(operators', getDefinedValue(definition))
+            getDefiniendum(top), getDefiniens(top))
+        operators'' := addSyntax(operators', getDefiniens(definition))
         State(operator :: definition :: tail(stack'), operators'')
     if isOperator(top)
         state'
