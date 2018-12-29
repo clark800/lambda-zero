@@ -13,7 +13,7 @@ define showTypeAndLocation(type)
         " at " ++ showTypeLocation(type))
 
 define showVariables(variables)
-    variables.getDump.map((address, value) ->
+    variables.dump.map((address, value) ->
         getVariableName(address) ++ " := " ++ showType(value)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
@@ -26,7 +26,7 @@ define addRenaming((renaming, variables), type)
 
 define makeRenaming(type)
     renaming := newRenaming([])
-    variables := newStore
+    variables := newStore([])
     first(addRenaming((renaming, variables), type))
 
 define showTypeWithRenaming(type, renaming)

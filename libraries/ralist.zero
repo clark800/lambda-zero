@@ -1,0 +1,98 @@
+#* ralist.zero
+
+define list.push(x)
+    match list
+        case []; [(1, Leaf(x))]
+        case (size, tree) :: rest
+            match rest
+                case []; (1, Leaf(x)) :: list
+                case (size', tree') :: rest'
+                    if size = size'
+                        (size + size' + 1, Branch(x, tree, tree')) :: rest'
+                    (1, Leaf(x)) :: list
+
+
+define list.pull
+    match list
+        case []; undefined
+        case (size, tree) :: rest
+            match tree
+                case Leaf(_); rest
+                case Branch(_, left, right)
+                    size' := size // 2
+                    (size', left) :: (size', right) :: rest
+
+
+define list.peek
+    match list
+        case []; undefined
+        case (size, tree) :: _
+            match tree
+                Leaf(x) -> x
+                Branch(x, _, _) -> x
+
+
+define seekTree(n, size, tree)
+    match tree
+        case Leaf(x)
+            if n = 0 then x else undefined
+        case Branch(x, left, right)
+            if n = 0
+                x
+            size' := size // 2
+            if n <= size'
+                seekTree(n - 1, size', left)
+            seekTree(n - size' - 1, size', right)
+
+
+define list.seek(n)
+    match list
+        case []; undefined
+        case (size, tree) :: rest
+            if n < size then seekTree(n, size, tree) else rest.seek(n - size)
+
+
+define updateTree(n, x, size, tree)
+    match tree
+        case Leaf(_)
+            if n = 0 then Leaf(x) else tree
+        case Branch(x', left, right)
+            if n = 0
+                Branch(x, left, right)
+            size' := size // 2
+            if n <= size'
+                Branch(x', updateTree(n - 1, x, size', left), right)
+            Branch(x', left, updateTree(n - size' - 1, x, size', right))
+
+
+define list.update(n, x)
+    match list
+        case []; []
+        case (size, tree) :: rest
+            if n < size
+                (size, updateTree(n, x, size, tree)) :: rest
+            (size, tree) :: rest.update(n - size, x)
+
+
+define flattenPreorderTree(tree)
+    match tree
+        case Leaf(x); [x]
+        case Branch(x, left, right)
+            x :: flattenPreorderTree(left) ++ flattenPreorderTree(right)
+
+
+define list.getList
+    match list
+        case []; []
+        case (_, tree) :: rest
+            flattenPreorderTree(tree) ++ getList(rest)
+
+
+define list.showRandomAccessList(showValue)
+    list.map(second).map(showFullBinaryTree(showValue)).joinWith("\n")
+
+
+define newRandomAccessList(elements)
+    elements.fold(push, [])
+
+#*

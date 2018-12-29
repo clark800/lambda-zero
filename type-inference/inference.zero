@@ -19,7 +19,7 @@ define getFreeVariables(variables, type)
         deduplicateBy(sameRoot)
 
 define getAllFreeVariables(variables, variables')
-    join(variables.getAddresses.map(TypeVariable(noTerm)).map(
+    join(variables.dump.map(first).map(TypeVariable(noTerm)).map(
         getFreeVariables(variables'))).deduplicateBy(sameRoot)
 
 define substitute(variables, type)
@@ -28,7 +28,7 @@ define substitute(variables, type)
         if isFreeType(type')
             type
         type'' := type'.setSource(getSource(type))
-        if type''.getFreeVariables(newStore).any(sameRoot(type))
+        if type''.getFreeVariables(newStore([])).any(sameRoot(type))
             recursionError(type, type, variables)
         type''.substitute(variables)
 
@@ -141,7 +141,7 @@ define constructParameterType(variables, schemes, term)
 define inferParameterType(stack, variables, term)
     metadata := getMetadata(term)
     schemes := getConstructorDebruijnIndices(metadata).map(k ->
-        stack.peek(k - 1) ?? undefined)
+        stack.seek(k - 1))
     if isNil(schemes)
         (parameterType, variables') := variables.newTypeVariable(term)
         (parameterType, Scheme([], parameterType), variables')
@@ -153,11 +153,11 @@ define inferParameterType(stack, variables, term)
 #   variables or concrete types); every type variable appears in variables
 define infer(stack, variables)
     case term @ Variable(_, debruijn)
-        scheme := stack.peek(debruijn - 1) ?? Free
+        scheme := stack.seek(debruijn - 1)
         scheme.instantiate(variables, term)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
-            getAscription(metadata).instantiate(newStore, term)
+            getAscription(metadata).instantiate(newStore([]), term)
         (type, scheme, variables') := inferParameterType(stack, variables, term)
         (bodyType, variables'') := infer(stack.push(scheme), variables', body)
         (FunctionType(term, type, bodyType), variables'')
@@ -181,8 +181,8 @@ define infer(stack, variables)
 define inferType(stack, definition)
     if getTagLexeme(first(definition)) =*= "fix"
         stack.push(getFixScheme(second(definition)))
-    (type, variables') := infer(stack, newStore, second(definition))
-    stack.push(type.generalize(variables', newStore))
+    (type, variables') := infer(stack, newStore([]), second(definition))
+    stack.push(type.generalize(variables', newStore([])))
 
 
 define getDefinitions
@@ -198,8 +198,8 @@ define getDefinitions
 define main(input)
     term := parse(input)
     definitions := getDefinitions(term)
-    stack := definitions.cascade(inferType, newStore)
-    schemes := stack.getDump.map(second)
+    stack := definitions.cascade(inferType, newRandomAccessList([]))
+    schemes := stack.getList.reverse
     (names, _) := unzip(definitions)
     showTypings(zip(names, schemes))
 
