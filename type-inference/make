@@ -1,0 +1,43 @@
+#!/bin/bash -e
+# use bash process substitution to prepend prelude to source file
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB="$DIR/../libraries"
+PARSER="$DIR/../self-interpreter"
+# read input first to check for errors accessing files
+declare -a files=(
+    "$LIB/operators.zero"
+    "$LIB/prelude.zero"
+    "$LIB/store.zero"
+    "$LIB/aatree.zero"
+    "$LIB/protoset.zero"
+    "$LIB/table.zero"
+    "$PARSER/lex.zero"
+    "$PARSER/ast.zero"
+    "$PARSER/errors.zero"
+    "$PARSER/symbols.zero"
+    "$PARSER/term.zero"
+    "$PARSER/type.zero"
+    "$PARSER/patterns.zero"
+    "$PARSER/define.zero"
+    "$PARSER/brackets.zero"
+    "$PARSER/syntax.zero"
+    "$PARSER/serialize.zero"
+    "$PARSER/builtins.zero"
+    "$PARSER/bind.zero"
+    "$PARSER/parse.zero"
+    "$DIR/types.zero"
+    "$DIR/show.zero"
+    "$DIR/errors.zero"
+    "$DIR/declarations.zero"
+    "$DIR/inference.zero"
+)
+chmod -f +w main || true
+
+# cat sources files and erase lines containing only comments to speed parsing
+# note: can't remove blank lines because it would change line numbers in errors
+# note: can't safely remove inline comments because they could be inside quotes
+# note: also have to avoid erasing file markers
+echo "#!../bootstrap-interpreter/main" > main
+cat ${files[@]} | sed -e 's/^[ ]*# .*$//' >> main
+chmod -w main
+chmod +x main
