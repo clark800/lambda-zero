@@ -6,9 +6,10 @@ MetadataType ::= {Metadata(
     getConstructorDebruijnIndices : List(ℕ)
 )}
 
-ClosureT(term) ::= {
-    Closure(getTerm : term, getEnvironment : List(ClosureT(term)))
-}
+ClosureT(term) ::= {Closure(
+    getTerm : term,
+    getEnvironment : List(ℕ && FullBinaryTree(ClosureT(term)))
+)}
 
 Term ::= {
     Variable(_ : TagType, getDebruijnIndex : ℕ),

@@ -108,7 +108,7 @@ define sameRoot(a, b)
 
 
 define newTypeVariable(source, variables)
-    (address, variables') := variables.register(FreeType)
+    (address, variables') := variables.allocate(FreeType)
     (TypeVariable(source, address), variables')
 
 newTypeVariables(originals, variables) :=

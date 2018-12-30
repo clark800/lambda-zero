@@ -5,7 +5,7 @@ define serialize(closure)
         match term
             case Variable(tag, debruijn)
                 if debruijn <= depth then showTag(tag) else
-                    serialize'(environment[debruijn - depth - 1], 0)
+                    serialize'(environment.seek(debruijn - depth - 1), 0)
             case Abstraction(tag, _, body)
                 "(" ++ showTag(tag) ++ " -> " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
@@ -32,8 +32,9 @@ define serializeString(evaluateClosure, closure)
     if nil
         just([])
 
-    dummy := Closure(Numeral(noTag, 0), [])
-    enclose := `Closure(dummy :: dummy :: getEnvironment(closure'))
+    dummy := Closure(Numeral(noTag, 0), newRandomAccessList([]))
+    environment' := getEnvironment(closure').push(dummy).push(dummy)
+    enclose := `Closure(environment')
 
     maybe headTerm := maybeHead(term)
     maybe character := maybeNatural(getTerm(evaluateClosure(enclose(headTerm))))

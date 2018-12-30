@@ -265,14 +265,14 @@ Tree(a) ⩴ {Node(_datum ∈ a, _children ∈ List(Tree(a)))}
 
 # binary tree
 BinaryTree(a) ⩴ {
-    Leaf,
-    Branch(_datum ∈ a, _left ∈ BinaryTree(a), _right ∈ BinaryTree(a))
+    Tip,
+    Fork(_datum ∈ a, _left ∈ BinaryTree(a), _right ∈ BinaryTree(a))
 }
 
 define search((≾), datum, tree)
     match tree
-        case Leaf; void
-        case Branch(datum′, left, right)
+        case Tip; void
+        case Fork(datum′, left, right)
             if datum ≾ datum′
                 if datum′ ≾ datum
                     just(datum′)
@@ -281,9 +281,29 @@ define search((≾), datum, tree)
 
 define flatten(tree)
     match tree
-        Leaf ↦ []
-        Branch(value, left, right) ↦ flatten(left) ⧺ [value] ⧺ flatten(right)
+        Tip ↦ []
+        Fork(value, left, right) ↦ flatten(left) ⧺ [value] ⧺ flatten(right)
 
+# full binary tree
+FullBinaryTree(a) ⩴ {
+    Leaf(_datum ∈ a),
+    Branch(_datum ∈ a, _left ∈ FullBinaryTree(a), _right ∈ FullBinaryTree(a))
+}
+
+
+define showFullBinaryTree(showElement, tree)
+    define showElementLine(indent, x)
+        replicate(2 * indent, ' ') ++ showElement(x) ++ "\n"
+
+    define showFullBinaryTreeNode(indent, node)
+        match node
+            case Leaf(x); showElementLine(indent, x)
+            case Branch(x, left, right)
+                showElementLine(indent, x) ++
+                    showFullBinaryTreeNode(up indent, left) ++
+                    showFullBinaryTreeNode(up indent, right)
+
+    showFullBinaryTreeNode(0, tree)
 
 # undefined
 undefined ≔ abort "undefined"

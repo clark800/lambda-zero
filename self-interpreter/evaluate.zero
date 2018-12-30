@@ -10,10 +10,11 @@ define expandNatural(tag, n)
 define evaluate(closure @ Closure(term, environment), stack)
     match term
         case Variable(_, debruijn)
-            evaluate(environment[debruijn - 1], stack)
+            evaluate(environment.seek(debruijn - 1), stack)
         case Abstraction(_, _, body)
             if isNil(stack) then closure else
-                evaluate(Closure(body, stack[0] :: environment), tail(stack))
+                evaluate(Closure(body, environment.push(head(stack))),
+                    tail(stack))
         case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
@@ -26,7 +27,7 @@ define evaluate(closure @ Closure(term, environment), stack)
 
 
 define evaluateClosure(closure)
-    evaluate(closure, [])
+    evaluate(closure, newRandomAccessList([]))
 
 
 define evaluateTerm(term)
