@@ -1,12 +1,24 @@
 #* syntax.zero
 
+define isValidPrior(operator, node)
+    prior := getPrior(getSyntax(operator))
+    isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
+
+
 define reduceApply(operator, left, right)
     Juxtaposition(getTag(operator), left, right)
 
 
-define isValidPrior(operator, node)
-    prior := getPrior(getSyntax(operator))
-    isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
+define reducePrefix(operator, _left, right)
+    if not isValidPrior(operator, right)
+        syntaxError("operator syntax error", operator)
+    reduceApply(operator, OperatorName(getTag(operator), PREFIX), right)
+
+
+define reducePostfix(operator, left, _right)
+    if not isValidPrior(operator, left)
+        syntaxError("operator syntax error", operator)
+    reduceApply(operator, OperatorName(getTag(operator), POSTFIX), left)
 
 
 define reduceInfix(operator, left, right)
@@ -26,20 +38,28 @@ define reduceInfixR(operator, left, right)
     reduceInfix(operator, left, right)
 
 
-define reducePrefix(operator, _left, right)
-    if not isValidPrior(operator, right)
-        syntaxError("operator syntax error", operator)
-    reduceApply(operator, OperatorName(getTag(operator), PREFIX), right)
-
-
-define reducePostfix(operator, left, _right)
-    if not isValidPrior(operator, left)
-        syntaxError("operator syntax error", operator)
-    reduceApply(operator, OperatorName(getTag(operator), POSTFIX), left)
-
-
 define reduceArrow(operator, left, right)
     newStrictArrow(getTag(operator), left, right)
+
+
+define reducePipeline(operator, left, right)
+    reduceApply(operator, right, left)
+
+
+define reduceCommaPair(operator, left, right)
+    CommaPair(getTag(operator), left, right)
+
+
+define reduceAsPattern(operator, left, right)
+    if not isName(left)
+        syntaxError("expected name to left of", operator)
+    AsPattern(getTag(operator), left, right)
+
+
+define reduceWhere(operator, left, right)
+    if not isDefinition(right)
+        syntaxError("expected definition to right of", operator)
+    applyDefinition(right, left)
 
 
 define reduceNewline(operator, left, right)
@@ -60,24 +80,12 @@ define reduceInterfix(operator, left, right)
     reduceNewline(operator, left, right)
 
 
-define reducePipeline(operator, left, right)
-    reduceApply(operator, right, left)
+define reduceInvalid(operator, _left, _right)
+    syntaxError("missing operator", operator)
 
 
-define reduceAsPattern(operator, left, right)
-    if not isName(left)
-        syntaxError("expected name to left of", operator)
-    AsPattern(getTag(operator), left, right)
-
-
-define reduceCommaPair(operator, left, right)
-    CommaPair(getTag(operator), left, right)
-
-
-define reduceWhere(operator, left, right)
-    if not isDefinition(right)
-        syntaxError("expected definition to right of", operator)
-    applyDefinition(right, left)
+define reduceReserved(operator, _left, _right)
+    syntaxError("reserved operator", operator)
 
 
 define shiftPrefix(state, operator)
@@ -126,14 +134,6 @@ define shiftSpace(state, operator)
     if isOperator(head(getStack(state')))
         state'
     State(operator :: getStack(state'), getOperators(state'))
-
-
-define reduceReserved(operator, _left, _right)
-    syntaxError("reserved operator", operator)
-
-
-define reduceInvalid(operator, _left, _right)
-    syntaxError("missing operator", operator)
 
 
 define newOperator'(tag, prior, precedence, fixity, associativity,
@@ -242,17 +242,24 @@ define reduceLeftErase(State(stack, operators), operator)
     reduceLeft(State(erase(stack, " "), operators), operator)
 
 
-define shiftNewline(state, operator)
-    state' @ State(stack', operators') := reduceLeftErase(state, operator)
+define shiftSemicolon(state, operator)
+    _ @ State(stack', operators') := reduceLeftErase(state, operator)
     top := head(stack')
+    if isOperator(top)
+        syntaxError("missing left operand for", operator)
     if isSyntaxDefinition(top)
         definition := defineSyntax(operators', top,
             getDefiniendum(top), getDefiniens(top))
         operators'' := addSyntax(operators', getDefiniens(definition))
         State(operator :: definition :: tail(stack'), operators'')
-    if isOperator(top)
-        state'
     State(operator :: stack', operators')
+
+
+define shiftNewline(state @ State(stack, operators), operator)
+    stack' := erase(stack, " ")
+    if isOperator(head(stack'))
+        State(stack', operators)
+    shiftSemicolon(state, operator)
 
 
 define coreAlias(lexeme, alias, leftPrecedence, rightPrecedence, fixity,
@@ -278,7 +285,7 @@ OPERATORS := [newDictionary([
     coreSyntax("|", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
     coreSyntax("\n", 3, 3, INFIX, RIGHTVALUE, shiftNewline, reduceNewline),
-    coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftInfix, reduceNewline),
+    coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftSemicolon, reduceNewline),
     coreSyntax("define", 5, 5, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
     coreAlias("≔", ":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
@@ -289,7 +296,7 @@ OPERATORS := [newDictionary([
     coreAlias("⦊", "|>", 6, 6, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
     coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
-    coreSyntax(";", 8, 8, INFIX, RIGHT, shiftInfix, reduceNewline),
+    coreSyntax(";", 8, 8, INFIX, RIGHT, shiftSemicolon, reduceNewline),
     coreSyntax("->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreAlias("↦", "->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),

@@ -23,6 +23,16 @@ static Node* reduceAdfix(Node* operator, Node* argument) {
     return reduceApply(operator, Name(getTag(operator)), argument);
 }
 
+static Node* reducePrefix(Node* operator, Node* left, Node* right) {
+    (void)left;
+    return reduceAdfix(validatePrior(operator, right), right);
+}
+
+static Node* reducePostfix(Node* operator, Node* left, Node* right) {
+    (void)right;
+    return reduceAdfix(validatePrior(operator, left), left);
+}
+
 static Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceAdfix(operator, left), right);
 }
@@ -35,18 +45,27 @@ static Node* reduceInfixR(Node* operator, Node* left, Node* right) {
     return reduceInfix(validatePrior(operator, right), left, right);
 }
 
-static Node* reducePrefix(Node* operator, Node* left, Node* right) {
-    (void)left;
-    return reduceAdfix(validatePrior(operator, right), right);
-}
-
-static Node* reducePostfix(Node* operator, Node* left, Node* right) {
-    (void)right;
-    return reduceAdfix(validatePrior(operator, left), left);
-}
-
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     return newStrictArrow(getTag(operator), left, right);
+}
+
+static Node* reducePipeline(Node* operator, Node* left, Node* right) {
+    return reduceApply(operator, right, left);
+}
+
+static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
+    return CommaPair(getTag(operator), left, right);
+}
+
+static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isName(left), "expected name to left of" , operator);
+    return AsPattern(getTag(operator), left, right);
+}
+
+static Node* reduceWhere(Node* operator, Node* left, Node* right) {
+    if (!isDefinition(right))
+        syntaxError("expected definition to right of", operator);
+    return applyDefinition(right, left);
 }
 
 static Node* reduceNewline(Node* operator, Node* left, Node* right) {
@@ -65,23 +84,18 @@ static Node* reduceInterfix(Node* operator, Node* left, Node* right) {
     return reduceNewline(validatePrior(operator, left), left, right);
 }
 
-static Node* reduceWhere(Node* operator, Node* left, Node* right) {
-    if (!isDefinition(right))
-        syntaxError("expected definition to right of", operator);
-    return applyDefinition(right, left);
+static Node* reduceAbort(Node* operator, Node* left, Node* right) {
+    (void)left;
+    Tag tag = getTag(operator);
+    Node* exit = FixedName(tag, "(exit)");
+    return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
+        Juxtaposition(tag, FixedName(tag, "abort"), right)));
 }
 
-static Node* reducePipeline(Node* operator, Node* left, Node* right) {
-    return reduceApply(operator, right, left);
-}
-
-static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isName(left), "expected name to left of" , operator);
-    return AsPattern(getTag(operator), left, right);
-}
-
-static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
-    return CommaPair(getTag(operator), left, right);
+static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
+    (void)left, (void)right;
+    syntaxError("missing operator", operator);
+    return NULL;
 }
 
 static Node* reduceReserved(Node* operator, Node* left, Node* right) {
@@ -90,17 +104,21 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
-static void shiftSpace(Stack* stack, Node* operator) {
-    reduceLeft(stack, operator);
-    // ignore space after operators (note: close and postfix are never
-    // pushed onto the stack, so the operator must be expecting a right operand)
-    if (!isOperator(peek(stack, 0)))
-        push(stack, operator);
-}
-
 static void shiftPrefix(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     push(stack, operator);
+}
+
+static void shiftPostfix(Stack* stack, Node* operator) {
+    erase(stack, " ");      // if we erase newlines it would break associativity
+    reduceLeft(stack, operator);
+    if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
+        push(stack, LeftPlaceholder(getTag(operator)));
+    if (isOperator(peek(stack, 0)))
+        syntaxError("missing left operand for", operator);
+    Hold* operand = pop(stack);
+    push(stack, reduce(operator, getNode(operand), VOID));
+    release(operand);
 }
 
 static void shiftInfix(Stack* stack, Node* operator) {
@@ -118,30 +136,12 @@ static void shiftInfix(Stack* stack, Node* operator) {
     push(stack, operator);
 }
 
-static void shiftPostfix(Stack* stack, Node* operator) {
-    erase(stack, " ");      // if we erase newlines it would break associativity
+static void shiftSpace(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
-    if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
-        push(stack, LeftPlaceholder(getTag(operator)));
-    if (isOperator(peek(stack, 0)))
-        syntaxError("missing left operand for", operator);
-    Hold* operand = pop(stack);
-    push(stack, reduce(operator, getNode(operand), VOID));
-    release(operand);
-}
-
-static Node* reduceAbort(Node* operator, Node* left, Node* right) {
-    (void)left;
-    Tag tag = getTag(operator);
-    Node* exit = FixedName(tag, "(exit)");
-    return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
-        Juxtaposition(tag, FixedName(tag, "abort"), right)));
-}
-
-static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
-    (void)left, (void)right;
-    syntaxError("missing operator", operator);
-    return NULL;
+    // ignore space after operators (note: close and postfix are never
+    // pushed onto the stack, so the operator must be expecting a right operand)
+    if (!isOperator(peek(stack, 0)))
+        push(stack, operator);
 }
 
 static Precedence parsePrecedence(Node* node) {
@@ -203,15 +203,22 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         addCoreSyntax("(-)", p, p, PREFIX, L, shiftPrefix, reducePrefix);
 }
 
-static void shiftNewline(Stack* stack, Node* operator) {
+static void shiftSemicolon(Stack* stack, Node* operator) {
     erase(stack, " ");
     reduceLeft(stack, operator);
     Node* top = peek(stack, 0);
+    if (isOperator(top))
+        syntaxError("missing left operand for", operator);
     if (isSyntaxDefinition(top))
         defineSyntax(top, getLeft(top), getRight(top));
+    push(stack, operator);
+}
+
+static void shiftNewline(Stack* stack, Node* operator) {
     // ignore newlines after operators for line continuations
+    erase(stack, " ");
     if (!isOperator(peek(stack, 0)))
-        push(stack, operator);
+        shiftSemicolon(stack, operator);
 }
 
 void initSymbols(void) {
@@ -225,14 +232,14 @@ void initSymbols(void) {
     addCoreSyntax("|", 1, 1, INFIX, N, shiftInfix, reduceReserved);
     addCoreSyntax(",", 2, 2, INFIX, L, shiftInfix, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, shiftNewline, reduceNewline);
-    addCoreSyntax(";;", 4, 4, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax(";;", 4, 4, INFIX, R, shiftSemicolon, reduceNewline);
     addCoreSyntax("define", 5, 5, PREFIX, L, shiftPrefix, reducePrefix);
     addCoreSyntax(":=", 5, 5, INFIX, R, shiftInfix, reduceDefine);
     addCoreSyntax("::=", 5, 5, INFIX, R, shiftInfix, reduceADTDefinition);
     addCoreSyntax("where", 5, 5, INFIX, R, shiftInfix, reduceWhere);
     addCoreSyntax("|>", 6, 6, INFIX, L, shiftInfix, reducePipeline);
     addCoreSyntax("<|", 6, 6, INFIX, R, shiftInfix, reduceApply);
-    addCoreSyntax(";", 8, 8, INFIX, R, shiftInfix, reduceNewline);
+    addCoreSyntax(";", 8, 8, INFIX, R, shiftSemicolon, reduceNewline);
     addCoreSyntax("->", 9, 9, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("=>", 9, 9, INFIX, R, shiftInfix, reduceInfix);
     addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
