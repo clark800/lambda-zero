@@ -7,10 +7,11 @@ BLUE='\033[0;34m'
 NOCOLOR='\033[0m'
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CMD="$DIR/../main"
+CMD="$DIR/../main -t"
 if [[ "$#" > 0 && "$1" == "meta" ]]; then
     META=1
-    CMD="$DIR/../../self-interpreter/interpret -t"
+    "$DIR/../../self-interpreter/make"
+    CMD="$DIR/../../self-interpreter/main"
 else
     META=0
 fi
@@ -44,7 +45,6 @@ function oneline_suite {
     local failures=0
     local newline=$'\n'
     local prelude=""
-    local flags="-t"
     shift
     for filename in "$@"; do
         prelude+="$(cat "$DIR/$filename")$newline"
@@ -55,7 +55,7 @@ function oneline_suite {
         local expected_output=$(echo "$output_line" | sed 's/\\n/\n/g')
         local sedline=$(echo "$line" | sed 's/\\n/\n/g')
         local input="$prelude$sedline"
-        local output=$(echo "$input" | $CMD $flags 2>&1)
+        local output=$(echo "$input" | $CMD 2>&1)
         check "$line" "$expected_output" "$output" || ((failures++)) || true
     done < <(grep -v "====" "$testcases_path")
     if [[ $failures -eq 0 ]]; then return 0; else return 1; fi

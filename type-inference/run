@@ -1,4 +1,0 @@
-#!/bin/bash
-rm -f main
-make
-time main < main

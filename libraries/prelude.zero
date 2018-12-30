@@ -93,7 +93,7 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
-prepend ≔ `(∷)
+prepend ≔ (∷)
 isNil ≔ [] ↦ true; _ ∷ _ ↦ false
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
 cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
