@@ -46,7 +46,9 @@ static Node* reduceInfixR(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
-    return newStrictArrow(getTag(operator), left, right);
+    if (isName(left))
+        return SimpleArrow(getTag(operator), left, right);
+    return newCaseArrow(getTag(operator), left, right);
 }
 
 static Node* reducePipeline(Node* operator, Node* left, Node* right) {
@@ -76,7 +78,7 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
     if (isCase(left) && isCase(right))
         return combineCases(getTag(operator), left, right);
     if (isKeyphrase(left, "case"))
-        return reduceArrow(operator, getRight(left), right);
+        return newCaseArrow(getTag(operator), getRight(left), right);
     return reduceApply(operator, left, right);
 }
 

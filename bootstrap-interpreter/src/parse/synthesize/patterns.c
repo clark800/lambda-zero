@@ -37,10 +37,8 @@ Node* newLazyArrow(Tag tag, Node* left, Node* right) {
     return UnderscoreArrow(tag, body);
 }
 
-Node* newStrictArrow(Tag tag, Node* left, Node* right) {
+Node* newCaseArrow(Tag tag, Node* left, Node* right) {
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
-    if (isName(left))
-        return SimpleArrow(tag, left, right);
     Node* body = right;
     Node* items = isAsPattern(left) ? getRight(left) : left;
     for (; isJuxtaposition(items); items = getLeft(items))
