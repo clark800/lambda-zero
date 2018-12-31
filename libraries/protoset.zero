@@ -1,14 +1,16 @@
 #* protoset.zero
 
-ProtosetType(a) ::= {
-    Protoset(_compare : (a => a => 𝔹), _data : BinaryTree(AADatumType(a)))
+Protoset(a) ::= {
+    Protoset(_compare : (a => a => 𝔹), _data : BinaryTree(AADatum(a)))
 }
 
-newProtoset((~<), elements) := Protoset((~<), extendAA((~<), elements, Tip))
+newProtoset((~<), elements) :=
+    Protoset((~<), extendAA((~<), elements, Tip))
 Protoset(_, data).getElements := flattenAA(data)
 Protoset((~<), data).elicit(object) := searchAA((~<), object, data)
 object in protoset := not isVoid(protoset.elicit(object))
-Protoset((~<), data).add(object) := Protoset((~<), insertAA((~<), object, data))
+Protoset((~<), data).add(object) :=
+    Protoset((~<), insertAA((~<), object, data))
 Protoset((~<), data).merge(Protoset(_, data')) :=
     Protoset((~<), mergeAA((~<), data, data'))
 

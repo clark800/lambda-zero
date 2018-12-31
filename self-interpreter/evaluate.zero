@@ -4,7 +4,7 @@ define expandNatural(tag, n)
     metadata := Metadata(Free, Free, [])
     Abstraction(tag, metadata, Abstraction(tag, metadata,
         if n = 0 then Variable(tag, 2) else
-            Application(tag, false, Variable(tag, 1), Numeral(tag, n - 1))))
+            Application(tag, False, Variable(tag, 1), Numeral(tag, n - 1))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)

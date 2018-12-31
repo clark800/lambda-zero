@@ -1,13 +1,14 @@
 #* store.zero
 
-StoreType(a) ::= {Store(_size : ℕ, _data : List(ℕ && FullBinaryTree(a)))}
+Store(a) ::= {Store(_size : ℕ, _data : List(ℕ && FullBinaryTree(a)))}
 
 newStore(elements) :=
     Store(length(elements), newRandomAccessList(reverse(elements)))
 Store(_, data).dump := zip(0 ..., reverse(getList(data)))
-Store(size, data).allocate(value) := (size, Store(up size, data.push(value)))
+Store(size, data).allocate(value) :=
+    (size, Store(up size, data.push(value)))
 Store(size, data).access(n) :=
-    if n >= size then void else just(data.seek(size - n - 1))
+    if n >= size then Void else Just(data.seek(size - n - 1))
 Store(size, data).assign(n, value) :=
     Store(size, data.update(size - n - 1, value))
 

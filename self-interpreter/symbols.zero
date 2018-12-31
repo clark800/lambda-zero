@@ -48,7 +48,7 @@ define reduceTop(State(stack, operators))
 
 define isHigherPrecedence(left, right)
     if isEOF(left)
-        false
+        False
 
     leftSyntax := getSyntax(left)
     rightSyntax := getSyntax(right)

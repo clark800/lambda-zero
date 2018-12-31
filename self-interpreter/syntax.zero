@@ -230,11 +230,11 @@ define addSyntax(operators, operator)
     operators' :=  dictionary' :: operators
     p := getLeftPrecedence(getSyntax(operator))
     if isThisOperator(operator, "+")
-        s := Syntax("(+)", p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix,
+        s := Syntax("(+)", p, p, PREFIX, LEFT, False, shiftPrefix, reducePrefix,
             "")
         head(operators').set("(+)", s) :: operators'
     if isThisOperator(operator, "-")
-        s := Syntax("(-)", p, p, PREFIX, LEFT, false, shiftPrefix, reducePrefix,
+        s := Syntax("(-)", p, p, PREFIX, LEFT, False, shiftPrefix, reducePrefix,
             "")
         head(operators').set("(-)", s) :: operators'
     operators'
@@ -267,7 +267,7 @@ define shiftNewline(state @ State(stack, operators), operator)
 define coreAlias(lexeme, alias, leftPrecedence, rightPrecedence, fixity,
         associativity, shifter, reducer)
     (lexeme, Syntax(alias, leftPrecedence, rightPrecedence, fixity,
-        associativity, true, shifter, reducer, ""))
+        associativity, True, shifter, reducer, ""))
 
 
 define coreSyntax(lexeme, leftPrecedence, rightPrecedence, fixity,
