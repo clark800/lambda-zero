@@ -63,23 +63,27 @@ static inline Node* Reference(Tag tag, long long value, long long depth) {
 
 static inline Node* Name(Tag tag) {return Reference(tag, 0, 0);}
 
+static inline Node* FixedName(Tag tag, const char* s) {
+    return Name(renameTag(tag, s));
+}
+
 static inline Node* Operator(Tag tag, long long value, void* rules) {
     return newLeaf(tag, OPERATOR, value, rules);
 }
 
-static inline Node* SimpleArrow(Tag tag, Node* parameter, Node* body) {
+static inline Node* SimpleArrow(Node* parameter, Node* body) {
     assert(isName(parameter));
-    return newBranch(tag, ARROW, SIMPLEARROW, parameter, body);
+    return newBranch(getTag(parameter), ARROW, SIMPLEARROW, parameter, body);
 }
 
-static inline Node* StrictArrow(Tag tag, Node* parameter, Node* body) {
-    assert(isName(parameter));
-    return newBranch(tag, ARROW, STRICTARROW, parameter, body);
+static inline Node* StrictArrow(Tag constructorTag, Node* body) {
+    Node* parameter = FixedName(constructorTag, "_");
+    return newBranch(constructorTag, ARROW, STRICTARROW, parameter, body);
 }
 
-static inline Node* LockedArrow(Tag tag, Node* parameter, Node* body) {
+static inline Node* LockedArrow(Node* parameter, Node* body) {
     assert(isName(parameter));
-    return newBranch(tag, ARROW, LOCKEDARROW, parameter, body);
+    return newBranch(getTag(parameter), ARROW, LOCKEDARROW, parameter, body);
 }
 
 static inline Node* Juxtaposition(Tag tag, Node* left, Node* right) {
@@ -111,16 +115,12 @@ static inline Node* SetBuilder(Tag tag, Node* commaList) {
     return newBranch(tag, SETBUILDER, 0, VOID, commaList);
 }
 
-static inline Node* FixedName(Tag tag, const char* s) {
-    return Name(renameTag(tag, s));
-}
-
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
     return Reference(renameTag(tag, "_"), (long long)debruijn, 0);
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
-    return LockedArrow(tag, FixedName(tag, "_"), body);
+    return LockedArrow(FixedName(tag, "_"), body);
 }
 
 static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}

@@ -176,7 +176,8 @@ void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
         RULES = newArray(1024);
     bool special = strncmp(symbol, "(+)", 4) && strncmp(symbol, "(-)", 4);
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
-    appendSyntax((Rules){lexeme, lexeme, {"", 0}, leftPrecedence,
+    String empty = newString("", 0);
+    appendSyntax((Rules){lexeme, lexeme, empty, leftPrecedence,
         rightPrecedence, fixity, associativity, special, shifter, reducer});
 }
 
