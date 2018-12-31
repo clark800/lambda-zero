@@ -44,9 +44,7 @@ define getNameAndValue(f, left, right)
     getNameAndValue(f, getLeft(left), f(getRight(left), right))
 
 
-define newStrictArrow(tag, left, right)
-    if (isName(left))
-        SimpleArrow(tag, left, right)
+define newCaseArrow(tag, left, right)
     pattern := if isAsPattern(left) then getPattern(left) else left
     (name, reconstructor) :=
         getNameAndValue(newPatternArrow(tag), pattern, right)
