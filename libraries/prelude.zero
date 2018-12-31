@@ -40,18 +40,18 @@ until(p, f, z) ≔ if p(z) then z else until(p, f, f(z))
 while(p, f, z) ≔ until((not) ∘ p, f, z)
 
 # maybe
-(a)? ⩴ {Void, Just(_ : a)}
+(a)? ⩴ {Void, Just(_ ∈ a)}
 isVoid ≔ Void ↦ True; Just(_) ↦ False
 onJust(f, mx) ≔ mx ⦊ Void ↦ Void; Just(x) ↦ f(x)
 mapJust(f, mx) ≔ mx.onJust(Just ∘ f)
 mx ⁇ x ≔ mx ⦊ Void ↦ x; Just(x′) ↦ x′
 
 # either
-a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
+a ⊔ b ⩴ {Left(_ ∈ a), Right(_ ∈ b)}
 isLeft ≔ Left(_) ↦ True; Right(_) ↦ False
 isRight ≔ Left(_) ↦ False; Right(_) ↦ True
 try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
-onLeft(f, exy) ≔ exy ⦊ Left(x) -> f(x); Right(y) -> Right(y)
+onLeft(f, exy) ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ Right(y)
 onRight(f, exy) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
 mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
@@ -66,7 +66,6 @@ positive(n) ≔ + n
 negative(n) ≔ - n
 negate ≔ + n ↦ - n; - n ↦ + n
 abs ≔ + n ↦ + n; - n ↦ + n
-abs′ ≔ + n ↦ n; - n ↦ n
 min(n, m) ≔ if n ≤ m then n else m
 max(n, m) ≔ if n ≥ m then n else m
 mod(d, n) ≔ n % d
@@ -103,18 +102,16 @@ length(xs) ≔ xs.fold(constant(↑), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
 drop(n, xs) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ xs′.drop(n′))
 take(n, xs) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
-xs[n] ≔ head(xs.drop(n))
-at(n, xs) ≔ xs[n]
 xs[n, n′] ≔ if n ≥ n′ then [] else xs.drop(n).take(n′ - n)
-slice(n, n′, xs) := xs[n, n′]
-last(xs) ≔ until(isNil ∘ tail, tail, xs).head
-dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
-    head(xs) ∷ dropLast(tail(xs))
-reduce(f, xs) ≔ tail(xs).cascade(f, xs[0])
-safeHead(xs) ≔ if isNil(xs) then Void else Just(head(xs))
-safeTail(xs) ≔ if isNil(xs) then Void else Just(tail(xs))
-safeIndex(xs) ≔ 0 ↦ safeHead(xs);
-    ↑ n′ ↦ (safeIndex(xs′, n′) where maybe xs′ ≔ safeTail(xs))
+slice(n, n′, xs) ≔ xs[n, n′]
+dropLast(xs) ≔ xs ⦊ [] ↦ [];
+    x ∷ xs′ ↦ if isNil(xs′) then [] else x ∷ dropLast(xs′)
+safeHead(xs) ≔ xs ⦊ [] ↦ Void; x ∷ _ ↦ Just(x)
+safeTail(xs) ≔ xs ⦊ [] ↦ Void; _ ∷ xs ↦ Just(xs)
+safeLast(xs) ≔ xs ⦊ [] ↦ Void;
+    x ∷ xs′ ↦ (xs′ ⦊ [] ↦ Just(x); _ ∷ _ ↦ safeLast(xs′))
+safeAt(n, xs) ≔ n ⦊ 0 ↦ safeHead(xs);
+    ↑ n′ ↦ (xs′.safeAt(n′) where maybe xs′ ≔ safeTail(xs))
 dropIf(p, ns) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
 takeWhile(p, xs) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(p, xs′) else []
@@ -124,13 +121,13 @@ filter(p, xs) ≔ xs.fold(x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [
 xs ¦ p ≔ filter(p, xs)
 map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 (⬫) ≔ map
-filterMap(f, xs) := xs |> [] ↦ []; x ∷ xs′ ->
-    (f(x) |> Void ↦ xs''; Just(x') ↦ x' ∷ xs'' where xs'' ≔ filterMap(f, xs′))
+filterMap(f, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦
+    (f(x) ⦊ Void ↦ xs″; Just(x′) ↦ x′ ∷ xs″ where xs″ ≔ filterMap(f, xs′))
 zipWith(f, xs, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
-pairs(xs) ≔ zip(xs, tail(xs))
+pairs(xs) ≔ xs ⦊ [] ↦ []; _ ∷ xs′ ↦ zip(xs, xs′)
 interleave(y, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs′) where
     interleave′ ≔ [] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
 joinWith(ys, xss) ≔ join(interleave(ys, xss))
@@ -150,6 +147,9 @@ contains(p, xs) ≔ not isVoid(xs.find(p))
 findIndices(p, xs) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
 findIndex(p, xs) ≔ safeHead(findIndices(xs, p))
 
+cascadeMaybe(f, z, xs) ≔ xs ⦊ [] ↦ Just(z); x ∷ xs′ ↦
+    f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′))
+
 # cascadeMap : (a => s => (b && s)) => s => List(a) => (List(b) && s)
 cascadeMap(f, z, xs) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
@@ -164,9 +164,6 @@ deduplicate(xs) ≔ deduplicateBy((=), xs)
 ∏(ns) ≔ ns.cascade((⋅), 1)
 sum ≔ ∑
 product ≔ ∏
-
-minimum(ns) ≔ ns.reduce(min)
-maximum(ns) ≔ ns.reduce(max)
 
 fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 primes ≔ p(2 …) where p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
@@ -188,14 +185,19 @@ define startsWith(ks, ns)
         [] ↦ True
         k ∷ ks′ ↦ (ns ⦊ [] ↦ False; n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))
 
-define split(p, ns)
-    match ns
+define split(p, xs)
+    match xs
         [] ↦ ([], [])
-        n ∷ ns′ ↦ (if p(ns) then ([], ns) else (n ∷ before, after) where
-                  (before, after) ≔ ns′.split(p))
+        x ∷ xs′ ↦ (if p(xs) then ([], xs) else (x ∷ before, after) where
+                  (before, after) ≔ xs′.split(p))
+
+define splitWhen(p, xs)
+    match xs
+        [] ↦ ([], [])
+        x ∷ xs′ ↦ (if p(x) then ([], xs) else (x ∷ before, after) where
+                  (before, after) ≔ xs′.splitWhen(p))
 
 splitAt(n, xs) ≔ (xs.take(n), xs.drop(n))
-splitWhen(p, ns) ≔ ns.split(p ∘ head)
 splitOn(delimiter, ns) ≔ ns.split(startsWith(delimiter))
 
 define splitWith(splitter, ns)
@@ -244,20 +246,17 @@ define showNatural(n)
     if n = 0 then "0" else reverse(showReversedNatural(n))
 
 showSign ≔ + _ ↦ "+"; - _ ↦ "-"
-showInteger(z) ≔ showSign(z) ⧺ showNatural(abs′(z))
+showInteger(z) ≔ showSign(z) ⧺ showNatural(z ⦊ + n ↦ n; - n ↦ n)
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
 define showPair(showFirst, showSecond, xsxs)
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
 showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 # parsing
-parseDigit(base, digit) ≔
-    if isDigit(digit) and digit - '0' < base then digit - '0' else
-    abort "Invalid digit in base " ⧺ showNatural(base) ⧺ ": " ⧺ [digit]
-parseNatural(base, string) ≔
-    string.cascade(x ↦ d ↦ base ⋅ x + parseDigit(base, d), 0)
-parseInteger(base, string) ≔ if string.head = '-' then
-    - parseNatural(base, tail(string)) else + parseNatural(base, string)
+parseDigit(digit) ≔ if isDigit(digit) then Just(digit - '0') else Void
+parseNatural(ns) ≔ if isNil(ns) then Void else
+    ns.cascadeMaybe(x ↦ d ↦
+        (Just(10 ⋅ x + n) where maybe n ≔ parseDigit(d)), 0)
 repl(prompt, f, input) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
 # tree
@@ -293,15 +292,15 @@ FullBinaryTree(a) ⩴ {
 
 define showFullBinaryTree(showElement, tree)
     define showElementLine(indent, x)
-        replicate(2 * indent, ' ') ++ showElement(x) ++ "\n"
+        replicate(2 ⋅ indent, ' ') ⧺ showElement(x) ⧺ "\n"
 
     define showFullBinaryTreeNode(indent, node)
         match node
             case Leaf(x); showElementLine(indent, x)
             case Branch(x, left, right)
-                showElementLine(indent, x) ++
-                    showFullBinaryTreeNode(up indent, left) ++
-                    showFullBinaryTreeNode(up indent, right)
+                showElementLine(indent, x) ⧺
+                    showFullBinaryTreeNode(↑ indent, left) ⧺
+                    showFullBinaryTreeNode(↑ indent, right)
 
     showFullBinaryTreeNode(0, tree)
 

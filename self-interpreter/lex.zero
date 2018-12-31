@@ -57,11 +57,11 @@ define splitLexeme(ns)
     ns.splitWhen(isDelimiter)
 
 define advanceLocation(Location(file, line, column), lexeme)
-    if isComment(lexeme[0]) and lexeme[1] = '*'
+    if lexeme.startsWith("#*")
         (_, after) := lexeme.drop(2).splitWhen(=/= ' ')
         (file', _) := after.splitWhen(isLineFeed)
         Location(file', if isNil(file') then 0 else 1, 0)
-    if isLineFeed(head(lexeme))
+    if lexeme.startsWith("\n")
         Location(file, line + 1, length(lexeme))
     Location(file, line, column + length(lexeme))
 

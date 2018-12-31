@@ -103,11 +103,13 @@ define shiftPostfix(state, operator)
         placeholder := newLeftPlaceholder(getTag(head(stack')))
         body := reduceOperator(operator, placeholder, Null(getTag(placeholder)))
         State(body :: stack', getOperators(state))
-    operand := stack'[0]
-    if isOperator(operand)
-        syntaxError("missing left operand for", operator)
-    reduced := reduceOperator(operator, operand, Null(getTag(operator)))
-    State(reduced :: tail(stack'), getOperators(state))
+    match stack'
+        case []; syntaxError("missing left operand for", operator)
+        case operand :: stack''
+            if isOperator(operand)
+                syntaxError("missing left operand for", operator)
+            reduced := reduceOperator(operator, operand, Null(getTag(operator)))
+            State(reduced :: stack'', getOperators(state))
 
 
 define shiftInfix(state, operator)

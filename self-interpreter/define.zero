@@ -1,7 +1,7 @@
 #* define.zero
 
 define isTupleConstructor(node)
-    isName(node) and not isNil(getLexeme(node)) and getLexeme(node)[0] = ','
+    isName(node) and getLexeme(node).startsWith(",")
 
 define isTuple(node)
     if isJuxtaposition(node)

@@ -46,26 +46,27 @@ isADT(type) := indexType(type) = 4
 define getVariableName(index)
     characters := ['a', 'b', 'c', 'd']
     if index < 4
-        [characters[index]]
-    getVariableName((index // 4) - 1) ++ [characters[index % 4]]
+        [characters.safeAt(index) ?? '#']
+    getVariableName((index // 4) - 1) ++ [characters.safeAt(index % 4) ?? '#']
 
 
 define getSuffix(count, index)
     if count <= 1 or index = 0 then ""
     subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(index).map(x -> x - '0').map(x -> subscripts[x]).join
+    showNatural(index).map(x -> subscripts.safeAt(x - '0') ?? "").join
 
 
 define showADT(name, fixity, arguments)
-    if isNil(arguments)
-        name
-    if fixity = INFIX and length(arguments) = 2
-        "(" ++ arguments[0] ++ " " ++ name ++ " " ++ arguments[1] ++ ")"
-    if fixity = PREFIX and length(arguments) = 1
-        name ++ "(" ++ arguments[0] ++ ")"
-    if fixity = POSTFIX and length(arguments) = 1
-        "(" ++ arguments[0] ++ ")" ++ name
-    name ++ "(" ++ arguments.joinWith(", ") ++ ")"
+    match arguments
+        case []; name
+        case argument :: arguments'
+            if fixity = INFIX and length(arguments) = 2
+                "(" ++ (argument :: name :: arguments').joinWith(" ") ++ ")"
+            if fixity = PREFIX and length(arguments) = 1
+                name ++ "(" ++ argument ++ ")"
+            if fixity = POSTFIX and length(arguments) = 1
+                "(" ++ argument ++ ")" ++ name
+            name ++ "(" ++ arguments.joinWith(", ") ++ ")"
 
 
 define showType

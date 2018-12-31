@@ -16,24 +16,28 @@ define getBuiltin(tag)
         f(checkNatural(getTerm(left)), checkNatural(getTerm(right)))
 
     define makeUnaryBuiltin(f, evaluate, arguments)
-        if length(arguments) < 1
-            runtimeError("missing argument to", tag)
-        argument := evaluate(arguments[0])
-        Closure(Numeral(tag', f(checkNatural(getTerm(argument)))), [])
+        match arguments
+            case []; runtimeError("missing argument to", tag)
+            case argument :: arguments'
+                argument' := evaluate(argument)
+                Closure(Numeral(tag', f(checkNatural(getTerm(argument')))), [])
+
+    define makeBinaryBuiltin(constructor, f, evaluate, arguments)
+        match arguments
+            case []; runtimeError("missing argument to", tag)
+            case left :: arguments'
+                match arguments'
+                    case []; runtimeError("missing argument to", tag)
+                    case right :: _
+                        left' := evaluate(left)
+                        right' := evaluate(right)
+                        Closure(constructor(compute(f, left', right')), [])
 
     define makeNaturalBuiltin(f, evaluate, arguments)
-        if length(arguments) < 2
-            runtimeError("missing argument to", tag)
-        left := evaluate(arguments[0])
-        right := evaluate(arguments[1])
-        Closure(Numeral(tag', compute(f, left, right)), [])
+        makeBinaryBuiltin(Numeral(tag'), f, evaluate, arguments)
 
     define makeComparisonBuiltin(f, evaluate, arguments)
-        if length(arguments) < 2
-            runtimeError("missing argument to", tag)
-        left := evaluate(arguments[0])
-        right := evaluate(arguments[1])
-        Closure(newBoolean(compute(f, left, right)), [])
+        makeBinaryBuiltin(newBoolean, f, evaluate, arguments)
 
     define addBuiltin(left, right)
         if left > maxInteger - right
