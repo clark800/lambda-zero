@@ -31,32 +31,32 @@ Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
 Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth_4 ∈ d)}
 
 # boolean
-𝔹 ⩴ {false, true}
-if b then x else y ≔ b ⦊ false ↦ y; true ↦ x
-not b ≔ if b then false else true
-b and c ≔ if b then c else false
-b or c ≔ if b then true else c
+𝔹 ⩴ {False, True}
+if b then x else y ≔ b ⦊ False ↦ y; True ↦ x
+not b ≔ if b then False else True
+b and c ≔ if b then c else False
+b or c ≔ if b then True else c
 until(p, f, z) ≔ if p(z) then z else until(p, f, f(z))
 while(p, f, z) ≔ until((not) ∘ p, f, z)
 
 # maybe
-(a)? ⩴ {void, just(_ : a)}
-isVoid ≔ void ↦ true; just(_) ↦ false
-onJust(f, mx) ≔ mx ⦊ void ↦ void; just(x) ↦ f(x)
-mapJust(f, mx) ≔ mx.onJust(just ∘ f)
-mx ⁇ x ≔ mx ⦊ void ↦ x; just(x′) ↦ x′
+(a)? ⩴ {Void, Just(_ : a)}
+isVoid ≔ Void ↦ True; Just(_) ↦ False
+onJust(f, mx) ≔ mx ⦊ Void ↦ Void; Just(x) ↦ f(x)
+mapJust(f, mx) ≔ mx.onJust(Just ∘ f)
+mx ⁇ x ≔ mx ⦊ Void ↦ x; Just(x′) ↦ x′
 
 # either
 a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
-isLeft ≔ Left(_) ↦ true; Right(_) ↦ false
-isRight ≔ Left(_) ↦ false; Right(_) ↦ true
+isLeft ≔ Left(_) ↦ True; Right(_) ↦ False
+isRight ≔ Left(_) ↦ False; Right(_) ↦ True
 try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
 onLeft(f, exy) ≔ exy ⦊ Left(x) -> f(x); Right(y) -> Right(y)
 onRight(f, exy) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
 mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
 exy ⁈ y ≔ try exy catch constant(y)
-toMaybe ≔ Left(_) ↦ void; Right(y) ↦ just(y)
+toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 
 # numbers
 ℕ ⩴ {0, ↑((↓) ∈ ℕ)}
@@ -79,12 +79,12 @@ f ° n ≔ n ⦊ 0 ↦ id; ↑ n′ ↦ f ∘ f ° n′
 (n)² ≔ n ⋅ n
 n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′
 
-# (=) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false); ↑ n ↦ (0 ↦ false; ↑ m ↦ n = m)
-# (≠) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true); ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≠ m)
-# (<) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ true); ↑ n ↦ (0 ↦ false; ↑ m ↦ n < m)
-# (>) ≔ 0 ↦ (0 ↦ false; ↑ _ ↦ false); ↑ n ↦ (0 ↦ true; ↑ m ↦ n > m)
-# (≤) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ true); ↑ n ↦ (0 ↦ false; ↑ m ↦ n ≤ m)
-# (≥) ≔ 0 ↦ (0 ↦ true; ↑ _ ↦ false); ↑ n ↦ (0 ↦ true; ↑ m ↦ n ≥ m)
+# (=) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ False; ↑ m ↦ n = m)
+# (≠) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ True); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≠ m)
+# (<) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n < m)
+# (>) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n > m)
+# (≤) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n ≤ m)
+# (≥) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≥ m)
 # (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
 # (-) ≔ 0 ↦ (0 ↦ 0; ↑ n ↦ up n); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
 # (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
@@ -94,7 +94,7 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 # list
 List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ (∷)
-isNil ≔ [] ↦ true; _ ∷ _ ↦ false
+isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
 cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
 xs ⧺ ys ≔ xs.fold((∷), ys)
@@ -111,8 +111,8 @@ last(xs) ≔ until(isNil ∘ tail, tail, xs).head
 dropLast(xs) ≔ if isNil(xs) or isNil(tail(xs)) then [] else
     head(xs) ∷ dropLast(tail(xs))
 reduce(f, xs) ≔ tail(xs).cascade(f, xs[0])
-safeHead(xs) ≔ if isNil(xs) then void else just(head(xs))
-safeTail(xs) ≔ if isNil(xs) then void else just(tail(xs))
+safeHead(xs) ≔ if isNil(xs) then Void else Just(head(xs))
+safeTail(xs) ≔ if isNil(xs) then Void else Just(tail(xs))
 safeIndex(xs) ≔ 0 ↦ safeHead(xs);
     ↑ n′ ↦ (safeIndex(xs′, n′) where maybe xs′ ≔ safeTail(xs))
 dropIf(p, ns) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
@@ -125,7 +125,7 @@ xs ¦ p ≔ filter(p, xs)
 map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 (⬫) ≔ map
 filterMap(f, xs) := xs |> [] ↦ []; x ∷ xs′ ->
-    (f(x) |> void ↦ xs''; just(x') ↦ x' ∷ xs'' where xs'' ≔ filterMap(f, xs′))
+    (f(x) |> Void ↦ xs''; Just(x') ↦ x' ∷ xs'' where xs'' ≔ filterMap(f, xs′))
 zipWith(f, xs, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
@@ -135,8 +135,8 @@ interleave(y, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ interleave′(xs�
     interleave′ ≔ [] ↦ []; x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
 joinWith(ys, xss) ≔ join(interleave(ys, xss))
 bisect(p, xs) ≔ (xs ¦ p, xs ¦ (not) ∘ p)
-any(p, xs) ≔ xs.map(p).fold((or), false)
-all(p, xs) ≔ xs.map(p).fold((and), true)
+any(p, xs) ≔ xs.map(p).fold((or), False)
+all(p, xs) ≔ xs.map(p).fold((and), True)
 count(p, xs) ≔ length(xs ¦ p)
 
 iterate(f, x) ≔ x ∷ iterate(f, f(x))
@@ -175,18 +175,18 @@ primes ≔ p(2 …) where p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0
 define xs ≛ ys
     match xs
         [] ↦ isNil(ys)
-        x ∷ xs′ ↦ (ys ⦊ [] ↦ false; y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
+        x ∷ xs′ ↦ (ys ⦊ [] ↦ False; y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
 
 define ns ⩿ ms
     match ns
-        [] ↦ true
-        n ∷ ns′ ↦ (ms ⦊ [] ↦ false; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
+        [] ↦ True
+        n ∷ ns′ ↦ (ms ⦊ [] ↦ False; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
 
 
 define startsWith(ks, ns)
     match ks
-        [] ↦ true
-        k ∷ ks′ ↦ (ns ⦊ [] ↦ false; n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))
+        [] ↦ True
+        k ∷ ks′ ↦ (ns ⦊ [] ↦ False; n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))
 
 define split(p, ns)
     match ns
@@ -236,7 +236,7 @@ isGraphical(n) ≔ isPrintable(n) and not isBlank(n)
 isPunctuation(n) ≔ isGraphical(n) and not isAlphanumeric(n)
 
 # serialization
-showBoolean(b) ≔ if b then "true" else "false"
+showBoolean(b) ≔ if b then "True" else "False"
 
 define showNatural(n)
     define showReversedNatural(m)
@@ -271,11 +271,11 @@ BinaryTree(a) ⩴ {
 
 define search((≾), datum, tree)
     match tree
-        case Tip; void
+        case Tip; Void
         case Fork(datum′, left, right)
             if datum ≾ datum′
                 if datum′ ≾ datum
-                    just(datum′)
+                    Just(datum′)
                 search((≾), datum, left)
             search((≾), datum, right)
 

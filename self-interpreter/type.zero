@@ -15,7 +15,7 @@ Type ::= {
         # form of case expressions
 }
 
-SchemeType ::= {Scheme(getUniversals : List(Type), getType : Type)}
+Scheme ::= {Scheme(getUniversals : List(Type), getType : Type)}
 
 Free := Scheme([], FreeType)
 

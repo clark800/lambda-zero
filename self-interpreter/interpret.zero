@@ -24,7 +24,7 @@ define constructString(tag, string)
 define evaluateMain(Closure(main, environment), input)
     # todo: use tag for "input" parameter to main
     tag := getTermTag(main)
-    term := Application(tag, false, main, constructString(tag, input))
+    term := Application(tag, False, main, constructString(tag, input))
     serializeString(evaluateClosure, Closure(term, environment)) ??
         runtimeError("expected string from", tag)
 

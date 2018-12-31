@@ -6,7 +6,7 @@ define findDebruijnIndex(level, stack, lexeme)
 
 define bindOperation(tag)
     maybe (arity, optimize) := getBuiltin(tag)
-    just(Operation(tag, arity, optimize))
+    Just(Operation(tag, arity, optimize))
 
 
 define bindName(level, stack, tag)

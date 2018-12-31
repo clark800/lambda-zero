@@ -13,44 +13,43 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
 ArrowType ::= {Simple, Strict, Locked}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
-StateType(ast, syntax) ::= {State(
+State(ast, syntax) ::= {State(
     getStack : List(ast),
-    getOperators : List(ProtosetType(List(ℕ) && syntax))
+    getOperators : List(Protoset(List(ℕ) && syntax))
 )}
 
-SyntaxType(ast) ::= {Syntax(
+Syntax(ast) ::= {Syntax(
     getAlias : List(ℕ),
     getLeftPrecedence : ℕ,
     getRightPrecedence : ℕ,
     getFixity : ℕ,
     getAssociativity : ℕ,
     getSpecial : 𝔹,
-    getShift : (StateType(ast, SyntaxType(ast)) =>
-        ast => StateType(ast, SyntaxType(ast))),
+    getShift : (State(ast, Syntax(ast)) => ast => State(ast, Syntax(ast))),
     getReduce : (ast => ast => ast => ast),
     getPrior : List(ℕ)
 )}
 
 AST ::= {
-    Reference(_ : TagType, getReferenceIndex : ℕ,
+    Reference(_ : Tag, getReferenceIndex : ℕ,
         getReferenceDepth : ℕ, getReferenceFixity : ℕ),
-    Arrow(_ : TagType, getArrowType : ArrowType, getConstructors : List(AST),
+    Arrow(_ : Tag, getArrowType : ArrowType, getConstructors : List(AST),
         getArrowLeft : AST, getArrowRight : AST),
-    Couple(_ : TagType, getCoupleType : CoupleType,
+    Couple(_ : Tag, getCoupleType : CoupleType,
         getLeft : AST, getRight : AST),
-    Number(_ : TagType, getNumericValue : ℕ),
-    Operator(_ : TagType, getRank : ℕ, getSyntax : SyntaxType(AST)),
-    Definition(_ : TagType, getDefinitionType : DefinitionType,
+    Number(_ : Tag, getNumericValue : ℕ),
+    Operator(_ : Tag, getRank : ℕ, getSyntax : Syntax(AST)),
+    Definition(_ : Tag, getDefinitionType : DefinitionType,
         getDefiniendum : AST, getDefiniens : AST),
-    AsPattern(_ : TagType, getLabel : AST, getPattern : AST),
-    CommaPair(_ : TagType, getCommaLeft : AST, getCommaRight : AST),
-    Section(_ :  TagType, getSide : SectionSide, getSectionBody : AST),
-    SetBuilder(_ : TagType, getForms : List(AST)),
-    Constructor(_ : TagType, _parameterTypes : List(AST), _dataType : AST,
+    AsPattern(_ : Tag, getLabel : AST, getPattern : AST),
+    CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
+    Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
+    SetBuilder(_ : Tag, getForms : List(AST)),
+    Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
-    Accessor(_ : TagType, _dataType : AST, _returnType : AST,
+    Accessor(_ : Tag, _dataType : AST, _returnType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
-    Null(_ : TagType)
+    Null(_ : Tag)
 }
 
 define lockArrow
@@ -89,16 +88,16 @@ define containsName(name)
     Arrow(_, _, _, _, body) -> containsName(name, body)
     Couple(_, _, left, right) ->
         containsName(name, left) or containsName(name, right)
-    Number(_, _) -> false
-    Operator(_, _, _) -> false
-    Definition(_, _, _, _) -> false
-    AsPattern(_, _, _) -> false
-    CommaPair(_, _, _) -> false
-    Section(_, _, _) -> false
-    SetBuilder(_, _) -> false
-    Constructor(_, _, _, _, _, _) -> false
-    Accessor(_, _, _, _, _, _) -> false
-    Null(_) -> false
+    Number(_, _) -> False
+    Operator(_, _, _) -> False
+    Definition(_, _, _, _) -> False
+    AsPattern(_, _, _) -> False
+    CommaPair(_, _, _) -> False
+    Section(_, _, _) -> False
+    SetBuilder(_, _) -> False
+    Constructor(_, _, _, _, _, _) -> False
+    Accessor(_, _, _, _, _, _) -> False
+    Null(_) -> False
 
 define showAST
     Reference(tag, _, _, _) -> showTag(tag)

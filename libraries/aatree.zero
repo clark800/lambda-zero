@@ -1,6 +1,6 @@
 #* aatree.zero
 
-AADatumType(a) ::= {AADatum(_level : ℕ, getValueAA : a)}
+AADatum(a) ::= {AADatum(_level : ℕ, getValueAA : a)}
 
 
 define getLevelAA(tree)

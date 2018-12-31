@@ -98,7 +98,7 @@ define getInternalTypes
 
 define sameRoot(a, b)
     match a
-        FreeType -> false
+        FreeType -> False
         BottomType(_) -> isBottomType(b)
         TypeVariable(_, _) -> isTypeVariable(b) and
             getAddress(a) = getAddress(b)

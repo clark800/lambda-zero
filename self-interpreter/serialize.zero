@@ -30,7 +30,7 @@ define serializeString(evaluateClosure, closure)
     term := getTerm(closure')
     maybe nil := maybeIsNil(term)
     if nil
-        just([])
+        Just([])
 
     dummy := Closure(Numeral(noTag, 0), newRandomAccessList([]))
     environment' := getEnvironment(closure').push(dummy).push(dummy)
@@ -42,7 +42,7 @@ define serializeString(evaluateClosure, closure)
     maybe tailTerm := maybeTail(term)
     maybe remaining := serializeString(evaluateClosure, enclose(tailTerm))
 
-    just(character :: remaining)
+    Just(character :: remaining)
 
 
 #*
