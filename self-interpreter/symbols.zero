@@ -30,9 +30,13 @@ define reduceBracket(open, close, left, right)
 define shift(state @ State(stack, operators), node)
     if isOperator(node)
         getShift(getSyntax(node))(state, node)
-    if isNil(stack) or not isOperator(head(stack))
-        syntaxError("missing operator before", node)
-    State(node :: stack, operators)
+    match stack
+        case []
+            syntaxError("missing operator before", node)
+        case top :: stack'
+            if not isOperator(top)
+                syntaxError("missing operator before", node)
+            State(node :: stack, operators)
 
 define erase(stack, lexeme)
     stack.dropIf(`isThisOperator(lexeme))
@@ -104,10 +108,15 @@ define reduceLeft(state, operator)
 define parseOperator(tag, value, operatorSyntax)
     Operator(renameTag(tag, getAlias(operatorSyntax)), value, operatorSyntax)
 
+
+define lookupSyntax(lexeme, operators)
+    operators |> [] -> Void; top :: _ -> top.lookup(lexeme)
+
+
 define parseSymbol(tag, value, operators)
     lexeme := getTagLexeme(tag)
-    head(operators).lookup(lexeme).mapJust(parseOperator(tag, value)) ??
-        (if lexeme =*= " " then (head(operators).lookup("( )").
+    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
+        (if lexeme =*= " " then (operators.lookupSyntax("( )").
             mapJust(Operator(tag, value)) ?? Name(tag)) else Name(tag))
 
 #*

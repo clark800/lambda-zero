@@ -1,7 +1,16 @@
 #* bind.zero
 
 define findDebruijnIndex(level, stack, lexeme)
-    head(stack).lookup(lexeme).mapJust(level -)
+    match stack
+        case []; Void
+        case table :: _
+            table.lookup(lexeme).mapJust(level -)
+
+
+define pushParameter(lexeme, level, stack)
+    match stack
+        case []; [newDictionary([(lexeme, level)])]
+        case top :: stack'; top.set(lexeme, level) :: stack'
 
 
 define bindOperation(tag)
@@ -67,11 +76,13 @@ define newConstructorType(term, parameterTypes, dataType, context, count, index)
     # todo: check that universals are not already defined and that all other
     # names are already defined; also make sure universal name is not the
     # same as the dataType name
-    if isNil(parameterTypes)
-        parseADT(dataType, context, count, index)
-    parameterType := parseParameterType(head(parameterTypes), context)
-    FunctionType(term, parameterType, newConstructorType(getBody(term),
-        tail(parameterTypes), dataType, context, count, index))
+    match parameterTypes
+        case []
+            parseADT(dataType, context, count, index)
+        case parameterType :: parameterTypes'
+            parameterType' := parseParameterType(parameterType, context)
+            FunctionType(term, parameterType', newConstructorType(getBody(term),
+                parameterTypes', dataType, context, count, index))
 
 
 define newConstructorScheme(term, parameterTypes, dataType, count, index)
@@ -100,7 +111,7 @@ define bind(level, stack, node)
             constructors' := constructors.map(bind(level, stack))
             indices := constructors'.map(getDebruijnIndex)
             metadata := Metadata(Free, Free, indices)
-            stack' := head(stack).set(getLexeme(parameter), level) :: stack
+            stack' := stack.pushParameter(getLexeme(parameter), level)
             body' := bind(up level, stack', body)
             Abstraction(getTag(parameter), metadata, body')
         case Couple(tag, _, left, right)

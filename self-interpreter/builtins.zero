@@ -70,12 +70,12 @@ define getBuiltin(tag)
         argument + 1
 
     define abortBuiltin(evaluate, arguments)
-        if length(arguments) < 1
-            runtimeError("missing argument to", tag)
-        closure := head(arguments)
-        message := serializeString(evaluate, closure) ??
-            runtimeError("expected string argument to", tag)
-        abort message
+        match arguments
+            case []; runtimeError("missing argument to", tag)
+            case closure :: _
+                message := serializeString(evaluate, closure) ??
+                    runtimeError("expected string argument to", tag)
+                abort message
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),

@@ -1,5 +1,9 @@
 #* syntax.zero
 
+define isOperatorTop(stack)
+    stack |> [] -> True; top :: _ -> isOperator(top)
+
+
 define isValidPrior(operator, node)
     prior := getPrior(getSyntax(operator))
     isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
@@ -99,13 +103,14 @@ define shiftPostfix(state, operator)
     stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
-    if not isSpecial(operator) and isOpenOperator(head(stack'))
-        placeholder := newLeftPlaceholder(getTag(head(stack')))
-        body := reduceOperator(operator, placeholder, Null(getTag(placeholder)))
-        State(body :: stack', getOperators(state))
     match stack'
         case []; syntaxError("missing left operand for", operator)
         case operand :: stack''
+            if not isSpecial(operator) and isOpenOperator(operand)
+                placeholder := newLeftPlaceholder(getTag(operand))
+                null := Null(getTag(placeholder))
+                body := reduceOperator(operator, placeholder, null)
+                State(body :: stack', getOperators(state))
             if isOperator(operand)
                 syntaxError("missing left operand for", operator)
             reduced := reduceOperator(operator, operand, Null(getTag(operator)))
@@ -116,26 +121,29 @@ define shiftInfix(state, operator)
     stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
-    operators := getOperators(state')
-    top := head(stack')
-    tag := getTag(operator)
-    if isOperator(top)
-        if isThisOperator(operator, "+")
-            operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
-            State(operator' :: stack', operators)
-        if isThisOperator(operator, "-")
-            operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
-            State(operator' :: stack', operators)
-        if not isSpecial(operator) and isOpenOperator(top)
-            placeholder := newLeftPlaceholder(tag)
-            State(operator :: placeholder :: stack', operators)
-        syntaxError("missing left operand for", operator)
-    State(operator :: stack', operators)
+    match stack'
+        case []
+            syntaxError("missing left operand for", operator)
+        case top :: _
+            tag := getTag(operator)
+            operators := getOperators(state')
+            if not isOperator(top)
+                State(operator :: stack', operators)
+            if isThisOperator(operator, "+")
+                operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
+                State(operator' :: stack', operators)
+            if isThisOperator(operator, "-")
+                operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
+                State(operator' :: stack', operators)
+            if not isSpecial(operator) and isOpenOperator(top)
+                placeholder := newLeftPlaceholder(tag)
+                State(operator :: placeholder :: stack', operators)
+            syntaxError("missing left operand for", operator)
 
 
 define shiftSpace(state, operator)
     state' := reduceLeft(state, operator)
-    if isOperator(head(getStack(state')))
+    if isOperatorTop(getStack(state'))
         state'
     State(operator :: getStack(state'), getOperators(state'))
 
@@ -177,7 +185,7 @@ define newSyntaxOperator(tag, precedence, fixity, prior)
 define newAlias(operators, tag, name)
     if not isName(name)
         syntaxError("expected operator name", name)
-    rules := head(operators).lookup(getLexeme(name)) ??
+    rules := operators.lookupSyntax(getLexeme(name)) ??
         syntaxError("syntax not defined", name)
     Operator(tag, 0, rules)
 
@@ -190,7 +198,7 @@ define copySyntax(operators, tag, name)
 
 
 define findPrecedence(operators, node)
-    syntax := head(operators).lookup(getLexeme(node)) ??
+    syntax := operators.lookupSyntax(getLexeme(node)) ??
         syntaxError("syntax not defined", node)
     if getLeftPrecedence(syntax) =/= getRightPrecedence(syntax)
         syntaxError("operator not supported", node)
@@ -225,20 +233,27 @@ define defineSyntax(operators, node, name, right)
     Definition(tag, SyntaxDefinition, name, operator)
 
 
+define pushSyntax(lexeme, syntax, operators)
+    match operators
+        case []
+            [newDictionary([(lexeme, syntax)])]
+        case top :: operators'
+            top.set(lexeme, syntax) :: operators
+
+
 define addSyntax(operators, operator)
-    if head(operators).hasKey(getLexeme(operator))
+    if not isVoid(operators.lookupSyntax(getLexeme(operator)))
         syntaxError("syntax already defined", operator)
-    dictionary' := head(operators).set(getLexeme(operator), getSyntax(operator))
-    operators' :=  dictionary' :: operators
+    operators' := operators.pushSyntax(getLexeme(operator), getSyntax(operator))
     p := getLeftPrecedence(getSyntax(operator))
     if isThisOperator(operator, "+")
         s := Syntax("(+)", p, p, PREFIX, LEFT, False, shiftPrefix, reducePrefix,
             "")
-        head(operators').set("(+)", s) :: operators'
+        operators'.pushSyntax("(+)", s)
     if isThisOperator(operator, "-")
         s := Syntax("(-)", p, p, PREFIX, LEFT, False, shiftPrefix, reducePrefix,
             "")
-        head(operators').set("(-)", s) :: operators'
+        operators'.pushSyntax("(-)", s)
     operators'
 
 
@@ -248,20 +263,22 @@ define reduceLeftErase(State(stack, operators), operator)
 
 define shiftSemicolon(state, operator)
     _ @ State(stack', operators') := reduceLeftErase(state, operator)
-    top := head(stack')
-    if isOperator(top)
-        syntaxError("missing left operand for", operator)
-    if isSyntaxDefinition(top)
-        definition := defineSyntax(operators', top,
-            getDefiniendum(top), getDefiniens(top))
-        operators'' := addSyntax(operators', getDefiniens(definition))
-        State(operator :: definition :: tail(stack'), operators'')
-    State(operator :: stack', operators')
+    match stack'
+        case []; syntaxError("missing left operand for", operator)
+        case top :: stack''
+            if isOperator(top)
+                syntaxError("missing left operand for", operator)
+            if isSyntaxDefinition(top)
+                definition := defineSyntax(operators', top,
+                    getDefiniendum(top), getDefiniens(top))
+                operators'' := addSyntax(operators', getDefiniens(definition))
+                State(operator :: definition :: stack'', operators'')
+            State(operator :: stack', operators')
 
 
 define shiftNewline(state @ State(stack, operators), operator)
     stack' := erase(stack, " ")
-    if isOperator(head(stack'))
+    if isOperatorTop(stack')
         State(stack', operators)
     shiftSemicolon(state, operator)
 
