@@ -36,7 +36,13 @@ define parseParameterType(node, context)
     if name =*= "=>"
         if length(parameterTypes) =/= 2
             syntaxError("(=>) requires two arguments", node)
-        FunctionType(noTerm, parameterTypes[0], parameterTypes[1])
+        match parameterTypes
+            case []; FunctionType(noTerm, FreeType, FreeType)
+            case left :: parameterTypes'
+                match parameterTypes'
+                    case []; FunctionType(noTerm, left, FreeType)
+                    case right :: _
+                        FunctionType(noTerm, left, right)
     ADT(noTerm, name, getADTFixity(root), parameterTypes, FreeType, 0, 0)
 
 

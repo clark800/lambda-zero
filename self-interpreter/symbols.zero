@@ -37,14 +37,30 @@ define shift(state @ State(stack, operators), node)
 define erase(stack, lexeme)
     stack.dropIf(`isThisOperator(lexeme))
 
-define reduceTop(State(stack, operators))
-    if isOperator(stack[1]) and getFixity(getSyntax(stack[1])) = PREFIX
-        shift(State(stack.drop(2), operators),
-            reduceOperator(stack[1], Null(getTag(stack[1])), stack[0]))
-    operators' := if isSyntaxDefinition(stack[2]) then
-        tail(operators) else operators
-    shift(State(stack.drop(3), operators'),
-        reduceOperator(stack[1], stack[2], stack[0]))
+
+define reduceTop'(operator, right, stack, operators)
+    if getFixity(getSyntax(operator)) = PREFIX
+        shift(State(stack, operators),
+            reduceOperator(operator, Null(getTag(operator)), right))
+    match stack
+        case []; State(stack, operators)
+        case left :: stack'
+            state' := State(stack', if isSyntaxDefinition(left) then
+                operators.drop(1) else operators)
+            shift(state', reduceOperator(operator, left, right))
+
+
+define reduceTop(state @ State(stack, operators))
+    match stack
+        case []; state
+        case right :: stack'
+            match stack'
+                case []; state
+                case operator :: stack''
+                    if not isOperator(operator)
+                        state
+                    reduceTop'(operator, right, stack'', operators)
+
 
 define isHigherPrecedence(left, right)
     if isEOF(left)
@@ -70,8 +86,17 @@ define isHigherPrecedence(left, right)
 
     leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 
+
 define shouldReduceTop(operator, State(stack, _operators))
-    not isOperator(stack[0]) and isHigherPrecedence(stack[1], operator)
+    match stack
+        case []; False
+        case x :: stack'
+            if isOperator(x)
+                False
+            match stack'
+                case []; False
+                case x' :: _; isHigherPrecedence(x', operator)
+
 
 define reduceLeft(state, operator)
     while(shouldReduceTop(operator), reduceTop, state)
