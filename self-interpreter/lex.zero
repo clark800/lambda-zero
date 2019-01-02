@@ -11,50 +11,67 @@ isInvalid(c) := c =/= 0 and isControl(c) and not isLineFeed(c)
 isDelimiter(c) := " `.,;@#$()[]{}\"\n\0".any((= c)) or isInvalid(c)
 isRepeatable(c) := " `.,;".any(= c)
 
+define startsWithDigit(lexeme)
+    lexeme |> [] -> False; n :: _ -> isDigit(n)
+
 define isNumeric(lexeme)
-    isDigit(head(lexeme)) or ((head(lexeme) = '+' or head(lexeme) = '-') and
-        not isNil(tail(lexeme)) and isDigit(head(tail(lexeme))))
+    lexeme |> [] -> False; n :: ns ->
+        isDigit(n) or ((n = '+' or n = '-') and startsWithDigit(ns))
 
 define splitQuoteCharacter(quote, ns)
-    if ns.isNil or head(ns) = quote or isLineFeed(head(ns))
-        ([], ns)
-    n := if head(ns) = '\\' and not isNil(tail(ns)) then 2 else 1
-    ns.splitAt(n)
+    match ns
+        case []; ([], ns)
+        case n :: ns'
+            if n = quote or isLineFeed(n)
+                ([], ns)
+            n' := if n = '\\' and not isNil(ns') then 2 else 1
+            ns.splitAt(n')
 
 define shiftSplit((a, b))
-    if isNil(b)
-        (a, b)
-    (a ++ [head(b)], tail(b))
+    b |> [] -> (a, b); n :: ns -> (a ++ [n], ns)
 
 define splitQuote(ns)
-    quote := head(ns)
-    (a, b) := tail(ns).splitWith(splitQuoteCharacter(quote))
-    if not b.isNil and head(b) = quote
-        shiftSplit((quote :: a, b))
-    (quote :: a, b)
+    match ns
+        case []; ([], [])
+        case quote :: ns'
+            (a, b) := ns'.splitWith(splitQuoteCharacter(quote))
+            match b
+                case []
+                    (quote :: a, b)
+                case quote' :: _
+                    if quote' = quote
+                        shiftSplit((quote :: a, b))
+                    (quote :: a, b)
 
 define splitNumeric(ns)
     (before, after) := ns.splitWhen(isDelimiter)
-    if isNil(after) or isNil(tail(after)) or head(after) =/= '.' or
-            not isDigit(head(tail(after)))
-        (before, after)
-    (before', after') := tail(after).splitWhen(isDelimiter)
-    (before ++ [head(after)] ++ before', after')
+    match after
+        case []
+            (before, after)
+        case n :: ns'
+            if n =/= '.' or not startsWithDigit(ns')
+                (before, after)
+            (before', after') := ns'.splitWhen(isDelimiter)
+            (before ++ [n] ++ before', after')
 
 define splitNewline(ns)
-    (before, after) := tail(ns).splitWhen(=/= ' ')
-    (head(ns) :: before, after)
+    match ns
+        case []; ([], [])
+        case n :: ns'
+            (before, after) := ns'.splitWhen(=/= ' ')
+            (n :: before, after)
 
 define splitLexeme(ns)
-    if ns.isNil then ([], [])
-    c := head(ns)
-    if c.isLineFeed then splitNewline(ns)
-    if c.isQuote then splitQuote(ns)
-    if c.isComment then ns.splitWhen(isLineFeed)
-    if ns.isNumeric then splitNumeric(ns)
-    if c.isRepeatable then ns.splitWhen(=/= c)
-    if c.isDelimiter then ([head(ns)], tail(ns))
-    ns.splitWhen(isDelimiter)
+    match ns
+        case []; ([], [])
+        case c :: ns'
+            if c.isLineFeed then splitNewline(ns)
+            if c.isQuote then splitQuote(ns)
+            if c.isComment then ns.splitWhen(isLineFeed)
+            if ns.isNumeric then splitNumeric(ns)
+            if c.isRepeatable then ns.splitWhen(=/= c)
+            if c.isDelimiter then ([c], ns')
+            ns.splitWhen(isDelimiter)
 
 define advanceLocation(Location(file, line, column), lexeme)
     if lexeme.startsWith("#*")
@@ -83,9 +100,12 @@ define showFullTag(Tag(lexeme, location))
     "'" ++ lexeme ++ "' at " ++ showLocation(location)
 
 define showTag(Tag(lexeme, _))
-    if lexeme.isNil or head(lexeme) = 0 then "\\0"
-    if head(lexeme) = '\n' then "\\n"
-    lexeme
+    match lexeme
+        case []; "\\0"
+        case c :: _
+            if c = 0 then "\\0"
+            if c = '\n' then "\\n"
+            lexeme
 
 
 TokenCode ::= {
@@ -95,22 +115,27 @@ TokenCode ::= {
 Token ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
 define createLineFeedToken(tag, _ @ Tag(nextLexeme, _))
-    if isNil(nextLexeme) or
-            head(nextLexeme).isLineFeed or isComment(head(nextLexeme))
-        Token(tag, VSpace)
-    Token(tag, Newline)
+    match nextLexeme
+        case []
+            Token(tag, VSpace)
+        case c :: _
+            if isLineFeed(c) or isComment(c)
+                Token(tag, VSpace)
+            Token(tag, Newline)
 
 define createToken(tag @ Tag(lexeme, _), nextTag)
-    if isNil(lexeme) then Token(tag, Symbolic)
-    c := head(lexeme)
-    if c = ' ' then Token(tag, Space)
-    if c = '\n' then createLineFeedToken(tag, nextTag)
-    if c = '"' then Token(tag, String)
-    if c = '\'' then Token(tag, Character)
-    if isNumeric(lexeme) then Token(tag, Numeric)
-    if isComment(c) then Token(tag, Comment)
-    if isInvalid(c) then Token(tag, Invalid)
-    Token(tag, Symbolic)
+    match lexeme
+        case []
+            Token(tag, Symbolic)
+        case c :: _
+            if c = ' ' then Token(tag, Space)
+            if c = '\n' then createLineFeedToken(tag, nextTag)
+            if c = '"' then Token(tag, String)
+            if c = '\'' then Token(tag, Character)
+            if isNumeric(lexeme) then Token(tag, Numeric)
+            if isComment(c) then Token(tag, Comment)
+            if isInvalid(c) then Token(tag, Invalid)
+            Token(tag, Symbolic)
 
 define getTokenCodeNumber(tokenCode)
     match tokenCode

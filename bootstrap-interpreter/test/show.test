@@ -14,7 +14,7 @@ main(input) := showString(deduplicate("acbbcda"))
 main(input) := ((0..10).map(positive))[3, 7].showList(showInteger)
 [+3, +4, +5, +6]
 ===============================================================================
-main(input) := " 12 3  4 ".split((= '3') <> head).showPair(showString, showString)
+main(input) := " 12 3  4 ".splitWhen(= '3').showPair(showString, showString)
 (" 12 ", "3  4 ")
 ===============================================================================
 main(input) := " 12 3  4 ".splitOn("3").showPair(showString, showString)

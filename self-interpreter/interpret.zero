@@ -2,8 +2,7 @@
 
 define splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
-    input' := if afterCode.isNil then [] else tail(afterCode)
-    (code, input')
+    afterCode |> [] -> (code, []); _ :: input' -> (code, input')
 
 
 define isMain(term)

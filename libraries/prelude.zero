@@ -91,7 +91,7 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 # n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 # list
-List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
+List(a) ⩴ {[], (_head ∈ a) ∷ (_tail ∈ List(a))}
 prepend ≔ (∷)
 isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))

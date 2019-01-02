@@ -12,26 +12,29 @@ define parseEscapeCode(code, tag)
 
 
 define parseQuotedCharacter(tag, string)
-    c := head(string)
-    if c =/= '\\'
-        Number(tag, c)
-    if isNil(tail(string))
-        parseError("missing end quote for", tag)
-    Number(tag, parseEscapeCode(head(tail(string)), tag))
+    match string
+        case []
+            parseError("missing end quote for", tag)
+        case c :: cs
+            if c =/= '\\'
+                Number(tag, c)
+            match cs
+                case []; parseError("missing end quote for", tag)
+                case c' :: _; Number(tag, parseEscapeCode(c', tag))
 
 
 define splitStringLiteral(string)
-    if isNil(string)
-        []
-    n := if head(string) = '\\' and not isNil(tail(string)) then 2 else 1
-    string.take(n) :: splitStringLiteral(string.drop(n))
+    match string
+        case []; []
+        case c :: cs
+            n := if c = '\\' and not isNil(cs) then 2 else 1
+            string.take(n) :: splitStringLiteral(string.drop(n))
 
 
 define buildStringLiteral(tag, characters)
-    if isNil(characters)
-        newNil(tag)
-    prependList(tag, head(characters),
-        buildStringLiteral(tag, tail(characters)))
+    match characters
+        case []; newNil(tag)
+        case c :: cs; prependList(tag, c, buildStringLiteral(tag, cs))
 
 
 define getQuoteContents(tag)
@@ -51,9 +54,11 @@ define parseStringLiteral(tag)
 
 define parseCharacterLiteral(tag)
     characters := getQuotedCharacters(tag)
-    if characters.length = 1
-        head(characters)
-    parseError("invalid character literal", tag)
+    match characters
+        case []; parseError("invalid character literal", tag)
+        case c :: cs
+            if isNil(cs) then c else
+                parseError("invalid character literal", tag)
 
 
 define parseNumericLiteral(tag)
@@ -98,10 +103,13 @@ define parse(code)
     stack := getStack(tokens.cascade(shiftToken, state))
     # use "count" to force any syntaxErrors in the stack
     if stack.count((not) <> isEOF) = 0
-        syntaxError("no input", head(stack))
-    if length(stack) =/= 1
         abort "parser error"
-    # abort(showAST(head(stack)))
-    bindAST(head(stack))
+    match stack
+        case []
+            abort "parser error"
+        case result :: remaining
+            if not isNil(remaining)
+                syntaxError("parser error", result)
+            bindAST(result)
 
 #*

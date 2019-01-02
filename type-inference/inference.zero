@@ -60,9 +60,10 @@ define unify(variables, types)
     unify'(types, variables, types)
 
 define unifyAll(variables, types)
-    if isNil(types)
-        variables
-    zip(repeat(head(types)), tail(types)).cascade(unify, variables)
+    match types
+        case []; variables
+        case type :: types'
+            zip(repeat(type), types').cascade(unify, variables)
 
 define generalize(variables, oldVariables, type)
     syntax(\\) := syntax(\)
@@ -109,7 +110,7 @@ define constructParameterType(variables, schemes, term)
     counts := deduplicate(adtTypes.map(getCount))
     if length(names) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
-    count := head(counts)
+    count := safeHead(counts) ?? 0
     indices := adtTypes.map(getIndex)
     if length(indices) < count
         throwError("Type error: missing case:", tag)
@@ -119,11 +120,11 @@ define constructParameterType(variables, schemes, term)
         throwError("Type error: cases out of order:", tag)
 
     # note: all schemes should have the same universals
-    universals := getUniversals(head(schemes))
+    universals := getUniversals(safeHead(schemes) ?? Free)
     variable := TypeVariable(term, length(universals))
     universals' := variable :: universals
 
-    outerType := head(adtTypes)   # todo: set index to zero
+    outerType := safeHead(adtTypes) ?? FreeType   # todo: set index to zero
     innerType := constructInnerParameterType(types, variable, term)
 
     # note: the variables in inner and outer must be instantiated together
