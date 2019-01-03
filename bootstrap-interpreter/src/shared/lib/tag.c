@@ -4,7 +4,7 @@
 #include "tag.h"
 
 String newString(const char* start, unsigned int length) {
-    return (String){start, length};
+    return (String){start, length, '\0'};
 }
 
 String toString(const char* start) {
@@ -23,19 +23,24 @@ Tag renameTag(Tag tag, const char* name) {
     return newTag(newString(name, (unsigned int)strlen(name)), tag.location);
 }
 
+Tag addPrefix(Tag tag, char prefix) {
+    return newTag((String){tag.lexeme.start, tag.lexeme.length, prefix},
+        tag.location);
+}
+
 bool isThisString(String a, const char* b) {
-    return a.length == strlen(b) && strncmp(a.start, b, a.length) == 0;
+    return a.prefix == '\0' && a.length == strlen(b) &&
+        strncmp(a.start, b, a.length) == 0;
 }
 
 bool isSameString(String a, String b) {
-    return a.length == b.length && strncmp(a.start, b.start, a.length) == 0;
-}
-
-bool contains(String a, char c) {
-    return memchr(a.start, c, a.length) != NULL;
+    return a.length == b.length && a.prefix == b.prefix &&
+        strncmp(a.start, b.start, a.length) == 0;
 }
 
 void printString(String string, FILE* stream) {
+    if (string.prefix != '\0')
+        fputc(string.prefix, stream);
     fwrite(string.start, sizeof(char), string.length, stream);
 }
 

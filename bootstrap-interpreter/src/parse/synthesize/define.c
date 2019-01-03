@@ -12,18 +12,18 @@ Node* getHead(Node* node) {
 
 Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    return Let(tag, newLazyArrow(tag, left, scope), right);
+    return Let(tag, newLazyArrow(left, scope), right);
 }
 
 Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
-            newLazyArrow(tag, left, scope)), right);
+            newLazyArrow(left, scope)), right);
 }
 
 Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> onRight(b, (a -> c)) --> (((onRight) b) (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
-            newLazyArrow(tag, left, scope)), right);
+            newLazyArrow(left, scope)), right);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -71,7 +71,7 @@ static Node* transformRecursion(Node* name, Node* value) {
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);
     Node* fix = FixedName(tag, "fix");
-    return Juxtaposition(tag, fix, LockedArrow(tag, name, value));
+    return Juxtaposition(tag, fix, LockedArrow(name, value));
 }
 
 static inline bool isValidPattern(Node* node) {
@@ -147,12 +147,47 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
     return applyPlainDefinition(tag, name, constructor, scope);
 }
 
+static Node* newFallbackCase(Tag tag, unsigned int m) {
+    // ignore all m parameters and return f applied to parameter above
+    Node* fallback = Underscore(tag, m + 2);
+    Node* instance = Underscore(tag, m + 1);
+    Node* body = Juxtaposition(tag, fallback, instance);
+    for (unsigned int j = 0; j < m; ++j)
+        body = UnderscoreArrow(tag, body);
+    return body;
+}
+
+static Node* newDeconstructorDefinition(Tag tag, Node* form, Node* scope,
+        unsigned int ms[], unsigned int i, unsigned int n) {
+    // deconstructor :
+    // (reconstructor : p1 => ... => pm => T) => (fallback : A => T) => A => T
+    Node* reconstructor = Underscore(tag, 3);
+    Node* body = Underscore(tag, 1);
+    for (unsigned int j = 0; j < n; ++j)
+        body = Juxtaposition(tag, body, j == i ?
+            reconstructor : newFallbackCase(tag, ms[j]));
+    Node* deconstructor = UnderscoreArrow(tag,
+        UnderscoreArrow(tag, UnderscoreArrow(tag, body)));
+    Node* name = Name(addPrefix(getTag(getHead(form)), '@'));
+    return applyPlainDefinition(tag, name, deconstructor, scope);
+}
+
 Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
-    // for each item in the forms tuple, define a constructor function
-    Node* form = getRight(adt), *node = form;
-    unsigned int n = getArgumentCount(form);
-    for (unsigned int i = 1; isJuxtaposition(node); ++i, node = getLeft(node))
-        scope = newConstructorDefinition(tag, getRight(node), scope, n - i, n);
+    // for each item in the forms tuple, define constructor functions
+    Node* forms = getRight(adt);
+    Node* node = forms;
+    unsigned int n = getArgumentCount(forms);
+    unsigned int ms[256];  // store the number of arguments for each constructor
+
+    for (unsigned int i = 0; i < n; ++i, node = getLeft(node))
+        ms[n - i - 1] = getArgumentCount(getRight(node));
+
+    node = forms;
+    for (unsigned int i = 0; i < n; ++i, node = getLeft(node)) {
+        Node* form = getRight(node);
+        scope = newDeconstructorDefinition(tag, form, scope, ms, n - i - 1, n);
+        scope = newConstructorDefinition(tag, form, scope, n - i - 1, n);
+    }
 
     // define ADT name as outermost definition
     Node* undefined = FixedName(tag, "(undefined)");
@@ -194,7 +229,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     if (isTuple(left) || isAsPattern(left))
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))
-        right = newLazyArrow(tag, getRight(left), right);
+        right = newLazyArrow(getRight(left), right);
     syntaxErrorIf(!isName(left), "invalid left hand side", operator);
     if (isThisName(left, "main"))
         return applyPlainDefinition(tag, left, right, newMainCall(left));

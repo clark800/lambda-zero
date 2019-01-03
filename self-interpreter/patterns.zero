@@ -11,27 +11,27 @@ define getArguments(pattern)
 
 
 define newProjector(tag, size, index)
-    (UnderscoreArrow(tag)^<>(size))(newUnderscore(tag, size - index))
+    (UnderscoreArrow(tag)^<>(size))(Underscore(tag, size - index))
 
 
-define newPatternArrow(tag, pattern, body)
+define newPatternArrow(pattern, body)
     if isName(pattern)
-        LockedArrow(tag, pattern, body)
+        LockedArrow(pattern, body)
     if isAsPattern(pattern)
         label := getLabel(pattern)
-        LockedArrow(tag, label, Juxtaposition(tag,
-            newPatternArrow(tag, getPattern(pattern), body),
+        LockedArrow(label, Juxtaposition(getTag(pattern),
+            newPatternArrow(getPattern(pattern), body),
             Reference(getTag(label), 1, 0, getReferenceFixity(label))))
     if isJuxtaposition(pattern)
         constructor := getHead(pattern)
+        tag := getTag(constructor)
         arguments := getArguments(pattern)
         size := length(arguments)
-        underscore := newUnderscore(tag, 1)
-        function := arguments.fold(newPatternArrow(tag), body)
+        underscore := Underscore(tag, 1)
+        function := arguments.fold(newPatternArrow, body)
         projectors := (0 .. size - 1).map(newProjector(tag, size))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        parameter := Name(renameTag(tag, "_"))
-        lockArrow(StrictArrow(tag, [constructor], parameter,
+        lockArrow(StrictArrow(tag, [constructor],
             projections.cascade(Juxtaposition(tag), function)))
     syntaxError("invalid parameter", pattern)
 
@@ -44,20 +44,19 @@ define getNameAndValue(f, left, right)
     getNameAndValue(f, getLeft(left), f(getRight(left), right))
 
 
-define newCaseArrow(tag, left, right)
+define newCaseArrow(left, right)
     pattern := if isAsPattern(left) then getPattern(left) else left
     (name, reconstructor) :=
-        getNameAndValue(newPatternArrow(tag), pattern, right)
+        getNameAndValue(newPatternArrow, pattern, right)
     constructor := Name(getTag(name))  # name could be a number
-    underscore := newUnderscore(tag, 1)
-    parameter := Name(renameTag(tag, "_"))
+    tag := getTag(constructor)
+    underscore := Underscore(tag, 1)
     if not isAsPattern(left)
-        StrictArrow(tag, [constructor], parameter,
+        StrictArrow(tag, [constructor],
             Juxtaposition(tag, underscore, reconstructor))
-    wrapper := newPatternArrow(tag, getLabel(left), reconstructor)
+    wrapper := newPatternArrow(getLabel(left), reconstructor)
     argument := Juxtaposition(tag, wrapper, underscore)
-    StrictArrow(tag, [constructor], parameter,
-        Juxtaposition(tag, underscore, argument))
+    StrictArrow(tag, [constructor], Juxtaposition(tag, underscore, argument))
 
 
 define addCases(tag, base, extension)
@@ -69,7 +68,7 @@ define addCases(tag, base, extension)
 
 define newCaseBody(tag, left, right)
     base := if isSimpleArrow(left) then
-        Juxtaposition(tag, newUnderscore(tag, 1), getArrowRight(left)) else
+        Juxtaposition(tag, Underscore(tag, 1), getArrowRight(left)) else
         getArrowRight(left)
     if isSimpleArrow(right)
         Juxtaposition(tag, base, getArrowRight(right))
@@ -82,9 +81,28 @@ define getCaseConstructors(arrow)
     getConstructors(arrow)
 
 
+define isDefaultCase(arrow)
+    isSimpleArrow(arrow) and isUnderscore(getTag(getArrowLeft(arrow)))
+
+
+define getReconstructor(arrow)
+    if isSimpleArrow(arrow)
+        getArrowRight(arrow)
+    getRight(getArrowRight(arrow))
+
+
+define chainCases(tag, arrow, fallback)
+    deconstructor := Name(addPrefix(getTag(arrow), '@'))
+    reconstructor := getReconstructor(arrow)
+    body := Juxtaposition(tag, Juxtaposition(tag, Juxtaposition(tag,
+        deconstructor, reconstructor), fallback), Underscore(tag, 1))
+    SimpleArrow(Name(renameTag(tag, "_")), body)
+
+
 define combineCases(tag, left, right)
-    underscore := Name(renameTag(tag, "_"))
+    if isDefaultCase(right)
+        chainCases(tag, left, right)
     constructors := getCaseConstructors(left) ++ getCaseConstructors(right)
-    StrictArrow(tag, constructors, underscore, newCaseBody(tag, left, right))
+    StrictArrow(tag, constructors, newCaseBody(tag, left, right))
 
 #*

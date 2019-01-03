@@ -44,8 +44,8 @@ define reduceInfixR(operator, left, right)
 
 define reduceArrow(operator, left, right)
     if isName(left)
-        SimpleArrow(getTag(operator), left, right)
-    newCaseArrow(getTag(operator), left, right)
+        SimpleArrow(left, right)
+    newCaseArrow(left, right)
 
 
 define reducePipeline(operator, left, right)
@@ -76,7 +76,7 @@ define reduceNewline(operator, left, right)
     if isCase(left) and isCase(right)
         combineCases(getTag(operator), left, right)
     if isKeyphrase(left, "case")
-        newCaseArrow(getTag(operator), getRight(left), right)
+        newCaseArrow(getRight(left), right)
     reduceApply(operator, left, right)
 
 

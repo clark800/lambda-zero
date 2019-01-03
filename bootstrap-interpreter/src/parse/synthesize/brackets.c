@@ -29,11 +29,11 @@ static Node* newTuple(Node* open, Node* commaList) {
 }
 
 static Node* wrapLeftSection(Tag tag, Node* body) {
-    return LockedArrow(tag, FixedName(tag, "*."), body);
+    return LockedArrow(FixedName(tag, "*."), body);
 }
 
 static Node* wrapRightSection(Tag tag, Node* body) {
-    return LockedArrow(tag, FixedName(tag, ".*"), body);
+    return LockedArrow(FixedName(tag, ".*"), body);
 }
 
 static Node* wrapSection(Tag tag, Node* section) {
