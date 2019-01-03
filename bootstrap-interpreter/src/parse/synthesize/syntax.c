@@ -61,7 +61,6 @@ static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isName(left), "expected name to left of" , operator);
     return AsPattern(getTag(operator), left, right);
 }
 
@@ -69,6 +68,20 @@ static Node* reduceWhere(Node* operator, Node* left, Node* right) {
     if (!isDefinition(right))
         syntaxError("expected definition to right of", operator);
     return applyDefinition(right, left);
+}
+
+static Node* reduceWith(Node* operator, Node* asPattern, Node* withBlock) {
+    if (!isAsPattern(asPattern))
+        syntaxError("expected as pattern to right of", operator);
+    Tag tag = getTag(operator);
+    Node* expression = getLeft(asPattern);
+    Node* pattern = getRight(asPattern);
+    Node* elseBlock = Underscore(tag, 3);
+    Node* caseArrow = newCaseArrow(pattern, withBlock);
+    Node* fallback = SimpleArrow(Underscore(tag, 0), elseBlock);
+    Node* function = combineCases(tag, caseArrow, fallback);
+    release(hold(caseArrow));
+    return UnderscoreArrow(tag, Juxtaposition(tag, function, expression));
 }
 
 static Node* reduceNewline(Node* operator, Node* left, Node* right) {
@@ -80,6 +93,8 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return combineCases(getTag(operator), left, right);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
+    if (isKeyphrase(left, "with"))
+        return reduceWith(getLeft(left), getRight(left), right);
     return reduceApply(operator, left, right);
 }
 
@@ -246,7 +261,9 @@ void initSymbols(void) {
     addCoreSyntax("->", 9, 9, INFIX, R, shiftInfix, reduceArrow);
     addCoreSyntax("=>", 9, 9, INFIX, R, shiftInfix, reduceInfix);
     addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax("with", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
+    addCoreSyntax("as", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 15, 15, PREFIX, L, shiftPrefix, reduceAbort);
     addCoreSyntax(".", 92, 92, INFIX, L, shiftInfix, reducePipeline);
     addCoreSyntax("$", 99, 99, PREFIX, L, shiftPrefix, reduceReserved);

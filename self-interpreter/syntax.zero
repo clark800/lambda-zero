@@ -57,8 +57,6 @@ define reduceCommaPair(operator, left, right)
 
 
 define reduceAsPattern(operator, left, right)
-    if not isName(left)
-        syntaxError("expected name to left of", operator)
     AsPattern(getTag(operator), left, right)
 
 
@@ -66,6 +64,19 @@ define reduceWhere(operator, left, right)
     if not isDefinition(right)
         syntaxError("expected definition to right of", operator)
     applyDefinition(right, left)
+
+
+define reduceWith(operator, asPattern, withBlock)
+    if not isAsPattern(asPattern)
+        syntaxError("expected as pattern to right of", operator)
+    tag := getTag(operator)
+    expression := getLabel(asPattern)
+    pattern := getPattern(asPattern)
+    elseBlock := Underscore(tag, 3)
+    caseArrow := newCaseArrow(pattern, withBlock)
+    fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
+    function := combineCases(tag, caseArrow, fallback)
+    UnderscoreArrow(tag, Juxtaposition(tag, function, expression))
 
 
 define reduceNewline(operator, left, right)
@@ -77,6 +88,8 @@ define reduceNewline(operator, left, right)
         combineCases(getTag(operator), left, right)
     if isKeyphrase(left, "case")
         newCaseArrow(getRight(left), right)
+    if isKeyphrase(left, "with")
+        reduceWith(getLeft(left), getRight(left), right)
     reduceApply(operator, left, right)
 
 
@@ -323,7 +336,9 @@ OPERATORS := [newDictionary([
     coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
     coreAlias("⇒", "=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
+    coreSyntax("with", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
+    coreSyntax("as", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(".", 92, 92, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved),

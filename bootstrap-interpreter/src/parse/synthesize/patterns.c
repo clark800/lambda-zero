@@ -22,9 +22,8 @@ Node* newLazyArrow(Node* left, Node* right) {
 
     // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
     if (isAsPattern(left))
-        return LockedArrow(getLeft(left), Juxtaposition(getTag(left),
-            newLazyArrow(getRight(left), right),
-            Reference(getTag(getLeft(left)), 1, 0)));
+        return newLazyArrow(getLeft(left), Juxtaposition(getTag(left),
+            newLazyArrow(getRight(left), right), Underscore(getTag(left), 1)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
     syntaxErrorIf(!isJuxtaposition(left), "invalid parameter", left);

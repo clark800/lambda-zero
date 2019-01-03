@@ -10,7 +10,7 @@ syntax region lambdaZeroCharacter start=/[ ()\[\]{},;.`@$]'/lc=1 skip=/\\./ end=
 syntax region lambdaZeroCharacter start=/^'/ skip=/\\./ end=/'/ oneline
 syntax match lambdaZeroLineComment "#.*$"
 syntax keyword lambdaZeroConstant True False Void
-syntax keyword lambdaZeroKeyword not and or in if then else define by match to case abort maybe try catch where of
+syntax keyword lambdaZeroKeyword not and or in if then else define by match to case with as abort maybe try catch where of
 
 highlight link lambdaZeroName Normal
 highlight link lambdaZeroOperator Operator
