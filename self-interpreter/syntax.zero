@@ -57,8 +57,6 @@ define reduceCommaPair(operator, left, right)
 
 
 define reduceAsPattern(operator, left, right)
-    if not isName(left)
-        syntaxError("expected name to left of", operator)
     AsPattern(getTag(operator), left, right)
 
 
@@ -66,6 +64,19 @@ define reduceWhere(operator, left, right)
     if not isDefinition(right)
         syntaxError("expected definition to right of", operator)
     applyDefinition(right, left)
+
+
+define reduceWith(operator, asPattern, withBlock)
+    if not isAsPattern(asPattern)
+        syntaxError("expected as pattern to right of", operator)
+    tag := getTag(operator)
+    expression := getLabel(asPattern)
+    pattern := getPattern(asPattern)
+    elseBlock := Underscore(tag, 3)
+    caseArrow := newCaseArrow(pattern, withBlock)
+    fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
+    function := combineCases(tag, caseArrow, fallback)
+    UnderscoreArrow(tag, Juxtaposition(tag, function, expression))
 
 
 define reduceNewline(operator, left, right)
@@ -77,6 +88,8 @@ define reduceNewline(operator, left, right)
         combineCases(getTag(operator), left, right)
     if isKeyphrase(left, "case")
         newCaseArrow(getRight(left), right)
+    if isKeyphrase(left, "with")
+        reduceWith(getLeft(left), getRight(left), right)
     reduceApply(operator, left, right)
 
 
@@ -103,42 +116,39 @@ define shiftPostfix(state, operator)
     stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
-    match stack'
-        case []; syntaxError("missing left operand for", operator)
-        case operand :: stack''
-            if not isSpecial(operator) and isOpenOperator(operand)
-                placeholder := newLeftPlaceholder(getTag(operand))
-                null := Null(getTag(placeholder))
-                body := reduceOperator(operator, placeholder, null)
-                State(body :: stack', getOperators(state))
-            if isOperator(operand)
-                syntaxError("missing left operand for", operator)
-            reduced := reduceOperator(operator, operand, Null(getTag(operator)))
-            State(reduced :: stack'', getOperators(state))
+    with stack' as operand :: stack''
+        if not isSpecial(operator) and isOpenOperator(operand)
+            placeholder := newLeftPlaceholder(getTag(operand))
+            null := Null(getTag(placeholder))
+            body := reduceOperator(operator, placeholder, null)
+            State(body :: stack', getOperators(state))
+        if isOperator(operand)
+            syntaxError("missing left operand for", operator)
+        reduced := reduceOperator(operator, operand, Null(getTag(operator)))
+        State(reduced :: stack'', getOperators(state))
+    syntaxError("missing left operand for", operator)
 
 
 define shiftInfix(state, operator)
     stack := erase(getStack(state), " ")
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
-    match stack'
-        case []
-            syntaxError("missing left operand for", operator)
-        case top :: _
-            tag := getTag(operator)
-            operators := getOperators(state')
-            if not isOperator(top)
-                State(operator :: stack', operators)
-            if isThisOperator(operator, "+")
-                operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
-                State(operator' :: stack', operators)
-            if isThisOperator(operator, "-")
-                operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
-                State(operator' :: stack', operators)
-            if not isSpecial(operator) and isOpenOperator(top)
-                placeholder := newLeftPlaceholder(tag)
-                State(operator :: placeholder :: stack', operators)
-            syntaxError("missing left operand for", operator)
+    with stack' as top :: _
+        tag := getTag(operator)
+        operators := getOperators(state')
+        if not isOperator(top)
+            State(operator :: stack', operators)
+        if isThisOperator(operator, "+")
+            operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
+            State(operator' :: stack', operators)
+        if isThisOperator(operator, "-")
+            operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
+            State(operator' :: stack', operators)
+        if not isSpecial(operator) and isOpenOperator(top)
+            placeholder := newLeftPlaceholder(tag)
+            State(operator :: placeholder :: stack', operators)
+        syntaxError("missing left operand for", operator)
+    syntaxError("missing left operand for", operator)
 
 
 define shiftSpace(state, operator)
@@ -234,11 +244,9 @@ define defineSyntax(operators, node, name, right)
 
 
 define pushSyntax(lexeme, syntax, operators)
-    match operators
-        case []
-            [newDictionary([(lexeme, syntax)])]
-        case top :: operators'
-            top.set(lexeme, syntax) :: operators
+    with operators as top :: _
+        top.set(lexeme, syntax) :: operators
+    [newDictionary([(lexeme, syntax)])]
 
 
 define addSyntax(operators, operator)
@@ -263,17 +271,16 @@ define reduceLeftErase(State(stack, operators), operator)
 
 define shiftSemicolon(state, operator)
     _ @ State(stack', operators') := reduceLeftErase(state, operator)
-    match stack'
-        case []; syntaxError("missing left operand for", operator)
-        case top :: stack''
-            if isOperator(top)
-                syntaxError("missing left operand for", operator)
-            if isSyntaxDefinition(top)
-                definition := defineSyntax(operators', top,
-                    getDefiniendum(top), getDefiniens(top))
-                operators'' := addSyntax(operators', getDefiniens(definition))
-                State(operator :: definition :: stack'', operators'')
-            State(operator :: stack', operators')
+    with stack' as top :: stack''
+        if isOperator(top)
+            syntaxError("missing left operand for", operator)
+        if isSyntaxDefinition(top)
+            definition := defineSyntax(operators', top,
+                getDefiniendum(top), getDefiniens(top))
+            operators'' := addSyntax(operators', getDefiniens(definition))
+            State(operator :: definition :: stack'', operators'')
+        State(operator :: stack', operators')
+    syntaxError("missing left operand for", operator)
 
 
 define shiftNewline(state @ State(stack, operators), operator)
@@ -323,7 +330,9 @@ OPERATORS := [newDictionary([
     coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
     coreAlias("⇒", "=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
+    coreSyntax("with", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
+    coreSyntax("as", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(".", 92, 92, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved),

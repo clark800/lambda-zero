@@ -55,10 +55,9 @@ AST ::= {
 }
 
 define lockArrow(node)
-    match node
-        Arrow(tag, _, constructors, left, right) ->
-            Arrow(tag, Locked, constructors, left, right)
-        _ -> node
+    with node as Arrow(tag, _, constructors, left, right)
+        Arrow(tag, Locked, constructors, left, right)
+    node
 
 define getTag
     Reference(tag, _, _, _) -> tag

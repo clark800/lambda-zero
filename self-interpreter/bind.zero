@@ -1,16 +1,15 @@
 #* bind.zero
 
 define findDebruijnIndex(level, stack, lexeme)
-    match stack
-        case []; Void
-        case table :: _
-            table.lookup(lexeme).mapJust(level -)
+    with stack as table :: _
+        table.lookup(lexeme).mapJust(level -)
+    Void
 
 
 define pushParameter(lexeme, level, stack)
-    match stack
-        case []; [newDictionary([(lexeme, level)])]
-        case top :: stack'; top.set(lexeme, level) :: stack'
+    with stack as top :: stack'
+        top.set(lexeme, level) :: stack'
+    [newDictionary([(lexeme, level)])]
 
 
 define bindOperation(tag)
@@ -45,13 +44,11 @@ define parseParameterType(node, context)
     if name =*= "=>"
         if length(parameterTypes) =/= 2
             syntaxError("(=>) requires two arguments", node)
-        match parameterTypes
-            case []; FunctionType(noTerm, FreeType, FreeType)
-            case left :: parameterTypes'
-                match parameterTypes'
-                    case []; FunctionType(noTerm, left, FreeType)
-                    case right :: _
-                        FunctionType(noTerm, left, right)
+        with parameterTypes as left :: parameterTypes'
+            with parameterTypes' as right :: _
+                FunctionType(noTerm, left, right)
+            FunctionType(noTerm, left, FreeType)
+        FunctionType(noTerm, FreeType, FreeType)
     ADT(noTerm, name, getADTFixity(root), parameterTypes, FreeType, 0, 0)
 
 
@@ -74,14 +71,12 @@ define buildContext(adtTypeAST)
 
 
 define newReconstructorType(term, context, parameterTypeASTs, returnType)
-    match parameterTypeASTs
-        case []
-            returnType
-        case typeAST :: parameterTypeASTs'
-            parameterType := parseParameterType(typeAST, context)
-            bodyType := newReconstructorType(
-                getBody(term), context, parameterTypeASTs', returnType)
-            FunctionType(term, parameterType, bodyType)
+    with parameterTypeASTs as typeAST :: parameterTypeASTs'
+        parameterType := parseParameterType(typeAST, context)
+        bodyType := newReconstructorType(
+            getBody(term), context, parameterTypeASTs', returnType)
+        FunctionType(term, parameterType, bodyType)
+    returnType
 
 
 define newConstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)

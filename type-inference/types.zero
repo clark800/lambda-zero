@@ -28,19 +28,11 @@ define setMatchType(adtType, type)
             ADT(source, name, fixity, parameters, type, count, index)
 
 
-define indexType
-    FreeType -> 0
-    BottomType(_) -> 1
-    TypeVariable(_, _) -> 2
-    FunctionType(_, _, _) -> 3
-    ADT(_, _, _, _, _, _, _) -> 4
-
-
-isFreeType(type) := indexType(type) = 0
-isBottomType(type) := indexType(type) = 1
-isTypeVariable(type) := indexType(type) = 2
-isFunctionType(type) := indexType(type) = 3
-isADT(type) := indexType(type) = 4
+isFreeType := FreeType -> True; _ -> False
+isBottomType := BottomType(_) -> True; _ -> False
+isTypeVariable := TypeVariable(_, _) -> True; _ -> False
+isFunctionType := FunctionType(_, _, _) -> True; _ -> False
+isADT := ADT(_, _, _, _, _, _, _) -> True; _ -> False
 
 
 define getVariableName(index)
@@ -57,16 +49,15 @@ define getSuffix(count, index)
 
 
 define showADT(name, fixity, arguments)
-    match arguments
-        case []; name
-        case argument :: arguments'
-            if fixity = INFIX and length(arguments) = 2
-                "(" ++ (argument :: name :: arguments').joinWith(" ") ++ ")"
-            if fixity = PREFIX and length(arguments) = 1
-                name ++ "(" ++ argument ++ ")"
-            if fixity = POSTFIX and length(arguments) = 1
-                "(" ++ argument ++ ")" ++ name
-            name ++ "(" ++ arguments.joinWith(", ") ++ ")"
+    with arguments as argument :: arguments'
+        if fixity = INFIX and length(arguments) = 2
+            "(" ++ (argument :: name :: arguments').joinWith(" ") ++ ")"
+        if fixity = PREFIX and length(arguments) = 1
+            name ++ "(" ++ argument ++ ")"
+        if fixity = POSTFIX and length(arguments) = 1
+            "(" ++ argument ++ ")" ++ name
+        name ++ "(" ++ arguments.joinWith(", ") ++ ")"
+    name
 
 
 define showType

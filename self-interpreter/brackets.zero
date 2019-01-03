@@ -90,64 +90,58 @@ define isOpenOperator(operator)
     isOperator(operator) and getFixity(getSyntax(operator)) = OPENFIX
 
 define pushBracket(stack, open, close, contents)
-    match stack
-        case []
-            [reduceBracket(open, close, Null(getTag(open)), contents)]
-        case left :: stack'
-            if not isOperator(left)
-                reduceBracket(open, close, left, contents) :: stack'
-            reduceBracket(open, close, Null(getTag(open)), contents) :: stack
+    with stack as left :: stack'
+        if not isOperator(left)
+            reduceBracket(open, close, left, contents) :: stack'
+        reduceBracket(open, close, Null(getTag(open)), contents) :: stack
+    [reduceBracket(open, close, Null(getTag(open)), contents)]
 
 define shiftClose'(state, close)
     stack := getStack(state)
-    match stack
-        case []; syntaxError("missing open for", close)
-        case contents :: stack'
-            if isEOF(contents)
+    with stack as contents :: stack'
+        if isEOF(contents)
+            syntaxError("missing open for", close)
+        if isOpenOperator(contents)
+            open := contents
+            stack'' := pushBracket(stack', open, close, Null(getTag(open)))
+            State(stack'', getOperators(state))
+        with stack' as open :: stack''
+            if isEOF(open) and not isEOF(close)
                 syntaxError("missing open for", close)
-            if isOpenOperator(contents)
-                open := contents
-                stack'' := pushBracket(stack', open, close, Null(getTag(open)))
-                State(stack'', getOperators(state))
-            match stack'
-                case []; syntaxError("missing open for", close)
-                case open :: stack''
-                    if isEOF(open) and not isEOF(close)
-                        syntaxError("missing open for", close)
-                    if isOperator(contents)
-                        syntaxError("missing right operand for", contents)
-                    stack' := pushBracket(stack'', open, close, contents)
-                    State(stack', getOperators(state))
+            if isOperator(contents)
+                syntaxError("missing right operand for", contents)
+            stack' := pushBracket(stack'', open, close, contents)
+            State(stack', getOperators(state))
+        syntaxError("missing open for", close)
+    syntaxError("missing open for", close)
 
 
 define preReduceOperator(operator, stack)
     tag := getTag(operator)
-    match stack
-        case []; operator :: stack
-        case left :: stack'
-            if isLeftPlaceholder(left)
-                # bracketed infix operator
-                OperatorName(tag, INFIX) :: stack'
-            if isOpenOperator(left)
-                # bracketed prefix operators
-                if isThisOperator(operator, "(+)")
-                    OperatorName(renameTag(tag, "+"), INFIX) :: stack
-                if isThisOperator(operator, "(-)")
-                    OperatorName(renameTag(tag, "-"), INFIX) :: stack
-                OperatorName(tag, PREFIX) :: stack
-            fixity := getFixity(getSyntax(operator))
-            if fixity = INFIX or fixity = PREFIX
-                newRightPlaceholder(tag) :: operator :: stack   # LeftSection
-            operator :: stack
+    with stack as left :: stack'
+        if isLeftPlaceholder(left)
+            # bracketed infix operator
+            OperatorName(tag, INFIX) :: stack'
+        if isOpenOperator(left)
+            # bracketed prefix operators
+            if isThisOperator(operator, "(+)")
+                OperatorName(renameTag(tag, "+"), INFIX) :: stack
+            if isThisOperator(operator, "(-)")
+                OperatorName(renameTag(tag, "-"), INFIX) :: stack
+            OperatorName(tag, PREFIX) :: stack
+        fixity := getFixity(getSyntax(operator))
+        if fixity = INFIX or fixity = PREFIX
+            newRightPlaceholder(tag) :: operator :: stack   # LeftSection
+        operator :: stack
+    operator :: stack
 
 
 define preReduce(stack)
-    match stack
-        case []; stack
-        case top :: stack'
-            if isOperator(top) and not isSpecial(top)
-                preReduceOperator(top, stack')
-            stack
+    with stack as top :: stack'
+        if isOperator(top) and not isSpecial(top)
+            preReduceOperator(top, stack')
+        stack
+    stack
 
 
 define shiftClose(state, close)

@@ -18,10 +18,9 @@ define newPatternArrow(pattern, body)
     if isName(pattern)
         LockedArrow(pattern, body)
     if isAsPattern(pattern)
-        label := getLabel(pattern)
-        LockedArrow(label, Juxtaposition(getTag(pattern),
+        newPatternArrow(getLabel(pattern), Juxtaposition(getTag(pattern),
             newPatternArrow(getPattern(pattern), body),
-            Reference(getTag(label), 1, 0, getReferenceFixity(label))))
+            Underscore(getTag(pattern), 1)))
     if isJuxtaposition(pattern)
         constructor := getHead(pattern)
         tag := getTag(constructor)
