@@ -60,10 +60,9 @@ define unify(variables, types)
     unify'(types, variables, types)
 
 define unifyAll(variables, types)
-    match types
-        case []; variables
-        case type :: types'
-            zip(repeat(type), types').cascade(unify, variables)
+    with types as type :: types'
+        zip(repeat(type), types').cascade(unify, variables)
+    variables
 
 define generalize(variables, oldVariables, type)
     syntax(\\) := syntax(\)
@@ -186,14 +185,11 @@ define inferType(stack, definition)
     stack.push(type.generalize(variables', newStore([])))
 
 
-define getDefinitions
-    Variable(_, _) -> []
-    Abstraction(_, _, _) -> []
-    Application(_, isLet, applicand, argument) ->
+define getDefinitions(term)
+    with term as Application(_, isLet, applicand, argument)
         if isLet then (getTermTag(applicand), argument) ::
             getDefinitions(getBody(applicand)) else []
-    Numeral(_, _) -> []
-    Operation(_, _, _) -> []
+    []
 
 
 define main(input)

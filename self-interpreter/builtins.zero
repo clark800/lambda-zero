@@ -16,22 +16,19 @@ define getBuiltin(tag)
         f(checkNatural(getTerm(left)), checkNatural(getTerm(right)))
 
     define makeUnaryBuiltin(f, evaluate, arguments)
-        match arguments
-            case []; runtimeError("missing argument to", tag)
-            case argument :: arguments'
-                argument' := evaluate(argument)
-                Closure(Numeral(tag', f(checkNatural(getTerm(argument')))), [])
+        with arguments as argument :: arguments'
+            argument' := evaluate(argument)
+            Closure(Numeral(tag', f(checkNatural(getTerm(argument')))), [])
+        runtimeError("missing argument to", tag)
 
     define makeBinaryBuiltin(constructor, f, evaluate, arguments)
-        match arguments
-            case []; runtimeError("missing argument to", tag)
-            case left :: arguments'
-                match arguments'
-                    case []; runtimeError("missing argument to", tag)
-                    case right :: _
-                        left' := evaluate(left)
-                        right' := evaluate(right)
-                        Closure(constructor(compute(f, left', right')), [])
+        with arguments as left :: arguments'
+            with arguments' as right :: _
+                left' := evaluate(left)
+                right' := evaluate(right)
+                Closure(constructor(compute(f, left', right')), [])
+            runtimeError("missing argument to", tag)
+        runtimeError("missing argument to", tag)
 
     define makeNaturalBuiltin(f, evaluate, arguments)
         makeBinaryBuiltin(Numeral(tag'), f, evaluate, arguments)
@@ -70,12 +67,11 @@ define getBuiltin(tag)
         argument + 1
 
     define abortBuiltin(evaluate, arguments)
-        match arguments
-            case []; runtimeError("missing argument to", tag)
-            case closure :: _
-                message := serializeString(evaluate, closure) ??
-                    runtimeError("expected string argument to", tag)
-                abort message
+        with arguments as argument :: _
+            message := serializeString(evaluate, argument) ??
+                runtimeError("expected string argument to", tag)
+            abort message
+        runtimeError("missing argument to", tag)
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),

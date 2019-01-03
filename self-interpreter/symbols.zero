@@ -5,13 +5,16 @@ RIGHT := 1
 RIGHTVALUE := 2
 NEITHER := 3
 
+
 define isSpecial(node)
     getSpecial(getSyntax(node))
+
 
 define propagateSection(operator, side, body)
     if isSpecial(operator) or not isJuxtaposition(body)
         syntaxError("operator does not support sections", operator)
     Section(getTag(operator), side, body)
+
 
 define reduceOperator(operator, left, right)
     left' := if isSection(left) then getSectionBody(left) else left
@@ -24,19 +27,20 @@ define reduceOperator(operator, left, right)
         propagateSection(operator, LeftSection, result)
     result
 
+
 define reduceBracket(open, close, left, right)
     getReduce(getSyntax(close))(open, left, right)
+
 
 define shift(state @ State(stack, operators), node)
     if isOperator(node)
         getShift(getSyntax(node))(state, node)
-    match stack
-        case []
+    with stack as top :: _
+        if not isOperator(top)
             syntaxError("missing operator before", node)
-        case top :: stack'
-            if not isOperator(top)
-                syntaxError("missing operator before", node)
-            State(node :: stack, operators)
+        State(node :: stack, operators)
+    syntaxError("missing operator before", node)
+
 
 define erase(stack, lexeme)
     stack.dropIf(`isThisOperator(lexeme))
@@ -46,24 +50,21 @@ define reduceTop'(operator, right, stack, operators)
     if getFixity(getSyntax(operator)) = PREFIX
         shift(State(stack, operators),
             reduceOperator(operator, Null(getTag(operator)), right))
-    match stack
-        case []; State(stack, operators)
-        case left :: stack'
-            state' := State(stack', if isSyntaxDefinition(left) then
-                operators.drop(1) else operators)
-            shift(state', reduceOperator(operator, left, right))
+    with stack as left :: stack'
+        state' := State(stack', if isSyntaxDefinition(left) then
+            operators.drop(1) else operators)
+        shift(state', reduceOperator(operator, left, right))
+    State(stack, operators)
 
 
 define reduceTop(state @ State(stack, operators))
-    match stack
-        case []; state
-        case right :: stack'
-            match stack'
-                case []; state
-                case operator :: stack''
-                    if not isOperator(operator)
-                        state
-                    reduceTop'(operator, right, stack'', operators)
+    with stack as right :: stack'
+        with stack' as operator :: stack''
+            if isOperator(operator)
+                reduceTop'(operator, right, stack'', operators)
+            state
+        state
+    state
 
 
 define isHigherPrecedence(left, right)
@@ -92,25 +93,27 @@ define isHigherPrecedence(left, right)
 
 
 define shouldReduceTop(operator, State(stack, _operators))
-    match stack
-        case []; False
-        case x :: stack'
-            if isOperator(x)
-                False
-            match stack'
-                case []; False
-                case x' :: _; isHigherPrecedence(x', operator)
+    with stack as x :: stack'
+        if isOperator(x)
+            False
+        with stack' as x' :: _
+            isHigherPrecedence(x', operator)
+        False
+    False
 
 
 define reduceLeft(state, operator)
     while(shouldReduceTop(operator), reduceTop, state)
+
 
 define parseOperator(tag, value, operatorSyntax)
     Operator(renameTag(tag, getAlias(operatorSyntax)), value, operatorSyntax)
 
 
 define lookupSyntax(lexeme, operators)
-    operators |> [] -> Void; top :: _ -> top.lookup(lexeme)
+    with operators as top :: _
+        top.lookup(lexeme)
+    Void
 
 
 define parseSymbol(tag, value, operators)

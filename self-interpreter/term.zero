@@ -30,19 +30,11 @@ define getTermTag
     Operation(tag, _, _) -> tag
 
 
-define indexTerm
-    Variable(_, _) -> 0
-    Abstraction(_, _, _) -> 1
-    Application(_, _, _, _) -> 2
-    Numeral(_, _) -> 3
-    Operation(_, _, _) -> 4
-
-
-isVariable(term) := indexTerm(term) = 0
-isAbstraction(term) := indexTerm(term) = 1
-isApplication(term) := indexTerm(term) = 2
-isNumeral(term) := indexTerm(term) = 3
-isOperation(term) := indexTerm(term) = 4
+isVariable := Variable(_, _) -> True; _ -> False
+isAbstraction := Abstraction(_, _, _) -> True; _ -> False
+isApplication := Application(_, _, _, _) -> True; _ -> False
+isNumeral := Numeral(_, _) -> True; _ -> False
+isOperation := Operation(_, _, _) -> True; _ -> False
 
 
 define maybeDebruijnIndex(term)

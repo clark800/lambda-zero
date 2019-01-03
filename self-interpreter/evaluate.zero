@@ -12,8 +12,9 @@ define evaluate(closure @ Closure(term, environment), stack)
         case Variable(_, debruijn)
             evaluate(environment.seek(debruijn - 1), stack)
         case Abstraction(_, _, body)
-            stack |> [] -> closure; argument :: stack' ->
+            with stack as argument :: stack'
                 evaluate(Closure(body, environment.push(argument)), stack')
+            closure
         case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
