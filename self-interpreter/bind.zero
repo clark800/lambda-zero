@@ -67,12 +67,12 @@ define parseADT(node, count, index)
     (type, context)
 
 
-define newReconstructorType(term, context, parameterTypeASTs, returnType)
+define newReconstructorType(context, parameterTypeASTs, returnType)
     with parameterTypeASTs as typeAST :: parameterTypeASTs'
         parameterType := parseParameterType(typeAST, context)
-        bodyType := newReconstructorType(
-            getBody(term), context, parameterTypeASTs', returnType)
-        FunctionType(term, parameterType, bodyType)
+        bodyType := newReconstructorType(context,
+            parameterTypeASTs', returnType)
+        FunctionType(noTerm, parameterType, bodyType)
     returnType
 
 
@@ -82,7 +82,7 @@ define newConstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
     # same as the dataType name
     (adtType, context) := parseADT(adtTypeAST, count, index)
     universals := getValues(context)
-    type := newReconstructorType(term, context, parameterTypeASTs, adtType)
+    type := newReconstructorType(context, parameterTypeASTs, adtType)
     Scheme(universals, type)
 
 
@@ -91,7 +91,7 @@ define newDeconstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
     (adtType, context) := parseADT(adtTypeAST, count, index)
     universals := returnType :: getValues(context)
     reconstructorType :=
-        newReconstructorType(term, context, parameterTypeASTs, returnType)
+        newReconstructorType(context, parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
     (>->) := FunctionType(term)
     fallbackType := adtType >-> returnType
@@ -114,7 +114,7 @@ define bind(level, stack, node)
             Variable(tag, debruijn)
         case Arrow(tag, _, constructors, parameter, body)
             constructors' := constructors.map(bind(level, stack))
-            indices := constructors'.map(getDebruijnIndex)
+            indices := constructors'.map(maybeDebruijnIndex).prune
             metadata := Metadata(Free, Free, indices)
             stack' := stack.pushParameter(getLexeme(parameter), level)
             body' := bind(up level, stack', body)
@@ -136,24 +136,21 @@ define bind(level, stack, node)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
-        case Constructor(tag, parameterTypes, dataType, body, count, index)
-            term := bind(level, stack, body)
+        case Constructor(tag, parameterTypes, dataType, function, count, index)
+            term := bind(level, stack, function)
             scheme := newConstructorScheme(term, parameterTypes,
                 dataType, count, index)
-            metadata := Metadata(Free, scheme, [])
-            Abstraction(getTermTag(term), metadata, getBody(term))
-        case Deconstructor(tag, parameterTypes, dataType, body, count, index)
-            term := bind(level, stack, body)
+            term.setMetadata(Metadata(Free, scheme, []))
+        case Deconstructor(tag, parameterTypes, adtType, function, count, index)
+            term := bind(level, stack, function)
             scheme := newDeconstructorScheme(term, parameterTypes,
-                dataType, count, index)
-            metadata := Metadata(Free, scheme, [])
-            Abstraction(getTermTag(term), metadata, getBody(term))
-        case Accessor(tag, dataType, returnType, body, count, index)
-            term := bind(level, stack, body)
+                adtType, count, index)
+            term.setMetadata(Metadata(Free, scheme, []))
+        case Accessor(tag, dataType, returnType, function, count, index)
+            term := bind(level, stack, function)
             scheme := newAccessorScheme(term, dataType, returnType,
                 count, index)
-            metadata := Metadata(Free, scheme, [])
-            Abstraction(getTermTag(term), metadata, getBody(term))
+            term.setMetadata(Metadata(Free, scheme, []))
         case Null(_)
             abort "internal error: Null reached bind"
 

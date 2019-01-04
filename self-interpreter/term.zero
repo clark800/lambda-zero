@@ -12,13 +12,12 @@ Closure(term) ::= {Closure(
 )}
 
 Term ::= {
-    Variable(_ : Tag, getDebruijnIndex : ℕ),
-    Abstraction(_ : Tag, getMetadata : Metadata, getBody : Term),
-    Application(_ : Tag, isLet : 𝔹,
-        getApplicand : Term, getArgument : Term),
-    Numeral(_ :  Tag, getNatural : ℕ),
-    Operation(_ : Tag, getArity : ℕ,
-        getOperator : ((Closure(Term) => Closure(Term)) =>
+    Variable(_ : Tag, _debruijn : ℕ),
+    Abstraction(_ : Tag, _ : Metadata, _body : Term),
+    Application(_ : Tag, _let : 𝔹, _applicand : Term, _argument : Term),
+    Numeral(_ :  Tag, _value : ℕ),
+    Operation(_ : Tag, _arity : ℕ, _operator :
+        ((Closure(Term) => Closure(Term)) =>
             List(Closure(Term)) => Closure(Term)))
 }
 
@@ -37,24 +36,40 @@ isNumeral := Numeral(_, _) -> True; _ -> False
 isOperation := Operation(_, _, _) -> True; _ -> False
 
 
+define setMetadata(metadata, term)
+    with term as Abstraction(tag, _, body)
+        Abstraction(tag, metadata, body)
+    term
+
+
 define maybeDebruijnIndex(term)
-    if isVariable(term) then Just(getDebruijnIndex(term)) else Void
+    with term as Variable(_, debruijn)
+        Just(debruijn)
+    Void
 
 
 define maybeBody(term)
-    if isAbstraction(term) then Just(getBody(term)) else Void
+    with term as Abstraction(_, _, body)
+        Just(body)
+    Void
 
 
 define maybeApplicand(term)
-    if isApplication(term) then Just(getApplicand(term)) else Void
+    with term as Application(_, _, applicand, _)
+        Just(applicand)
+    Void
 
 
 define maybeArgument(term)
-    if isApplication(term) then Just(getArgument(term)) else Void
+    with term as Application(_, _, _, argument)
+        Just(argument)
+    Void
 
 
 define maybeNatural(term)
-    if isNumeral(term) then Just(getNatural(term)) else Void
+    with term as Numeral(_, value)
+        Just(value)
+    Void
 
 
 define maybeHead(term)
@@ -101,6 +116,10 @@ define showTerm
     Operation(tag, _, _) -> showTag(tag)
 
 noTerm := Variable(noTag, 0)
-isNoTerm(term) := isVariable(term) and getDebruijnIndex(term) = 0
+
+define isNoTerm(term)
+    with term as Variable(_, debruijn)
+        debruijn = 0
+    False
 
 #*
