@@ -10,7 +10,9 @@ define expandNatural(tag, n)
 define evaluate(closure @ Closure(term, environment), stack)
     match term
         case Variable(_, debruijn)
-            evaluate(environment.seek(debruijn -- 1), stack)
+            with environment.seek(debruijn -- 1) as Just(closure')
+                evaluate(closure', stack)
+            closure
         case Abstraction(_, _, body)
             with stack as argument :: stack'
                 evaluate(Closure(body, environment.push(argument)), stack')
@@ -19,8 +21,9 @@ define evaluate(closure @ Closure(term, environment), stack)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
         case Numeral(tag, n)
-            if isNil(stack) then closure else
+            with stack as _ :: _
                 evaluate(Closure(expandNatural(tag, n), environment), stack)
+            closure
         case Operation(_, arity, operator)
             result := operator(`evaluate([]), stack.take(arity))
             evaluate(result, stack.drop(arity))

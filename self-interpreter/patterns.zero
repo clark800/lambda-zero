@@ -37,7 +37,7 @@ define newPatternArrow(pattern, body)
 
 define getNameAndValue(f, left, right)
     if isNull(right)
-        undefined                   # force syntax errors
+        abort "NULL"                    # force syntax errors
     if not isJuxtaposition(left)
         (left, right)
     getNameAndValue(f, getLeft(left), f(getRight(left), right))

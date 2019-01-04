@@ -4,8 +4,11 @@ define serialize(closure)
     define serialize'(Closure(term, environment), depth)
         match term
             case Variable(tag, debruijn)
-                if debruijn <= depth then showTag(tag) else
-                    serialize'(environment.seek(debruijn -- depth -- 1), 0)
+                if debruijn <= depth
+                    showTag(tag)
+                with environment.seek(debruijn -- depth -- 1) as Just(closure)
+                    serialize'(closure, 0)
+                showTag(tag)
             case Abstraction(tag, _, body)
                 "(" ++ showTag(tag) ++ " -> " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"

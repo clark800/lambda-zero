@@ -1,12 +1,16 @@
 #* table.zero
 
-newTable((=<), entries) := newProtoset((=<).on(first), entries)
-table.lookup(key) := table.elicit((key, undefined)).mapJust(second)
-table.hasKey(key) := (key, undefined) in table
-table.get(key) := table.lookup(key) ?? undefined
-table.set(key, value) := table.add((key, value))
-table.getKeys := getElements(table).map(first)
-table.getValues := getElements(table).map(second)
+Table(k, v) ::= {
+    Table(_compare : (k => k => 𝔹), _data : BinaryTree(AADatum(k && v)))
+}
+
+newTable((=<), entries) := Table((=<), Tip.extendAA((=<), first, entries))
+Table((=<), data).lookup(key) := data.searchAA((=<), first, key).mapJust(second)
+Table((=<), data).set(key, value) :=
+    Table((=<), data.insertAA((=<), first, (key, value)))
+Table(_, data).getKeys := flattenAA(data).map(first)
+Table(_, data).getValues := flattenAA(data).map(second)
+table.hasKey(key) := not isVoid(table.lookup(key))
 
 newDictionary := newTable((<*=))
 

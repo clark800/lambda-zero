@@ -9,7 +9,6 @@ declare -a files=(
     "$LIB/prelude.zero"
     "$LIB/ralist.zero"
     "$LIB/aatree.zero"
-    "$LIB/protoset.zero"
     "$LIB/table.zero"
     "$DIR/lex.zero"
     "$DIR/ast.zero"

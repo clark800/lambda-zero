@@ -1,7 +1,7 @@
 #* types.zero
 
 define getSource
-    FreeType -> undefined
+    FreeType -> noTerm
     BottomType(source) -> source
     TypeVariable(source, _) -> source
     FunctionType(source, _, _) -> source
@@ -18,14 +18,10 @@ define setSource(source)
         ADT(source, name, fixity, parameters, type, count, index)
 
 
-define setMatchType(adtType, type)
-    match adtType
-        FreeType -> undefined
-        BottomType(_) -> undefined
-        TypeVariable(_, index) -> undefined
-        FunctionType(_, parameter, body) -> undefined
-        ADT(source, name, fixity, parameters, _, count, index) ->
-            ADT(source, name, fixity, parameters, type, count, index)
+define setMatchType(type, matchType)
+    with type as ADT(source, name, fixity, parameters, _, count, index)
+        ADT(source, name, fixity, parameters, matchType, count, index)
+    type
 
 
 isFreeType := FreeType -> True; _ -> False

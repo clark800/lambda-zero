@@ -11,7 +11,6 @@ declare -a files=(
     "$LIB/ralist.zero"
     "$LIB/store.zero"
     "$LIB/aatree.zero"
-    "$LIB/protoset.zero"
     "$LIB/table.zero"
     "$PARSER/lex.zero"
     "$PARSER/ast.zero"

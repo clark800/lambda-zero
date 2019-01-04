@@ -8,7 +8,7 @@ Store(_, data).dump := zip(0 ..., reverse(getList(data)))
 Store(size, data).allocate(value) :=
     (size, Store(up size, data.push(value)))
 Store(size, data).access(n) :=
-    if n >= size then Void else Just(data.seek(size -- n -- 1))
+    if n >= size then Void else data.seek(size -- n -- 1)
 Store(size, data).assign(n, value) :=
     Store(size, data.update(size -- n -- 1, value))
 

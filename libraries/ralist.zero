@@ -14,31 +14,31 @@ define list.push(x)
 
 define list.pull
     match list
-        case []; undefined
+        case []; Void
         case (size, tree) :: rest
             match tree
-                case Leaf(_); rest
+                case Leaf(_); Just(rest)
                 case Branch(_, left, right)
                     size' := size // 2
-                    (size', left) :: (size', right) :: rest
+                    Just((size', left) :: (size', right) :: rest)
 
 
 define list.peek
     match list
-        case []; undefined
+        case []; Void
         case (size, tree) :: _
             match tree
-                Leaf(x) -> x
-                Branch(x, _, _) -> x
+                Leaf(x) -> Just(x)
+                Branch(x, _, _) -> Just(x)
 
 
 define seekTree(n, size, tree)
     match tree
         case Leaf(x)
-            if n = 0 then x else undefined
+            if n = 0 then Just(x) else Void
         case Branch(x, left, right)
             if n = 0
-                x
+                Just(x)
             size' := size // 2
             if n <= size'
                 seekTree(n -- 1, size', left)
@@ -47,7 +47,7 @@ define seekTree(n, size, tree)
 
 define list.seek(n)
     match list
-        case []; undefined
+        case []; Void
         case (size, tree) :: rest
             if n < size then seekTree(n, size, tree) else rest.seek(n -- size)
 
