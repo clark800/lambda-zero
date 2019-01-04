@@ -55,7 +55,6 @@ onLeft(f, exy) ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ Right(y)
 onRight(f, exy) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
 mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
-exy ⁈ y ≔ try exy catch constant(y)
 toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 
 # numbers
