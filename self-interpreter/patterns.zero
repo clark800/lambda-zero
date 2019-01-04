@@ -11,7 +11,7 @@ define getArguments(pattern)
 
 
 define newProjector(tag, size, index)
-    (UnderscoreArrow(tag)^<>(size))(Underscore(tag, size - index))
+    (UnderscoreArrow(tag)^<>(size))(Underscore(tag, size -- index))
 
 
 define newPatternArrow(pattern, body)
@@ -28,7 +28,7 @@ define newPatternArrow(pattern, body)
         size := length(arguments)
         underscore := Underscore(tag, 1)
         function := arguments.fold(newPatternArrow, body)
-        projectors := (0 .. size - 1).map(newProjector(tag, size))
+        projectors := (0 .. size -- 1).map(newProjector(tag, size))
         projections := projectors.map(Juxtaposition(tag, underscore))
         lockArrow(StrictArrow(tag, [constructor],
             projections.cascade(Juxtaposition(tag), function)))

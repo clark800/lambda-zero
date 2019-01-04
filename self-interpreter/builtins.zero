@@ -37,14 +37,12 @@ define getBuiltin(tag)
         makeBinaryBuiltin(newBoolean, f, evaluate, arguments)
 
     define addBuiltin(left, right)
-        if left > maxInteger - right
+        if left > maxInteger -- right
             runtimeError("overflow in", tag)
         left + right
 
-    define subtractBuiltin(left, right)
-        if right > left
-            runtimeError("underflow in", tag)
-        left - right
+    define monusBuiltin(left, right)
+        left -- right
 
     define multiplyBuiltin(left, right)
         if right =/= 0 and left > maxInteger // right
@@ -52,13 +50,9 @@ define getBuiltin(tag)
         left * right
 
     define divideBuiltin(left, right)
-        if right = 0
-            runtimeError("divide by zero in", tag)
         left // right
 
     define moduloBuiltin(left, right)
-        if right = 0
-            left
         left % right
 
     define incrementBuiltin(argument)
@@ -75,7 +69,7 @@ define getBuiltin(tag)
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),
-        ("-", (2, makeNaturalBuiltin(subtractBuiltin))),
+        ("--", (2, makeNaturalBuiltin(monusBuiltin))),
         ("*", (2, makeNaturalBuiltin(multiplyBuiltin))),
         ("//", (2, makeNaturalBuiltin(divideBuiltin))),
         ("%", (2, makeNaturalBuiltin(moduloBuiltin))),

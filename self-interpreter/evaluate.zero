@@ -3,14 +3,14 @@
 define expandNatural(tag, n)
     metadata := Metadata(Free, Free, [])
     Abstraction(tag, metadata, Abstraction(tag, metadata,
-        if n = 0 then Variable(tag, 2) else
-            Application(tag, False, Variable(tag, 1), Numeral(tag, n - 1))))
+        n |> 0 -> Variable(tag, 2); up n' ->
+            Application(tag, False, Variable(tag, 1), Numeral(tag, n'))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
     match term
         case Variable(_, debruijn)
-            evaluate(environment.seek(debruijn - 1), stack)
+            evaluate(environment.seek(debruijn -- 1), stack)
         case Abstraction(_, _, body)
             with stack as argument :: stack'
                 evaluate(Closure(body, environment.push(argument)), stack')

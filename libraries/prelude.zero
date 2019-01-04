@@ -86,7 +86,7 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 # (≤) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n ≤ m)
 # (≥) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≥ m)
 # (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
-# (-) ≔ 0 ↦ (0 ↦ 0; ↑ n ↦ up n); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n - m)
+# (∸) ≔ 0 ↦ (0 ↦ 0; ↑ _ ↦ 0); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n ∸ m)
 # (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
 # n ⫽ m ≔ if m = 0 or n < m then 0 else ↑((n - m) ⫽ m)
 # n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
@@ -103,7 +103,7 @@ length(xs) ≔ xs.fold(constant(↑), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
 drop(n, xs) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ xs′.drop(n′))
 take(n, xs) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
-xs[n, n′] ≔ if n ≥ n′ then [] else xs.drop(n).take(n′ - n)
+xs[n, n′] ≔ xs.drop(n).take(n′ ∸ n)
 slice(n, n′, xs) ≔ xs[n, n′]
 dropLast(xs) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if isNil(xs′) then [] else x ∷ dropLast(xs′)
@@ -254,7 +254,7 @@ define showPair(showFirst, showSecond, xsxs)
 showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 # parsing
-parseDigit(digit) ≔ if isDigit(digit) then Just(digit - '0') else Void
+parseDigit(digit) ≔ if isDigit(digit) then Just(digit ∸ '0') else Void
 parseNatural(ns) ≔ if isNil(ns) then Void else
     ns.cascadeMaybe(x ↦ d ↦
         (Just(10 ⋅ x + n) where maybe n ≔ parseDigit(d)), 0)

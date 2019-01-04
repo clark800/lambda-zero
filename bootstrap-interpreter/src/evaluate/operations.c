@@ -31,22 +31,10 @@ static long long add(long long left, long long right, Closure* operation) {
     return left + right;
 }
 
-static long long subtract(long long left, long long right, Closure* operation) {
-    if (right > left)
-        runtimeError("underflow in", operation);
-    return left - right;
-}
-
 static long long multiply(long long left, long long right, Closure* operation) {
     if (right != 0 && left > LLONG_MAX / right)
         runtimeError("overflow in", operation);
     return left * right;
-}
-
-static long long divide(long long left, long long right, Closure* operation) {
-    if (right == 0)
-        runtimeError("divide by zero in", operation);
-    return left / right;
 }
 
 unsigned int getArity(Term* operation) {
@@ -82,9 +70,8 @@ static Hold* evaluateAbort(Closure* operation, Closure* message) {
 
 static Term* evaluatePut(Closure* operation, Term* left) {
     long long c = getNumericValue(operation, left);
-    if (c < 0 || c >= 256)
-        runtimeError("non-byte value in string returned from main", operation);
-    fputc((int)c, STDERR ? stderr : stdout);
+    if (c >= 0 && c < 256)
+        fputc((int)c, STDERR ? stderr : stdout);
     Tag tag = getTag(getTerm(operation));
     return Abstraction(tag, Variable(tag, 1));
 }
@@ -119,9 +106,9 @@ static Term* computeOperation(Closure* operation,
     switch (getOperationCode(getTerm(operation))) {
         case INCREMENT: return Numeral(tag, increment(left, operation));
         case PLUS: return Numeral(tag, add(left, right, operation));
-        case MINUS: return Numeral(tag, subtract(left, right, operation));
+        case MONUS: return Numeral(tag, right >= left ? 0 : left - right);
         case TIMES: return Numeral(tag, multiply(left, right, operation));
-        case DIVIDE: return Numeral(tag, divide(left, right, operation));
+        case DIVIDE: return Numeral(tag, right == 0 ? 0 : left / right);
         case MODULO: return Numeral(tag, right == 0 ? left : left % right);
         case EQUAL: return newBoolean(tag, left == right);
         case NOTEQUAL: return newBoolean(tag, left != right);

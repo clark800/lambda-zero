@@ -2,7 +2,7 @@
 
 define findDebruijnIndex(level, stack, lexeme)
     with stack as table :: _
-        table.lookup(lexeme).mapJust(level -)
+        table.lookup(lexeme).mapJust(level --)
     Void
 
 
