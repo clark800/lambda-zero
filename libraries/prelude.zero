@@ -123,6 +123,7 @@ map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 (⬫) ≔ map
 filterMap(f, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦
     (f(x) ⦊ Void ↦ xs″; Just(x′) ↦ x′ ∷ xs″ where xs″ ≔ filterMap(f, xs′))
+prune(mxs) ≔ filterMap(id, mxs)
 zipWith(f, xs, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
@@ -268,15 +269,16 @@ BinaryTree(a) ⩴ {
     Fork(_datum ∈ a, _left ∈ BinaryTree(a), _right ∈ BinaryTree(a))
 }
 
-define search((≾), datum, tree)
+define search((≾), hash, key, tree)
     match tree
         case Tip; Void
-        case Fork(datum′, left, right)
-            if datum ≾ datum′
-                if datum′ ≾ datum
-                    Just(datum′)
-                search((≾), datum, left)
-            search((≾), datum, right)
+        case Fork(datum, left, right)
+            key′ ≔ hash(datum)
+            if key ≾ key′
+                if key′ ≾ key
+                    Just(datum)
+                search((≾), hash, key, left)
+            search((≾), hash, key, right)
 
 define flatten(tree)
     match tree
@@ -303,8 +305,5 @@ define showFullBinaryTree(showElement, tree)
                     showFullBinaryTreeNode(↑ indent, right)
 
     showFullBinaryTreeNode(0, tree)
-
-# undefined
-undefined ≔ abort "undefined"
 
 #*

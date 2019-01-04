@@ -81,7 +81,7 @@ define getBuiltin(tag)
         (">=", (2, makeComparisonBuiltin(>=))),
         ("abort", (1, abortBuiltin)),
         ("(increment)", (1, makeUnaryBuiltin(incrementBuiltin))),
-        ("(undefined)", (0, closure -> undefined))
+        ("(undefined)", (0, closure -> (abort "undefined")))
     ])
 
     builtins.lookup(getTagLexeme(tag))

@@ -34,31 +34,33 @@ define splitAA(tree)
                     Fork(datum', Fork(datum, left, left'), right')
 
 
-define insertAA((~<), value, tree)
+define insertAA((~<), hash, value, tree)
     ss := splitAA <> skewAA
     match tree
         case Tip; Fork(AADatum(1, value), Tip, Tip)
         case Fork(datum @ AADatum(n, value'), left, right)
-            if value ~< value'
-                if value' ~< value
+            key := hash(value)
+            key' := hash(value')
+            if key ~< key'
+                if key' ~< key
                     Fork(AADatum(n, value), left, right)
-                ss(Fork(datum, insertAA((~<), value, left), right))
-            ss(Fork(datum, left, insertAA((~<), value, right)))
+                ss(Fork(datum, insertAA((~<), hash, value, left), right))
+            ss(Fork(datum, left, insertAA((~<), hash, value, right)))
 
 
-define searchAA((~<), value, tree)
-    search((~<).on(getValueAA), AADatum(0, value), tree).mapJust(getValueAA)
+define searchAA((~<), hash, key, tree)
+    search((~<), hash <> getValueAA, key, tree).mapJust(getValueAA)
 
 
 define flattenAA(tree)
     flatten(tree).map(getValueAA)
 
 
-define extendAA((~<), values, tree)
-    values.fold(insertAA(~<), tree)
+define extendAA((~<), hash, values, tree)
+    values.fold(insertAA((~<), hash), tree)
 
 
-define mergeAA((~<), tree', tree)
-    extendAA((~<), flattenAA(tree'), tree)
+define mergeAA((~<), hash, tree', tree)
+    extendAA((~<), hash, flattenAA(tree'), tree)
 
 #*

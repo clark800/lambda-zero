@@ -52,22 +52,19 @@ define parseParameterType(node, context)
     ADT(noTerm, name, getADTFixity(root), parameterTypes, FreeType, 0, 0)
 
 
-define parseADT(node, context, count, index)
-    root := getHead(node)
-    name := getLexeme(root)
-    parameterTypes := getArguments(node).map(`get(context) <> getLexeme)
-    fixity := getADTFixity(root)
-    ADT(noTerm, name, fixity, parameterTypes, FreeType, count, index)
-
-
-define buildContext(adtTypeAST)
+define parseADT(node, count, index)
     # context maps type variable names to type variables
     # type variable with index 0 is reserved for deconstructors
-    components := getArguments(adtTypeAST)
+    root := getHead(node)
+    name := getLexeme(root)
+    fixity := getADTFixity(root)
+    components := getArguments(node)
     if not components.all(isName)
-        syntaxError("all components should be names", adtTypeAST)
-    typeVariables := (1 .. length(components)).map(TypeVariable(noTerm))
-    newDictionary(zip(components.map(getLexeme), typeVariables))
+        syntaxError("all components should be names", node)
+    parameterTypes := (1 .. length(components)).map(TypeVariable(noTerm))
+    context := newDictionary(zip(components.map(getLexeme), parameterTypes))
+    type := ADT(noTerm, name, fixity, parameterTypes, FreeType, count, index)
+    (type, context)
 
 
 define newReconstructorType(term, context, parameterTypeASTs, returnType)
@@ -83,18 +80,16 @@ define newConstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
     # todo: check that universals are not already defined and that all other
     # names are already defined; also make sure universal name is not the
     # same as the dataType name
-    context := buildContext(adtTypeAST)
+    (adtType, context) := parseADT(adtTypeAST, count, index)
     universals := getValues(context)
-    adtType := parseADT(adtTypeAST, context, count, index)
     type := newReconstructorType(term, context, parameterTypeASTs, adtType)
     Scheme(universals, type)
 
 
 define newDeconstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
     returnType := TypeVariable(term, 0)
-    context := buildContext(adtTypeAST)
+    (adtType, context) := parseADT(adtTypeAST, count, index)
     universals := returnType :: getValues(context)
-    adtType := parseADT(adtTypeAST, context, count, index)
     reconstructorType :=
         newReconstructorType(term, context, parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
@@ -105,10 +100,9 @@ define newDeconstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
 
 
 define newAccessorScheme(term, dataType, returnType, count, index)
-    context := buildContext(dataType)
+    (adtType, context) := parseADT(dataType, count, index)
+    type := FunctionType(term, adtType, parseParameterType(returnType, context))
     universals := getValues(context)
-    type := FunctionType(term, parseADT(dataType, context, count, index),
-        parseParameterType(returnType, context))
     Scheme(universals, type)
 
 
