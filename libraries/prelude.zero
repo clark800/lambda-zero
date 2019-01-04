@@ -59,9 +59,10 @@ exy ⁈ y ≔ try exy catch constant(y)
 toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 
 # numbers
-ℕ ⩴ {0, ↑((↓) ∈ ℕ)}
+ℕ ⩴ {0, ↑(_ ∈ ℕ)}
 ℤ ⩴ {+(_ ∈ ℕ), -(_ ∈ ℕ)}
 ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
+↓ n ≔ n ⦊ 0 ↦ 0; ↑ n′ ↦ n′
 positive(n) ≔ + n
 negative(n) ≔ - n
 negate ≔ + n ↦ - n; - n ↦ + n
