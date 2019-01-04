@@ -138,8 +138,7 @@ define constructParameterType(variables, schemes, term)
     (outerType, fullScheme, variables')
 
 
-define inferParameterType(stack, variables, term)
-    metadata := getMetadata(term)
+define inferParameterType(stack, variables, metadata, term)
     schemes := getConstructorDebruijnIndices(metadata).map(k ->
         stack.seek(k -- 1)).prune
     if isNil(schemes)
@@ -158,14 +157,18 @@ define infer(stack, variables)
     case term @ Abstraction(_, metadata, body)
         if not isFreeType(getType(getAscription(metadata)))
             getAscription(metadata).instantiate(newStore([]), term)
-        (type, scheme, variables') := inferParameterType(stack, variables, term)
+        (type, scheme, variables') :=
+            inferParameterType(stack, variables, metadata, term)
         (bodyType, variables'') := infer(stack.push(scheme), variables', body)
         (FunctionType(term, type, bodyType), variables'')
-    case term @ Application(_, isLet, applicand, argument)
+    case term @ Application(tag, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
             stack' := stack.push(valueType.generalize(variables', variables))
-            infer(stack', variables', getBody(applicand))
+            with applicand as Abstraction(_, _, body)
+                infer(stack', variables', body)
+            infer(stack, variables,
+                Application(tag, False, applicand, argument))
         (argumentType, variables') := infer(stack, variables, argument)
         (applicandType, variables'') := infer(stack, variables', applicand)
         (returnType, variables''') := variables''.newTypeVariable(term)
@@ -187,8 +190,11 @@ define inferType(stack, definition)
 
 define getDefinitions(term)
     with term as Application(_, isLet, applicand, argument)
-        if isLet then (getTermTag(applicand), argument) ::
-            getDefinitions(getBody(applicand)) else []
+        if isLet
+            with applicand as Abstraction(_, _, body)
+                (getTermTag(applicand), argument) :: getDefinitions(body)
+            []
+        []
     []
 
 
