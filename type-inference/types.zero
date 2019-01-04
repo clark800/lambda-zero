@@ -8,6 +8,26 @@ define getSource
     ADT(source, _, _, _, _, _, _) -> source
 
 
+define maybeAddress(term)
+    with term as TypeVariable(_, address)
+        Just(address)
+    Void
+
+define maybeName(term)
+    with term as ADT(_, name, _, _, _, _, _)
+        Just(name)
+    Void
+
+define maybeCount(term)
+    with term as ADT(_, _, _, _, _, count, _)
+        Just(count)
+    Void
+
+define maybeIndex(term)
+    with term as ADT(_, _, _, _, _, _, index)
+        Just(index)
+    Void
+
 define setSource(source)
     FreeType -> FreeType
     BottomType(_) -> BottomType(source)
@@ -86,13 +106,20 @@ define getInternalTypes
 
 define sameRoot(a, b)
     match a
-        FreeType -> False
-        BottomType(_) -> isBottomType(b)
-        TypeVariable(_, _) -> isTypeVariable(b) and
-            getAddress(a) = getAddress(b)
-        FunctionType(_, _, _) -> isFunctionType(b)
-        ADT(_, _, _, _, _, _, _) -> isADT(b) and getName(a) =*= getName(b) and
-            length(getParameters(a)) = length(getParameters(b))
+        case FreeType
+            False
+        case BottomType(_)
+            isBottomType(b)
+        case TypeVariable(_, address)
+            with b as TypeVariable(_, address')
+                address = address'
+            False
+        case FunctionType(_, _, _)
+            isFunctionType(b)
+        case ADT(_, name, _, parameters, _, _, _)
+            with b as ADT(_, name', _, parameters', _, _, _)
+                name =*= name' and length(parameters) = length(parameters')
+            False
 
 
 define newTypeVariable(source, variables)
@@ -112,11 +139,11 @@ define mapInternalTypes(f, type)
         ADT(source, name, fixity, parameters, type, count, index) ->
             ADT(source, name, fixity, parameters.map(f), f(type), count, index)
 
-newRenaming(mappings) := newTable((<=).on(getAddress), mappings)
+newRenaming(mappings) := newTable((<=), mappings)
 
 define rename(renaming, type)
-    if isTypeVariable(type)
-        renaming.lookup(type) ?? type
+    with type as TypeVariable(_, address)
+        renaming.lookup(address) ?? type
     type.mapInternalTypes(rename(renaming))
 
 #*
