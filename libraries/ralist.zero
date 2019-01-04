@@ -41,15 +41,15 @@ define seekTree(n, size, tree)
                 x
             size' := size // 2
             if n <= size'
-                seekTree(n - 1, size', left)
-            seekTree(n - size' - 1, size', right)
+                seekTree(n -- 1, size', left)
+            seekTree(n -- size' -- 1, size', right)
 
 
 define list.seek(n)
     match list
         case []; undefined
         case (size, tree) :: rest
-            if n < size then seekTree(n, size, tree) else rest.seek(n - size)
+            if n < size then seekTree(n, size, tree) else rest.seek(n -- size)
 
 
 define updateTree(n, x, size, tree)
@@ -61,8 +61,8 @@ define updateTree(n, x, size, tree)
                 Branch(x, left, right)
             size' := size // 2
             if n <= size'
-                Branch(x', updateTree(n - 1, x, size', left), right)
-            Branch(x', left, updateTree(n - size' - 1, x, size', right))
+                Branch(x', updateTree(n -- 1, x, size', left), right)
+            Branch(x', left, updateTree(n -- size' -- 1, x, size', right))
 
 
 define list.update(n, x)
@@ -71,7 +71,7 @@ define list.update(n, x)
         case (size, tree) :: rest
             if n < size
                 (size, updateTree(n, x, size, tree)) :: rest
-            (size, tree) :: rest.update(n - size, x)
+            (size, tree) :: rest.update(n -- size, x)
 
 
 define flattenPreorderTree(tree)

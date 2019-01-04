@@ -19,7 +19,7 @@ define builtinTypes
     comparison := natural >-> natural >-> boolean
     newDictionary([
         ("+", arithmetic),
-        ("-", arithmetic),
+        ("--", arithmetic),
         ("*", arithmetic),
         ("//", arithmetic),
         ("%", arithmetic),

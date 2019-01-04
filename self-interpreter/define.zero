@@ -47,7 +47,7 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
         scope
     projector := newProjector(tag, m, k)
     undefined' := Name(renameTag(tag, "(undefined)"))
-    arguments := (0 .. n - 1).map(q -> if q = j then projector else undefined')
+    arguments := (0 .. n -- 1).map(q -> if q = j then projector else undefined')
     body := UnderscoreArrow(tag,
         arguments.cascade(Juxtaposition(tag), Underscore(tag, 1)))
     returnType := getRight(parameter)
@@ -76,7 +76,7 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     if not isName(name)
         syntaxError("invalid constructor name", name)
     arguments := reverse(n + 1 .. n + m).map(Underscore(tag))
-    base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n - j))
+    base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n -- j))
     body := (UnderscoreArrow(tag)^<>(n + m))(base)
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(tag, parameterTypes, dataType, body, n, j + 1)
@@ -92,8 +92,8 @@ define newFallbackCase(tag, m)
 
 define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
     reconstructor := Underscore(tag, 3)
-    arguments := (1 .. n).map(k -> if k - 1 = j then reconstructor else
-        newFallbackCase(tag, ms.safeAt(k - 1) ?? 0))
+    arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
+        newFallbackCase(tag, ms.safeAt(k -- 1) ?? 0))
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
     function := UnderscoreArrow(tag, UnderscoreArrow(tag,
         UnderscoreArrow(tag, body)))

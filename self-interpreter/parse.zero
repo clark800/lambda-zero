@@ -80,7 +80,7 @@ define parseToken(operators, token)
         Space -> operators.parseSymbol(renameTag(tag, " "), 0)
         VSpace -> abort "internal error: VSpace reached parseToken"
         Newline -> operators.parseSymbol(renameTag(tag, "\n"),
-            length(getTagLexeme(tag)) - 1)
+            length(getTagLexeme(tag)) -- 1)
         Symbolic -> operators.parseSymbol(tag, 0)
         Numeric -> parseNumericLiteral(tag)
         Character -> parseCharacterLiteral(tag)
