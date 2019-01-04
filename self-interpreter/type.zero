@@ -5,11 +5,11 @@
 Type ::= {
     FreeType,
     BottomType(_source : Term),
-    TypeVariable(_source : Term, getAddress : ℕ),
-    FunctionType(_source : Term, getParameterType : Type, getBodyType : Type),
-    ADT(_source : Term, getName : List(ℕ), getNameFixity : ℕ,
-        getParameters : List(Type), getMatchType : Type,
-        getCount : ℕ, getIndex : ℕ)
+    TypeVariable(_source : Term, _address : ℕ),
+    FunctionType(_source : Term, _parameterType : Type, _bodyType : Type),
+    ADT(_source : Term, _name : List(ℕ), _fixity : ℕ,
+        _parameterTypes : List(Type), _matchType : Type,
+        _count : ℕ, _index : ℕ)
         # when getMatchType=FreeType, it can't be applied as a function;
         # ADT instances can only be applied as functions in the desugared
         # form of case expressions

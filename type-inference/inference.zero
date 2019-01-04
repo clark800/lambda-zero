@@ -1,8 +1,9 @@
 #* inference.zero
 
-
-define getValue(variable, variables)
-    variables.access(getAddress(variable)) ?? FreeType
+define getValue(type, variables)
+    with type as TypeVariable(_, address)
+        variables.access(address) ?? FreeType
+    type
 
 
 define isFree(variable, variables)
@@ -10,29 +11,37 @@ define isFree(variable, variables)
 
 
 define getFreeVariables(variables, type)
-    if isTypeVariable(type)
-        type' := variables.getValue(type)
+    with type as TypeVariable(_, address)
+        type' := variables.access(address) ?? FreeType
         if isFreeType(type')
             [type]
         getFreeVariables(variables, type')
     join(getInternalTypes(type).map(getFreeVariables(variables))).
         deduplicateBy(sameRoot)
 
+
 define getAllFreeVariables(variables, variables')
     join(variables.dump.map(first).map(TypeVariable(noTerm)).map(
         getFreeVariables(variables'))).deduplicateBy(sameRoot)
 
+
 define substitute(variables, type)
-    if isTypeVariable(type)
-        type' := variables.getValue(type)
+    with type as TypeVariable(source, address)
+        type' := variables.access(address) ?? FreeType
         if isFreeType(type')
             type
-        type'' := type'.setSource(getSource(type))
+        type'' := type'.setSource(source)
         if type''.getFreeVariables(newStore([])).any(sameRoot(type))
             recursionError(type, type, variables)
         type''.substitute(variables)
 
     type.mapInternalTypes(substitute(variables))
+
+
+define unifyFailure(originals, variables, (left, right))
+    unificationError(originals.mapPair(substitute(variables)),
+        left.substitute(variables), right.substitute(variables))
+
 
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
@@ -47,14 +56,15 @@ define unify'(originals, variables, (left, right))
     if sameRoot(left, right)
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
-    if isTypeVariable(left)
-        variables.assign(getAddress(left), right)
-    if isTypeVariable(right)
-        variables.assign(getAddress(right), left)
-    if isADT(left) and not isFreeType(getMatchType(left))
-        unify'(originals, variables, (getMatchType(left), right))
-    unificationError(originals.mapPair(substitute(variables)),
-        left.substitute(variables), right.substitute(variables))
+    with left as TypeVariable(_, address)
+        variables.assign(address, right)
+    with right as TypeVariable(_, address)
+        variables.assign(address, left)
+    with left as ADT(_, _, _, _, matchType, _, _)
+        if isFreeType(matchType)
+            unifyFailure(originals, variables, (left, right))
+        unify'(originals, variables, (matchType, right))
+    unifyFailure(originals, variables, (left, right))
 
 define unify(variables, types)
     unify'(types, variables, types)
@@ -74,21 +84,24 @@ define generalize(variables, oldVariables, type)
 
 define instantiate(variables, term, Scheme(universals, type))
     (freshVariables, variables') := newTypeVariables(universals, variables)
-    mappings := zip(universals, freshVariables)
+    addresses := universals.map(maybeAddress).prune
+    mappings := zip(addresses, freshVariables)
     renaming := newRenaming(mappings)
     (type.rename(renaming).setSource(term), variables')
 
 
 define getResultType(type)
-    if isFunctionType(type) then getResultType(getBodyType(type)) else type
+    with type as FunctionType(_, _, bodyType)
+        getResultType(bodyType)
+    type
 
 
 define convertConstructorType(variable, type)
     if isADT(type)
         variable
-    if isFunctionType(type)
-        FunctionType(getSource(type), getParameterType(type),
-            convertConstructorType(variable, getBodyType(type)))
+    with type as FunctionType(source, parameterType, bodyType)
+        FunctionType(source, parameterType,
+            convertConstructorType(variable, bodyType))
     abort "Type error: invalid constructor at " ++ showTypeLocation(type)
 
 
@@ -105,12 +118,12 @@ define constructParameterType(variables, schemes, term)
     adtTypes := types.map(getResultType)
     if not adtTypes.all(isADT)
         throwError("Type error: invalid cases:", tag)
-    names := deduplicateBy((=*=), adtTypes.map(getName))
-    counts := deduplicate(adtTypes.map(getCount))
+    names := deduplicateBy((=*=), adtTypes.map(maybeName).prune)
+    counts := deduplicate(adtTypes.map(maybeCount).prune)
     if length(names) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
     count := safeHead(counts) ?? 0
-    indices := adtTypes.map(getIndex)
+    indices := adtTypes.map(maybeIndex).prune
     if length(indices) < count
         throwError("Type error: missing case:", tag)
     if length(indices) > count
@@ -130,12 +143,12 @@ define constructParameterType(variables, schemes, term)
     # so we use a trick of packaging them together in a FunctionType
     scheme := Scheme(universals', FunctionType(term, outerType, innerType))
     (polarType, variables') := scheme.instantiate(variables, term)
-    outerType := getParameterType(polarType)
-    matchType := getBodyType(polarType)
-    fullType := setMatchType(outerType, matchType)
-    universal := getResultType(matchType)
-    fullScheme := Scheme([universal], fullType)
-    (outerType, fullScheme, variables')
+    with polarType as FunctionType(_, outerType, matchType)
+        fullType := setMatchType(outerType, matchType)
+        universal := getResultType(matchType)
+        fullScheme := Scheme([universal], fullType)
+        (outerType, fullScheme, variables')
+    throwError("Type error: internal error", tag)
 
 
 define inferParameterType(stack, variables, metadata, term)
