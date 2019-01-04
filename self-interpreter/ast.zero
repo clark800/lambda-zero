@@ -31,8 +31,7 @@ Syntax(ast) ::= {Syntax(
 )}
 
 AST ::= {
-    Reference(_ : Tag, getReferenceIndex : ℕ,
-        getReferenceDepth : ℕ, getReferenceFixity : ℕ),
+    Reference(_ : Tag, getReferenceIndex : ℕ, getReferenceFixity : ℕ),
     Arrow(_ : Tag, getArrowType : ArrowType, getConstructors : List(AST),
         getArrowLeft : AST, getArrowRight : AST),
     Couple(_ : Tag, getCoupleType : CoupleType,
@@ -60,7 +59,7 @@ define lockArrow(node)
     node
 
 define getTag
-    Reference(tag, _, _, _) -> tag
+    Reference(tag, _, _) -> tag
     Arrow(tag, _, _, _, _) -> tag
     Couple(tag, _, _, _) -> tag
     Number(tag, _) -> tag
@@ -76,7 +75,7 @@ define getTag
     Null(tag) -> tag
 
 define containsName(name)
-    Reference(tag, _, _, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
+    Reference(tag, _, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, body) -> containsName(name, body)
     Couple(_, _, left, right) ->
         containsName(name, left) or containsName(name, right)
@@ -93,7 +92,7 @@ define containsName(name)
     Null(_) -> False
 
 define showAST
-    Reference(tag, _, _, _) -> showTag(tag)
+    Reference(tag, _, _) -> showTag(tag)
     Arrow(tag, _, _, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
     Couple(tag, _, left, right) ->
@@ -113,7 +112,7 @@ define showAST
     Accessor(_, _, _, body, _, _) -> showAST(body)
     Null(_) -> "#NULL#"
 
-isReference := Reference(_, _, _, _) -> True; _ -> False
+isReference := Reference(_, _, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _) -> True; _ -> False
 isCouple := Couple(_, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
@@ -138,9 +137,9 @@ isSimpleArrow(node) := isArrow(node) and
 isCase(node) := isArrow(node) and
     (getArrowType(node) |> Locked -> False; _ -> True)
 
-Name(tag) := Reference(tag, 0, 0, NOFIX)
+Name(tag) := Reference(tag, 0, NOFIX)
 isName(node) := isReference(node) and getReferenceIndex(node) = 0
-OperatorName(tag, fixity) := Reference(tag, 0, 0, fixity)
+OperatorName(tag, fixity) := Reference(tag, 0, fixity)
 Juxtaposition(tag, left, right) := Couple(tag, JuxtapositionCouple, left, right)
 Let(tag, left, right) := Couple(tag, LetCouple, left, right)
 SimpleArrow(parameter, body) :=
@@ -163,7 +162,7 @@ isKeyphrase(node, lexeme) :=
     isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
 UnderscoreArrow(tag, body) :=
     LockedArrow(Name(renameTag(tag, "_")), body)
-Underscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn, 0, NOFIX)
+Underscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn, NOFIX)
 newNil(tag) := Name(renameTag(tag, "[]"))
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, OperatorName(renameTag(tag, "::"), INFIX), item), list)

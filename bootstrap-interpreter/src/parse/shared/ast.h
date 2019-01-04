@@ -57,11 +57,11 @@ static inline bool isKeyphrase(Node* n, const char* key) {
 static inline bool isEOF(Node* n) {return isThisOperator(n, "\0");}
 static inline bool isUnderscore(Node* n) {return isThisName(n, "_");}
 
-static inline Node* Reference(Tag tag, long long value, long long depth) {
-    return newLeaf(tag, REFERENCE, value, (void*)depth);
+static inline Node* Reference(Tag tag, long long value) {
+    return newLeaf(tag, REFERENCE, value, NULL);
 }
 
-static inline Node* Name(Tag tag) {return Reference(tag, 0, 0);}
+static inline Node* Name(Tag tag) {return Reference(tag, 0);}
 
 static inline Node* FixedName(Tag tag, const char* s) {
     return Name(renameTag(tag, s));
@@ -116,7 +116,7 @@ static inline Node* SetBuilder(Tag tag, Node* commaList) {
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
-    return Reference(renameTag(tag, "_"), (long long)debruijn, 0);
+    return Reference(renameTag(tag, "_"), (long long)debruijn);
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {

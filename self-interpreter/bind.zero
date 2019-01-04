@@ -114,7 +114,7 @@ define newAccessorScheme(term, dataType, returnType, count, index)
 
 define bind(level, stack, node)
     match node
-        case Reference(tag, debruijn, _depth, fixity)
+        case Reference(tag, debruijn, fixity)
             if debruijn = 0
                 bindName(level, stack, tag)
             Variable(tag, debruijn)
