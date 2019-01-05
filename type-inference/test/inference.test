@@ -56,9 +56,9 @@ fix := x -> x  # dummy definition
 
 repeat(x) := x :: repeat(x)
 
-syntax(-) := infixL(21)
+syntax(--) := infixL(21)
 
-r(n, m) := r(n - 1, r(n, n))
+r(n, m) := r(n -- 1, r(n, n))
 
 f(x) := x |> 0 -> 1; up(n) -> 2
 
@@ -71,7 +71,7 @@ pp'(x) := (
 
 abort' := abort "0"
 
-factorial := 0 -> 1; n @ up(n') -> n * n'
+factorial(n) := n |> 0 -> 1; up(n') -> n * n'
 
 #head'(xs) := (x :: xs' -> x)(xs)
 
