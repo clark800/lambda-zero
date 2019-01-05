@@ -25,7 +25,9 @@ define bindName(level, stack, tag)
 
 
 define getADTFixity(root)
-    if isReference(root) then getReferenceFixity(root) else NOFIX
+    with root as Reference(_, _, fixity)
+        fixity
+    NOFIX
 
 
 define parseParameterType(node, context)
@@ -119,8 +121,11 @@ define bind(level, stack, node)
             stack' := stack.pushParameter(getLexeme(parameter), level)
             body' := bind(up level, stack', body)
             Abstraction(getTag(parameter), metadata, body')
-        case Couple(tag, _, left, right)
-            Application(tag, isLetCouple(node),
+        case Juxtaposition(tag, left, right)
+            Application(tag, False,
+                bind(level, stack, left), bind(level, stack, right))
+        case Let(tag, left, right)
+            Application(tag, True,
                 bind(level, stack, left), bind(level, stack, right))
         case Number(tag, value)
             Numeral(renameTag(tag, "_"), value)

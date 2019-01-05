@@ -4,8 +4,8 @@ define isTupleConstructor(node)
     isName(node) and getLexeme(node).startsWith(",")
 
 define isTuple(node)
-    if isJuxtaposition(node)
-        isTuple(getLeft(node))
+    with node as Juxtaposition(_, left, _)
+        isTuple(left)
     isTupleConstructor(node)
 
 define applyPlainDefinition(tag, name, value, scope)
@@ -29,34 +29,46 @@ define transformRecursion(name, value)
     Juxtaposition(tag, fix', LockedArrow(Name(tag), value))
 
 define isValidPattern(node)
-    isName(node) or (isJuxtaposition(node) and
-        isValidPattern(getLeft(node)) and isValidPattern(getRight(node)))
+    if isName(node)
+        True
+    with node as Juxtaposition(_, left, right)
+        isValidPattern(left) and isValidPattern(right)
+    False
 
 define isValidConstructorParameter(parameter)
-    isJuxtaposition(parameter) and isJuxtaposition(getLeft(parameter)) and
-    isValidPattern(getRight(parameter)) and
-    isName(getRight(getLeft(parameter))) and
-    (isThisName(getLeft(getLeft(parameter)), ":") or
-     isThisName(getLeft(getLeft(parameter)), "∈"))
+    with parameter as Juxtaposition(_, left, right)
+        if not isValidPattern(right)
+            False
+        with left as Juxtaposition(_, left', right')
+            isName(right') and
+                (isThisName(left', ":") or isThisName(left', "∈"))
+        False
+    False
 
 define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     if not isValidConstructorParameter(parameter)
         syntaxError("invalid constructor parameter", parameter)
-    name := getRight(getLeft(parameter))
-    if isUnused(getTag(name))
-        scope
-    projector := newProjector(tag, m, k)
-    undefined' := Name(renameTag(tag, "(undefined)"))
-    arguments := (0 .. n -- 1).map(q -> if q = j then projector else undefined')
-    body := UnderscoreArrow(tag,
-        arguments.cascade(Juxtaposition(tag), Underscore(tag, 1)))
-    returnType := getRight(parameter)
-    accessor := Accessor(tag, dataType, returnType, body, n, j + 1)
-    applyPlainDefinition(tag, name, accessor, scope)
+    with parameter as Juxtaposition(_, left, returnType)
+        with left as Juxtaposition(_, _, name)
+            if isUnused(getTag(name))
+                scope
+            projector := newProjector(tag, m, k)
+            undefined' := Name(renameTag(tag, "(undefined)"))
+            arguments := (0 .. n -- 1).map(q ->
+                if q = j then projector else undefined')
+            body := UnderscoreArrow(tag,
+                arguments.cascade(Juxtaposition(tag), Underscore(tag, 1)))
+            accessor := Accessor(tag, dataType, returnType, body, n, j + 1)
+            applyPlainDefinition(tag, name, accessor, scope)
+        syntaxError("invalid constructor parameter", parameter)
+    syntaxError("invalid constructor parameter", parameter)
 
 define readParameterTypes(form)
-    if not isJuxtaposition(form) then []
-    readParameterTypes(getLeft(form)) ++ [getRight(getRight(form))]
+    with form as Juxtaposition(_, left, right)
+        with right as Juxtaposition(_, left', right')
+            readParameterTypes(left) ++ [right']
+        syntaxError("invalid form", form)
+    []
 
 define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     parameters := getArguments(form)
@@ -64,17 +76,20 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     scope' := zip(parameters, 0...).fold(
         newGetterDefinition(tag, dataType, n, j, m), scope)
 
-    if isNumber(form) and getNumericValue(form) = 0
+    with form as Number(tag, value)
+        if value =/= 0
+            syntaxError("invalid constructor name", form)
         zero := Name(renameTag(getTag(form), "0"))
         applyPlainDefinition(tag, zero, form, scope')
-    if isJuxtaposition(form) and isThisName(getLeft(form), "up")
-        name := getLeft(form)
-        increment := Name(renameTag(getTag(name), "(increment)"))
-        applyPlainDefinition(tag, name, increment, scope')
 
     name := getHead(form)
     if not isName(name)
         syntaxError("invalid constructor name", name)
+    if isThisName(name, "up")
+        if m =/= 1
+            syntaxError("expected one parameter to", name)
+        increment := Name(renameTag(getTag(name), "(increment)"))
+        applyPlainDefinition(tag, name, increment, scope')
     arguments := reverse(n + 1 .. n + m).map(Underscore(tag))
     base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n -- j))
     body := (UnderscoreArrow(tag)^<>(n + m))(base)
@@ -110,25 +125,26 @@ define newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
 
 
 define applyADTDefinition(tag, left, right, scope)
-    forms := getForms(right)
-    n := length(forms)
-    ms := forms.map(length <> getArguments)
-    scope' := zip(forms, 0...).fold(
-        newConstructorDefinitions(tag, left, n, ms), scope)
-    undefined' := Name(renameTag(tag, "(undefined)"))
-    applyPlainDefinition(tag, getHead(left), undefined', scope')
+    with right as SetBuilder(_, forms)
+        n := length(forms)
+        ms := forms.map(length <> getArguments)
+        scope' := zip(forms, 0...).fold(
+            newConstructorDefinitions(tag, left, n, ms), scope)
+        undefined' := Name(renameTag(tag, "(undefined)"))
+        applyPlainDefinition(tag, getHead(left), undefined', scope')
+    syntaxError("internal error", left)
 
 
 define applyDefinition(definition, scope)
-    tag := getTag(definition)
-    name := getDefiniendum(definition)
-    value := getDefiniens(definition)
-    match getDefinitionType(definition)
-        PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
-        MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
-        TryDefinition -> applyTryDefinition(tag, name, value, scope)
-        SyntaxDefinition -> scope
-        ADTDefinition -> applyADTDefinition(tag, name, value, scope)
+    with definition as Definition(tag, type, name, value)
+        match type
+            PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
+            MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
+            TryDefinition -> applyTryDefinition(tag, name, value, scope)
+            SyntaxDefinition -> scope
+            ADTDefinition -> applyADTDefinition(tag, name, value, scope)
+    syntaxError("internal error", definition)
+
 
 define reduceDefine'(tag, definitionType, left, right)
     if isTuple(left) or isAsPattern(left)
@@ -144,12 +160,14 @@ define reduceDefine(operator, left, right)
     tag := getTag(operator)
     if isDefinition(right)   # todo: remove after converting exceptions
         syntaxError("missing scope for definition", right)
-    if isKeyphrase(left, "maybe")
-        reduceDefine'(tag, MaybeDefinition, getRight(left), right)
-    if isKeyphrase(left, "try")
-        reduceDefine'(tag, TryDefinition, getRight(left), right)
-    if isKeyphrase(left, "syntax")
-        reduceDefine'(tag, SyntaxDefinition, getRight(left), right)
+    with left as Juxtaposition(_, left', right')
+        if isThisName(left', "maybe")
+            reduceDefine'(tag, MaybeDefinition, right', right)
+        if isThisName(left', "try")
+            reduceDefine'(tag, TryDefinition, right', right)
+        if isThisName(left', "syntax")
+            reduceDefine'(tag, SyntaxDefinition, right', right)
+        reduceDefine'(tag, PlainDefinition, left, right)
     reduceDefine'(tag, PlainDefinition, left, right)
 
 define reduceADTDefine(operator, left, right)

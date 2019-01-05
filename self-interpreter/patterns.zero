@@ -1,13 +1,15 @@
 #* patterns.zero
 
 define getHead(node)
-    if isJuxtaposition(node) then getHead(getLeft(node)) else node
+    with node as Juxtaposition(_, left, _)
+        getHead(left)
+    node
 
 
 define getArguments(pattern)
-    if not isJuxtaposition(pattern)
-        []
-    getArguments(getLeft(pattern)) ++ [getRight(pattern)]
+    with pattern as Juxtaposition(_, left, right)
+        getArguments(left) ++ [right]
+    []
 
 
 define newProjector(tag, size, index)
@@ -17,10 +19,9 @@ define newProjector(tag, size, index)
 define newPatternArrow(pattern, body)
     if isName(pattern)
         LockedArrow(pattern, body)
-    if isAsPattern(pattern)
-        newPatternArrow(getLabel(pattern), Juxtaposition(getTag(pattern),
-            newPatternArrow(getPattern(pattern), body),
-            Underscore(getTag(pattern), 1)))
+    with pattern as AsPattern(tag, left, right)
+        newPatternArrow(left, Juxtaposition(tag,
+            newPatternArrow(right, body), Underscore(tag, 1)))
     if isJuxtaposition(pattern)
         constructor := getHead(pattern)
         tag := getTag(constructor)
@@ -38,56 +39,69 @@ define newPatternArrow(pattern, body)
 define getNameAndValue(f, left, right)
     if isNull(right)
         abort "NULL"                    # force syntax errors
-    if not isJuxtaposition(left)
-        (left, right)
-    getNameAndValue(f, getLeft(left), f(getRight(left), right))
+    with left as Juxtaposition(_, left', right')
+        getNameAndValue(f, left', f(right', right))
+    (left, right)
 
 
 define newCaseArrow(left, right)
-    pattern := if isAsPattern(left) then getPattern(left) else left
+    pattern := with left as AsPattern(_, _, pattern'); pattern' <| left
     (name, reconstructor) :=
         getNameAndValue(newPatternArrow, pattern, right)
     constructor := Name(getTag(name))  # name could be a number
     tag := getTag(constructor)
     underscore := Underscore(tag, 1)
-    if not isAsPattern(left)
+    with left as AsPattern(tag, asLeft, _)
+        wrapper := newPatternArrow(asLeft, reconstructor)
+        argument := Juxtaposition(tag, wrapper, underscore)
         StrictArrow(tag, [constructor],
-            Juxtaposition(tag, underscore, reconstructor))
-    wrapper := newPatternArrow(getLabel(left), reconstructor)
-    argument := Juxtaposition(tag, wrapper, underscore)
-    StrictArrow(tag, [constructor], Juxtaposition(tag, underscore, argument))
+            Juxtaposition(tag, underscore, argument))
+    StrictArrow(tag, [constructor],
+        Juxtaposition(tag, underscore, reconstructor))
 
 
 define addCases(tag, base, extension)
-    if not isJuxtaposition(extension)
-        base
-    merged := addCases(tag, base, getLeft(extension))
-    Juxtaposition(tag, merged, getRight(extension))
+    with extension as Juxtaposition(_, left, right)
+        Juxtaposition(tag, addCases(tag, base, left), right)
+    base
 
 
 define newCaseBody(tag, left, right)
-    base := if isSimpleArrow(left) then
-        Juxtaposition(tag, Underscore(tag, 1), getArrowRight(left)) else
-        getArrowRight(left)
-    if isSimpleArrow(right)
-        Juxtaposition(tag, base, getArrowRight(right))
-    addCases(tag, base, getArrowRight(right))
+    with left as Arrow(_, type, _, _, body)
+        base := with type as Simple;
+            Juxtaposition(tag, Underscore(tag, 1), body) <| body
+        with right as Arrow(_, type', _, _, body')
+            with type' as Simple
+                Juxtaposition(tag, base, body')
+            addCases(tag, base, body')
+        syntaxError("internal error", left)
+    syntaxError("internal error", left)
 
 
 define getCaseConstructors(arrow)
-    if isSimpleArrow(arrow)
-        [getArrowLeft(arrow)]
-    getConstructors(arrow)
+    with arrow as Arrow(_, type, constructors, parameter, _)
+        with type as Simple
+            [parameter]
+        constructors
+    []
 
 
 define isDefaultCase(arrow)
-    isSimpleArrow(arrow) and isUnderscore(getTag(getArrowLeft(arrow)))
+    with arrow as Arrow(_, type, _, parameter, _)
+        with type as Simple
+            isUnderscore(getTag(parameter))
+        False
+    False
 
 
 define getReconstructor(arrow)
-    if isSimpleArrow(arrow)
-        getArrowRight(arrow)
-    getRight(getArrowRight(arrow))
+    with arrow as Arrow(_, type, _, _, body)
+        with type as Simple
+            body
+        with body as Juxtaposition(_, _, right)
+            right
+        syntaxError("internal error", arrow)
+    syntaxError("internal error", arrow)
 
 
 define chainCases(tag, arrow, fallback)

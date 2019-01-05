@@ -7,7 +7,6 @@ POSTFIX := 3
 OPENFIX := 4
 CLOSEFIX := 5
 
-CoupleType ::= {JuxtapositionCouple, LetCouple}
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
 ArrowType ::= {Simple, Strict, Locked}
@@ -31,19 +30,19 @@ Syntax(ast) ::= {Syntax(
 )}
 
 AST ::= {
-    Reference(_ : Tag, getReferenceIndex : ℕ, getReferenceFixity : ℕ),
-    Arrow(_ : Tag, getArrowType : ArrowType, getConstructors : List(AST),
-        getArrowLeft : AST, getArrowRight : AST),
-    Couple(_ : Tag, getCoupleType : CoupleType,
-        getLeft : AST, getRight : AST),
-    Number(_ : Tag, getNumericValue : ℕ),
-    Operator(_ : Tag, getRank : ℕ, getSyntax : Syntax(AST)),
-    Definition(_ : Tag, getDefinitionType : DefinitionType,
-        getDefiniendum : AST, getDefiniens : AST),
-    AsPattern(_ : Tag, getLabel : AST, getPattern : AST),
-    CommaPair(_ : Tag, getCommaLeft : AST, getCommaRight : AST),
-    Section(_ :  Tag, getSide : SectionSide, getSectionBody : AST),
-    SetBuilder(_ : Tag, getForms : List(AST)),
+    Reference(_ : Tag, _debruijn : ℕ, _fixity : ℕ),
+    Arrow(_ : Tag, _type : ArrowType, _constructors : List(AST),
+        _parameter : AST, _body : AST),
+    Juxtaposition(_ : Tag, _left : AST, _right : AST),
+    Let(_ : Tag, _left : AST, _right : AST),
+    Number(_ : Tag, _value : ℕ),
+    Operator(_ : Tag, _rank : ℕ, _syntax : Syntax(AST)),
+    Definition(_ : Tag, _type : DefinitionType,
+        _definiendum : AST, _definiens : AST),
+    AsPattern(_ : Tag, _left : AST, _pattern : AST),
+    CommaPair(_ : Tag, _left : AST, _right : AST),
+    Section(_ :  Tag, _side : SectionSide, _body : AST),
+    SetBuilder(_ : Tag, _forms : List(AST)),
     Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
     Deconstructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
@@ -61,7 +60,8 @@ define lockArrow(node)
 define getTag
     Reference(tag, _, _) -> tag
     Arrow(tag, _, _, _, _) -> tag
-    Couple(tag, _, _, _) -> tag
+    Juxtaposition(tag, _, _) -> tag
+    Let(tag, _, _) -> tag
     Number(tag, _) -> tag
     Operator(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
@@ -77,7 +77,9 @@ define getTag
 define containsName(name)
     Reference(tag, _, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, body) -> containsName(name, body)
-    Couple(_, _, left, right) ->
+    Juxtaposition(_, left, right) ->
+        containsName(name, left) or containsName(name, right)
+    Let(_, left, right) ->
         containsName(name, left) or containsName(name, right)
     Number(_, _) -> False
     Operator(_, _, _) -> False
@@ -95,7 +97,9 @@ define showAST
     Reference(tag, _, _) -> showTag(tag)
     Arrow(tag, _, _, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
-    Couple(tag, _, left, right) ->
+    Juxtaposition(tag, left, right) ->
+        "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
+    Let(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
     Number(tag, value) -> showNatural(value)
     Operator(tag, rank, rules) -> showTag(tag)
@@ -114,7 +118,8 @@ define showAST
 
 isReference := Reference(_, _, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _) -> True; _ -> False
-isCouple := Couple(_, _, _, _) -> True; _ -> False
+isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
+isLet := Let(_, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
 isOperator := Operator(_, _, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
@@ -127,21 +132,12 @@ isDeconstructor := Deconstructor(_, _, _, _, _, _) -> True; _ -> False
 isAccessor := Accessor(_, _, _, _, _, _) -> True; _ -> False
 isNull := Null(_) -> True; _ -> False
 
-isJuxtaposition(node) := isCouple(node) and
-    (getCoupleType(node) |> JuxtapositionCouple -> True; _ -> False)
-isLetCouple(node) := isCouple(node) and
-    (getCoupleType(node) |> LetCouple -> True; _ -> False)
-
-isSimpleArrow(node) := isArrow(node) and
-    (getArrowType(node) |> Simple -> True; _ -> False)
-isCase(node) := isArrow(node) and
-    (getArrowType(node) |> Locked -> False; _ -> True)
+isCase(node) := with node as Arrow(_, type, _, _, _);
+    (type |> Locked -> False; _ -> True) <| False
 
 Name(tag) := Reference(tag, 0, NOFIX)
-isName(node) := isReference(node) and getReferenceIndex(node) = 0
+isName(node) := with node as Reference(_, debruijn, _); debruijn = 0 <| False
 OperatorName(tag, fixity) := Reference(tag, 0, fixity)
-Juxtaposition(tag, left, right) := Couple(tag, JuxtapositionCouple, left, right)
-Let(tag, left, right) := Couple(tag, LetCouple, left, right)
 SimpleArrow(parameter, body) :=
     Arrow(getTag(parameter), Simple, [], parameter, body)
 StrictArrow(tag, constructors, body) :=
@@ -149,8 +145,8 @@ StrictArrow(tag, constructors, body) :=
 LockedArrow(parameter, body) :=
     Arrow(getTag(parameter), Locked, [], parameter, body)
 
-isSyntaxDefinition(node) := isDefinition(node) and
-    (getDefinitionType(node) |> SyntaxDefinition -> True; _ -> False)
+isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
+    (with type as SyntaxDefinition; True <| False) <| False
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
@@ -158,8 +154,6 @@ isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme
 isEOF(node) := isThisOperator(node, "\0")
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
-isKeyphrase(node, lexeme) :=
-    isJuxtaposition(node) and isThisName(getLeft(node), lexeme)
 UnderscoreArrow(tag, body) :=
     LockedArrow(Name(renameTag(tag, "_")), body)
 Underscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn, NOFIX)
@@ -170,23 +164,26 @@ newLeftPlaceholder(tag) :=
     Section(tag, RightSection, Name(renameTag(tag, ".*")))
 newRightPlaceholder(tag) :=
     Section(tag, LeftSection, Name(renameTag(tag, "*.")))
-isLeftPlaceholder(node) :=
-    isSection(node) and isThisName(getSectionBody(node), ".*")
+isLeftPlaceholder(node) := with node as Section(_, _, body);
+    isThisName(body, ".*") <| False
 wrapLeftSection(tag, body) :=
     LockedArrow(Name(renameTag(tag, "*.")), body)
 wrapRightSection(tag, body) :=
     LockedArrow(Name(renameTag(tag, ".*")), body)
 
 define wrapSection(tag, section)
-    body := getSectionBody(section)
-    match getSide(section)
-        case LeftSection
-            wrapLeftSection(tag, body)
-        case RightSection
-            if isName(getLeft(body))
-                getLeft(body)       # parenthesized postfix operator
-            wrapRightSection(tag, body)
-        case LeftRightSection
-            wrapLeftSection(tag, wrapRightSection(tag, body))
+    with section as Section(_, side, body)
+        match side
+            case LeftSection
+                wrapLeftSection(tag, body)
+            case RightSection
+                with body as Juxtaposition(_, left, _)
+                    if isName(left)
+                        left       # parenthesized postfix operator
+                    wrapRightSection(tag, body)
+                wrapRightSection(tag, body)
+            case LeftRightSection
+                wrapLeftSection(tag, wrapRightSection(tag, body))
+    section
 
 #*
