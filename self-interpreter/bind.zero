@@ -37,7 +37,7 @@ define parseParameterType(node, context)
             BottomType(noTerm)        # todo: remove after implementing (=>)
         name := getLexeme(node)
         context.lookup(name) ??
-            ADT(noTerm, name, getADTFixity(node), [], FreeType, 0, 0)
+            ADT(noTerm, name, getADTFixity(node), [], 0, 0)
     root := getHead(node)
     name := getLexeme(root)
     if context.hasKey(name)
@@ -51,7 +51,7 @@ define parseParameterType(node, context)
                 FunctionType(noTerm, left, right)
             FunctionType(noTerm, left, FreeType)
         FunctionType(noTerm, FreeType, FreeType)
-    ADT(noTerm, name, getADTFixity(root), parameterTypes, FreeType, 0, 0)
+    ADT(noTerm, name, getADTFixity(root), parameterTypes, 0, 0)
 
 
 define parseADT(node, count, index)
@@ -65,7 +65,7 @@ define parseADT(node, count, index)
         syntaxError("all components should be names", node)
     parameterTypes := (1 .. length(components)).map(TypeVariable(noTerm))
     context := newDictionary(zip(components.map(getLexeme), parameterTypes))
-    type := ADT(noTerm, name, fixity, parameterTypes, FreeType, count, index)
+    type := ADT(noTerm, name, fixity, parameterTypes, count, index)
     (type, context)
 
 
