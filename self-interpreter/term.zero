@@ -115,11 +115,4 @@ define showTerm
     Numeral(_, n) -> showNatural(n)
     Operation(tag, _, _) -> showTag(tag)
 
-noTerm := Variable(noTag, 0)
-
-define isNoTerm(term)
-    with term as Variable(_, debruijn)
-        debruijn = 0
-    False
-
 #*

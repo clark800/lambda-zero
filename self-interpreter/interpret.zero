@@ -17,7 +17,7 @@ define newNilTerm(tag)
 
 define constructString(tag, string)
     # todo: implement this
-    newNilTerm(renameTag(tag, "_"))
+    newNilTerm(veil(tag))
 
 
 define evaluateMain(Closure(main, environment), input)

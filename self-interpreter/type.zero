@@ -1,15 +1,20 @@
 #* type.zero
 
-# note: types contain source terms so that we have the ability to serialize the
-# whole source term if there is a type error
 Type ::= {
     FreeType,
-    BottomType(_source : Term),
-    TypeVariable(_source : Term, _address : ℕ),
-    FunctionType(_source : Term, _parameterType : Type, _bodyType : Type),
-    ADT(_source : Term, _name : List(ℕ), _fixity : ℕ,
+    BottomType(_ : Tag),
+    TypeVariable(_ : Tag, _address : ℕ),
+    FunctionType(_ : Tag, _parameterType : Type, _bodyType : Type),
+    ADT(_ : Tag, _name : List(ℕ), _fixity : ℕ,
         _parameterTypes : List(Type), _count : ℕ, _index : ℕ)
 }
+
+define getTypeTag
+    FreeType -> Tag("_", Location("", 0, 0))
+    BottomType(tag) -> tag
+    TypeVariable(tag, _) -> tag
+    FunctionType(tag, _, _) -> tag
+    ADT(tag, _, _, _, _, _) -> tag
 
 Scheme ::= {Scheme(getUniversals : List(Type), getType : Type)}
 

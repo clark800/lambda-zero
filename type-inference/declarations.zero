@@ -1,20 +1,20 @@
 #* declarations.zero
 
-define getFixScheme(source)
+define getFixScheme(tag)
     syntax(>->) := syntax(++)
-    (>->) := FunctionType(source)
-    a := TypeVariable(source, 0)
+    (>->) := FunctionType(tag)
+    a := TypeVariable(veil(tag), 0)
     Scheme([a], (a >-> a) >-> a)
 
 
 define builtinTypes
     syntax(>->) := syntax(++)
-    (>->) := FunctionType(noTerm)
-    bottom := BottomType(noTerm)
-    boolean := ADT(noTerm, "𝔹", NOFIX, [], 2, 0)
-    natural := ADT(noTerm, "ℕ", NOFIX, [], 2, 0)
-    string := ADT(noTerm, "List", NOFIX, [natural], 2, 0)
-    natural' := ADT(noTerm, "ℕ", NOFIX, [], 2, 2)
+    (>->) := FunctionType(noTag)
+    bottom := BottomType(noTag)
+    boolean := ADT(noTag, "𝔹", NOFIX, [], 2, 0)
+    natural := ADT(noTag, "ℕ", NOFIX, [], 2, 0)
+    string := ADT(noTag, "List", NOFIX, [natural], 2, 0)
+    natural' := ADT(noTag, "ℕ", NOFIX, [], 2, 2)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -34,9 +34,9 @@ define builtinTypes
         ("(undefined)", bottom)
     ])
 
-define getBuiltinType(term)
-    with builtinTypes.lookup(getTagLexeme(getTermTag(term))) as Just(type)
-        type.setSource(term)
+define getBuiltinType(tag)
+    with builtinTypes.lookup(getTagLexeme(tag)) as Just(type)
+        type.setTag(tag)
     FreeType
 
 #*

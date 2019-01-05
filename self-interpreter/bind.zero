@@ -31,13 +31,12 @@ define getADTFixity(root)
 
 
 define parseParameterType(node, context)
-    # TODO: count parameter to ADTs is wrong
     if isName(node)
-        if isUnderscore(getTag(node))
-            BottomType(noTerm)        # todo: remove after implementing (=>)
+        tag := getTag(node)
+        if isUnderscore(tag)
+            BottomType(tag)  # todo: remove after implementing (=>)
         name := getLexeme(node)
-        context.lookup(name) ??
-            ADT(noTerm, name, getADTFixity(node), [], 0, 0)
+        context.lookup(name) ?? ADT(tag, name, getADTFixity(node), [], 0, 0)
     root := getHead(node)
     name := getLexeme(root)
     if context.hasKey(name)
@@ -48,10 +47,10 @@ define parseParameterType(node, context)
             syntaxError("(=>) requires two arguments", node)
         with parameterTypes as left :: parameterTypes'
             with parameterTypes' as right :: _
-                FunctionType(noTerm, left, right)
-            FunctionType(noTerm, left, FreeType)
-        FunctionType(noTerm, FreeType, FreeType)
-    ADT(noTerm, name, getADTFixity(root), parameterTypes, 0, 0)
+                FunctionType(getTypeTag(left), left, right)
+            syntaxError("(=>) requires two arguments", node)
+        syntaxError("(=>) requires two arguments", node)
+    ADT(getTag(root), name, getADTFixity(root), parameterTypes, 0, 0)
 
 
 define parseADT(node, count, index)
@@ -63,9 +62,10 @@ define parseADT(node, count, index)
     components := getArguments(node)
     if not components.all(isName)
         syntaxError("all components should be names", node)
-    parameterTypes := (1 .. length(components)).map(TypeVariable(noTerm))
+    tag := veil(getTag(node))
+    parameterTypes := (1 .. length(components)).map(TypeVariable(tag))
     context := newDictionary(zip(components.map(getLexeme), parameterTypes))
-    type := ADT(noTerm, name, fixity, parameterTypes, count, index)
+    type := ADT(getTag(root), name, fixity, parameterTypes, count, index)
     (type, context)
 
 
@@ -74,11 +74,11 @@ define newReconstructorType(context, parameterTypeASTs, returnType)
         parameterType := parseParameterType(typeAST, context)
         bodyType := newReconstructorType(context,
             parameterTypeASTs', returnType)
-        FunctionType(noTerm, parameterType, bodyType)
+        FunctionType(getTypeTag(parameterType), parameterType, bodyType)
     returnType
 
 
-define newConstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
+define newConstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
     # todo: check that universals are not already defined and that all other
     # names are already defined; also make sure universal name is not the
     # same as the dataType name
@@ -88,22 +88,22 @@ define newConstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
     Scheme(universals, type)
 
 
-define newDeconstructorScheme(term, parameterTypeASTs, adtTypeAST, count, index)
-    returnType := TypeVariable(term, 0)
+define newDeconstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
+    returnType := TypeVariable(veil(tag), 0)
     (adtType, context) := parseADT(adtTypeAST, count, index)
     universals := returnType :: getValues(context)
     reconstructorType :=
         newReconstructorType(context, parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
-    (>->) := FunctionType(term)
+    (>->) := FunctionType(veil(tag))
     fallbackType := adtType >-> returnType
     type := reconstructorType >-> fallbackType >-> adtType >-> returnType
     Scheme(universals, type)
 
 
-define newAccessorScheme(term, dataType, returnType, count, index)
+define newAccessorScheme(tag, dataType, returnType, count, index)
     (adtType, context) := parseADT(dataType, count, index)
-    type := FunctionType(term, adtType, parseParameterType(returnType, context))
+    type := FunctionType(tag, adtType, parseParameterType(returnType, context))
     universals := getValues(context)
     Scheme(universals, type)
 
@@ -128,7 +128,7 @@ define bind(level, stack, node)
             Application(tag, True,
                 bind(level, stack, left), bind(level, stack, right))
         case Number(tag, value)
-            Numeral(renameTag(tag, "_"), value)
+            Numeral(veil(tag), value)
         case Operator(_, _, _)
             abort "internal error: Operator reached bind"
         case Definition(_, _, _, _)
@@ -141,20 +141,19 @@ define bind(level, stack, node)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
-        case Constructor(tag, parameterTypes, dataType, function, count, index)
+        case Constructor(tag, parameterTypes, adtType, function, count, index)
             term := bind(level, stack, function)
-            scheme := newConstructorScheme(term, parameterTypes,
-                dataType, count, index)
+            scheme := newConstructorScheme(tag, parameterTypes,
+                adtType, count, index)
             term.setMetadata(Metadata(Free, scheme, []))
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
             term := bind(level, stack, function)
-            scheme := newDeconstructorScheme(term, parameterTypes,
+            scheme := newDeconstructorScheme(tag, parameterTypes,
                 adtType, count, index)
             term.setMetadata(Metadata(Free, scheme, []))
-        case Accessor(tag, dataType, returnType, function, count, index)
+        case Accessor(tag, adtType, returnType, function, count, index)
             term := bind(level, stack, function)
-            scheme := newAccessorScheme(term, dataType, returnType,
-                count, index)
+            scheme := newAccessorScheme(tag, adtType, returnType, count, index)
             term.setMetadata(Metadata(Free, scheme, []))
         case Null(_)
             abort "internal error: Null reached bind"

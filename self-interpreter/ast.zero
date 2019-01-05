@@ -141,7 +141,7 @@ OperatorName(tag, fixity) := Reference(tag, 0, fixity)
 SimpleArrow(parameter, body) :=
     Arrow(getTag(parameter), Simple, [], parameter, body)
 StrictArrow(tag, constructors, body) :=
-    Arrow(tag, Strict, constructors, Name(renameTag(tag, "_")), body)
+    Arrow(tag, Strict, constructors, Name(veil(tag)), body)
 LockedArrow(parameter, body) :=
     Arrow(getTag(parameter), Locked, [], parameter, body)
 
@@ -154,9 +154,8 @@ isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme
 isEOF(node) := isThisOperator(node, "\0")
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
-UnderscoreArrow(tag, body) :=
-    LockedArrow(Name(renameTag(tag, "_")), body)
-Underscore(tag, debruijn) := Reference(renameTag(tag, "_"), debruijn, NOFIX)
+UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
+Underscore(tag, debruijn) := Reference(veil(tag), debruijn, NOFIX)
 newNil(tag) := Name(renameTag(tag, "[]"))
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, OperatorName(renameTag(tag, "::"), INFIX), item), list)

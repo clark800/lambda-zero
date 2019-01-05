@@ -109,7 +109,7 @@ define chainCases(tag, arrow, fallback)
     reconstructor := getReconstructor(arrow)
     body := Juxtaposition(tag, Juxtaposition(tag, Juxtaposition(tag,
         deconstructor, reconstructor), fallback), Underscore(tag, 1))
-    SimpleArrow(Name(renameTag(tag, "_")), body)
+    SimpleArrow(Name(veil(tag)), body)
 
 
 define combineCases(tag, left, right)
