@@ -1,15 +1,14 @@
 #* brackets.zero
 
 define applyToCommaList(tag, base, arguments)
-    if not isCommaPair(arguments)
-        Juxtaposition(tag, base, arguments)
-    Juxtaposition(tag, applyToCommaList(tag, base,
-        getCommaLeft(arguments)), getCommaRight(arguments))
+    with arguments as CommaPair(_, left, right)
+        Juxtaposition(tag, applyToCommaList(tag, base, left), right)
+    Juxtaposition(tag, base, arguments)
 
 define getCommaListSize(commaList)
-    if not isCommaPair(commaList)
-        1
-    getCommaListSize(getCommaLeft(commaList)) + 1
+    with commaList as CommaPair(_, left, _)
+        getCommaListSize(left) + 1
+    1
 
 define newTuple(tag, commaList)
     n := getCommaListSize(commaList)
@@ -19,8 +18,9 @@ define newTuple(tag, commaList)
 
 define getCommaListElements(commaList)
     if isNull(commaList) then []
-    if not isCommaPair(commaList) then [commaList]
-    getCommaListElements(getCommaLeft(commaList)) ++ [getCommaRight(commaList)]
+    with commaList as CommaPair(_, left, right)
+        getCommaListElements(left) ++ [right]
+    [commaList]
 
 define reduceUnmatched(open, _left, _right)
     syntaxError("missing close for", open)
@@ -44,15 +44,14 @@ define reduceParentheses(open, function, contents)
         newTuple(tag, contents')
     if isArrow(contents')
         lockArrow(contents')
-    if isJuxtaposition(contents')
-        Juxtaposition(tag, getLeft(contents'), getRight(contents'))
+    with contents' as Juxtaposition(_, left, right)
+        Juxtaposition(tag, left, right)
     contents'
 
 define createList(tag, commaList, list)
-    if not isCommaPair(commaList)
-        prependList(tag, commaList, list)
-    createList(tag, getCommaLeft(commaList),
-        prependList(tag, getCommaRight(commaList), list))
+    with commaList as CommaPair(_, left, right)
+        createList(tag, left, prependList(tag, right, list))
+    prependList(tag, commaList, list)
 
 define reduceSquare(open, left, contents)
     if not isThisOperator(open, "[")
@@ -87,7 +86,9 @@ define shiftOpen(state, open)
     State(open :: getStack(state'), getOperators(state'))
 
 define isOpenOperator(operator)
-    isOperator(operator) and getFixity(getSyntax(operator)) = OPENFIX
+    with operator as Operator(_, _, syntax)
+        getFixity(syntax) = OPENFIX
+    False
 
 define pushBracket(stack, open, close, contents)
     with stack as left :: stack'
@@ -117,21 +118,22 @@ define shiftClose'(state, close)
 
 
 define preReduceOperator(operator, stack)
-    tag := getTag(operator)
-    with stack as left :: stack'
-        if isLeftPlaceholder(left)
-            # bracketed infix operator
-            OperatorName(tag, INFIX) :: stack'
-        if isOpenOperator(left)
-            # bracketed prefix operators
-            if isThisOperator(operator, "(+)")
-                OperatorName(renameTag(tag, "+"), INFIX) :: stack
-            if isThisOperator(operator, "(-)")
-                OperatorName(renameTag(tag, "-"), INFIX) :: stack
-            OperatorName(tag, PREFIX) :: stack
-        fixity := getFixity(getSyntax(operator))
-        if fixity = INFIX or fixity = PREFIX
-            newRightPlaceholder(tag) :: operator :: stack   # LeftSection
+    with operator as Operator(tag, _, syntax)
+        with stack as left :: stack'
+            if isLeftPlaceholder(left)
+                # bracketed infix operator
+                OperatorName(tag, INFIX) :: stack'
+            if isOpenOperator(left)
+                # bracketed prefix operators
+                if isThisOperator(operator, "(+)")
+                    OperatorName(renameTag(tag, "+"), INFIX) :: stack
+                if isThisOperator(operator, "(-)")
+                    OperatorName(renameTag(tag, "-"), INFIX) :: stack
+                OperatorName(tag, PREFIX) :: stack
+            fixity := getFixity(syntax)
+            if fixity = INFIX or fixity = PREFIX
+                newRightPlaceholder(tag) :: operator :: stack   # LeftSection
+            operator :: stack
         operator :: stack
     operator :: stack
 

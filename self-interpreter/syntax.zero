@@ -5,8 +5,10 @@ define isOperatorTop(stack)
 
 
 define isValidPrior(operator, node)
-    prior := getPrior(getSyntax(operator))
-    isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
+    with operator as Operator(_, _, syntax)
+        prior := getPrior(syntax)
+        isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
+    False
 
 
 define reduceApply(operator, left, right)
@@ -67,29 +69,29 @@ define reduceWhere(operator, left, right)
 
 
 define reduceWith(operator, asPattern, withBlock)
-    if not isAsPattern(asPattern)
-        syntaxError("expected as pattern to right of", operator)
-    tag := getTag(operator)
-    expression := getLabel(asPattern)
-    pattern := getPattern(asPattern)
-    elseBlock := Underscore(tag, 3)
-    caseArrow := newCaseArrow(pattern, withBlock)
-    fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
-    function := combineCases(tag, caseArrow, fallback)
-    UnderscoreArrow(tag, Juxtaposition(tag, function, expression))
+    with asPattern as AsPattern(_, expression, pattern)
+        tag := getTag(operator)
+        elseBlock := Underscore(tag, 3)
+        caseArrow := newCaseArrow(pattern, withBlock)
+        fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
+        function := combineCases(tag, caseArrow, fallback)
+        UnderscoreArrow(tag, Juxtaposition(tag, function, expression))
+    syntaxError("expected as pattern to right of", operator)
 
 
 define reduceNewline(operator, left, right)
+    with left as Juxtaposition(_, left', right')
+        if isThisName(left', "define")
+            reduceDefine(left', right', right)
+        if isThisName(left', "case")
+            newCaseArrow(right', right)
+        if isThisName(left', "with")
+            reduceWith(left', right', right)
+        reduceApply(operator, left, right)
     if isDefinition(left)
         applyDefinition(left, right)
-    if isKeyphrase(left, "define")
-        reduceDefine(getLeft(left), getRight(left), right)
     if isCase(left) and isCase(right)
         combineCases(getTag(operator), left, right)
-    if isKeyphrase(left, "case")
-        newCaseArrow(getRight(left), right)
-    if isKeyphrase(left, "with")
-        reduceWith(getLeft(left), getRight(left), right)
     reduceApply(operator, left, right)
 
 
@@ -192,17 +194,20 @@ define newSyntaxOperator(tag, precedence, fixity, prior)
     syntaxError("invalid fixity", fixity)
 
 
-define newAlias(operators, tag, name)
+define getAliasSyntax(operators, name)
     if not isName(name)
         syntaxError("expected operator name", name)
-    rules := operators.lookupSyntax(getLexeme(name)) ??
+    operators.lookupSyntax(getLexeme(name)) ??
         syntaxError("syntax not defined", name)
-    Operator(tag, 0, rules)
+
+
+define newAlias(operators, tag, name)
+    Operator(tag, 0, getAliasSyntax(operators, name))
 
 
 define copySyntax(operators, tag, name)
     lexeme := getTagLexeme(tag)
-    match getSyntax(newAlias(operators, tag, name))
+    match getAliasSyntax(operators, name)
         Syntax(_, l, r, f, a, s, sh, rd, p) ->
             Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, sh, rd, p))
 
@@ -216,31 +221,26 @@ define findPrecedence(operators, node)
 
 
 define parsePrecedence(operators, node)
-    precedence := if isNumber(node) then
-        getNumericValue(node) else findPrecedence(operators, node)
-    if precedence > 99
-        syntaxError("invalid precedence", node)
-    precedence
+    with node as Number(_, precedence)
+        if precedence > 99
+            syntaxError("invalid precedence", node)
+        precedence
+    findPrecedence(operators, node)
 
 
-define defineSyntax(operators, node, name, right)
-    tag := getTag(node)
+define defineSyntax(operators, definition, name, right)
+    tag := getTag(definition)
     if not isName(name)
-        syntaxError("expected name operand to", node)
-    if not isJuxtaposition(right)
-        syntaxError("invalid syntax definition", node)
-    fixity := getLeft(right)
-    if isThisName(fixity, "alias")
-        operator := newAlias(operators, getTag(name), getRight(right))
-        Definition(tag, SyntaxDefinition, name, operator)
-    if isThisName(fixity, "syntax")
-        operator := copySyntax(operators, getTag(name), getRight(right))
-        Definition(tag, SyntaxDefinition, name, operator)
-    argument := getRight(right)
-    precedence := parsePrecedence(operators, argument)
-    prior := if isNumber(argument) then "" else getLexeme(argument)
-    operator := newSyntaxOperator(getTag(name), precedence, fixity, prior)
-    Definition(tag, SyntaxDefinition, name, operator)
+        syntaxError("expected name operand to", definition)
+    with right as Juxtaposition(_, fixity, argument)
+        if isThisName(fixity, "alias")
+            newAlias(operators, getTag(name), argument)
+        if isThisName(fixity, "syntax")
+            copySyntax(operators, getTag(name), argument)
+        precedence := parsePrecedence(operators, argument)
+        prior := if isNumber(argument) then "" else getLexeme(argument)
+        newSyntaxOperator(getTag(name), precedence, fixity, prior)
+    syntaxError("invalid syntax definition", definition)
 
 
 define pushSyntax(lexeme, syntax, operators)
@@ -252,17 +252,19 @@ define pushSyntax(lexeme, syntax, operators)
 define addSyntax(operators, operator)
     if not isVoid(operators.lookupSyntax(getLexeme(operator)))
         syntaxError("syntax already defined", operator)
-    operators' := operators.pushSyntax(getLexeme(operator), getSyntax(operator))
-    p := getLeftPrecedence(getSyntax(operator))
-    if isThisOperator(operator, "+")
-        s := Syntax("(+)", p, p, PREFIX, LEFT, False, shiftPrefix, reducePrefix,
-            "")
-        operators'.pushSyntax("(+)", s)
-    if isThisOperator(operator, "-")
-        s := Syntax("(-)", p, p, PREFIX, LEFT, False, shiftPrefix, reducePrefix,
-            "")
-        operators'.pushSyntax("(-)", s)
-    operators'
+    with operator as Operator(_, _, syntax)
+        operators' := operators.pushSyntax(getLexeme(operator), syntax)
+        p := getLeftPrecedence(syntax)
+        if isThisOperator(operator, "+")
+            s := Syntax("(+)", p, p, PREFIX, LEFT, False,
+                shiftPrefix, reducePrefix, "")
+            operators'.pushSyntax("(+)", s)
+        if isThisOperator(operator, "-")
+            s := Syntax("(-)", p, p, PREFIX, LEFT, False,
+                shiftPrefix, reducePrefix, "")
+            operators'.pushSyntax("(-)", s)
+        operators'
+    syntaxError("internal error", operator)
 
 
 define reduceLeftErase(State(stack, operators), operator)
@@ -272,13 +274,16 @@ define reduceLeftErase(State(stack, operators), operator)
 define shiftSemicolon(state, operator)
     _ @ State(stack', operators') := reduceLeftErase(state, operator)
     with stack' as top :: stack''
-        if isOperator(top)
+        with top as Operator(_, _, _)
             syntaxError("missing left operand for", operator)
-        if isSyntaxDefinition(top)
-            definition := defineSyntax(operators', top,
-                getDefiniendum(top), getDefiniens(top))
-            operators'' := addSyntax(operators', getDefiniens(definition))
-            State(operator :: definition :: stack'', operators'')
+        with top as Definition(tag, type, definiendum, definiens)
+            with type as SyntaxDefinition
+                operator' := defineSyntax(operators', top,
+                    definiendum, definiens)
+                operators'' := addSyntax(operators', operator')
+                definition := Definition(tag, type, definiendum, operator')
+                State(operator :: definition :: stack'', operators'')
+            State(operator :: stack', operators')
         State(operator :: stack', operators')
     syntaxError("missing left operand for", operator)
 

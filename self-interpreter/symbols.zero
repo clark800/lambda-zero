@@ -7,7 +7,9 @@ NEITHER := 3
 
 
 define isSpecial(node)
-    getSpecial(getSyntax(node))
+    with node as Operator(_, _, syntax)
+        getSpecial(syntax)
+    False
 
 
 define propagateSection(operator, side, body)
@@ -17,24 +19,28 @@ define propagateSection(operator, side, body)
 
 
 define reduceOperator(operator, left, right)
-    left' := if isSection(left) then getSectionBody(left) else left
-    right' := if isSection(right) then getSectionBody(right) else right
-    result := getReduce(getSyntax(operator))(operator, left', right')
-    if isSection(left)
-        side := if isSection(right) then LeftRightSection else RightSection
-        propagateSection(operator, side, result)
-    if isSection(right)
-        propagateSection(operator, LeftSection, result)
-    result
+    left' := with left as Section(_, _, body); body <| left
+    right' := with right as Section(_, _, body); body <| right
+    with operator as Operator(_, _, syntax)
+        result := getReduce(syntax)(operator, left', right')
+        if isSection(left)
+            side := if isSection(right) then LeftRightSection else RightSection
+            propagateSection(operator, side, result)
+        if isSection(right)
+            propagateSection(operator, LeftSection, result)
+        result
+    syntaxError("internal error", operator)
 
 
 define reduceBracket(open, close, left, right)
-    getReduce(getSyntax(close))(open, left, right)
+    with close as Operator(_, _, syntax)
+        getReduce(syntax)(open, left, right)
+    syntaxError("internal error", close)
 
 
 define shift(state @ State(stack, operators), node)
-    if isOperator(node)
-        getShift(getSyntax(node))(state, node)
+    with node as Operator(_, _, syntax)
+        getShift(syntax)(state, node)
     with stack as top :: _
         if not isOperator(top)
             syntaxError("missing operator before", node)
@@ -47,14 +53,16 @@ define erase(stack, lexeme)
 
 
 define reduceTop'(operator, right, stack, operators)
-    if getFixity(getSyntax(operator)) = PREFIX
-        shift(State(stack, operators),
-            reduceOperator(operator, Null(getTag(operator)), right))
-    with stack as left :: stack'
-        state' := State(stack', if isSyntaxDefinition(left) then
-            operators.drop(1) else operators)
-        shift(state', reduceOperator(operator, left, right))
-    State(stack, operators)
+    with operator as Operator(tag, _, syntax)
+        if getFixity(syntax) = PREFIX
+            shift(State(stack, operators),
+                reduceOperator(operator, Null(tag), right))
+        with stack as left :: stack'
+            state' := State(stack', if isSyntaxDefinition(left) then
+                operators.drop(1) else operators)
+            shift(state', reduceOperator(operator, left, right))
+        State(stack, operators)
+    syntaxError("internal error", operator)
 
 
 define reduceTop(state @ State(stack, operators))
@@ -71,25 +79,26 @@ define isHigherPrecedence(left, right)
     if isEOF(left)
         False
 
-    leftSyntax := getSyntax(left)
-    rightSyntax := getSyntax(right)
+    with left as Operator(_, leftRank, leftSyntax)
+        with right as Operator(_, rightRank, rightSyntax)
+            if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
+                if leftSyntax.getAssociativity = NEITHER
+                    syntaxError("operator is non-associative", left)
 
-    if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
-        if leftSyntax.getAssociativity = NEITHER
-            syntaxError("operator is non-associative", left)
+                if rightSyntax.getAssociativity = NEITHER
+                    syntaxError("operator is non-associative", right)
 
-        if rightSyntax.getAssociativity = NEITHER
-            syntaxError("operator is non-associative", right)
+                if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
+                    syntaxError("incompatible associativity", right)
 
-        if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
-            syntaxError("incompatible associativity", right)
+                if leftSyntax.getAssociativity = RIGHTVALUE
+                    leftRank > rightRank
 
-        if leftSyntax.getAssociativity = RIGHTVALUE
-            getRank(left) > getRank(right)
+                leftSyntax.getAssociativity = LEFT
 
-        leftSyntax.getAssociativity = LEFT
-
-    leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
+            leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
+        False
+    False
 
 
 define shouldReduceTop(operator, State(stack, _operators))
