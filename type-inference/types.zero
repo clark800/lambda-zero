@@ -1,41 +1,33 @@
 #* types.zero
 
-define getSource
-    FreeType -> noTerm
-    BottomType(source) -> source
-    TypeVariable(source, _) -> source
-    FunctionType(source, _, _) -> source
-    ADT(source, _, _, _, _, _) -> source
-
-
-define maybeAddress(term)
-    with term as TypeVariable(_, address)
+define maybeAddress(type)
+    with type as TypeVariable(_, address)
         Just(address)
     Void
 
-define maybeName(term)
-    with term as ADT(_, name, _, _, _, _)
+define maybeName(type)
+    with type as ADT(_, name, _, _, _, _)
         Just(name)
     Void
 
-define maybeCount(term)
-    with term as ADT(_, _, _, _, count, _)
+define maybeCount(type)
+    with type as ADT(_, _, _, _, count, _)
         Just(count)
     Void
 
-define maybeIndex(term)
-    with term as ADT(_, _, _, _, _, index)
+define maybeIndex(type)
+    with type as ADT(_, _, _, _, _, index)
         Just(index)
     Void
 
-define setSource(source)
+define setTag(tag)
     FreeType -> FreeType
-    BottomType(_) -> BottomType(source)
-    TypeVariable(_, index) -> TypeVariable(source, index)
+    BottomType(_) -> BottomType(tag)
+    TypeVariable(_, index) -> TypeVariable(tag, index)
     FunctionType(_, parameter, body) ->
-        FunctionType(source, parameter, body)
+        FunctionType(tag, parameter, body)
     ADT(_, name, fixity, parameters, count, index) ->
-        ADT(source, name, fixity, parameters, count, index)
+        ADT(tag, name, fixity, parameters, count, index)
 
 
 isFreeType := FreeType -> True; _ -> False
@@ -90,14 +82,6 @@ define getComponentTypes
     ADT(_, _, _, parameters, _, _) -> parameters
 
 
-define getInternalTypes
-    FreeType -> []
-    BottomType(_) -> []
-    TypeVariable(_, _) -> []
-    FunctionType(_, parameter, body) -> [parameter, body]
-    ADT(_, _, _, parameters, _, _) -> parameters
-
-
 define sameRoot(a, b)
     match a
         case FreeType
@@ -116,22 +100,22 @@ define sameRoot(a, b)
             False
 
 
-define newTypeVariable(source, variables)
+define newTypeVariable(tag, variables)
     (address, variables') := variables.allocate(FreeType)
-    (TypeVariable(source, address), variables')
+    (TypeVariable(tag, address), variables')
 
 newTypeVariables(originals, variables) :=
-    originals.map(getSource).cascadeMap(newTypeVariable, variables)
+    originals.map(getTypeTag).cascadeMap(newTypeVariable, variables)
 
 define mapInternalTypes(f, type)
     match type
         FreeType -> type
         BottomType(_) -> type
         TypeVariable(_, _) -> type
-        FunctionType(source, parameter, body) ->
-            FunctionType(source, f(parameter), f(body))
-        ADT(source, name, fixity, parameters, count, index) ->
-            ADT(source, name, fixity, parameters.map(f), count, index)
+        FunctionType(tag, parameter, body) ->
+            FunctionType(tag, f(parameter), f(body))
+        ADT(tag, name, fixity, parameters, count, index) ->
+            ADT(tag, name, fixity, parameters.map(f), count, index)
 
 newRenaming(mappings) := newTable((<=), mappings)
 

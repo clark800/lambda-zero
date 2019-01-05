@@ -4,6 +4,7 @@ Location ::= {Location(_file : List(ℕ), _line : ℕ, _column : ℕ)}
 Tag ::= {Tag(getTagLexeme : List(ℕ), getTagLocation : Location)}
 
 renameTag(Tag(_, location), lexeme) := Tag(lexeme, location)
+veil(tag) := renameTag(tag, "_")
 addPrefix(Tag(lexeme, location), prefix) := Tag(prefix :: lexeme, location)
 
 isComment(c) := c = '#'

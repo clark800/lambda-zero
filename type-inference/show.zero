@@ -3,14 +3,10 @@
 define showTypeLocation(type)
     if isFreeType(type)
         "VOID"
-    showLocation(getTagLocation(getTermTag(getSource(type))))
-
-define showSource(type)
-    if isFreeType(type) then "VOID" else showTerm(getSource(type))
+    showLocation(getTagLocation(getTypeTag(type)))
 
 define showTypeAndLocation(type)
-    showType(type) ++ (if isNoTerm(getSource(type)) then "" else
-        " at " ++ showTypeLocation(type))
+    showType(type) ++ " at " ++ showTypeLocation(type)
 
 define showVariables(variables)
     variables.dump.map((address, value) ->

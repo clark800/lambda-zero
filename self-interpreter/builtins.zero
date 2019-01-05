@@ -1,7 +1,7 @@
 #* builtins.zero
 
 define getBuiltin(tag)
-    tag' := renameTag(tag, "_")
+    tag' := veil(tag)
     maxInteger := 9223372036854775807
 
     define checkNatural(term)
