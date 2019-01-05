@@ -18,18 +18,18 @@ define reduceApply(operator, left, right)
 define reducePrefix(operator, _left, right)
     if not isValidPrior(operator, right)
         syntaxError("operator syntax error", operator)
-    reduceApply(operator, OperatorName(getTag(operator), PREFIX), right)
+    reduceApply(operator, Name(getTag(operator)), right)
 
 
 define reducePostfix(operator, left, _right)
     if not isValidPrior(operator, left)
         syntaxError("operator syntax error", operator)
-    reduceApply(operator, OperatorName(getTag(operator), POSTFIX), left)
+    reduceApply(operator, Name(getTag(operator)), left)
 
 
 define reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
-        OperatorName(getTag(operator), INFIX), left), right)
+        Name(getTag(operator)), left), right)
 
 
 define reduceInfixL(operator, left, right)
@@ -141,10 +141,10 @@ define shiftInfix(state, operator)
         if not isOperator(top)
             State(operator :: stack', operators)
         if isThisOperator(operator, "+")
-            operator' := operators.parseSymbol(renameTag(tag, "(+)"), 0)
+            operator' := operators.parseSymbol(renameTag(tag, "(+)", PREFIX), 0)
             State(operator' :: stack', operators)
         if isThisOperator(operator, "-")
-            operator' := operators.parseSymbol(renameTag(tag, "(-)"), 0)
+            operator' := operators.parseSymbol(renameTag(tag, "(-)", PREFIX), 0)
             State(operator' :: stack', operators)
         if not isSpecial(operator) and isOpenOperator(top)
             placeholder := newLeftPlaceholder(tag)
@@ -172,7 +172,7 @@ define newOperator'(tag, prior, precedence, fixity, associativity,
 define newSyntaxOperator(tag, precedence, fixity, prior)
     p := precedence
     if getTagLexeme(tag) =*= "()"
-        tag' := renameTag(tag, " ")
+        tag' := renameTag(tag, " ", INFIX)
         if getLexeme(fixity) =*= "infixL"
             newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceInfixL)
         if getLexeme(fixity) =*= "interfix"

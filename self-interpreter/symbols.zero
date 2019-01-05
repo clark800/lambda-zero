@@ -115,8 +115,9 @@ define reduceLeft(state, operator)
     while(shouldReduceTop(operator), reduceTop, state)
 
 
-define parseOperator(tag, value, operatorSyntax)
-    Operator(renameTag(tag, getAlias(operatorSyntax)), value, operatorSyntax)
+define parseOperator(tag, value, syntax)
+    tag' := renameTag(tag, getAlias(syntax), getFixity(syntax))
+    Operator(tag', value, syntax)
 
 
 define lookupSyntax(lexeme, operators)

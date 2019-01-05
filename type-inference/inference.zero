@@ -30,7 +30,7 @@ define substitute(variables, type)
         type' := variables.access(address) ?? FreeType
         if isFreeType(type')
             type
-        type'' := type'.setTag(tag)
+        type'' := type'.setLocation(tag)
         if type''.getFreeVariables(newStore([])).any(sameRoot(type))
             recursionError(type, type, variables)
         type''.substitute(variables)
@@ -83,7 +83,7 @@ define instantiate(variables, tag, Scheme(universals, type))
     addresses := universals.map(maybeAddress).prune
     mappings := zip(addresses, freshVariables)
     renaming := newRenaming(mappings)
-    (type.rename(renaming).setTag(tag), variables')
+    (type.rename(renaming).setLocation(tag), variables')
 
 
 define getResultType(type)
@@ -184,7 +184,7 @@ define infer(stack, variables)
         (returnType, unify(variables''', (applicandType, functionType)))
     case Numeral(tag, value)
         index := if value = 0 then 1 else 2
-        (ADT(tag, "ℕ", NOFIX, [], 2, index), variables)
+        (ADT(renameTag(tag, "ℕ", NOFIX), "ℕ", [], 2, index), variables)
     case Operation(tag, _, _)
         (getBuiltinType(tag), variables)
 

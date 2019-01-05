@@ -14,18 +14,19 @@ define applyPlainDefinition(tag, name, value, scope)
     Let(tag, newPatternArrow(name, scope), value)
 
 define applyMaybeDefinition(tag, name, value, scope)
-    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust")),
+    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust", NOFIX)),
         newPatternArrow(name, scope)), value)
 
 define applyTryDefinition(tag, name, value, scope)
-    Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onRight")),
+    Juxtaposition(tag, Juxtaposition(tag,
+        Name(renameTag(tag, "onRight", NOFIX)),
         newPatternArrow(name, scope)), value)
 
 define transformRecursion(name, value)
     if not isName(name) or not isArrow(value) or not containsName(name, value)
         value
     tag := getTag(name)
-    fix' := Name(renameTag(tag, "fix"))
+    fix' := Name(renameTag(tag, "fix", NOFIX))
     Juxtaposition(tag, fix', LockedArrow(Name(tag), value))
 
 define isValidPattern(node)
@@ -53,7 +54,7 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
             if isUnused(getTag(name))
                 scope
             projector := newProjector(tag, m, k)
-            undefined' := Name(renameTag(tag, "(undefined)"))
+            undefined' := Name(renameTag(tag, "(undefined)", NOFIX))
             arguments := (0 .. n -- 1).map(q ->
                 if q = j then projector else undefined')
             body := UnderscoreArrow(tag,
@@ -79,7 +80,7 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     with form as Number(tag, value)
         if value =/= 0
             syntaxError("invalid constructor name", form)
-        zero := Name(renameTag(getTag(form), "0"))
+        zero := Name(renameTag(getTag(form), "0", NOFIX))
         applyPlainDefinition(tag, zero, form, scope')
 
     name := getHead(form)
@@ -88,7 +89,7 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     if isThisName(name, "up")
         if m =/= 1
             syntaxError("expected one parameter to", name)
-        increment := Name(renameTag(getTag(name), "(increment)"))
+        increment := Name(renameTag(getTag(name), "(increment)", NOFIX))
         applyPlainDefinition(tag, name, increment, scope')
     arguments := reverse(n + 1 .. n + m).map(Underscore(tag))
     base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n -- j))
@@ -130,7 +131,7 @@ define applyADTDefinition(tag, left, right, scope)
         ms := forms.map(length <> getArguments)
         scope' := zip(forms, 0...).fold(
             newConstructorDefinitions(tag, left, n, ms), scope)
-        undefined' := Name(renameTag(tag, "(undefined)"))
+        undefined' := Name(renameTag(tag, "(undefined)", NOFIX))
         applyPlainDefinition(tag, getHead(left), undefined', scope')
     syntaxError("internal error", left)
 

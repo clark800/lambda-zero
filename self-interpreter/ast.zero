@@ -30,7 +30,7 @@ Syntax(ast) ::= {Syntax(
 )}
 
 AST ::= {
-    Reference(_ : Tag, _debruijn : ℕ, _fixity : ℕ),
+    Reference(_ : Tag, _debruijn : ℕ),
     Arrow(_ : Tag, _type : ArrowType, _constructors : List(AST),
         _parameter : AST, _body : AST),
     Juxtaposition(_ : Tag, _left : AST, _right : AST),
@@ -58,7 +58,7 @@ define lockArrow(node)
     node
 
 define getTag
-    Reference(tag, _, _) -> tag
+    Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
     Let(tag, _, _) -> tag
@@ -75,7 +75,7 @@ define getTag
     Null(tag) -> tag
 
 define containsName(name)
-    Reference(tag, _, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
+    Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
         containsName(name, left) or containsName(name, right)
@@ -94,7 +94,7 @@ define containsName(name)
     Null(_) -> False
 
 define showAST
-    Reference(tag, _, _) -> showTag(tag)
+    Reference(tag, _) -> showTag(tag)
     Arrow(tag, _, _, parameter, body) ->
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
@@ -116,7 +116,7 @@ define showAST
     Accessor(_, _, _, body, _, _) -> showAST(body)
     Null(_) -> "#NULL#"
 
-isReference := Reference(_, _, _) -> True; _ -> False
+isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
 isLet := Let(_, _, _) -> True; _ -> False
@@ -135,9 +135,8 @@ isNull := Null(_) -> True; _ -> False
 isCase(node) := with node as Arrow(_, type, _, _, _);
     (type |> Locked -> False; _ -> True) <| False
 
-Name(tag) := Reference(tag, 0, NOFIX)
-isName(node) := with node as Reference(_, debruijn, _); debruijn = 0 <| False
-OperatorName(tag, fixity) := Reference(tag, 0, fixity)
+Name(tag) := Reference(tag, 0)
+isName(node) := with node as Reference(_, debruijn); debruijn = 0 <| False
 SimpleArrow(parameter, body) :=
     Arrow(getTag(parameter), Simple, [], parameter, body)
 StrictArrow(tag, constructors, body) :=
@@ -155,20 +154,20 @@ isEOF(node) := isThisOperator(node, "\0")
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
-Underscore(tag, debruijn) := Reference(veil(tag), debruijn, NOFIX)
-newNil(tag) := Name(renameTag(tag, "[]"))
+Underscore(tag, debruijn) := Reference(veil(tag), debruijn)
+newNil(tag) := Name(renameTag(tag, "[]", NOFIX))
 prependList(tag, item, list) := Juxtaposition(tag,
-    Juxtaposition(tag, OperatorName(renameTag(tag, "::"), INFIX), item), list)
+    Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)
 newLeftPlaceholder(tag) :=
-    Section(tag, RightSection, Name(renameTag(tag, ".*")))
+    Section(tag, RightSection, Name(renameTag(tag, ".*", NOFIX)))
 newRightPlaceholder(tag) :=
-    Section(tag, LeftSection, Name(renameTag(tag, "*.")))
+    Section(tag, LeftSection, Name(renameTag(tag, "*.", NOFIX)))
 isLeftPlaceholder(node) := with node as Section(_, _, body);
     isThisName(body, ".*") <| False
 wrapLeftSection(tag, body) :=
-    LockedArrow(Name(renameTag(tag, "*.")), body)
+    LockedArrow(Name(renameTag(tag, "*.", NOFIX)), body)
 wrapRightSection(tag, body) :=
-    LockedArrow(Name(renameTag(tag, ".*")), body)
+    LockedArrow(Name(renameTag(tag, ".*", NOFIX)), body)
 
 define wrapSection(tag, section)
     with section as Section(_, side, body)

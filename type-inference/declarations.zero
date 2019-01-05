@@ -11,10 +11,10 @@ define builtinTypes
     syntax(>->) := syntax(++)
     (>->) := FunctionType(noTag)
     bottom := BottomType(noTag)
-    boolean := ADT(noTag, "𝔹", NOFIX, [], 2, 0)
-    natural := ADT(noTag, "ℕ", NOFIX, [], 2, 0)
-    string := ADT(noTag, "List", NOFIX, [natural], 2, 0)
-    natural' := ADT(noTag, "ℕ", NOFIX, [], 2, 2)
+    boolean := ADT(renameTag(noTag, "𝔹", NOFIX), "𝔹", [], 2, 0)
+    natural := ADT(renameTag(noTag, "ℕ", NOFIX), "ℕ", [], 2, 0)
+    natural' := ADT(renameTag(noTag, "ℕ", NOFIX), "ℕ", [], 2, 2)
+    string := ADT(renameTag(noTag, "List", NOFIX), "List", [natural], 2, 0)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -36,7 +36,7 @@ define builtinTypes
 
 define getBuiltinType(tag)
     with builtinTypes.lookup(getTagLexeme(tag)) as Just(type)
-        type.setTag(tag)
+        type.setLocation(tag)
     FreeType
 
 #*

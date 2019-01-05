@@ -13,7 +13,7 @@ define getCommaListSize(commaList)
 define newTuple(tag, commaList)
     n := getCommaListSize(commaList)
     lexeme := repeat(',').take(n -- 1)
-    constructor := Name(renameTag(tag, lexeme))
+    constructor := Name(renameTag(tag, lexeme, NOFIX))
     applyToCommaList(tag, constructor, commaList)
 
 define getCommaListElements(commaList)
@@ -30,7 +30,7 @@ define reduceParentheses(open, function, contents)
         syntaxError("missing close for", open)
     tag := getTag(open)
     if isNull(contents)
-        unit := Name(renameTag(tag, "()"))
+        unit := Name(renameTag(tag, "()", NOFIX))
         if isNull(function)
             unit
         Juxtaposition(tag, function, unit)
@@ -63,7 +63,7 @@ define reduceSquare(open, left, contents)
         syntaxError("missing argument to", open)
     if not isNull(left)
         n := getCommaListSize(contents)
-        constructor := Name(renameTag(tag, repeat('[').take(n)))
+        constructor := Name(renameTag(tag, repeat('[').take(n), NOFIX))
         applyToCommaList(tag, Juxtaposition(tag, constructor, left), contents)
     createList(tag, contents, newNil(tag))
 
@@ -122,14 +122,14 @@ define preReduceOperator(operator, stack)
         with stack as left :: stack'
             if isLeftPlaceholder(left)
                 # bracketed infix operator
-                OperatorName(tag, INFIX) :: stack'
+                Name(tag) :: stack'
             if isOpenOperator(left)
                 # bracketed prefix operators
                 if isThisOperator(operator, "(+)")
-                    OperatorName(renameTag(tag, "+"), INFIX) :: stack
+                    Name(renameTag(tag, "+", INFIX)) :: stack
                 if isThisOperator(operator, "(-)")
-                    OperatorName(renameTag(tag, "-"), INFIX) :: stack
-                OperatorName(tag, PREFIX) :: stack
+                    Name(renameTag(tag, "-", INFIX)) :: stack
+                Name(tag) :: stack
             fixity := getFixity(syntax)
             if fixity = INFIX or fixity = PREFIX
                 newRightPlaceholder(tag) :: operator :: stack   # LeftSection
