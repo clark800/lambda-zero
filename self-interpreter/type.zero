@@ -5,8 +5,7 @@ Type ::= {
     BottomType(_ : Tag),
     TypeVariable(_ : Tag, _address : ℕ),
     FunctionType(_ : Tag, _parameterType : Type, _bodyType : Type),
-    ADT(_ : Tag, _name : List(ℕ),
-        _parameterTypes : List(Type), _count : ℕ, _index : ℕ)
+    ADT(_ : Tag, _parameterTypes : List(Type), _count : ℕ, _index : ℕ)
 }
 
 define getTypeTag
@@ -14,7 +13,7 @@ define getTypeTag
     BottomType(tag) -> tag
     TypeVariable(tag, _) -> tag
     FunctionType(tag, _, _) -> tag
-    ADT(tag, _, _, _, _) -> tag
+    ADT(tag, _, _, _) -> tag
 
 Scheme ::= {Scheme(getUniversals : List(Type), getType : Type)}
 

@@ -113,7 +113,7 @@ define constructParameterType(variables, schemes, tag)
     adtTypes := types.map(getResultType)
     if not adtTypes.all(isADT)
         throwError("Type error: invalid cases:", tag)
-    names := deduplicateBy((=*=), adtTypes.map(maybeName).prune)
+    names := deduplicateBy((=*=), adtTypes.map(getTagLexeme <> getTypeTag))
     counts := deduplicate(adtTypes.map(maybeCount).prune)
     if length(names) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
@@ -184,7 +184,7 @@ define infer(stack, variables)
         (returnType, unify(variables''', (applicandType, functionType)))
     case Numeral(tag, value)
         index := if value = 0 then 1 else 2
-        (ADT(renameTag(tag, "ℕ", NOFIX), "ℕ", [], 2, index), variables)
+        (ADT(renameTag(tag, "ℕ", NOFIX), [], 2, index), variables)
     case Operation(tag, _, _)
         (getBuiltinType(tag), variables)
 
