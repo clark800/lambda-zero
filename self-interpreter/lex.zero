@@ -1,11 +1,16 @@
 #* lex.zero
 
 Location ::= {Location(_file : List(ℕ), _line : ℕ, _column : ℕ)}
-Tag ::= {Tag(getTagLexeme : List(ℕ), getTagLocation : Location)}
+Tag ::= {
+    Tag(getTagLexeme : List(ℕ), getTagFixity : ℕ, getTagLocation : Location)
+}
 
-renameTag(Tag(_, location), lexeme) := Tag(lexeme, location)
-veil(tag) := renameTag(tag, "_")
-addPrefix(Tag(lexeme, location), prefix) := Tag(prefix :: lexeme, location)
+renameTag(Tag(_, _, location), lexeme, fixity) := Tag(lexeme, fixity, location)
+veil(tag) := renameTag(tag, "_", 0)
+setTagLocation(location, Tag(lexeme, fixity, _)) :=
+    Tag(lexeme, fixity, location)
+addPrefix(Tag(lexeme, fixity, location), prefix) :=
+    Tag(prefix :: lexeme, fixity, location)
 
 isComment(c) := c = '#'
 isLineFeed(c) := c = '\n'
@@ -84,7 +89,7 @@ define splitLexemes(splitter, location, string)
         []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
-    Tag(lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
+    Tag(lexeme, 0, location) :: remaining.splitLexemes(splitter, nextLocation)
 
 define scan(string)
     string.splitLexemes(splitLexeme, Location("", 1, 1))
@@ -93,10 +98,10 @@ define showLocation(Location(file, line, column))
     (if isNil(file) then "" else file ++ " ") ++
         "line " ++ showNatural(line) ++ " column " ++ showNatural(column)
 
-define showFullTag(Tag(lexeme, location))
+define showFullTag(Tag(lexeme, _, location))
     "'" ++ lexeme ++ "' at " ++ showLocation(location)
 
-define showTag(Tag(lexeme, _))
+define showTag(Tag(lexeme, _, _))
     with lexeme as c :: _
         if c = 0 then "\\0"
         if c = '\n' then "\\n"
@@ -110,14 +115,14 @@ TokenCode ::= {
 }
 Token ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
 
-define createLineFeedToken(tag, _ @ Tag(nextLexeme, _))
+define createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
     with nextLexeme as c :: _
         if isLineFeed(c) or isComment(c)
             Token(tag, VSpace)
         Token(tag, Newline)
     Token(tag, VSpace)
 
-define createToken(tag @ Tag(lexeme, _), nextTag)
+define createToken(tag @ Tag(lexeme, _, _), nextTag)
     with lexeme as c :: _
         if c = ' ' then Token(tag, Space)
         if c = '\n' then createLineFeedToken(tag, nextTag)
@@ -141,10 +146,10 @@ define showToken(token)
     showTag(getTokenTag(token))
 
 define noTag
-    Tag("", Location("", 0, 0))
+    Tag("", 0, Location("", 0, 0))
 
 define START
-    Token(Tag("\0", Location("", 0, 0)), Symbolic)
+    Token(Tag("\0", 0, Location("", 0, 0)), Symbolic)
 
 define lex(string)
     pairs(scan(string) ++ [noTag]).map(uncurry(createToken))

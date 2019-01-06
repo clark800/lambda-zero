@@ -77,9 +77,9 @@ define parseNumericLiteral(tag)
 define parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
-        Space -> operators.parseSymbol(renameTag(tag, " "), 0)
+        Space -> operators.parseSymbol(renameTag(tag, " ", INFIX), 0)
         VSpace -> abort "internal error: VSpace reached parseToken"
-        Newline -> operators.parseSymbol(renameTag(tag, "\n"),
+        Newline -> operators.parseSymbol(renameTag(tag, "\n", INFIX),
             length(getTagLexeme(tag)) -- 1)
         Symbolic -> operators.parseSymbol(tag, 0)
         Numeric -> parseNumericLiteral(tag)

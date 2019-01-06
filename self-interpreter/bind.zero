@@ -24,19 +24,12 @@ define bindName(level, stack, tag)
         bindOperation(tag) ?? parseError("undefined symbol", tag)
 
 
-define getADTFixity(root)
-    with root as Reference(_, _, fixity)
-        fixity
-    NOFIX
-
-
 define parseParameterType(node, context)
     if isName(node)
         tag := getTag(node)
         if isUnderscore(tag)
             BottomType(tag)  # todo: remove after implementing (=>)
-        name := getLexeme(node)
-        context.lookup(name) ?? ADT(tag, name, getADTFixity(node), [], 0, 0)
+        context.lookup(getLexeme(node)) ?? ADT(tag, [], 0, 0)
     root := getHead(node)
     name := getLexeme(root)
     if context.hasKey(name)
@@ -50,22 +43,20 @@ define parseParameterType(node, context)
                 FunctionType(getTypeTag(left), left, right)
             syntaxError("(=>) requires two arguments", node)
         syntaxError("(=>) requires two arguments", node)
-    ADT(getTag(root), name, getADTFixity(root), parameterTypes, 0, 0)
+    ADT(getTag(root), parameterTypes, 0, 0)
 
 
 define parseADT(node, count, index)
     # context maps type variable names to type variables
     # type variable with index 0 is reserved for deconstructors
     root := getHead(node)
-    name := getLexeme(root)
-    fixity := getADTFixity(root)
     components := getArguments(node)
     if not components.all(isName)
         syntaxError("all components should be names", node)
     tag := veil(getTag(node))
     parameterTypes := (1 .. length(components)).map(TypeVariable(tag))
     context := newDictionary(zip(components.map(getLexeme), parameterTypes))
-    type := ADT(getTag(root), name, fixity, parameterTypes, count, index)
+    type := ADT(getTag(root), parameterTypes, count, index)
     (type, context)
 
 
@@ -110,7 +101,7 @@ define newAccessorScheme(tag, dataType, returnType, count, index)
 
 define bind(level, stack, node)
     match node
-        case Reference(tag, debruijn, fixity)
+        case Reference(tag, debruijn)
             if debruijn = 0
                 bindName(level, stack, tag)
             Variable(tag, debruijn)

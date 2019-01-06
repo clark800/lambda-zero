@@ -1,6 +1,6 @@
 #* errors.zero
 
-define showErrorLocation(Tag(lexeme, location))
+define showErrorLocation(Tag(lexeme, _, location))
     "'" ++ lexeme ++ "' at " ++ showLocation(location) ++ "\n"
 
 
