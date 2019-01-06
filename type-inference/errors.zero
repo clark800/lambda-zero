@@ -3,13 +3,13 @@
 define recursionError(type, type', variables)
     abort("Type error: recursive type at " ++
         showTypeLocation(type) ++ " and " ++ showTypeLocation(type') ++
-        ":\n" ++ showType(type) ++ " = " ++ showType(type') ++ "\n\n" ++
+        ":\n" ++ showTerm(type) ++ " = " ++ showTerm(type') ++ "\n\n" ++
         showVariables(variables))
 
 
 define unificationError(originals, left, right)
     abort("Type error: Can't unify\n" ++
-        showType(left) ++ "\nwith\n" ++ showType(right) ++
+        showTerm(left) ++ "\nwith\n" ++ showTerm(right) ++
         "\nwhile trying to unify\n" ++
         showTypeAndLocation(first(originals)) ++
         "\nwith\n" ++
