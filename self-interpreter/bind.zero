@@ -106,7 +106,7 @@ define bind(level, stack, node)
         case Arrow(tag, _, constructors, parameter, body)
             constructors' := constructors.map(bind(level, stack))
             indices := constructors'.map(maybeDebruijnIndex).prune
-            metadata := Metadata(Free, Free, indices)
+            metadata := Metadata(Void, Void, indices)
             stack' := stack.pushParameter(getLexeme(parameter), level)
             body' := bind(up level, stack', body)
             Abstraction(getTag(parameter), metadata, body')
@@ -134,16 +134,16 @@ define bind(level, stack, node)
             term := bind(level, stack, function)
             scheme := newConstructorScheme(tag, parameterTypes,
                 adtType, count, index)
-            term.setMetadata(Metadata(Free, scheme, []))
+            term.setMetadata(Metadata(Void, Just(scheme), []))
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
             term := bind(level, stack, function)
             scheme := newDeconstructorScheme(tag, parameterTypes,
                 adtType, count, index)
-            term.setMetadata(Metadata(Free, scheme, []))
+            term.setMetadata(Metadata(Void, Just(scheme), []))
         case Accessor(tag, adtType, returnType, function, count, index)
             term := bind(level, stack, function)
             scheme := newAccessorScheme(tag, adtType, returnType, count, index)
-            term.setMetadata(Metadata(Free, scheme, []))
+            term.setMetadata(Metadata(Void, Just(scheme), []))
         case Null(_)
             abort "internal error: Null reached bind"
 

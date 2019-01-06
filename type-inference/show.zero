@@ -1,16 +1,20 @@
 #* show.zero
 
 define showTypeLocation(type)
-    if isFreeType(type)
-        "VOID"
     showLocation(getTagLocation(getTypeTag(type)))
 
 define showTypeAndLocation(type)
     showType(type) ++ " at " ++ showTypeLocation(type)
 
+define showMaybeType(maybeType)
+    with maybeType as Just(type)
+        showType(type)
+    "Free"
+
 define showVariables(variables)
-    variables.dump.map((address, value) ->
-        getVariableName(address) ++ " := " ++ showType(value)).joinWith("\n")
+    variables.dump.map((address, maybeValue) ->
+        getVariableName(address) ++ " := " ++
+        showMaybeType(maybeValue)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
     with type as TypeVariable(source, address)
