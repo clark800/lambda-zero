@@ -51,8 +51,6 @@ define unify'(originals, variables, (left, right))
         unify'(originals, variables, (variables.getValue(left), right))
     if isTypeVariable(right) and not isFree(right, variables)
         unify'(originals, variables, (left, variables.getValue(right)))
-    if isBottomType(left) or isBottomType(right)
-        variables
     if sameRoot(left, right)
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
@@ -186,7 +184,7 @@ define infer(stack, variables)
         index := if value = 0 then 1 else 2
         (ADT(renameTag(tag, "ℕ", NOFIX), [], 2, index), variables)
     case Operation(tag, _, _)
-        (getBuiltinType(tag), variables)
+        getBuiltinType(tag, variables)
 
 
 define inferType(stack, definition)

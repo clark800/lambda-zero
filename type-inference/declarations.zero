@@ -10,11 +10,9 @@ define getFixScheme(tag)
 define builtinTypes
     syntax(>->) := syntax(++)
     (>->) := FunctionType(noTag)
-    bottom := BottomType(noTag)
     boolean := ADT(renameTag(noTag, "𝔹", NOFIX), [], 2, 0)
     natural := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
     natural' := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 2)
-    string := ADT(renameTag(noTag, "List", NOFIX), [natural], 2, 0)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -29,14 +27,20 @@ define builtinTypes
         (">", comparison),
         ("<=", comparison),
         (">=", comparison),
-        ("abort", string >-> bottom),
-        ("(increment)", natural >-> natural'),
-        ("(undefined)", bottom)
+        ("(increment)", natural >-> natural')
     ])
 
-define getBuiltinType(tag)
-    with builtinTypes.lookup(getTagLexeme(tag)) as Just(type)
-        type.setLocation(tag)
-    FreeType
+define getBuiltinType(tag, variables)
+    lexeme := getTagLexeme(tag)
+    if lexeme =*= "undefined"
+        newTypeVariable(tag, variables)
+    if lexeme =*= "abort"
+        natural := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
+        string := ADT(renameTag(noTag, "List", NOFIX), [natural], 2, 0)
+        (variable, variables') := newTypeVariable(veil(tag), variables)
+        (FunctionType(tag, string, variable), variables')
+    with builtinTypes.lookup(lexeme) as Just(type)
+        (type.setLocation(tag), variables)
+    (FreeType, variables)
 
 #*
