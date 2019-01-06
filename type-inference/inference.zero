@@ -1,7 +1,7 @@
 #* inference.zero
 
 define getValue(type, variables)
-    with type as TypeVariable(_, address)
+    with type as MetaVariable(_, address)
         with variables.access(address) ?? Void as Just(type')
             type'
         throwError("internal error", getTypeTag(type))
@@ -9,13 +9,13 @@ define getValue(type, variables)
 
 
 define isFree(variable, variables)
-    with variable as TypeVariable(_, address)
+    with variable as MetaVariable(_, address)
         isVoid(variables.access(address) ?? Void)
     False
 
 
 define getFreeVariables(variables, type)
-    with type as TypeVariable(_, address)
+    with type as MetaVariable(_, address)
         with variables.access(address) ?? Void as Just(type')
             getFreeVariables(variables, type')
         [type]
@@ -24,12 +24,12 @@ define getFreeVariables(variables, type)
 
 
 define getAllFreeVariables(variables, variables')
-    join(variables.dump.map(first).map(TypeVariable(noTag)).map(
+    join(variables.dump.map(first).map(MetaVariable(noTag)).map(
         getFreeVariables(variables'))).deduplicateBy(sameRoot)
 
 
 define substitute(variables, type)
-    with type as TypeVariable(tag, address)
+    with type as MetaVariable(tag, address)
         with variables.access(address) ?? Void as Just(type')
             type'' := type'.setLocation(tag)
             if type''.getFreeVariables(newStore([])).any(sameRoot(type))
@@ -48,16 +48,16 @@ define unifyFailure(originals, variables, (left, right))
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
 define unify'(originals, variables, (left, right))
-    if isTypeVariable(left) and not isFree(left, variables)
+    if isMetaVariable(left) and not isFree(left, variables)
         unify'(originals, variables, (variables.getValue(left), right))
-    if isTypeVariable(right) and not isFree(right, variables)
+    if isMetaVariable(right) and not isFree(right, variables)
         unify'(originals, variables, (left, variables.getValue(right)))
     if sameRoot(left, right)
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
-    with left as TypeVariable(_, address)
+    with left as MetaVariable(_, address)
         variables.assign(address, Just(right))
-    with right as TypeVariable(_, address)
+    with right as MetaVariable(_, address)
         variables.assign(address, Just(left))
     unifyFailure(originals, variables, (left, right))
 
@@ -78,7 +78,7 @@ define generalize(variables, oldVariables, type)
     Scheme(universals, type')
 
 define instantiate(variables, tag, Scheme(universals, type))
-    (freshVariables, variables') := newTypeVariables(universals, variables)
+    (freshVariables, variables') := newMetaVariables(universals, variables)
     addresses := universals.map(maybeAddress).prune
     mappings := zip(addresses, freshVariables)
     renaming := newRenaming(mappings)
@@ -86,23 +86,23 @@ define instantiate(variables, tag, Scheme(universals, type))
 
 
 define getResultType(type)
-    with type as FunctionType(_, _, bodyType)
+    with type as Implication(_, _, bodyType)
         getResultType(bodyType)
     type
 
 
 define convertConstructorType(variable, type)
-    if isADT(type)
+    if isConstruction(type)
         variable
-    with type as FunctionType(tag, parameterType, bodyType)
-        FunctionType(tag, parameterType,
+    with type as Implication(tag, parameterType, bodyType)
+        Implication(tag, parameterType,
             convertConstructorType(variable, bodyType))
     abort "Type error: invalid constructor at " ++ showTypeLocation(type)
 
 
 define constructInnerParameterType(types, variable, tag)
     types' := types.map(convertConstructorType(variable))
-    types'.fold(FunctionType(tag), variable)
+    types'.fold(Implication(tag), variable)
 
 
 define constructParameterType(variables, schemes, tag)
@@ -110,7 +110,7 @@ define constructParameterType(variables, schemes, tag)
         throwError("Type error: no cases:", tag)
     types := schemes.map(getType)
     adtTypes := types.map(getResultType)
-    if not adtTypes.all(isADT)
+    if not adtTypes.all(isConstruction)
         throwError("Type error: invalid cases:", tag)
     names := deduplicateBy((=*=), adtTypes.map(getTagLexeme <> getTypeTag))
     counts := deduplicate(adtTypes.map(maybeCount).prune)
@@ -128,7 +128,7 @@ define constructParameterType(variables, schemes, tag)
     # note: all schemes should have the same universals
     universals := getUniversals(safeHead(schemes) ??
         throwError("Type error: invalid cases", tag))
-    variable := TypeVariable(tag, length(universals))
+    variable := MetaVariable(tag, length(universals))
     universals' := variable :: universals
 
     # todo: set index to zero
@@ -137,10 +137,10 @@ define constructParameterType(variables, schemes, tag)
     innerType := constructInnerParameterType(types, variable, veil(tag))
 
     # note: the variables in inner and outer must be instantiated together
-    # so we use a trick of packaging them together in a FunctionType
-    scheme := Scheme(universals', FunctionType(veil(tag), outerType, innerType))
+    # so we use a trick of packaging them together in a Implication
+    scheme := Scheme(universals', Implication(veil(tag), outerType, innerType))
     (polarType, variables') := scheme.instantiate(variables, tag)
-    with polarType as FunctionType(_, outerType, matchType)
+    with polarType as Implication(_, outerType, matchType)
         universal := getResultType(matchType)
         innerScheme := Scheme([universal], matchType)
         (outerType, innerScheme, variables')
@@ -151,7 +151,7 @@ define inferParameterType(stack, variables, metadata, tag)
     schemes := getConstructorDebruijnIndices(metadata).map(k ->
         stack.seek(k -- 1)).prune
     if isNil(schemes)
-        (parameterType, variables') := variables.newTypeVariable(tag)
+        (parameterType, variables') := variables.newMetaVariable(tag)
         (parameterType, Scheme([], parameterType), variables')
     constructParameterType(variables, schemes, tag)
 
@@ -170,7 +170,7 @@ define infer(stack, variables)
         (type, scheme, variables') :=
             inferParameterType(stack, variables, metadata, tag)
         (bodyType, variables'') := infer(stack.push(scheme), variables', body)
-        (FunctionType(tag, type, bodyType), variables'')
+        (Implication(tag, type, bodyType), variables'')
     case Application(tag, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
@@ -181,13 +181,13 @@ define infer(stack, variables)
                 Application(tag, False, applicand, argument))
         (argumentType, variables') := infer(stack, variables, argument)
         (applicandType, variables'') := infer(stack, variables', applicand)
-        (returnType, variables''') := variables''.newTypeVariable(tag)
+        (returnType, variables''') := variables''.newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
-        functionType := FunctionType(applicandTag, argumentType, returnType)
+        functionType := Implication(applicandTag, argumentType, returnType)
         (returnType, unify(variables''', (applicandType, functionType)))
     case Numeral(tag, value)
         index := if value = 0 then 1 else 2
-        (ADT(renameTag(tag, "ℕ", NOFIX), [], 2, index), variables)
+        (Construction(renameTag(tag, "ℕ", NOFIX), [], 2, index), variables)
     case Operation(tag, _, _)
         getBuiltinType(tag, variables)
 

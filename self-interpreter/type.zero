@@ -1,14 +1,14 @@
 #* type.zero
 
 Type ::= {
-    TypeVariable(_ : Tag, _address : ℕ),
-    FunctionType(_ : Tag, _parameterType : Type, _bodyType : Type),
-    ADT(_ : Tag, _parameterTypes : List(Type), _count : ℕ, _index : ℕ)
+    MetaVariable(_ : Tag, _address : ℕ),
+    Implication(_ : Tag, _parameterType : Type, _bodyType : Type),
+    Construction(_ : Tag, _parameterTypes : List(Type), _count : ℕ, _index : ℕ)
 }
 
 define getTypeTag
-    TypeVariable(tag, _) -> tag
-    FunctionType(tag, _, _) -> tag
-    ADT(tag, _, _, _) -> tag
+    MetaVariable(tag, _) -> tag
+    Implication(tag, _, _) -> tag
+    Construction(tag, _, _, _) -> tag
 
 Scheme ::= {Scheme(getUniversals : List(Type), getType : Type)}

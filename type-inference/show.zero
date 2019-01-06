@@ -17,10 +17,10 @@ define showVariables(variables)
         showMaybeType(maybeValue)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
-    with type as TypeVariable(source, address)
+    with type as MetaVariable(source, address)
         if renaming.hasKey(address)
             (renaming, variables)
-        (type', variables') := variables.newTypeVariable(source)
+        (type', variables') := variables.newMetaVariable(source)
         (renaming.set(address, type'), variables')
     getComponentTypes(type).cascade(addRenaming, (renaming, variables))
 
