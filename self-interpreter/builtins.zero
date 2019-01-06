@@ -8,7 +8,7 @@ define getBuiltin(tag)
         maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
 
     define newBoolean(b)
-        metadata := Metadata(Free, Free, [])
+        metadata := Metadata(Void, Void, [])
         Abstraction(tag', metadata, Abstraction(tag', metadata,
                 Variable(tag', if b then 1 else 2)))
 

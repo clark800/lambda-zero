@@ -1,7 +1,7 @@
 #* evaluate.zero
 
 define expandNatural(tag, n)
-    metadata := Metadata(Free, Free, [])
+    metadata := Metadata(Void, Void, [])
     Abstraction(tag, metadata, Abstraction(tag, metadata,
         n |> 0 -> Variable(tag, 2); up n' ->
             Application(tag, False, Variable(tag, 1), Numeral(tag, n'))))

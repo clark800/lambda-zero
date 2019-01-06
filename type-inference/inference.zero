@@ -2,20 +2,23 @@
 
 define getValue(type, variables)
     with type as TypeVariable(_, address)
-        variables.access(address) ?? FreeType
+        with variables.access(address) ?? Void as Just(type')
+            type'
+        throwError("internal error", getTypeTag(type))
     type
 
 
 define isFree(variable, variables)
-    isFreeType(variables.getValue(variable))
+    with variable as TypeVariable(_, address)
+        isVoid(variables.access(address) ?? Void)
+    False
 
 
 define getFreeVariables(variables, type)
     with type as TypeVariable(_, address)
-        type' := variables.access(address) ?? FreeType
-        if isFreeType(type')
-            [type]
-        getFreeVariables(variables, type')
+        with variables.access(address) ?? Void as Just(type')
+            getFreeVariables(variables, type')
+        [type]
     join(getComponentTypes(type).map(getFreeVariables(variables))).
         deduplicateBy(sameRoot)
 
@@ -27,14 +30,12 @@ define getAllFreeVariables(variables, variables')
 
 define substitute(variables, type)
     with type as TypeVariable(tag, address)
-        type' := variables.access(address) ?? FreeType
-        if isFreeType(type')
-            type
-        type'' := type'.setLocation(tag)
-        if type''.getFreeVariables(newStore([])).any(sameRoot(type))
-            recursionError(type, type, variables)
-        type''.substitute(variables)
-
+        with variables.access(address) ?? Void as Just(type')
+            type'' := type'.setLocation(tag)
+            if type''.getFreeVariables(newStore([])).any(sameRoot(type))
+                recursionError(type, type, variables)
+            type''.substitute(variables)
+        type
     type.mapInternalTypes(substitute(variables))
 
 
@@ -55,9 +56,9 @@ define unify'(originals, variables, (left, right))
         zip(getComponentTypes(left), getComponentTypes(right)).
             cascade(unify'(originals), variables)
     with left as TypeVariable(_, address)
-        variables.assign(address, right)
+        variables.assign(address, Just(right))
     with right as TypeVariable(_, address)
-        variables.assign(address, left)
+        variables.assign(address, Just(left))
     unifyFailure(originals, variables, (left, right))
 
 define unify(variables, types)
@@ -125,11 +126,14 @@ define constructParameterType(variables, schemes, tag)
         throwError("Type error: cases out of order:", tag)
 
     # note: all schemes should have the same universals
-    universals := getUniversals(safeHead(schemes) ?? Free)
+    universals := getUniversals(safeHead(schemes) ??
+        throwError("Type error: invalid cases", tag))
     variable := TypeVariable(tag, length(universals))
     universals' := variable :: universals
 
-    outerType := safeHead(adtTypes) ?? FreeType   # todo: set index to zero
+    # todo: set index to zero
+    outerType := safeHead(adtTypes) ??
+        throwError("Type error: invalid cases", tag)
     innerType := constructInnerParameterType(types, variable, veil(tag))
 
     # note: the variables in inner and outer must be instantiated together
@@ -157,11 +161,12 @@ define inferParameterType(stack, variables, metadata, tag)
 #   variables or concrete types); every type variable appears in variables
 define infer(stack, variables)
     case Variable(tag, debruijn)
-        scheme := stack.seek(debruijn -- 1) ?? Free
+        scheme := stack.seek(debruijn -- 1) ??
+            throwError("unbound variable", tag)
         scheme.instantiate(variables, tag)
     case Abstraction(tag, metadata, body)
-        if not isFreeType(getType(getAscription(metadata)))
-            getAscription(metadata).instantiate(newStore([]), tag)
+        with getAscription(metadata) as Just(ascription)
+            ascription.instantiate(newStore([]), tag)
         (type, scheme, variables') :=
             inferParameterType(stack, variables, metadata, tag)
         (bodyType, variables'') := infer(stack.push(scheme), variables', body)

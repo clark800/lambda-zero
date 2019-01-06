@@ -1,8 +1,8 @@
 #* term.zero
 
 Metadata ::= {Metadata(
-    getAnnotation : Scheme,
-    getAscription : Scheme,
+    getAnnotation : (Scheme)?,
+    getAscription : (Scheme)?,
     getConstructorDebruijnIndices : List(ℕ)
 )}
 

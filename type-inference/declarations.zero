@@ -32,7 +32,7 @@ define builtinTypes
 
 define getBuiltinType(tag, variables)
     lexeme := getTagLexeme(tag)
-    if lexeme =*= "undefined"
+    if lexeme =*= "(undefined)"
         newTypeVariable(tag, variables)
     if lexeme =*= "abort"
         natural := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
@@ -41,6 +41,6 @@ define getBuiltinType(tag, variables)
         (FunctionType(tag, string, variable), variables')
     with builtinTypes.lookup(lexeme) as Just(type)
         (type.setLocation(tag), variables)
-    (FreeType, variables)
+    throwError("Type error: unrecognized builtin", tag)
 
 #*
