@@ -15,7 +15,6 @@ declare -a files=(
     "$DIR/errors.zero"
     "$DIR/symbols.zero"
     "$DIR/term.zero"
-    "$DIR/type.zero"
     "$DIR/patterns.zero"
     "$DIR/define.zero"
     "$DIR/brackets.zero"

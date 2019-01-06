@@ -17,7 +17,6 @@ declare -a files=(
     "$PARSER/errors.zero"
     "$PARSER/symbols.zero"
     "$PARSER/term.zero"
-    "$PARSER/type.zero"
     "$PARSER/patterns.zero"
     "$PARSER/define.zero"
     "$PARSER/brackets.zero"

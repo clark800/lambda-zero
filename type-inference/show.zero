@@ -1,19 +1,19 @@
 #* show.zero
 
 define showTypeLocation(type)
-    showLocation(getTagLocation(getTypeTag(type)))
+    showLocation(getTagLocation(getTermTag(type)))
 
 define showTypeAndLocation(type)
-    showType(type) ++ " at " ++ showTypeLocation(type)
+    showTerm(type) ++ " at " ++ showTypeLocation(type)
 
 define showMaybeType(maybeType)
     with maybeType as Just(type)
-        showType(type)
+        showTerm(type)
     "Free"
 
 define showVariables(variables)
     variables.dump.map((address, maybeValue) ->
-        getVariableName(address) ++ " := " ++
+        showMetaVariable(address) ++ " := " ++
         showMaybeType(maybeValue)).joinWith("\n")
 
 define addRenaming((renaming, variables), type)
@@ -22,7 +22,7 @@ define addRenaming((renaming, variables), type)
             (renaming, variables)
         (type', variables') := variables.newMetaVariable(source)
         (renaming.set(address, type'), variables')
-    getComponentTypes(type).cascade(addRenaming, (renaming, variables))
+    getComponents(type).cascade(addRenaming, (renaming, variables))
 
 define makeRenaming(type)
     renaming := newRenaming([])
@@ -30,7 +30,7 @@ define makeRenaming(type)
     first(addRenaming((renaming, variables), type))
 
 define showTypeWithRenaming(type, renaming)
-    showType(type.rename(renaming))
+    showTerm(type.rename(renaming))
 
 define showUniversals(universals, renaming)
     universals.map(universal ->

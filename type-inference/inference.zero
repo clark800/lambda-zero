@@ -4,7 +4,7 @@ define getValue(type, variables)
     with type as MetaVariable(_, address)
         with variables.access(address) ?? Void as Just(type')
             type'
-        throwError("internal error", getTypeTag(type))
+        throwError("internal error", getTermTag(type))
     type
 
 
@@ -19,24 +19,24 @@ define getFreeVariables(variables, type)
         with variables.access(address) ?? Void as Just(type')
             getFreeVariables(variables, type')
         [type]
-    join(getComponentTypes(type).map(getFreeVariables(variables))).
-        deduplicateBy(sameRoot)
+    join(getComponents(type).map(getFreeVariables(variables))).
+        deduplicateBy(sameHead)
 
 
 define getAllFreeVariables(variables, variables')
     join(variables.dump.map(first).map(MetaVariable(noTag)).map(
-        getFreeVariables(variables'))).deduplicateBy(sameRoot)
+        getFreeVariables(variables'))).deduplicateBy(sameHead)
 
 
 define substitute(variables, type)
     with type as MetaVariable(tag, address)
         with variables.access(address) ?? Void as Just(type')
             type'' := type'.setLocation(tag)
-            if type''.getFreeVariables(newStore([])).any(sameRoot(type))
+            if type''.getFreeVariables(newStore([])).any(sameHead(type))
                 recursionError(type, type, variables)
             type''.substitute(variables)
         type
-    type.mapInternalTypes(substitute(variables))
+    type.mapComponents(substitute(variables))
 
 
 define unifyFailure(originals, variables, (left, right))
@@ -52,8 +52,8 @@ define unify'(originals, variables, (left, right))
         unify'(originals, variables, (variables.getValue(left), right))
     if isMetaVariable(right) and not isFree(right, variables)
         unify'(originals, variables, (left, variables.getValue(right)))
-    if sameRoot(left, right)
-        zip(getComponentTypes(left), getComponentTypes(right)).
+    if sameHead(left, right)
+        zip(getComponents(left), getComponents(right)).
             cascade(unify'(originals), variables)
     with left as MetaVariable(_, address)
         variables.assign(address, Just(right))
@@ -71,7 +71,7 @@ define unifyAll(variables, types)
 
 define generalize(variables, oldVariables, type)
     syntax(\\) := syntax(\)
-    vs \\ vs' := vs |: (v -> not vs'.any(sameRoot(v)))
+    vs \\ vs' := vs |: (v -> not vs'.any(sameHead(v)))
     type' := type.substitute(variables)
     universals := type'.getFreeVariables(variables) \\
         variables.getAllFreeVariables(oldVariables)
@@ -112,7 +112,7 @@ define constructParameterType(variables, schemes, tag)
     adtTypes := types.map(getResultType)
     if not adtTypes.all(isConstruction)
         throwError("Type error: invalid cases:", tag)
-    names := deduplicateBy((=*=), adtTypes.map(getTagLexeme <> getTypeTag))
+    names := deduplicateBy((=*=), adtTypes.map(getTagLexeme <> getTermTag))
     counts := deduplicate(adtTypes.map(maybeCount).prune)
     if length(names) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
@@ -160,10 +160,14 @@ define inferParameterType(stack, variables, metadata, tag)
 # variables is a table that maps type variables to types (either type
 #   variables or concrete types); every type variable appears in variables
 define infer(stack, variables)
+    case Top(tag)
+        (Top(tag), variables)
     case Variable(tag, debruijn)
         scheme := stack.seek(debruijn -- 1) ??
             throwError("unbound variable", tag)
         scheme.instantiate(variables, tag)
+    case MetaVariable(tag, n)
+        (Top(veil(tag)), variables)
     case Abstraction(tag, metadata, body)
         with getAscription(metadata) as Just(ascription)
             ascription.instantiate(newStore([]), tag)
@@ -171,6 +175,8 @@ define infer(stack, variables)
             inferParameterType(stack, variables, metadata, tag)
         (bodyType, variables'') := infer(stack.push(scheme), variables', body)
         (Implication(tag, type, bodyType), variables'')
+    case Implication(tag, parameter, body)
+        (Top(veil(tag)), variables)
     case Application(tag, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
@@ -185,6 +191,8 @@ define infer(stack, variables)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
         (returnType, unify(variables''', (applicandType, functionType)))
+    case Construction(tag, _, _, _)
+        (Top(veil(tag)), variables)
     case Numeral(tag, value)
         index := if value = 0 then 1 else 2
         (Construction(renameTag(tag, "ℕ", NOFIX), [], 2, index), variables)

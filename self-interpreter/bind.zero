@@ -38,7 +38,7 @@ define parseParameterType(node, context)
             syntaxError("(=>) requires two arguments", node)
         with parameterTypes as left :: parameterTypes'
             with parameterTypes' as right :: _
-                Implication(getTypeTag(left), left, right)
+                Implication(getTermTag(left), left, right)
             syntaxError("(=>) requires two arguments", node)
         syntaxError("(=>) requires two arguments", node)
     Construction(getTag(root), parameterTypes, 0, 0)
@@ -63,7 +63,7 @@ define newReconstructorType(context, parameterTypeASTs, returnType)
         parameterType := parseParameterType(typeAST, context)
         bodyType := newReconstructorType(context,
             parameterTypeASTs', returnType)
-        Implication(getTypeTag(parameterType), parameterType, bodyType)
+        Implication(getTermTag(parameterType), parameterType, bodyType)
     returnType
 
 

@@ -1,110 +1,20 @@
 #* types.zero
 
-define maybeAddress(type)
-    with type as MetaVariable(_, address)
-        Just(address)
-    Void
-
-define maybeCount(type)
-    with type as Construction(_, _, count, _)
-        Just(count)
-    Void
-
-define maybeIndex(type)
-    with type as Construction(_, _, _, index)
-        Just(index)
-    Void
-
-define setLocation(Tag(_, _, location))
-    MetaVariable(tag, index) ->
-        MetaVariable(tag.setTagLocation(location), index)
-    Implication(tag, parameter, body) ->
-        Implication(tag.setTagLocation(location), parameter, body)
-    Construction(tag, parameters, count, index) ->
-        Construction(tag.setTagLocation(location), parameters, count, index)
-
-
-isMetaVariable := MetaVariable(_, _) -> True; _ -> False
-isImplication := Implication(_, _, _) -> True; _ -> False
-isConstruction := Construction(_, _, _, _) -> True; _ -> False
-
-
-define getVariableName(index)
-    characters := ['a', 'b', 'c', 'd']
-    if index < 4
-        [characters.safeAt(index) ?? '#']
-    getVariableName((index // 4) -- 1) ++ [characters.safeAt(index % 4) ?? '#']
-
-
-define getSuffix(count, index)
-    if count <= 1 or index = 0 then ""
-    subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(index).map(x -> subscripts.safeAt(x -- '0') ?? "").join
-
-
-define showConstruction(Tag(name, fixity, _), arguments)
-    with arguments as argument :: arguments'
-        if fixity = INFIX and length(arguments) = 2
-            "(" ++ (argument :: name :: arguments').joinWith(" ") ++ ")"
-        if fixity = PREFIX and length(arguments) = 1
-            name ++ "(" ++ argument ++ ")"
-        if fixity = POSTFIX and length(arguments) = 1
-            "(" ++ argument ++ ")" ++ name
-        name ++ "(" ++ arguments.joinWith(", ") ++ ")"
-    name
-
-
-define showType
-    case MetaVariable(_, address); getVariableName(address)
-    case Implication(_, parameter, body)
-        if isImplication(parameter)
-            "(" ++ showType(parameter) ++ ")" ++ " ⇒ " ++ showType(body)
-        showType(parameter) ++ " ⇒ " ++ showType(body)
-    case Construction(tag, parameters, count, index)
-        showConstruction(tag, parameters.map(showType))
-
-
-define getComponentTypes
-    MetaVariable(_, _) -> []
-    Implication(_, parameter, body) -> [parameter, body]
-    Construction(_, parameters, _, _) -> parameters
-
-
-define sameRoot(a, b)
-    match a
-        case MetaVariable(_, address)
-            with b as MetaVariable(_, address')
-                address = address'
-            False
-        case Implication(_, _, _)
-            isImplication(b)
-        case Construction(tag, parameters, _, _)
-            with b as Construction(tag', parameters', _, _)
-                getTagLexeme(tag) =*= getTagLexeme(tag') and
-                    length(parameters) = length(parameters')
-            False
-
-
 define newMetaVariable(tag, variables)
     (address, variables') := variables.allocate(Void)
     (MetaVariable(tag, address), variables')
 
-newMetaVariables(originals, variables) :=
-    originals.map(getTypeTag).cascadeMap(newMetaVariable, variables)
 
-define mapInternalTypes(f, type)
-    match type
-        MetaVariable(_, _) -> type
-        Implication(tag, parameter, body) ->
-            Implication(tag, f(parameter), f(body))
-        Construction(tag, parameters, count, index) ->
-            Construction(tag, parameters.map(f), count, index)
+newMetaVariables(originals, variables) :=
+    originals.map(getTermTag).cascadeMap(newMetaVariable, variables)
+
 
 newRenaming(mappings) := newTable((<=), mappings)
+
 
 define rename(renaming, type)
     with type as MetaVariable(_, address)
         renaming.lookup(address) ?? type
-    type.mapInternalTypes(rename(renaming))
+    type.mapComponents(rename(renaming))
 
 #*

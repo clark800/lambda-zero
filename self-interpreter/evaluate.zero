@@ -9,17 +9,25 @@ define expandNatural(tag, n)
 
 define evaluate(closure @ Closure(term, environment), stack)
     match term
+        case Top(tag)
+            runtimeError("Top", tag)
         case Variable(_, debruijn)
             with environment.seek(debruijn -- 1) as Just(closure')
                 evaluate(closure', stack)
             closure
+        case MetaVariable(tag, _)
+            runtimeError("MetaVariable", tag)
         case Abstraction(_, _, body)
             with stack as argument :: stack'
                 evaluate(Closure(body, environment.push(argument)), stack')
             closure
+        case Implication(tag, _, _)
+            runtimeError("Implication", tag)
         case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
+        case Construction(tag, _, _, _)
+            runtimeError("Construction", tag)
         case Numeral(tag, n)
             with stack as _ :: _
                 evaluate(Closure(expandNatural(tag, n), environment), stack)
@@ -30,7 +38,7 @@ define evaluate(closure @ Closure(term, environment), stack)
 
 
 define evaluateClosure(closure)
-    evaluate(closure, newRandomAccessList([]))
+    evaluate(closure, [])
 
 
 define evaluateTerm(term)
