@@ -2,7 +2,6 @@
 
 Type ::= {
     FreeType,
-    BottomType(_ : Tag),
     TypeVariable(_ : Tag, _address : ℕ),
     FunctionType(_ : Tag, _parameterType : Type, _bodyType : Type),
     ADT(_ : Tag, _parameterTypes : List(Type), _count : ℕ, _index : ℕ)
@@ -10,7 +9,6 @@ Type ::= {
 
 define getTypeTag
     FreeType -> Tag("_", NOFIX, Location("", 0, 0))
-    BottomType(tag) -> tag
     TypeVariable(tag, _) -> tag
     FunctionType(tag, _, _) -> tag
     ADT(tag, _, _, _) -> tag
