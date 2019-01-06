@@ -2,17 +2,17 @@
 
 define getFixScheme(tag)
     syntax(>->) := syntax(++)
-    (>->) := FunctionType(tag)
-    a := TypeVariable(veil(tag), 0)
+    (>->) := Implication(tag)
+    a := MetaVariable(veil(tag), 0)
     Scheme([a], (a >-> a) >-> a)
 
 
 define builtinTypes
     syntax(>->) := syntax(++)
-    (>->) := FunctionType(noTag)
-    boolean := ADT(renameTag(noTag, "𝔹", NOFIX), [], 2, 0)
-    natural := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
-    natural' := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 2)
+    (>->) := Implication(noTag)
+    boolean := Construction(renameTag(noTag, "𝔹", NOFIX), [], 2, 0)
+    natural := Construction(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
+    natural' := Construction(renameTag(noTag, "ℕ", NOFIX), [], 2, 2)
     arithmetic := natural >-> natural >-> natural
     comparison := natural >-> natural >-> boolean
     newDictionary([
@@ -33,12 +33,12 @@ define builtinTypes
 define getBuiltinType(tag, variables)
     lexeme := getTagLexeme(tag)
     if lexeme =*= "(undefined)"
-        newTypeVariable(tag, variables)
+        newMetaVariable(tag, variables)
     if lexeme =*= "abort"
-        natural := ADT(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
-        string := ADT(renameTag(noTag, "List", NOFIX), [natural], 2, 0)
-        (variable, variables') := newTypeVariable(veil(tag), variables)
-        (FunctionType(tag, string, variable), variables')
+        natural := Construction(renameTag(noTag, "ℕ", NOFIX), [], 2, 0)
+        string := Construction(renameTag(noTag, "List", NOFIX), [natural], 2, 0)
+        (variable, variables') := newMetaVariable(veil(tag), variables)
+        (Implication(tag, string, variable), variables')
     with builtinTypes.lookup(lexeme) as Just(type)
         (type.setLocation(tag), variables)
     throwError("Type error: unrecognized builtin", tag)

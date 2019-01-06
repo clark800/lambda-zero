@@ -27,7 +27,7 @@ define bindName(level, stack, tag)
 define parseParameterType(node, context)
     if isName(node)
         tag := getTag(node)
-        context.lookup(getLexeme(node)) ?? ADT(tag, [], 0, 0)
+        context.lookup(getLexeme(node)) ?? Construction(tag, [], 0, 0)
     root := getHead(node)
     name := getLexeme(root)
     if context.hasKey(name)
@@ -38,13 +38,13 @@ define parseParameterType(node, context)
             syntaxError("(=>) requires two arguments", node)
         with parameterTypes as left :: parameterTypes'
             with parameterTypes' as right :: _
-                FunctionType(getTypeTag(left), left, right)
+                Implication(getTypeTag(left), left, right)
             syntaxError("(=>) requires two arguments", node)
         syntaxError("(=>) requires two arguments", node)
-    ADT(getTag(root), parameterTypes, 0, 0)
+    Construction(getTag(root), parameterTypes, 0, 0)
 
 
-define parseADT(node, count, index)
+define parseConstruction(node, count, index)
     # context maps type variable names to type variables
     # type variable with index 0 is reserved for deconstructors
     root := getHead(node)
@@ -52,9 +52,9 @@ define parseADT(node, count, index)
     if not components.all(isName)
         syntaxError("all components should be names", node)
     tag := veil(getTag(node))
-    parameterTypes := (1 .. length(components)).map(TypeVariable(tag))
+    parameterTypes := (1 .. length(components)).map(MetaVariable(tag))
     context := newDictionary(zip(components.map(getLexeme), parameterTypes))
-    type := ADT(getTag(root), parameterTypes, count, index)
+    type := Construction(getTag(root), parameterTypes, count, index)
     (type, context)
 
 
@@ -63,7 +63,7 @@ define newReconstructorType(context, parameterTypeASTs, returnType)
         parameterType := parseParameterType(typeAST, context)
         bodyType := newReconstructorType(context,
             parameterTypeASTs', returnType)
-        FunctionType(getTypeTag(parameterType), parameterType, bodyType)
+        Implication(getTypeTag(parameterType), parameterType, bodyType)
     returnType
 
 
@@ -71,28 +71,28 @@ define newConstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
     # todo: check that universals are not already defined and that all other
     # names are already defined; also make sure universal name is not the
     # same as the dataType name
-    (adtType, context) := parseADT(adtTypeAST, count, index)
+    (adtType, context) := parseConstruction(adtTypeAST, count, index)
     universals := getValues(context)
     type := newReconstructorType(context, parameterTypeASTs, adtType)
     Scheme(universals, type)
 
 
 define newDeconstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
-    returnType := TypeVariable(veil(tag), 0)
-    (adtType, context) := parseADT(adtTypeAST, count, index)
+    returnType := MetaVariable(veil(tag), 0)
+    (adtType, context) := parseConstruction(adtTypeAST, count, index)
     universals := returnType :: getValues(context)
     reconstructorType :=
         newReconstructorType(context, parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
-    (>->) := FunctionType(veil(tag))
+    (>->) := Implication(veil(tag))
     fallbackType := adtType >-> returnType
     type := reconstructorType >-> fallbackType >-> adtType >-> returnType
     Scheme(universals, type)
 
 
 define newAccessorScheme(tag, dataType, returnType, count, index)
-    (adtType, context) := parseADT(dataType, count, index)
-    type := FunctionType(tag, adtType, parseParameterType(returnType, context))
+    (adtType, context) := parseConstruction(dataType, count, index)
+    type := Implication(tag, adtType, parseParameterType(returnType, context))
     universals := getValues(context)
     Scheme(universals, type)
 

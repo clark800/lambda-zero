@@ -1,32 +1,32 @@
 #* types.zero
 
 define maybeAddress(type)
-    with type as TypeVariable(_, address)
+    with type as MetaVariable(_, address)
         Just(address)
     Void
 
 define maybeCount(type)
-    with type as ADT(_, _, count, _)
+    with type as Construction(_, _, count, _)
         Just(count)
     Void
 
 define maybeIndex(type)
-    with type as ADT(_, _, _, index)
+    with type as Construction(_, _, _, index)
         Just(index)
     Void
 
 define setLocation(Tag(_, _, location))
-    TypeVariable(tag, index) ->
-        TypeVariable(tag.setTagLocation(location), index)
-    FunctionType(tag, parameter, body) ->
-        FunctionType(tag.setTagLocation(location), parameter, body)
-    ADT(tag, parameters, count, index) ->
-        ADT(tag.setTagLocation(location), parameters, count, index)
+    MetaVariable(tag, index) ->
+        MetaVariable(tag.setTagLocation(location), index)
+    Implication(tag, parameter, body) ->
+        Implication(tag.setTagLocation(location), parameter, body)
+    Construction(tag, parameters, count, index) ->
+        Construction(tag.setTagLocation(location), parameters, count, index)
 
 
-isTypeVariable := TypeVariable(_, _) -> True; _ -> False
-isFunctionType := FunctionType(_, _, _) -> True; _ -> False
-isADT := ADT(_, _, _, _) -> True; _ -> False
+isMetaVariable := MetaVariable(_, _) -> True; _ -> False
+isImplication := Implication(_, _, _) -> True; _ -> False
+isConstruction := Construction(_, _, _, _) -> True; _ -> False
 
 
 define getVariableName(index)
@@ -42,7 +42,7 @@ define getSuffix(count, index)
     showNatural(index).map(x -> subscripts.safeAt(x -- '0') ?? "").join
 
 
-define showADT(Tag(name, fixity, _), arguments)
+define showConstruction(Tag(name, fixity, _), arguments)
     with arguments as argument :: arguments'
         if fixity = INFIX and length(arguments) = 2
             "(" ++ (argument :: name :: arguments').joinWith(" ") ++ ")"
@@ -55,55 +55,55 @@ define showADT(Tag(name, fixity, _), arguments)
 
 
 define showType
-    case TypeVariable(_, address); getVariableName(address)
-    case FunctionType(_, parameter, body)
-        if isFunctionType(parameter)
+    case MetaVariable(_, address); getVariableName(address)
+    case Implication(_, parameter, body)
+        if isImplication(parameter)
             "(" ++ showType(parameter) ++ ")" ++ " ⇒ " ++ showType(body)
         showType(parameter) ++ " ⇒ " ++ showType(body)
-    case ADT(tag, parameters, count, index)
-        showADT(tag, parameters.map(showType))
+    case Construction(tag, parameters, count, index)
+        showConstruction(tag, parameters.map(showType))
 
 
 define getComponentTypes
-    TypeVariable(_, _) -> []
-    FunctionType(_, parameter, body) -> [parameter, body]
-    ADT(_, parameters, _, _) -> parameters
+    MetaVariable(_, _) -> []
+    Implication(_, parameter, body) -> [parameter, body]
+    Construction(_, parameters, _, _) -> parameters
 
 
 define sameRoot(a, b)
     match a
-        case TypeVariable(_, address)
-            with b as TypeVariable(_, address')
+        case MetaVariable(_, address)
+            with b as MetaVariable(_, address')
                 address = address'
             False
-        case FunctionType(_, _, _)
-            isFunctionType(b)
-        case ADT(tag, parameters, _, _)
-            with b as ADT(tag', parameters', _, _)
+        case Implication(_, _, _)
+            isImplication(b)
+        case Construction(tag, parameters, _, _)
+            with b as Construction(tag', parameters', _, _)
                 getTagLexeme(tag) =*= getTagLexeme(tag') and
                     length(parameters) = length(parameters')
             False
 
 
-define newTypeVariable(tag, variables)
+define newMetaVariable(tag, variables)
     (address, variables') := variables.allocate(Void)
-    (TypeVariable(tag, address), variables')
+    (MetaVariable(tag, address), variables')
 
-newTypeVariables(originals, variables) :=
-    originals.map(getTypeTag).cascadeMap(newTypeVariable, variables)
+newMetaVariables(originals, variables) :=
+    originals.map(getTypeTag).cascadeMap(newMetaVariable, variables)
 
 define mapInternalTypes(f, type)
     match type
-        TypeVariable(_, _) -> type
-        FunctionType(tag, parameter, body) ->
-            FunctionType(tag, f(parameter), f(body))
-        ADT(tag, parameters, count, index) ->
-            ADT(tag, parameters.map(f), count, index)
+        MetaVariable(_, _) -> type
+        Implication(tag, parameter, body) ->
+            Implication(tag, f(parameter), f(body))
+        Construction(tag, parameters, count, index) ->
+            Construction(tag, parameters.map(f), count, index)
 
 newRenaming(mappings) := newTable((<=), mappings)
 
 define rename(renaming, type)
-    with type as TypeVariable(_, address)
+    with type as MetaVariable(_, address)
         renaming.lookup(address) ?? type
     type.mapInternalTypes(rename(renaming))
 
