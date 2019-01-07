@@ -61,13 +61,16 @@ define unify'(originals, variables, (left, right))
         variables.assign(address, Just(left))
     unifyFailure(originals, variables, (left, right))
 
+
 define unify(variables, types)
     unify'(types, variables, types)
+
 
 define unifyAll(variables, types)
     with types as type :: types'
         zip(repeat(type), types').cascade(unify, variables)
     variables
+
 
 define generalize(variables, oldVariables, type)
     syntax(\\) := syntax(\)
@@ -77,83 +80,30 @@ define generalize(variables, oldVariables, type)
         variables.getAllFreeVariables(oldVariables)
     Scheme(universals, type')
 
-define instantiate(variables, tag, Scheme(universals, type))
+
+define newInstantiationMap(universals, variables)
     (freshVariables, variables') := newMetaVariables(universals, variables)
     addresses := universals.map(maybeAddress).prune
-    mappings := zip(addresses, freshVariables)
-    renaming := newRenaming(mappings)
-    (type.rename(renaming).setLocation(tag), variables')
+    renaming := newRenaming(zip(addresses, freshVariables))
+    (renaming, variables')
 
 
-define getResultType(type)
-    with type as Implication(_, _, bodyType)
-        getResultType(bodyType)
-    type
+define instantiateType(tag, mapping, type)
+    type.rename(mapping).setLocation(tag)
 
 
-define convertConstructorType(variable, type)
-    if isConstruction(type)
-        variable
-    with type as Implication(tag, parameterType, bodyType)
-        Implication(tag, parameterType,
-            convertConstructorType(variable, bodyType))
-    abort "Type error: invalid constructor at " ++ showTypeLocation(type)
+define coinstantiate(tag, variables, schemes)
+    (Scheme(universalsA, typeA), Scheme(universalsB, typeB)) := schemes
+    universals := universalsB ++ universalsA
+    (mapping, variables') := newInstantiationMap(universals, variables)
+    (typeA', typeB') := (typeA, typeB).mapPair(instantiateType(tag, mapping))
+    universals' := universalsB.map(instantiateType(tag, mapping))
+    (typeA', Scheme(universals', typeB'), variables')
 
 
-define constructInnerParameterType(types, variable, tag)
-    types' := types.map(convertConstructorType(variable))
-    types'.fold(Implication(tag), variable)
-
-
-define constructParameterType(variables, schemes, tag)
-    if isNil(schemes)
-        throwError("Type error: no cases:", tag)
-    types := schemes.map(getType)
-    adtTypes := types.map(getResultType)
-    if not adtTypes.all(isConstruction)
-        throwError("Type error: invalid cases:", tag)
-    names := deduplicateBy((=*=), adtTypes.map(getTagLexeme <> getTermTag))
-    counts := deduplicate(adtTypes.map(maybeCount).prune)
-    if length(names) =/= 1 or length(counts) =/= 1
-        throwError("Type error: inconsistent cases:", tag)
-    count := safeHead(counts) ?? 0
-    indices := adtTypes.map(maybeIndex).prune
-    if length(indices) < count
-        throwError("Type error: missing case:", tag)
-    if length(indices) > count
-        throwError("Type error: too many cases:", tag)
-    if not indices =*= sort(indices)
-        throwError("Type error: cases out of order:", tag)
-
-    # note: all schemes should have the same universals
-    universals := getUniversals(safeHead(schemes) ??
-        throwError("Type error: invalid cases", tag))
-    variable := MetaVariable(tag, length(universals))
-    universals' := variable :: universals
-
-    # todo: set index to zero
-    outerType := safeHead(adtTypes) ??
-        throwError("Type error: invalid cases", tag)
-    innerType := constructInnerParameterType(types, variable, veil(tag))
-
-    # note: the variables in inner and outer must be instantiated together
-    # so we use a trick of packaging them together in a Implication
-    scheme := Scheme(universals', Implication(veil(tag), outerType, innerType))
-    (polarType, variables') := scheme.instantiate(variables, tag)
-    with polarType as Implication(_, outerType, matchType)
-        universal := getResultType(matchType)
-        innerScheme := Scheme([universal], matchType)
-        (outerType, innerScheme, variables')
-    throwError("Type error: internal error", tag)
-
-
-define inferParameterType(stack, variables, metadata, tag)
-    schemes := getConstructorDebruijnIndices(metadata).map(k ->
-        stack.seek(k -- 1)).prune
-    if isNil(schemes)
-        (parameterType, variables') := variables.newMetaVariable(tag)
-        (parameterType, Scheme([], parameterType), variables')
-    constructParameterType(variables, schemes, tag)
+define instantiate(tag, variables, Scheme(universals, type))
+    (mapping, variables') := newInstantiationMap(universals, variables)
+    (type.instantiateType(tag, mapping), variables')
 
 
 # stack is a list of type schemes for all the lambda-bound symbols in scope
@@ -165,16 +115,22 @@ define infer(stack, variables)
     case Variable(tag, debruijn)
         scheme := stack.seek(debruijn -- 1) ??
             throwError("unbound variable", tag)
-        scheme.instantiate(variables, tag)
+        scheme.instantiate(tag, variables)
     case MetaVariable(tag, n)
         (Top(veil(tag)), variables)
     case Abstraction(tag, metadata, body)
         with getAscription(metadata) as Just(ascription)
-            ascription.instantiate(newStore([]), tag)
-        (type, scheme, variables') :=
-            inferParameterType(stack, variables, metadata, tag)
+            ascription.instantiate(tag, variables)
+        with getAnnotation(metadata) as Just(schemes)
+            (outerType, innerScheme, variables') :=
+                coinstantiate(tag, variables, schemes)
+            (bodyType, variables'') :=
+                infer(stack.push(innerScheme), variables', body)
+            (Implication(tag, outerType, bodyType), variables'')
+        (parameterType, variables') := variables.newMetaVariable(tag)
+        scheme := Scheme([], parameterType)
         (bodyType, variables'') := infer(stack.push(scheme), variables', body)
-        (Implication(tag, type, bodyType), variables'')
+        (Implication(tag, parameterType, bodyType), variables'')
     case Implication(tag, parameter, body)
         (Top(veil(tag)), variables)
     case Application(tag, isLet, applicand, argument)
@@ -191,12 +147,11 @@ define infer(stack, variables)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
         (returnType, unify(variables''', (applicandType, functionType)))
-    case Construction(tag, _, _, _)
+    case Construction(tag, _)
         (Top(veil(tag)), variables)
-    case Numeral(tag, value)
-        index := if value = 0 then 1 else 2
-        (Construction(renameTag(tag, "ℕ", NOFIX), [], 2, index), variables)
-    case Operation(tag, _, _)
+    case Numeral(tag, type, value)
+        (type, variables)
+    case Operation(tag, type, _, _)
         getBuiltinType(tag, variables)
 
 

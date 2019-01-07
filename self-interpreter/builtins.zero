@@ -2,13 +2,14 @@
 
 define getBuiltin(tag)
     tag' := veil(tag)
+    typeN := Construction(renameTag(noTag, "#NATURAL#", NOFIX), [])
     maxInteger := 9223372036854775807
 
     define checkNatural(term)
         maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
 
     define newBoolean(b)
-        metadata := Metadata(Void, Void, [])
+        metadata := Metadata(Void, Void)
         Abstraction(tag', metadata, Abstraction(tag', metadata,
                 Variable(tag', if b then 1 else 2)))
 
@@ -18,7 +19,8 @@ define getBuiltin(tag)
     define makeUnaryBuiltin(f, evaluate, arguments)
         with arguments as argument :: arguments'
             argument' := evaluate(argument)
-            Closure(Numeral(tag', f(checkNatural(getTerm(argument')))), [])
+            Closure(Numeral(tag', typeN,
+                f(checkNatural(getTerm(argument')))), [])
         runtimeError("missing argument to", tag)
 
     define makeBinaryBuiltin(constructor, f, evaluate, arguments)
@@ -31,7 +33,7 @@ define getBuiltin(tag)
         runtimeError("missing argument to", tag)
 
     define makeNaturalBuiltin(f, evaluate, arguments)
-        makeBinaryBuiltin(Numeral(tag'), f, evaluate, arguments)
+        makeBinaryBuiltin(Numeral(tag', typeN), f, evaluate, arguments)
 
     define makeComparisonBuiltin(f, evaluate, arguments)
         makeBinaryBuiltin(newBoolean, f, evaluate, arguments)

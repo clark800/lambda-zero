@@ -25,6 +25,7 @@ declare -a files=(
     "$PARSER/builtins.zero"
     "$PARSER/bind.zero"
     "$PARSER/parse.zero"
+    "$PARSER/evaluate.zero"
     "$DIR/types.zero"
     "$DIR/show.zero"
     "$DIR/errors.zero"

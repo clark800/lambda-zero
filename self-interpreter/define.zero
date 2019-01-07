@@ -71,32 +71,36 @@ define readParameterTypes(form)
         syntaxError("invalid form", form)
     []
 
-define newConstructorDefinition(tag, dataType, n, (form, j), scope)
-    parameters := getArguments(form)
-    m := length(parameters)
-    scope' := zip(parameters, 0...).fold(
-        newGetterDefinition(tag, dataType, n, j, m), scope)
 
-    with form as Number(tag, value)
+define getConstructorBody(name, n, m, j)
+    tag := getTag(name)
+    with name as Number(tag, value)
         if value =/= 0
-            syntaxError("invalid constructor name", form)
-        zero := Name(renameTag(getTag(form), "0", NOFIX))
-        applyPlainDefinition(tag, zero, form, scope')
-
-    name := getHead(form)
+            syntaxError("invalid constructor name", name)
+        Number(tag, 0)
     if not isName(name)
         syntaxError("invalid constructor name", name)
     if isThisName(name, "up")
         if m =/= 1
             syntaxError("expected one parameter to", name)
-        increment := Name(renameTag(getTag(name), "(increment)", NOFIX))
-        applyPlainDefinition(tag, name, increment, scope')
+        Name(renameTag(tag, "(increment)", NOFIX))
     arguments := reverse(n + 1 .. n + m).map(Underscore(tag))
     base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n -- j))
-    body := (UnderscoreArrow(tag)^<>(n + m))(base)
+    (UnderscoreArrow(tag)^<>(n + m))(base)
+
+
+define newConstructorDefinition(tag, dataType, n, (form, j), scope)
+    parameters := getArguments(form)
+    m := length(parameters)
+    scope' := zip(parameters, 0...).fold(
+        newGetterDefinition(tag, dataType, n, j, m), scope)
+    name := getHead(form)
+    body := getConstructorBody(name, n, m, j)
+    if isNull(body)
+        syntaxError("invalid constructor", name)   # force errors
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(tag, parameterTypes, dataType, body, n, j + 1)
-    applyPlainDefinition(tag, name, constructor, scope')
+    applyPlainDefinition(tag, Name(getTag(name)), constructor, scope')
 
 
 define newFallbackCase(tag, m)

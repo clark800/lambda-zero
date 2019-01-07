@@ -1,33 +1,46 @@
 #* bind.zero
 
-define findDebruijnIndex(level, stack, lexeme)
+define findParameter(level, stack, lexeme)
     with stack as table :: _
-        table.lookup(lexeme).mapJust(level --)
+        table.lookup(lexeme).mapJust(mapFirst(level --))
     Void
 
 
-define pushParameter(lexeme, level, stack)
+define findDefiniens(stack, lexeme)
+    with stack as table :: _
+        table.lookup(lexeme).mapJust(second) ?? Void
+    Void
+
+
+define pushParameter(parameter, level, maybeNode, stack)
+    lexeme := getLexeme(parameter)
     with stack as top :: stack'
-        top.set(lexeme, level) :: stack'
-    [newDictionary([(lexeme, level)])]
+        top.set(lexeme, (level, maybeNode)) :: stack'
+    [newDictionary([(lexeme, (level, maybeNode))])]
 
 
 define bindOperation(tag)
     maybe (arity, optimize) := getBuiltin(tag)
-    Just(Operation(tag, arity, optimize))
+    Just(Operation(tag, Top(tag), arity, optimize))  # todo: set type
+
+
+define bindVariable(level, stack, tag)
+    lexeme := getTagLexeme(tag)
+    maybe (debruijn, maybeValue) := findParameter(level, stack, lexeme)
+    Just(Variable(tag, debruijn))
 
 
 define bindName(level, stack, tag)
     if isUnused(tag)
         parseError("cannot reference a symbol starting with underscore", tag)
-    findDebruijnIndex(level, stack, getTagLexeme(tag)).mapJust(Variable(tag)) ??
-        bindOperation(tag) ?? parseError("undefined symbol", tag)
+    bindVariable(level, stack, tag) ?? bindOperation(tag) ??
+        parseError("undefined symbol", tag)
 
 
 define parseParameterType(node, context)
     if isName(node)
         tag := getTag(node)
-        context.lookup(getLexeme(node)) ?? Construction(tag, [], 0, 0)
+        context.lookup(getLexeme(node)) ?? Construction(tag, [])
     root := getHead(node)
     name := getLexeme(root)
     if context.hasKey(name)
@@ -41,10 +54,10 @@ define parseParameterType(node, context)
                 Implication(getTermTag(left), left, right)
             syntaxError("(=>) requires two arguments", node)
         syntaxError("(=>) requires two arguments", node)
-    Construction(getTag(root), parameterTypes, 0, 0)
+    Construction(getTag(root), parameterTypes)
 
 
-define parseConstruction(node, count, index)
+define parseConstruction(node)
     # context maps type variable names to type variables
     # type variable with index 0 is reserved for deconstructors
     root := getHead(node)
@@ -54,8 +67,8 @@ define parseConstruction(node, count, index)
     tag := veil(getTag(node))
     parameterTypes := (1 .. length(components)).map(MetaVariable(tag))
     context := newDictionary(zip(components.map(getLexeme), parameterTypes))
-    type := Construction(getTag(root), parameterTypes, count, index)
-    (type, context)
+    type := Construction(getTag(root), parameterTypes)
+    (type, parameterTypes, context)
 
 
 define newReconstructorType(context, parameterTypeASTs, returnType)
@@ -67,20 +80,19 @@ define newReconstructorType(context, parameterTypeASTs, returnType)
     returnType
 
 
-define newConstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
+define newConstructorScheme(tag, parameterTypeASTs, adtTypeAST)
     # todo: check that universals are not already defined and that all other
     # names are already defined; also make sure universal name is not the
     # same as the dataType name
-    (adtType, context) := parseConstruction(adtTypeAST, count, index)
-    universals := getValues(context)
+    (adtType, universals, context) := parseConstruction(adtTypeAST)
     type := newReconstructorType(context, parameterTypeASTs, adtType)
     Scheme(universals, type)
 
 
-define newDeconstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
+define newDeconstructorScheme(tag, parameterTypeASTs, adtTypeAST)
     returnType := MetaVariable(veil(tag), 0)
-    (adtType, context) := parseConstruction(adtTypeAST, count, index)
-    universals := returnType :: getValues(context)
+    (adtType, componentTypes, context) := parseConstruction(adtTypeAST)
+    universals := returnType :: componentTypes
     reconstructorType :=
         newReconstructorType(context, parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
@@ -90,11 +102,105 @@ define newDeconstructorScheme(tag, parameterTypeASTs, adtTypeAST, count, index)
     Scheme(universals, type)
 
 
-define newAccessorScheme(tag, dataType, returnType, count, index)
-    (adtType, context) := parseConstruction(dataType, count, index)
+define newAccessorScheme(tag, dataType, returnType)
+    (adtType, universals, context) := parseConstruction(dataType)
     type := Implication(tag, adtType, parseParameterType(returnType, context))
-    universals := getValues(context)
     Scheme(universals, type)
+
+
+define getResultType(type)
+    with type as Implication(_, _, bodyType)
+        getResultType(bodyType)
+    type
+
+
+define replaceConstruction(returnType, constructorType)
+    if isConstruction(constructorType)
+        returnType
+    with constructorType as Implication(tag, parameterType, bodyType)
+        Implication(tag, parameterType,
+            replaceConstruction(returnType, bodyType))
+    throwError("Type error: invalid constructor", getTermTag(constructorType))
+
+
+define constructObjectType(tag, constructorTypes, returnType)
+    types' := constructorTypes.map(replaceConstruction(returnType))
+    types'.fold(Implication(tag), returnType)
+
+
+define maybeCount(node)
+    with node as Constructor(_, _, _, _, count, _)
+        Just(count)
+    Void
+
+
+define maybeIndex(node)
+    with node as Constructor(_, _, _, _, _, index)
+        Just(index)
+    Void
+
+
+define maybeConstructorScheme(node)
+    with node as Constructor(tag, parameterTypes, adtType, _, _, _)
+        Just(newConstructorScheme(tag, parameterTypes, adtType))
+    Void
+
+
+define constructCaseAnnotation(tag, constructors, constructorSchemes)
+    if isNil(constructors)
+        throwError("Type error: no cases:", tag)
+    if not constructors.all(isConstructor)
+        throwError("Type error: invalid cases:", tag)
+    constructorTypes := constructorSchemes.map(getType)
+    constructionTypes := constructorTypes.map(getResultType)
+    if not constructionTypes.all(isConstruction)
+        throwError("Type error: invalid cases:", tag)
+    names := deduplicateBy((=*=),
+        constructionTypes.map(getTagLexeme <> getTermTag))
+    counts := deduplicate(constructors.map(maybeCount).prune)
+    if length(names) =/= 1 or length(counts) =/= 1
+        throwError("Type error: inconsistent cases:", tag)
+    count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
+    indices := constructors.map(maybeIndex).prune
+    if length(indices) < count
+        throwError("Type error: missing case:", tag)
+    if length(indices) > count
+        throwError("Type error: too many cases:", tag)
+    if not indices =*= sort(indices)
+        throwError("Type error: cases out of order:", tag)
+
+    # note: all schemes should have the same universals
+    universals := getUniversals(safeHead(constructorSchemes) ??
+        throwError("Type error: invalid cases", tag))
+    returnType := MetaVariable(tag, 0)
+
+    constructionType := safeHead(constructionTypes) ??
+        throwError("Type error: invalid cases", tag)
+    objectType := constructObjectType(veil(tag), constructorTypes, returnType)
+    # note: the metsvariables in the two types must be instantiated together
+    # so we need a new instantiation method that merges the universals and
+    # instantiates two types with the same universals.
+    (Scheme(universals, constructionType), Scheme([returnType], objectType))
+
+
+define buildCaseAnnotation(tag, constructorNames, stack)
+    with constructorNames.map(getLexeme).map(findDefiniens(stack)).sequence as
+            Just(constructors)
+        with constructors.map(maybeConstructorScheme).sequence as
+                Just(constructorSchemes)
+            Just(constructCaseAnnotation(tag, constructors, constructorSchemes))
+        Void
+    Void
+
+
+define getNumeralType(stack)
+    tag := renameTag(noTag, "#NATURAL#", NOFIX)
+    fallback := Construction(tag, [])    # in case naturals are not defined
+    with findDefiniens(stack, "0") as Just(constructor)
+        with maybeConstructorScheme(constructor) as Just(scheme)
+            getType(scheme)
+        fallback
+    fallback
 
 
 define bind(level, stack, node)
@@ -103,26 +209,28 @@ define bind(level, stack, node)
             if debruijn = 0
                 bindName(level, stack, tag)
             Variable(tag, debruijn)
-        case Arrow(tag, _, constructors, parameter, body)
-            constructors' := constructors.map(bind(level, stack))
-            indices := constructors'.map(maybeDebruijnIndex).prune
-            metadata := Metadata(Void, Void, indices)
-            stack' := stack.pushParameter(getLexeme(parameter), level)
-            body' := bind(up level, stack', body)
-            Abstraction(getTag(parameter), metadata, body')
+        case Arrow(tag, _, constructorNames, parameter, body)
+            stack' := stack.pushParameter(parameter, level, Void)
+            bodyTerm := bind(up level, stack', body)
+            if isNil(constructorNames)
+                Abstraction(getTag(parameter), Metadata(Void, Void), bodyTerm)
+            with buildCaseAnnotation(tag, constructorNames, stack) as
+                    Just(annotation)
+                metadata := Metadata(Just(annotation), Void)
+                Abstraction(getTag(parameter), metadata, bodyTerm)
+            syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, False,
                 bind(level, stack, left), bind(level, stack, right))
         case Let(tag, name, value, scope)
             valueTerm := bind(level, stack, value)
-            # todo: push valueTerm
-            stack' := stack.pushParameter(getLexeme(name), level)
+            stack' := stack.pushParameter(name, level, Just(value))
             scopeTerm := bind(up level, stack', scope)
-            metadata := Metadata(Void, Void, [])
+            metadata := Metadata(Void, Void)
             abstraction := Abstraction(getTag(name), metadata, scopeTerm)
             Application(tag, True, abstraction, valueTerm)
         case Number(tag, value)
-            Numeral(veil(tag), value)
+            Numeral(tag, getNumeralType(stack), value)
         case Operator(_, _, _)
             abort "internal error: Operator reached bind"
         case Definition(_, _, _, _)
@@ -136,19 +244,16 @@ define bind(level, stack, node)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
         case Constructor(tag, parameterTypes, adtType, function, count, index)
-            term := bind(level, stack, function)
-            scheme := newConstructorScheme(tag, parameterTypes,
-                adtType, count, index)
-            term.setMetadata(Metadata(Void, Just(scheme), []))
+            scheme := newConstructorScheme(tag, parameterTypes, adtType)
+            with function as Number(_, value)
+                Numeral(tag, getType(scheme), value)
+            bind(level, stack, function).setAscription(scheme)
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
-            term := bind(level, stack, function)
-            scheme := newDeconstructorScheme(tag, parameterTypes,
-                adtType, count, index)
-            term.setMetadata(Metadata(Void, Just(scheme), []))
+            scheme := newDeconstructorScheme(tag, parameterTypes, adtType)
+            bind(level, stack, function).setAscription(scheme)
         case Accessor(tag, adtType, returnType, function, count, index)
-            term := bind(level, stack, function)
-            scheme := newAccessorScheme(tag, adtType, returnType, count, index)
-            term.setMetadata(Metadata(Void, Just(scheme), []))
+            scheme := newAccessorScheme(tag, adtType, returnType)
+            bind(level, stack, function).setAscription(scheme)
         case Null(_)
             abort "internal error: Null reached bind"
 

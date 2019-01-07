@@ -1,10 +1,11 @@
 #* evaluate.zero
 
-define expandNatural(tag, n)
-    metadata := Metadata(Void, Void, [])
+define expandNumeral(tag, type, n)
+    metadata := Metadata(Void, Void)
     Abstraction(tag, metadata, Abstraction(tag, metadata,
         n |> 0 -> Variable(tag, 2); up n' ->
-            Application(tag, False, Variable(tag, 1), Numeral(tag, n'))))
+            Application(tag, False, Variable(tag, 1),
+            Numeral(tag, type, n'))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
@@ -26,13 +27,14 @@ define evaluate(closure @ Closure(term, environment), stack)
         case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
-        case Construction(tag, _, _, _)
+        case Construction(tag, _)
             runtimeError("Construction", tag)
-        case Numeral(tag, n)
+        case Numeral(tag, type, n)
             with stack as _ :: _
-                evaluate(Closure(expandNatural(tag, n), environment), stack)
+                numeral := expandNumeral(tag, type, n)
+                evaluate(Closure(numeral, environment), stack)
             closure
-        case Operation(_, arity, operator)
+        case Operation(_, _, arity, operator)
             result := operator(`evaluate([]), stack.take(arity))
             evaluate(result, stack.drop(arity))
 
