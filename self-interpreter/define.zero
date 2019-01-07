@@ -9,9 +9,9 @@ define isTuple(node)
     isTupleConstructor(node)
 
 define applyPlainDefinition(tag, name, value, scope)
-    if isJuxtaposition(name) and isTuple(name)
-        Juxtaposition(tag, newPatternArrow(name, scope), value)
-    Let(tag, newPatternArrow(name, scope), value)
+    if isName(name)
+        Let(tag, name, value, scope)
+    Juxtaposition(tag, newPatternArrow(name, scope), value)
 
 define applyMaybeDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust", NOFIX)),

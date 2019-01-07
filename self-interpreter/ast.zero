@@ -34,7 +34,7 @@ AST ::= {
     Arrow(_ : Tag, _type : ArrowType, _constructors : List(AST),
         _parameter : AST, _body : AST),
     Juxtaposition(_ : Tag, _left : AST, _right : AST),
-    Let(_ : Tag, _left : AST, _right : AST),
+    Let(_ : Tag, _name : AST, _value : AST, _scope : AST),
     Number(_ : Tag, _value : ℕ),
     Operator(_ : Tag, _rank : ℕ, _syntax : Syntax(AST)),
     Definition(_ : Tag, _type : DefinitionType,
@@ -61,7 +61,7 @@ define getTag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
-    Let(tag, _, _) -> tag
+    Let(tag, _, _, _) -> tag
     Number(tag, _) -> tag
     Operator(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
@@ -79,8 +79,8 @@ define containsName(name)
     Arrow(_, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
         containsName(name, left) or containsName(name, right)
-    Let(_, left, right) ->
-        containsName(name, left) or containsName(name, right)
+    Let(_, _, value, scope) ->
+        containsName(name, value) or containsName(name, scope)
     Number(_, _) -> False
     Operator(_, _, _) -> False
     Definition(_, _, _, _) -> False
@@ -99,8 +99,9 @@ define showAST
         "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
-    Let(tag, left, right) ->
-        "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
+    Let(tag, name, value, scope) ->
+        "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
+            ";;" ++ showAST(scope) ++ ")"
     Number(tag, value) -> showNatural(value)
     Operator(tag, rank, rules) -> showTag(tag)
     Definition(tag, _, left, right) ->
@@ -119,7 +120,7 @@ define showAST
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
-isLet := Let(_, _, _) -> True; _ -> False
+isLet := Let(_, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
 isOperator := Operator(_, _, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
