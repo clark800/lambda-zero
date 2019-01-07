@@ -113,9 +113,14 @@ define bind(level, stack, node)
         case Juxtaposition(tag, left, right)
             Application(tag, False,
                 bind(level, stack, left), bind(level, stack, right))
-        case Let(tag, left, right)
-            Application(tag, True,
-                bind(level, stack, left), bind(level, stack, right))
+        case Let(tag, name, value, scope)
+            valueTerm := bind(level, stack, value)
+            # todo: push valueTerm
+            stack' := stack.pushParameter(getLexeme(name), level)
+            scopeTerm := bind(up level, stack', scope)
+            metadata := Metadata(Void, Void, [])
+            abstraction := Abstraction(getTag(name), metadata, scopeTerm)
+            Application(tag, True, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(veil(tag), value)
         case Operator(_, _, _)
