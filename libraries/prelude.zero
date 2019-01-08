@@ -124,6 +124,9 @@ map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 filterMap(f, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦
     (f(x) ⦊ Void ↦ xs″; Just(x′) ↦ x′ ∷ xs″ where xs″ ≔ filterMap(f, xs′))
 prune(mxs) ≔ filterMap(id, mxs)
+sequence(mxs) := mxs |> [] -> Just([]); mx :: mxs' ->
+    (mx |> Void -> Void; Just(x) ->
+        (sequence(mxs') |> Void -> Void; Just(xs) -> Just(x :: xs)))
 zipWith(f, xs, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)

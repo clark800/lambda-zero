@@ -32,16 +32,17 @@ define makeRenaming(type)
 define showTypeWithRenaming(type, renaming)
     showTerm(type.rename(renaming))
 
-define showUniversals(universals, renaming)
+define showUniversalsWithRenaming(universals, renaming)
     universals.map(universal ->
         "∀" ++ showTypeWithRenaming(universal, renaming) ++ " ").join
 
-define showScheme(Scheme(universals, type))
+define showPrettyScheme(Scheme(universals, type))
     renaming := makeRenaming(type)
-    showUniversals(universals, renaming) ++ showTypeWithRenaming(type, renaming)
+    showUniversalsWithRenaming(universals, renaming) ++
+        showTypeWithRenaming(type, renaming)
 
 define showTyping((tag, scheme))
-    getTagLexeme(tag) ++ " : " ++ showScheme(scheme)
+    getTagLexeme(tag) ++ " : " ++ showPrettyScheme(scheme)
 
 define showTypings(typings)
     typings.map(showTyping).joinWith("\n")

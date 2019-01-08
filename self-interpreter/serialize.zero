@@ -23,13 +23,13 @@ define serialize(closure)
             case Application(_, _, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++
                 " " ++ serialize'(Closure(argument, environment), depth) ++ ")"
-            case Construction(tag, parameters, _, _)
+            case Construction(tag, parameters)
                 parameters' := parameters.map(p ->
                     serialize'(Closure(p, environment), depth))
                 showConstruction(tag, parameters')
-            case Numeral(_, n)
+            case Numeral(_, _, n)
                 showNatural(n)
-            case Operation(tag, _, _)
+            case Operation(tag, _, _, _)
                 showTag(tag)
 
     result := serialize'(closure, 0)
@@ -46,7 +46,7 @@ define serializeString(evaluateClosure, closure)
     if nil
         Just([])
 
-    dummy := Closure(Numeral(noTag, 0), newRandomAccessList([]))
+    dummy := Closure(Variable(noTag, 0), newRandomAccessList([]))
     environment' := getEnvironment(closure').push(dummy).push(dummy)
     enclose := `Closure(environment')
 
