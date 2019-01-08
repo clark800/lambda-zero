@@ -11,8 +11,8 @@ define isMain(term)
 
 
 define newNilTerm(tag)
-    metadata := Metadata(Void, Void)
-    Abstraction(tag, metadata, Abstraction(tag, metadata, Variable(tag, 2)))
+    Abstraction(tag, NoConstraint,
+        Abstraction(tag, NoConstraint, Variable(tag, 2)))
 
 
 define constructString(tag, string)
