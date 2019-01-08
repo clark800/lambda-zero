@@ -1,9 +1,10 @@
 #* term.zero
 
-Metadata ::= {Metadata(
-    getAnnotation : (Scheme && Scheme)?,
-    getAscription : (Scheme)?
-)}
+Constraint ::= {
+    Ascription(_ : Scheme),
+    Annotation(_ : Scheme),
+    PolarAnnotation(_ : Scheme, _ : Scheme)
+}
 
 Closure(term) ::= {Closure(
     getTerm : term,
@@ -14,7 +15,7 @@ Term ::= {
     Top(_ : Tag),
     Variable(_ : Tag, _debruijn : ℕ),
     MetaVariable(_ : Tag, _id : ℕ),
-    Abstraction(_ : Tag, _ : Metadata, _body : Term),
+    Abstraction(_ : Tag, _ : Constraint, _body : Term),
     Implication(_ : Tag, _antecedent : Term, _consequent : Term),
     Application(_ : Tag, _let : 𝔹, _applicand : Term, _argument : Term),
     Construction(_ : Tag, _components : List(Term)),
@@ -26,6 +27,7 @@ Term ::= {
 
 Scheme ::= {Scheme(getUniversals : List(Term), getType : Term)}
 
+NoConstraint := Annotation(Scheme([v], v)) where v := MetaVariable(noTag, 0)
 
 define getTermTag
     Top(tag) -> tag
@@ -51,8 +53,8 @@ isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 
 define setAscription(scheme, term)
-    with term as Abstraction(tag, Metadata(annotation, _), body)
-        Abstraction(tag, Metadata(annotation, Just(scheme)), body)
+    with term as Abstraction(tag, _, body)
+        Abstraction(tag, Ascription(scheme), body)
     with term as Numeral(tag, _, value)
         Numeral(tag, getType(scheme), value)
     with term as Operation(tag, _, arity, operator)

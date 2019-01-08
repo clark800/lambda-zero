@@ -180,7 +180,8 @@ define constructCaseAnnotation(tag, constructors, constructorSchemes)
     # note: the metsvariables in the two types must be instantiated together
     # so we need a new instantiation method that merges the universals and
     # instantiates two types with the same universals.
-    (Scheme(universals, constructionType), Scheme([returnType], objectType))
+    PolarAnnotation(Scheme(universals, constructionType),
+        Scheme([returnType], objectType))
 
 
 define buildCaseAnnotation(tag, constructorNames, stack)
@@ -213,11 +214,10 @@ define bind(level, stack, node)
             stack' := stack.pushParameter(parameter, level, Void)
             bodyTerm := bind(up level, stack', body)
             if isNil(constructorNames)
-                Abstraction(getTag(parameter), Metadata(Void, Void), bodyTerm)
+                Abstraction(getTag(parameter), NoConstraint, bodyTerm)
             with buildCaseAnnotation(tag, constructorNames, stack) as
                     Just(annotation)
-                metadata := Metadata(Just(annotation), Void)
-                Abstraction(getTag(parameter), metadata, bodyTerm)
+                Abstraction(getTag(parameter), annotation, bodyTerm)
             syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, False,
@@ -226,8 +226,7 @@ define bind(level, stack, node)
             valueTerm := bind(level, stack, value)
             stack' := stack.pushParameter(name, level, Just(value))
             scopeTerm := bind(up level, stack', scope)
-            metadata := Metadata(Void, Void)
-            abstraction := Abstraction(getTag(name), metadata, scopeTerm)
+            abstraction := Abstraction(getTag(name), NoConstraint, scopeTerm)
             Application(tag, True, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNumeralType(stack), value)
