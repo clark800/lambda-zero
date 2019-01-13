@@ -17,6 +17,7 @@ Term ::= {
     MetaVariable(_ : Tag, _id : ℕ),
     Abstraction(_ : Tag, _ : Constraint, _body : Term),
     Implication(_ : Tag, _antecedent : Term, _consequent : Term),
+    Implicit(_ : Tag, _type : Term, _body : Term),
     Application(_ : Tag, _let : 𝔹, _applicand : Term, _argument : Term),
     Construction(_ : Tag, _components : List(Term)),
     Numeral(_ :  Tag, _type : Term, _value : ℕ),
@@ -35,6 +36,7 @@ define getTermTag
     MetaVariable(tag, _) -> tag
     Abstraction(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
+    Implicit(tag, _, _) -> tag
     Application(tag, _, _, _) -> tag
     Construction(tag, _) -> tag
     Numeral(tag, _, _) -> tag
@@ -46,6 +48,7 @@ isVariable := Variable(_, _) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isAbstraction := Abstraction(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
+isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _, _) -> True; _ -> False
 isConstruction := Construction(_, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
@@ -138,6 +141,7 @@ define setTag(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Abstraction(_, metadata, body) -> Abstraction(tag, metadata, body)
     Implication(_, parameter, body) -> Implication(tag, parameter, body)
+    Implicit(_, type, body) -> Implication(tag, type, body)
     Application(_, isLet, left, right) -> Application(tag, isLet, left, right)
     Construction(_, parameters) -> Construction(tag, parameters)
     Numeral(_, type, value) -> Numeral(tag, type, value)
@@ -163,6 +167,8 @@ define sameHead(term)
         isAbstraction(term)
     case Implication(_, _, _)
         isImplication(term)
+    case Implicit(_, _, _)
+        isImplicit(term)
     case Application(_, _, _, _)
         isApplication(term)
     case Construction(tag, parameters)
@@ -185,6 +191,7 @@ define getComponents
     MetaVariable(_, _) -> []
     Abstraction(_, _, body) -> [body]
     Implication(_, parameter, body) -> [parameter, body]
+    Implicit(_, type, body) -> [type, body]
     Application(_, _, left, right) -> [left, right]
     Construction(_, parameters) -> parameters
     Numeral(_, _, _) -> []
@@ -200,6 +207,8 @@ define mapComponents(f, term)
             Abstraction(tag, metadata, f(body))
         Implication(tag, parameter, body) ->
             Implication(tag, f(parameter), f(body))
+        Implicit(tag, type, body) ->
+            Implication(tag, f(type), f(type))
         Application(tag, isLet, left, right) ->
             Application(tag, isLet, f(left), f(right))
         Construction(tag, parameters) ->
@@ -235,7 +244,7 @@ define showMetaVariable(n)
 
 define showTerm
     Top(_) -> "⊤"
-    Variable(tag, n) -> showTag(tag) ++ "#" ++ showNatural(n)
+    Variable(tag, n) -> showTag(tag) #++ "#" ++ showNatural(n)
     MetaVariable(tag, n) -> showMetaVariable(n)
     Abstraction(tag, _, body) ->
         "(" ++ showTag(tag) ++ " ↦ " ++ showTerm(body) ++ ")"
@@ -244,6 +253,8 @@ define showTerm
             "(" ++ showTerm(parameter) ++ ")" ++
             " ⇒ " ++ showTerm(body) else
                 showTerm(parameter) ++ " ⇒ " ++ showTerm(body)
+    Implicit(tag, type, body) ->
+        "(" ++ showTag(tag) ++ " ⇝ " ++ showTerm(body) ++ ")"
     Application(_, _, applicand, argument) ->
         "(" ++ showTerm(applicand) ++ " " ++ showTerm(argument) ++ ")"
     Construction(tag, parameters) ->
@@ -255,5 +266,15 @@ define showTerm
 define showScheme(Scheme(universals, term))
     universals.map(universal -> "∀" ++ showTerm(universal) ++ " ").join ++
         showTerm(term)
+
+
+define getDefinitions(term)
+    with term as Application(_, isLet, applicand, argument)
+        if isLet
+            with applicand as Abstraction(_, _, body)
+                (getTermTag(applicand), argument) :: getDefinitions(body)
+            []
+        []
+    []
 
 #*

@@ -50,6 +50,10 @@ define reduceArrow(operator, left, right)
     newCaseArrow(left, right)
 
 
+define reduceDoubleArrow(operator, left, right)
+    Arrow(getTag(operator), DoubleArrow, [], left, right)
+
+
 define reducePipeline(operator, left, right)
     reduceApply(operator, right, left)
 
@@ -332,8 +336,8 @@ OPERATORS := [newDictionary([
     coreSyntax(";", 8, 8, INFIX, RIGHT, shiftSemicolon, reduceNewline),
     coreSyntax("->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreAlias("↦", "->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
-    coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
-    coreAlias("⇒", "=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceInfix),
+    coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),
+    coreAlias("⇒", "=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),
     coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("with", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),

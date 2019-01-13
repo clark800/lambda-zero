@@ -24,6 +24,8 @@ define evaluate(closure @ Closure(term, environment), stack)
             closure
         case Implication(tag, _, _)
             runtimeError("Implication", tag)
+        case Implicit(tag, _, _)
+            runtimeError("Implicit", tag)
         case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
