@@ -137,7 +137,11 @@ define infer(stack, variables)
                     infer(stack.push(innerScheme), variables', body)
                 (Implication(tag, outerType, bodyType), variables'')
     case Implication(tag, parameter, body)
-        (Top(veil(tag)), variables)
+        (parameterType, variables') := infer(stack, variables, parameter)
+        (bodyType, variables'') := infer(stack, variables', body)
+        (Top(veil(tag)), variables'')
+    case Implicit(tag, type, body)
+        infer(stack.push(Scheme([], type)), variables, body)
     case Application(tag, isLet, applicand, argument)
         if isLet
             (valueType, variables') := infer(stack, variables, argument)
@@ -165,16 +169,6 @@ define inferType(stack, definition)
         stack.push(getFixScheme(getTermTag(second(definition))))
     (type, variables') := infer(stack, newStore([]), second(definition))
     stack.push(type.generalize(variables', newStore([])))
-
-
-define getDefinitions(term)
-    with term as Application(_, isLet, applicand, argument)
-        if isLet
-            with applicand as Abstraction(_, _, body)
-                (getTermTag(applicand), argument) :: getDefinitions(body)
-            []
-        []
-    []
 
 
 define main(input)

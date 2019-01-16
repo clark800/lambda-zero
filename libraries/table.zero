@@ -1,7 +1,7 @@
 #* table.zero
 
-Table(k, v) ::= {
-    Table(_compare : (k => k => 𝔹), _data : BinaryTree(AADatum(k && v)))
+TableT(k, v) ::= {
+    Table(_compare : (k => k => 𝔹), _data : BinaryTree(AADatumT(k && v)))
 }
 
 newTable((=<), entries) := Table((=<), Tip.extendAA((=<), first, entries))

@@ -41,20 +41,27 @@ define parseParameterType(node, context)
     if isName(node)
         tag := getTag(node)
         context.lookup(getLexeme(node)) ?? Construction(tag, [])
+    with node as Arrow(tag, arrowType, _, parameter, body)
+        with arrowType as DoubleArrow
+            left := parseParameterType(parameter, context)
+            right := parseParameterType(body, context)
+            Implication(tag, left, right)
+        syntaxError("invalid arrow in annotation", node)
     root := getHead(node)
     name := getLexeme(root)
     if context.hasKey(name)
         syntaxError("type variable not allowed in applicand position", node)
     parameterTypes := getArguments(node).map(`parseParameterType(context))
-    if name =*= "=>"
-        if length(parameterTypes) =/= 2
-            syntaxError("(=>) requires two arguments", node)
-        with parameterTypes as left :: parameterTypes'
-            with parameterTypes' as right :: _
-                Implication(getTermTag(left), left, right)
-            syntaxError("(=>) requires two arguments", node)
-        syntaxError("(=>) requires two arguments", node)
     Construction(getTag(root), parameterTypes)
+
+
+define newReconstructorType(context, parameterTypeASTs, returnType)
+    with parameterTypeASTs as typeAST :: parameterTypeASTs'
+        parameterType := parseParameterType(typeAST, context)
+        bodyType := newReconstructorType(context,
+            parameterTypeASTs', returnType)
+        Implication(getTermTag(parameterType), parameterType, bodyType)
+    returnType
 
 
 define parseConstruction(node)
@@ -69,15 +76,6 @@ define parseConstruction(node)
     context := newDictionary(zip(components.map(getLexeme), parameterTypes))
     type := Construction(getTag(root), parameterTypes)
     (type, parameterTypes, context)
-
-
-define newReconstructorType(context, parameterTypeASTs, returnType)
-    with parameterTypeASTs as typeAST :: parameterTypeASTs'
-        parameterType := parseParameterType(typeAST, context)
-        bodyType := newReconstructorType(context,
-            parameterTypeASTs', returnType)
-        Implication(getTermTag(parameterType), parameterType, bodyType)
-    returnType
 
 
 define newConstructorScheme(tag, parameterTypeASTs, adtTypeAST)
@@ -204,13 +202,27 @@ define getNumeralType(stack)
     fallback
 
 
+define getAnnotation(node)
+    with node as Juxtaposition(_, left, right)
+        with left as Juxtaposition(_, left', _)
+            if isThisName(left', ":")
+                right
+            syntaxError("missing annotation", node)
+        syntaxError("missing annotation", node)
+    syntaxError("missing annotation", node)
+
+
 define bind(level, stack, node)
     match node
         case Reference(tag, debruijn)
             if debruijn = 0
                 bindName(level, stack, tag)
             Variable(tag, debruijn)
-        case Arrow(tag, _, constructorNames, parameter, body)
+        case Arrow(tag, arrowType, constructorNames, parameter, body)
+            with arrowType as DoubleArrow
+                parameterTerm := bind(level, stack, parameter)
+                bodyTerm := bind(level, stack, body)
+                Implication(tag, parameterTerm, bodyTerm)
             stack' := stack.pushParameter(parameter, level, Void)
             bodyTerm := bind(up level, stack', body)
             if isNil(constructorNames)
@@ -240,8 +252,19 @@ define bind(level, stack, node)
             syntaxError("comma not inside brackets", node)
         case Section(_, _, _)
             syntaxError("invalid section", node)
-        case SetBuilder(_, _)
+        case ADT(_, _)
             syntaxError("must appear on the right side of '::='", node)
+        case ADT(tag, forms)
+            # the parameters are already on the stack at this point
+            implicit := Name(veil(tag))
+            stack' := stack.pushParameter(implicit, level, Void)
+            returnType := Variable(renameTag(tag, "r", NOFIX), 0)
+            annotations := forms.map(getArguments).map(map(getAnnotation))
+            boundAnnotations := annotations.map(map(bind(up level, stack')))
+            boundTypes := boundAnnotations.map(
+                fold(Implication(veil(tag)), returnType))
+            bodyType := boundTypes.fold(Implication(veil(tag)), returnType)
+            Implicit(getTermTag(returnType), Top(tag), bodyType)
         case Constructor(tag, parameterTypes, adtType, function, count, index)
             scheme := newConstructorScheme(tag, parameterTypes, adtType)
             with function as Number(_, value)

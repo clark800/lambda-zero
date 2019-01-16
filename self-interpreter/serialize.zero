@@ -20,6 +20,10 @@ define serialize(closure)
                 "(" ++ serialize'(Closure(parameter, environment), depth) ++
                 " ⇒ " ++ serialize'(Closure(body, environment), depth + 1) ++
                 ")"
+            case Implication(tag, type, body)
+                "(" ++ serialize'(Closure(type, environment), depth) ++
+                " ⇝ " ++ serialize'(Closure(body, environment), depth + 1) ++
+                ")"
             case Application(_, _, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++
                 " " ++ serialize'(Closure(argument, environment), depth) ++ ")"

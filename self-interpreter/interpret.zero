@@ -28,8 +28,19 @@ define evaluateMain(Closure(main, environment), input)
         runtimeError("expected string from", tag)
 
 
+define showDefinition((tag, definiens))
+    getTagLexeme(tag) ++ " := " ++ showTerm(definiens)
+
+
+define showDefinitions(term)
+    getDefinitions(term).map(showDefinition).joinWith("\n")
+
+
 define main(input)
     (code, input') := splitCodeAndInput(input)
+    term := parse(code)
+    if code.startsWith("#% dump")
+        showDefinitions(term)
     closure := evaluateTerm(parse(code))
     if isMain(getTerm(closure))
         evaluateMain(closure, input')

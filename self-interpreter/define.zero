@@ -3,38 +3,53 @@
 define isTupleConstructor(node)
     isName(node) and getLexeme(node).startsWith(",")
 
+
 define isTuple(node)
     with node as Juxtaposition(_, left, _)
         isTuple(left)
     isTupleConstructor(node)
+
 
 define applyPlainDefinition(tag, name, value, scope)
     if isName(name)
         Let(tag, name, value, scope)
     Juxtaposition(tag, newPatternArrow(name, scope), value)
 
+
 define applyMaybeDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust", NOFIX)),
         newPatternArrow(name, scope)), value)
+
 
 define applyTryDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag,
         Name(renameTag(tag, "onRight", NOFIX)),
         newPatternArrow(name, scope)), value)
 
+
+define applyFix(name, value)
+    tag := getTag(name)
+    fix' := Name(renameTag(tag, "fix", NOFIX))
+    Juxtaposition(tag, fix', LockedArrow(name, value))
+
+
 define transformRecursion(name, value)
     if not isName(name) or not isArrow(value) or not containsName(name, value)
         value
-    tag := getTag(name)
-    fix' := Name(renameTag(tag, "fix", NOFIX))
-    Juxtaposition(tag, fix', LockedArrow(Name(tag), value))
+    applyFix(name, value)
+
 
 define isValidPattern(node)
     if isName(node)
         True
     with node as Juxtaposition(_, left, right)
         isValidPattern(left) and isValidPattern(right)
+    with node as Arrow(_, arrowType, _, left, right)
+        with arrowType as DoubleArrow
+            isValidPattern(left) and isValidPattern(right)
+        False
     False
+
 
 define isValidConstructorParameter(parameter)
     with parameter as Juxtaposition(_, left, right)
@@ -45,6 +60,7 @@ define isValidConstructorParameter(parameter)
                 (isThisName(left', ":") or isThisName(left', "∈"))
         False
     False
+
 
 define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
     if not isValidConstructorParameter(parameter)
@@ -63,6 +79,7 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
             applyPlainDefinition(tag, name, accessor, scope)
         syntaxError("invalid constructor parameter", parameter)
     syntaxError("invalid constructor parameter", parameter)
+
 
 define readParameterTypes(form)
     with form as Juxtaposition(_, left, right)
@@ -135,8 +152,15 @@ define applyADTDefinition(tag, left, right, scope)
         ms := forms.map(length <> getArguments)
         scope' := zip(forms, 0...).fold(
             newConstructorDefinitions(tag, left, n, ms), scope)
-        undefined' := Name(renameTag(tag, "(undefined)", NOFIX))
-        applyPlainDefinition(tag, getHead(left), undefined', scope')
+        name := getHead(left)
+        parameters := getArguments(left)
+        # todo: use the same method for parameters as with normal functions
+        if not parameters.all(isName)
+            syntaxError("parameters to type constructor must be names", name)
+        value := parameters.fold(LockedArrow, ADT(getTag(name), forms))
+        value' := if forms.any(containsName(name)) then
+            applyFix(name, value) else value
+        applyPlainDefinition(tag, name, value', scope')
     syntaxError("internal error", left)
 
 
@@ -161,6 +185,7 @@ define reduceDefine'(tag, definitionType, left, right)
         applyPlainDefinition(tag, name, value, name)
     Definition(tag, definitionType, name, transformRecursion(name, value))
 
+
 define reduceDefine(operator, left, right)
     tag := getTag(operator)
     if isDefinition(right)   # todo: remove after converting exceptions
@@ -174,6 +199,7 @@ define reduceDefine(operator, left, right)
             reduceDefine'(tag, SyntaxDefinition, right', right)
         reduceDefine'(tag, PlainDefinition, left, right)
     reduceDefine'(tag, PlainDefinition, left, right)
+
 
 define reduceADTDefine(operator, left, right)
     if not isValidPattern(left)
