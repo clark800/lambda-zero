@@ -1,12 +1,19 @@
 #* lex.zero
 
+NOFIX := 0
+PREFIX := 1
+INFIX := 2
+POSTFIX := 3
+OPENFIX := 4
+CLOSEFIX := 5
+
 Location ::= {Location(_file : List(ℕ), _line : ℕ, _column : ℕ)}
 Tag ::= {
     Tag(getTagLexeme : List(ℕ), getTagFixity : ℕ, getTagLocation : Location)
 }
 
 renameTag(Tag(_, _, location), lexeme, fixity) := Tag(lexeme, fixity, location)
-veil(tag) := renameTag(tag, "_", 0)
+veil(tag) := renameTag(tag, "_", NOFIX)
 setTagLocation(location, Tag(lexeme, fixity, _)) :=
     Tag(lexeme, fixity, location)
 addPrefix(Tag(lexeme, fixity, location), prefix) :=
@@ -89,7 +96,8 @@ define splitLexemes(splitter, location, string)
         []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
-    Tag(lexeme, 0, location) :: remaining.splitLexemes(splitter, nextLocation)
+    Tag(lexeme, NOFIX, location) ::
+        remaining.splitLexemes(splitter, nextLocation)
 
 define scan(string)
     string.splitLexemes(splitLexeme, Location("", 1, 1))
@@ -101,11 +109,12 @@ define showLocation(Location(file, line, column))
 define showFullTag(Tag(lexeme, _, location))
     "'" ++ lexeme ++ "' at " ++ showLocation(location)
 
-define showTag(Tag(lexeme, _, _))
+define showTag(Tag(lexeme, fixity, _))
     with lexeme as c :: _
         if c = 0 then "\\0"
         if c = '\n' then "\\n"
-        lexeme
+        if fixity = NOFIX then lexeme
+        "(" ++ lexeme ++ ")"
     "\\0"
 
 
@@ -146,10 +155,10 @@ define showToken(token)
     showTag(getTokenTag(token))
 
 define noTag
-    Tag("", 0, Location("", 0, 0))
+    Tag("", NOFIX, Location("", 0, 0))
 
 define START
-    Token(Tag("\0", 0, Location("", 0, 0)), Symbolic)
+    Token(Tag("\0", NOFIX, Location("", 0, 0)), Symbolic)
 
 define lex(string)
     pairs(scan(string) ++ [noTag]).map(uncurry(createToken))

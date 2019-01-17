@@ -29,7 +29,6 @@ declare -a files=(
     "$DIR/types.zero"
     "$DIR/show.zero"
     "$DIR/errors.zero"
-    "$DIR/declarations.zero"
     "$DIR/inference.zero"
 )
 

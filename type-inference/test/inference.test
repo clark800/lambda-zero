@@ -6,6 +6,14 @@ f'(x, y) := y(x)
 
 f''(x, y) := x(y)
 
+fix := x -> x  # dummy definition
+
+syntax(:) := infix(13)
+
+𝔹 ::= {False, True}
+
+ℕ ::= {0, up(down : ℕ)}
+
 syntax(*) := infixL(18)
 
 g(x) := x * x
@@ -14,23 +22,17 @@ syntax(>) := infix(13)
 
 h(x, y) := x > y
 
-𝔹 ::= {false, true}
+v(x) := True
 
-v(x) := true
-
-if(c, a, b) := c |> false -> a; true -> b
+if(c, a, b) := c |> False -> a; True -> b
 
 syntax(=) := infix(13)
 
 c(a) := if(a = 0, 1, a)
 
-syntax(:) := infix(13)
-
-ℕ ::= {0, up(down : ℕ)}
-
 Pair(a, b) ::= {(first : a, second : b)}
 
-p := (true, c(1))
+p := (True, c(1))
 
 q(x, y) := (x, y)
 
@@ -42,7 +44,7 @@ syntax(::) := infixR(15)
 
 List(a) ::= {[], (head : a) :: (tail : List(a))}
 
-list := [1 + 2, c(3), first(q(1, true)), f'(2, c)]
+list := [1 + 2, c(3), first(q(1, True)), f'(2, c)]
 
 list' := [x -> x, y -> y, x -> y -> y]
 
@@ -50,9 +52,7 @@ swap((x, y)) := (y, x)
 
 string := "test"
 
-e := if(true, 1, abort("..."))
-
-fix := x -> x  # dummy definition
+e := if(True, 1, abort("..."))
 
 repeat(x) := x :: repeat(x)
 
