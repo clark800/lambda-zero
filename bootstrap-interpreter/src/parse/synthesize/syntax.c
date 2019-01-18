@@ -81,7 +81,8 @@ static Node* reduceWith(Node* operator, Node* asPattern, Node* withBlock) {
     Node* fallback = SimpleArrow(Underscore(tag, 0), elseBlock);
     Node* function = combineCases(tag, caseArrow, fallback);
     release(hold(caseArrow));
-    return UnderscoreArrow(tag, Juxtaposition(tag, function, expression));
+    return LockedArrow(FixedName(tag, "pass"),
+        Juxtaposition(tag, function, expression));
 }
 
 static Node* reduceNewline(Node* operator, Node* left, Node* right) {
