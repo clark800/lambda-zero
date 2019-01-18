@@ -79,7 +79,8 @@ define reduceWith(operator, asPattern, withBlock)
         caseArrow := newCaseArrow(pattern, withBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
         function := combineCases(tag, caseArrow, fallback)
-        UnderscoreArrow(tag, Juxtaposition(tag, function, expression))
+        LockedArrow(Name(renameTag(tag, "pass", NOFIX)),
+            Juxtaposition(tag, function, expression))
     syntaxError("expected as pattern to right of", operator)
 
 
