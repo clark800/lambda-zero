@@ -29,8 +29,6 @@ define evaluate(closure @ Closure(term, environment), stack)
         case Application(_, _, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
-        case Construction(tag, _)
-            runtimeError("Construction", tag)
         case Numeral(tag, type, n)
             with stack as _ :: _
                 numeral := expandNumeral(tag, type, n)

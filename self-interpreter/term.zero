@@ -1,9 +1,11 @@
 #* term.zero
 
-Constraint ::= {
-    Ascription(_ : Scheme),
-    Annotation(_ : Scheme),
-    PolarAnnotation(_ : Scheme, _ : Scheme)
+SchemeT(term) ::= {Scheme(getUniversals : List(term), getType : term)}
+
+Constraint(term) ::= {
+    Ascription(_ : SchemeT(term)),
+    Annotation(_ : SchemeT(term)),
+    PolarAnnotation(_ : SchemeT(term), _ : SchemeT(term))
 }
 
 Closure(term) ::= {Closure(
@@ -15,18 +17,15 @@ Term ::= {
     Top(_ : Tag),
     Variable(_ : Tag, _debruijn : ℕ),
     MetaVariable(_ : Tag, _id : ℕ),
-    Abstraction(_ : Tag, _ : Constraint, _body : Term),
+    Abstraction(_ : Tag, _ : Constraint(Term), _body : Term),
     Implication(_ : Tag, _antecedent : Term, _consequent : Term),
     Implicit(_ : Tag, _type : Term, _body : Term),
     Application(_ : Tag, _let : 𝔹, _applicand : Term, _argument : Term),
-    Construction(_ : Tag, _components : List(Term)),
     Numeral(_ :  Tag, _type : Term, _value : ℕ),
     Operation(_ : Tag, _type : Term, _arity : ℕ, _operator :
         ((Closure(Term) => Closure(Term)) =>
             List(Closure(Term)) => Closure(Term)))
 }
-
-Scheme ::= {Scheme(getUniversals : List(Term), getType : Term)}
 
 NoConstraint := Annotation(Scheme([v], v)) where v := MetaVariable(noTag, 0)
 
@@ -38,7 +37,6 @@ define getTermTag
     Implication(tag, _, _) -> tag
     Implicit(tag, _, _) -> tag
     Application(tag, _, _, _) -> tag
-    Construction(tag, _) -> tag
     Numeral(tag, _, _) -> tag
     Operation(tag, _, _, _) -> tag
 
@@ -50,9 +48,15 @@ isAbstraction := Abstraction(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _, _) -> True; _ -> False
-isConstruction := Construction(_, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
+
+
+define splitSpine(term)
+    with term as Application(_, _, left, right)
+        (applicand, arguments) := splitSpine(left)
+        (applicand, arguments ++ [right])
+    (term, [])
 
 
 define setAscription(scheme, term)
@@ -143,7 +147,6 @@ define setTag(tag)
     Implication(_, parameter, body) -> Implication(tag, parameter, body)
     Implicit(_, type, body) -> Implication(tag, type, body)
     Application(_, isLet, left, right) -> Application(tag, isLet, left, right)
-    Construction(_, parameters) -> Construction(tag, parameters)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, type, arity, operator) -> Operation(tag, type, arity, operator)
 
@@ -152,12 +155,19 @@ define setLocation(Tag(_, _, location), term)
     term.setTag(getTermTag(term).setTagLocation(location))
 
 
+define sameHeadConstructor(a, b)
+    headA := first(splitSpine(a))
+    headB := first(splitSpine(b))
+    getTagLexeme(getTermTag(headA)) =*= getTagLexeme(getTermTag(headB))
+
+
 define sameHead(term)
     case Top(_)
         isTop(term)
-    case Variable(_, debruijn)
-        with term as Variable(_, debruijn')
-            debruijn = debruijn'
+    case Variable(tag, _)
+        with term as Variable(tag', _)
+            # todo: fix this
+            getTagLexeme(tag) =*= getTagLexeme(tag')
         False
     case MetaVariable(_, address)
         with term as MetaVariable(_, address')
@@ -169,11 +179,9 @@ define sameHead(term)
         isImplication(term)
     case Implicit(_, _, _)
         isImplicit(term)
-    case Application(_, _, _, _)
-        isApplication(term)
-    case Construction(tag, parameters)
-        with term as Construction(tag', parameters')
-            getTagLexeme(tag) =*= getTagLexeme(tag')
+    case Application(_, _, left, _)
+        with term as Application(_, _, left', _)
+            sameHeadConstructor(left, left')
         False
     case Numeral(_, _, value)
         with term as Numeral(_, _, value')
@@ -192,8 +200,7 @@ define getComponents
     Abstraction(_, _, body) -> [body]
     Implication(_, parameter, body) -> [parameter, body]
     Implicit(_, type, body) -> [type, body]
-    Application(_, _, left, right) -> [left, right]
-    Construction(_, parameters) -> parameters
+    Application(_, _, left, right) -> second(splitSpine(left)) ++ [right]
     Numeral(_, _, _) -> []
     Operation(_, _, _, _) -> []
 
@@ -210,9 +217,7 @@ define mapComponents(f, term)
         Implicit(tag, type, body) ->
             Implication(tag, f(type), f(type))
         Application(tag, isLet, left, right) ->
-            Application(tag, isLet, f(left), f(right))
-        Construction(tag, parameters) ->
-            Construction(tag, parameters.map(f))
+            Application(tag, isLet, mapComponents(f, left), f(right))
         Numeral(_, _, _) -> term
         Operation(_, _, _, _) -> term
 
@@ -223,16 +228,23 @@ define getSuffix(count, index)
     showNatural(index).map(x -> subscripts.safeAt(x -- '0') ?? "").join
 
 
-define showConstruction(Tag(name, fixity, _), arguments)
-    with arguments as argument :: arguments'
+define showApplication(showTerm, applicand, argument)
+    (headTerm, applicandArguments) := splitSpine(applicand)
+    headTag := getTermTag(headTerm)
+    arguments := applicandArguments ++ [argument]
+    argumentStrings := arguments.map(showTerm)
+    with argumentStrings as argumentString :: argumentStrings'
+        fixity := getTagFixity(headTag)
+        lexeme := getTagLexeme(headTag)
         if fixity = INFIX and length(arguments) = 2
-            "(" ++ (argument :: name :: arguments').joinWith(" ") ++ ")"
+            items := argumentString :: lexeme :: argumentStrings'
+            "(" ++ items.joinWith(" ") ++ ")"
         if fixity = PREFIX and length(arguments) = 1
-            name ++ "(" ++ argument ++ ")"
+            lexeme ++ "(" ++ argumentString ++ ")"
         if fixity = POSTFIX and length(arguments) = 1
-            "(" ++ argument ++ ")" ++ name
-        name ++ "(" ++ arguments.joinWith(", ") ++ ")"
-    name
+            "(" ++ argumentString ++ ")" ++ lexeme
+        showTag(headTag) ++ "(" ++ argumentStrings.joinWith(", ") ++ ")"
+    showTag(headTag)
 
 
 define showMetaVariable(n)
@@ -256,9 +268,7 @@ define showTerm
     Implicit(tag, type, body) ->
         "(" ++ showTag(tag) ++ " ⇝ " ++ showTerm(body) ++ ")"
     Application(_, _, applicand, argument) ->
-        "(" ++ showTerm(applicand) ++ " " ++ showTerm(argument) ++ ")"
-    Construction(tag, parameters) ->
-        showConstruction(tag, parameters.map(showTerm))
+        showApplication(showTerm, applicand, argument)
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _, _) -> showTag(tag)
 

@@ -1,12 +1,5 @@
 #* ast.zero
 
-NOFIX := 0
-PREFIX := 1
-INFIX := 2
-POSTFIX := 3
-OPENFIX := 4
-CLOSEFIX := 5
-
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
 ArrowType ::= {Simple, Strict, Locked, DoubleArrow}

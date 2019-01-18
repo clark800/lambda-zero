@@ -156,12 +156,17 @@ define infer(stack, variables)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
         (returnType, unify(variables''', (applicandType, functionType)))
-    case Construction(tag, _)
-        (Top(veil(tag)), variables)
     case Numeral(tag, type, value)
         (type, variables)
     case Operation(tag, type, _, _)
-        getBuiltinType(tag, variables)
+        Scheme([MetaVariable(noTag, 0)], type).instantiate(tag, variables)
+
+
+define getFixScheme(tag)
+    syntax(>->) := syntax(++)
+    (>->) := Implication(tag)
+    a := MetaVariable(veil(tag), 0)
+    Scheme([a], (a >-> a) >-> a)
 
 
 define inferType(stack, definition)

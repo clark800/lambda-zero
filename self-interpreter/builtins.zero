@@ -2,7 +2,7 @@
 
 define getBuiltin(tag)
     tag' := veil(tag)
-    typeN := Construction(renameTag(noTag, "#NATURAL#", NOFIX), [])
+    typeN := Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
     maxInteger := 9223372036854775807
 
     define checkNatural(term)
