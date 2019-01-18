@@ -45,11 +45,11 @@ define seekTree(n, size, tree)
             seekTree(n -- size' -- 1, size', right)
 
 
-define list.seek(n)
+define list.pick(n)
     match list
         case []; Void
         case (size, tree) :: rest
-            if n < size then seekTree(n, size, tree) else rest.seek(n -- size)
+            if n < size then seekTree(n, size, tree) else rest.pick(n -- size)
 
 
 define updateTree(n, x, size, tree)

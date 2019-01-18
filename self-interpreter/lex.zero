@@ -7,9 +7,9 @@ POSTFIX := 3
 OPENFIX := 4
 CLOSEFIX := 5
 
-Location ::= {Location(_file : List(ℕ), _line : ℕ, _column : ℕ)}
-Tag ::= {
-    Tag(getTagLexeme : List(ℕ), getTagFixity : ℕ, getTagLocation : Location)
+LocationT ::= {Location(_file : List(ℕ), _line : ℕ, _column : ℕ)}
+TagT ::= {
+    Tag(getTagLexeme : List(ℕ), getTagFixity : ℕ, getTagLocation : LocationT)
 }
 
 renameTag(Tag(_, _, location), lexeme, fixity) := Tag(lexeme, fixity, location)
@@ -122,7 +122,7 @@ TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
     Comment, Invalid
 }
-Token ::= {Token(getTokenTag : Tag, getTokenCode : TokenCode)}
+Token ::= {Token(getTokenTag : TagT, getTokenCode : TokenCode)}
 
 define createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
     with nextLexeme as c :: _

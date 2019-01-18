@@ -31,75 +31,75 @@ define maybeAscription(node)
     Void
 
 
-define findScheme(lexeme, stack)
-    with findDefiniens(stack, lexeme) as Just((_, term))
+define findScheme(lexeme, context)
+    with context.lookup(lexeme) as Just(((_, term), _))
         maybeAscription(term)
     Void
 
 
-define getNaturalType(stack)
-    findScheme("0", stack).mapJust(getType) ??
+define getNaturalType(context)
+    context.findScheme("0").mapJust(getType) ??
         Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
 
 
-define getBooleanType(stack)
-    findScheme("False", stack).mapJust(getType) ??
+define getBooleanType(context)
+    context.findScheme("False").mapJust(getType) ??
         Variable(renameTag(noTag, "#BOOLEAN#", NOFIX), 0)
 
 
-define getStringType(stack, tag)
-    natural := getNaturalType(stack)
-    listType := findScheme("[]", stack).mapJust(getType) ??
+define getStringType(context, tag)
+    natural := getNaturalType(context)
+    listType := context.findScheme("[]").mapJust(getType) ??
         parseError("List not defined", tag)
     with listType as Application(_, left, _)
         Application(noTag, left, natural)
     parseError("List type invalid", tag)
 
 
-define getOperationType(stack, tag)
+define getOperationType(context, tag)
     lexeme := getTagLexeme(tag)
     syntax(>->) := syntax(++)
     (>->) := Implication(noTag)
     if ["+", "--", "*", "//", "%"].any(=*= lexeme)
-        natural := getNaturalType(stack)
+        natural := getNaturalType(context)
         Just(natural >-> natural >-> natural)
     if ["=", "=/=", "<", ">", "<=", ">="].any(=*= lexeme)
-        natural := getNaturalType(stack)
-        boolean := getBooleanType(stack)
+        natural := getNaturalType(context)
+        boolean := getBooleanType(context)
         Just(natural >-> natural >-> boolean)
     if lexeme =*= "(increment)"
-        natural := getNaturalType(stack)
+        natural := getNaturalType(context)
         Just(natural >-> natural)
     if lexeme =*= "(undefined)"
         Just(MetaVariable(noTag, 0))
     if lexeme =*= "abort"
-        string := getStringType(stack, tag)
+        string := getStringType(context, tag)
         Just(string >-> MetaVariable(noTag, 0))
     Void
 
 
-define bindOperation(stack, tag)
+define bindOperation(context, tag)
     maybe (arity, optimize) := getBuiltin(tag)
-    maybe type := getOperationType(stack, tag)
+    maybe type := getOperationType(context, tag)
     Just(Operation(tag, type, arity, optimize))
 
 
-define bindStackVariable(level, stack, tag)
+define bindVariable(level, stack, tag)
     lexeme := getTagLexeme(tag)
     maybe (debruijn, maybeValue) := findParameter(level, stack, lexeme)
     Just(Variable(tag, debruijn))
 
 
-define bindContextVariable(context, tag)
-    context.lookup(getTagLexeme(tag))
+define bindContextTerm(context, tag)
+    context.lookup(getTagLexeme(tag)).mapJust(second)
 
 
 define bindName(level, stack, context, tag)
     if isUnused(tag)
         parseError("cannot reference a symbol starting with underscore", tag)
-    bindContextVariable(context, tag) ??
-        bindStackVariable(level, stack, tag) ??
-        bindOperation(stack, tag) ??
+    bindVariable(level, stack, tag) ??
+        bindContextTerm(context, tag) ??
+        bindOperation(context, tag) ??
         parseError("undefined symbol", tag)
 
 
@@ -143,7 +143,7 @@ define maybeCount(node)
     Void
 
 
-define maybeIndex(node)
+define maybeConstructorIndex(node)
     with node as Constructor(_, _, _, _, _, index)
         Just(index)
     Void
@@ -163,7 +163,7 @@ define constructCaseAnnotation(tag, constructorPairs)
     if length(names) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
     count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
-    indices := constructors.map(maybeIndex).prune
+    indices := constructors.map(maybeConstructorIndex).prune
     if length(indices) < count
         throwError("Type error: missing case:", tag)
     if length(indices) > count
@@ -186,10 +186,10 @@ define constructCaseAnnotation(tag, constructorPairs)
         Scheme([returnType], objectType))
 
 
-define buildCaseAnnotation(tag, constructorNames, stack)
-    with constructorNames.map(getLexeme).map(findDefiniens(stack)).sequence as
+define buildCaseAnnotation(tag, constructorNames, context)
+    with constructorNames.map(getLexeme).map(`lookup(context)).sequence as
             Just(constructorPairs)
-        (constructors, constructorTerms) := unzip(constructorPairs)
+        (constructors, constructorTerms) := unzip(constructorPairs.map(first))
         with constructorTerms.map(maybeAscription).sequence as Just(schemes)
             Just(constructCaseAnnotation(tag, zip(constructors, schemes)))
         Void
@@ -206,7 +206,7 @@ define getAnnotation(node)
     syntaxError("missing annotation", node)
 
 
-define createContext(adtTypeAST)
+define extendContext(adtTypeAST, context)
     name := getHead(adtTypeAST)
     components := getArguments(adtTypeAST)
     if not components.all(isName)
@@ -214,8 +214,9 @@ define createContext(adtTypeAST)
     tags := components.map(getTag)
     # note: metavariable 0 is reserved for the polymorphic return type
     parameterTypes := zip(tags, 1 ...).map(uncurry(MetaVariable))
-    context := newDictionary(zip(components.map(getLexeme), parameterTypes))
-    (context, parameterTypes)
+    values := zip(zip(components, parameterTypes), parameterTypes)
+    entries := zip(components.map(getLexeme), values)
+    (context.extendTable(entries), parameterTypes)
 
 
 define bind(level, stack, context, node)
@@ -233,7 +234,7 @@ define bind(level, stack, context, node)
             bodyTerm := body.bind(up level, stack', context)
             if isNil(constructorNames)
                 Abstraction(getTag(parameter), NoConstraint, bodyTerm)
-            with buildCaseAnnotation(tag, constructorNames, stack) as
+            with buildCaseAnnotation(tag, constructorNames, context) as
                     Just(annotation)
                 Abstraction(getTag(parameter), annotation, bodyTerm)
             syntaxError("invalid constructors", node)
@@ -247,7 +248,7 @@ define bind(level, stack, context, node)
             abstraction := Abstraction(getTag(name), NoConstraint, scopeTerm)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
-            Numeral(tag, getNaturalType(stack), value)
+            Numeral(tag, getNaturalType(context), value)
         case Operator(_, _, _)
             abort "internal error: Operator reached bind"
         case Definition(_, _, _, _)
@@ -273,7 +274,7 @@ define bind(level, stack, context, node)
             bodyType := boundTypes.fold(Implication(veil(tag)), returnType)
             Implicit(getTermTag(returnType), Top(tag), bodyType)
         case Constructor(tag, parameterTypes, adtType, function, count, index)
-            (context', universals) := createContext(adtType)
+            (context', universals) := context.extendContext(adtType)
             parameterTypes' := parameterTypes.map(bind(level, stack, context'))
             adtType' := adtType.bind(level, stack, context')
             type := newReconstructorType(parameterTypes', adtType')
@@ -282,14 +283,14 @@ define bind(level, stack, context, node)
             scheme := Scheme(universals, type)
             function.bind(level, stack, context).setAscription(scheme)
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
-            (context', universals) := createContext(adtType)
+            (context', universals) := context.extendContext(adtType)
             parameterTypes' := parameterTypes.map(bind(level, stack, context'))
             adtType' := adtType.bind(level, stack, context')
             scheme := universals.newDeconstructorScheme(
                 tag, parameterTypes', adtType')
             function.bind(level, stack, context).setAscription(scheme)
         case Accessor(tag, adtType, returnType, function, count, index)
-            (context', universals) := createContext(adtType)
+            (context', universals) := context.extendContext(adtType)
             adtType' := adtType.bind(level, stack, context')
             returnType' := returnType.bind(level, stack, context')
             type := Implication(tag, adtType', returnType')
@@ -299,9 +300,38 @@ define bind(level, stack, context, node)
             abort "internal error: Null reached bind"
 
 
-define bindAST(node)
-    context := newDictionary([])
+define bindGlobal(context, node)
     stack := [newDictionary([])]
     bind(0, stack, context, node)
+
+
+define bindDefinition(state, (tag, isTypeConstructor, node))
+    (tags, context, environment) := state
+    term := bindGlobal(context, node)
+    (index, environment') := environment.allocate(Closure(term, environment))
+    constant := Constant(tag, isTypeConstructor, index)
+    context' := context.set(getTagLexeme(tag), ((node, term), constant))
+    (tag :: tags, context', environment')
+
+
+define getDefinitions(node)
+    with node as Let(tag, name, value, scope)
+        # TODO: set isTypeConstructor
+        (getTag(name), False, value) :: getDefinitions(scope)
+    [(veil(getTag(node)), False, node)]
+
+
+define maybeIndex(term)
+    with term as Constant(_, _, index)
+        Just(index)
+    Void
+
+
+define bindAST(node)
+    # TODO: make state a parameter so we can bind with an existing state
+    state := ([], newDictionary([]), newStore([]))
+    state' := getDefinitions(node).cascade(bindDefinition, state)
+    (tags, context, environment) := state'
+    (reverse(tags), context, environment)
 
 #*

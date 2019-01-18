@@ -10,19 +10,20 @@ Constraint(term) ::= {
 
 Closure(term) ::= {Closure(
     getTerm : term,
-    getEnvironment : List(ℕ && FullBinaryTree(Closure(term)))
+    getEnvironment : StoreT(Closure(term))
 )}
 
 Term ::= {
-    Top(_ : Tag),
-    Variable(_ : Tag, _debruijn : ℕ),
-    MetaVariable(_ : Tag, _id : ℕ),
-    Abstraction(_ : Tag, _ : Constraint(Term), _body : Term),
-    Implication(_ : Tag, _antecedent : Term, _consequent : Term),
-    Implicit(_ : Tag, _type : Term, _body : Term),
-    Application(_ : Tag, _applicand : Term, _argument : Term),
-    Numeral(_ :  Tag, _type : Term, _value : ℕ),
-    Operation(_ : Tag, _type : Term, _arity : ℕ, _operator :
+    Top(_ : TagT),
+    Constant(_ : TagT, _isTypeConstructor : 𝔹, _id : ℕ),
+    Variable(_ : TagT, _debruijn : ℕ),
+    MetaVariable(_ : TagT, _id : ℕ),
+    Abstraction(_ : TagT, _ : Constraint(Term), _body : Term),
+    Implication(_ : TagT, _antecedent : Term, _consequent : Term),
+    Implicit(_ : TagT, _type : Term, _body : Term),
+    Application(_ : TagT, _applicand : Term, _argument : Term),
+    Numeral(_ :  TagT, _type : Term, _value : ℕ),
+    Operation(_ : TagT, _type : Term, _arity : ℕ, _operator :
         ((Closure(Term) => Closure(Term)) =>
             List(Closure(Term)) => Closure(Term)))
 }
@@ -31,6 +32,7 @@ NoConstraint := Annotation(Scheme([v], v)) where v := MetaVariable(noTag, 0)
 
 define getTermTag
     Top(tag) -> tag
+    Constant(tag, _, _) -> tag
     Variable(tag, _) -> tag
     MetaVariable(tag, _) -> tag
     Abstraction(tag, _, _) -> tag
@@ -42,6 +44,7 @@ define getTermTag
 
 
 isTop := Top(_) -> True; _ -> False
+isConstant := Constant(_, _, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isAbstraction := Abstraction(_, _, _) -> True; _ -> False
@@ -141,6 +144,7 @@ define maybeIsNil(term)
 
 define setTag(tag)
     Top(_) -> Top(tag)
+    Constant(_, isType, index) -> Constant(tag, isType, index)
     Variable(_, debruijn) -> Variable(tag, debruijn)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Abstraction(_, metadata, body) -> Abstraction(tag, metadata, body)
@@ -164,10 +168,11 @@ define sameHeadConstructor(a, b)
 define sameHead(term)
     case Top(_)
         isTop(term)
+    case Constant(_, _, index)
+        with term as Constant(_, _, index')
+            index = index'
+        False
     case Variable(tag, _)
-        with term as Variable(tag', _)
-            # todo: fix this
-            getTagLexeme(tag) =*= getTagLexeme(tag')
         False
     case MetaVariable(_, address)
         with term as MetaVariable(_, address')
@@ -195,6 +200,7 @@ define sameHead(term)
 
 define getComponents
     Top(_) -> []
+    Constant(_, _, _) -> []
     Variable(_, _) -> []
     MetaVariable(_, _) -> []
     Abstraction(_, _, body) -> [body]
@@ -208,6 +214,7 @@ define getComponents
 define mapComponents(f, term)
     match term
         Top(_) -> term
+        Constant(_, _, _) -> term
         Variable(_, _) -> term
         MetaVariable(_, _) -> term
         Abstraction(tag, metadata, body) ->
@@ -225,7 +232,7 @@ define mapComponents(f, term)
 define getSuffix(count, index)
     if count <= 1 or index = 0 then ""
     subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(index).map(x -> subscripts.safeAt(x -- '0') ?? "").join
+    showNatural(index).map(x -> subscripts.at(x -- '0') ?? "").join
 
 
 define showApplication(showTerm, applicand, argument)
@@ -250,13 +257,14 @@ define showApplication(showTerm, applicand, argument)
 define showMetaVariable(n)
     characters := ['a', 'b', 'c', 'd']
     if n < 4
-        [characters.safeAt(n) ?? '#']
-    showMetaVariable((n // 4) -- 1) ++ [characters.safeAt(n % 4) ?? '#']
+        [characters.at(n) ?? '#']
+    showMetaVariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
 
 
 define showTerm
     Top(_) -> "⊤"
-    Variable(tag, n) -> showTag(tag) #++ "#" ++ showNatural(n)
+    Constant(tag, _, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
+    Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
     MetaVariable(tag, n) -> showMetaVariable(n)
     Abstraction(tag, _, body) ->
         "(" ++ showTag(tag) ++ " ↦ " ++ showTerm(body) ++ ")"
@@ -276,15 +284,5 @@ define showTerm
 define showScheme(Scheme(universals, term))
     universals.map(universal -> "∀" ++ showTerm(universal) ++ " ").join ++
         showTerm(term)
-
-
-define getDefinitions(term)
-    with term as Application(_, applicand, argument)
-        with applicand as Abstraction(_, constraint, body)
-            with constraint as Annotation(_)
-                (getTermTag(applicand), argument) :: getDefinitions(body)
-            []
-        []
-    []
 
 #*

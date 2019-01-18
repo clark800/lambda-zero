@@ -116,12 +116,8 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
     // j is the index of the constructor parameter
     // m is the total number of parameters for this constructor
     // k = m - j - 1
+    Node* name = getHead(form);
     unsigned int m = getArgumentCount(form);
-    Node* node = form;
-    for (unsigned int k = 0; k < m; ++k, node = getLeft(node))
-        scope = newGetterDefinition(tag, getRight(node), scope, i, n,
-            m - k - 1, m);
-    Node* name = node;
 
     if (isNumber(form) && getValue(form) == 0) {
         Node* zero = FixedName(getTag(form), "0");
@@ -144,7 +140,13 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
             Underscore(tag, (unsigned long long)(n + m - j)));
     for (unsigned int q = 0; q < n + m; ++q)
         constructor = UnderscoreArrow(tag, constructor);
-    return applyPlainDefinition(tag, name, constructor, scope);
+    scope = applyPlainDefinition(tag, name, constructor, scope);
+
+    Node* node = form;
+    for (unsigned int k = 0; k < m; ++k, node = getLeft(node))
+        scope = newGetterDefinition(tag, getRight(node), scope, i, n,
+            m - k - 1, m);
+    return scope;
 }
 
 static Node* newFallbackCase(Tag tag, unsigned int m) {
@@ -183,10 +185,12 @@ Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
         ms[n - i - 1] = getArgumentCount(getRight(node));
 
     node = forms;
+    // define deconstructor first in case the constructor name is the same
+    // as the ADT name: this ensures that we always bind the ADT name
     for (unsigned int i = 0; i < n; ++i, node = getLeft(node)) {
         Node* form = getRight(node);
-        scope = newDeconstructorDefinition(tag, form, scope, ms, n - i - 1, n);
         scope = newConstructorDefinition(tag, form, scope, n - i - 1, n);
+        scope = newDeconstructorDefinition(tag, form, scope, ms, n - i - 1, n);
     }
 
     // define ADT name as outermost definition

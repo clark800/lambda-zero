@@ -1,7 +1,7 @@
 #* prelude.zero
 
 id(x) ≔ x
-constant(x) ≔ _ ↦ x
+const(x) ≔ _ ↦ x
 f of x ≔ f(x)
 match x to f ≔ f(x)
 f ∘ g ≔ x ↦ f(g(x))
@@ -98,7 +98,7 @@ fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
 cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
 xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
-length(xs) ≔ xs.fold(constant(↑), 0)
+length(xs) ≔ xs.fold(const(↑), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
 drop(n, xs) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ xs′.drop(n′))
 take(n, xs) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
@@ -110,8 +110,8 @@ safeHead(xs) ≔ xs ⦊ [] ↦ Void; x ∷ _ ↦ Just(x)
 safeTail(xs) ≔ xs ⦊ [] ↦ Void; _ ∷ xs ↦ Just(xs)
 safeLast(xs) ≔ xs ⦊ [] ↦ Void;
     x ∷ xs′ ↦ (xs′ ⦊ [] ↦ Just(x); _ ∷ _ ↦ safeLast(xs′))
-safeAt(n, xs) ≔ n ⦊ 0 ↦ safeHead(xs);
-    ↑ n′ ↦ (xs′.safeAt(n′) where maybe xs′ ≔ safeTail(xs))
+at(n, xs) ≔ n ⦊ 0 ↦ safeHead(xs);
+    ↑ n′ ↦ (xs′.at(n′) where maybe xs′ ≔ safeTail(xs))
 dropIf(p, ns) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
 takeWhile(p, xs) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(p, xs′) else []
@@ -159,6 +159,9 @@ cascadeMap(f, z, xs) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst(∷ ys), ([], z)).mapFirst(reverse)
 
 sort ≔ [] ↦ []; n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
+
+sortBy(≾) ≔ [] ↦ [];
+    n ∷ ns ↦ sortBy((≾), ns ¦ (≾ n)) ⧺ [n] ⧺ sortBy((≾), ns ¦ (not) ∘ (≾ n))
 
 deduplicateBy((≟), xs) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ x ∷ deduplicateBy((≟), xs′ ¦ (not) ∘ (≟ x))

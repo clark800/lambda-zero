@@ -42,7 +42,7 @@ define showPrettyScheme(Scheme(universals, type))
         showTypeWithRenaming(type, renaming)
 
 define showTyping((tag, scheme))
-    getTagLexeme(tag) ++ " : " ++ showPrettyScheme(scheme)
+    showTag(tag) ++ " : " ++ showPrettyScheme(scheme)
 
 define showTypings(typings)
     typings.map(showTyping).joinWith("\n")
