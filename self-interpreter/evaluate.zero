@@ -4,8 +4,7 @@ define expandNumeral(tag, type, n)
     Abstraction(tag, NoConstraint,
         Abstraction(tag, NoConstraint,
             n |> 0 -> Variable(tag, 2); up n' ->
-                Application(tag, False, Variable(tag, 1),
-                Numeral(tag, type, n'))))
+                Application(tag, Variable(tag, 1), Numeral(tag, type, n'))))
 
 
 define evaluate(closure @ Closure(term, environment), stack)
@@ -26,7 +25,7 @@ define evaluate(closure @ Closure(term, environment), stack)
             runtimeError("Implication", tag)
         case Implicit(tag, _, _)
             runtimeError("Implicit", tag)
-        case Application(_, _, applicand, argument)
+        case Application(_, applicand, argument)
             evaluate(Closure(applicand, environment),
                      Closure(argument, environment) :: stack)
         case Numeral(tag, type, n)

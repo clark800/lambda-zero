@@ -142,15 +142,14 @@ define infer(stack, variables)
         (Top(veil(tag)), variables'')
     case Implicit(tag, type, body)
         infer(stack.push(Scheme([], type)), variables, body)
-    case Application(tag, isLet, applicand, argument)
-        if isLet
-            (valueType, variables') := infer(stack, variables, argument)
-            stack' := stack.push(valueType.generalize(variables', variables))
-            with applicand as Abstraction(_, _, body)
-                infer(stack', variables', body)
-            infer(stack, variables,
-                Application(tag, False, applicand, argument))
+    case Application(tag, applicand, argument)
         (argumentType, variables') := infer(stack, variables, argument)
+        with applicand as Abstraction(_, constraint, body)
+            with constraint as Annotation(_)
+                stack' := stack.push(
+                    argumentType.generalize(variables', variables))
+                infer(stack', variables', body)
+            pass
         (applicandType, variables'') := infer(stack, variables', applicand)
         (returnType, variables''') := variables''.newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
