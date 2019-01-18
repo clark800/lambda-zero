@@ -24,7 +24,7 @@ define serialize(closure)
                 "(" ++ serialize'(Closure(type, environment), depth) ++
                 " ⇝ " ++ serialize'(Closure(body, environment), depth + 1) ++
                 ")"
-            case Application(_, _, applicand, argument)
+            case Application(_, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++
                 " " ++ serialize'(Closure(argument, environment), depth) ++ ")"
             case Numeral(_, _, n)

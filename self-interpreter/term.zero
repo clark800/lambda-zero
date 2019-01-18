@@ -20,7 +20,7 @@ Term ::= {
     Abstraction(_ : Tag, _ : Constraint(Term), _body : Term),
     Implication(_ : Tag, _antecedent : Term, _consequent : Term),
     Implicit(_ : Tag, _type : Term, _body : Term),
-    Application(_ : Tag, _let : 𝔹, _applicand : Term, _argument : Term),
+    Application(_ : Tag, _applicand : Term, _argument : Term),
     Numeral(_ :  Tag, _type : Term, _value : ℕ),
     Operation(_ : Tag, _type : Term, _arity : ℕ, _operator :
         ((Closure(Term) => Closure(Term)) =>
@@ -36,7 +36,7 @@ define getTermTag
     Abstraction(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
     Implicit(tag, _, _) -> tag
-    Application(tag, _, _, _) -> tag
+    Application(tag, _, _) -> tag
     Numeral(tag, _, _) -> tag
     Operation(tag, _, _, _) -> tag
 
@@ -47,13 +47,13 @@ isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isAbstraction := Abstraction(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isImplicit := Implicit(_, _, _) -> True; _ -> False
-isApplication := Application(_, _, _, _) -> True; _ -> False
+isApplication := Application(_, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 
 define splitSpine(term)
-    with term as Application(_, _, left, right)
+    with term as Application(_, left, right)
         (applicand, arguments) := splitSpine(left)
         (applicand, arguments ++ [right])
     (term, [])
@@ -82,13 +82,13 @@ define maybeBody(term)
 
 
 define maybeApplicand(term)
-    with term as Application(_, _, applicand, _)
+    with term as Application(_, applicand, _)
         Just(applicand)
     Void
 
 
 define maybeArgument(term)
-    with term as Application(_, _, _, argument)
+    with term as Application(_, _, argument)
         Just(argument)
     Void
 
@@ -146,7 +146,7 @@ define setTag(tag)
     Abstraction(_, metadata, body) -> Abstraction(tag, metadata, body)
     Implication(_, parameter, body) -> Implication(tag, parameter, body)
     Implicit(_, type, body) -> Implication(tag, type, body)
-    Application(_, isLet, left, right) -> Application(tag, isLet, left, right)
+    Application(_, left, right) -> Application(tag, left, right)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, type, arity, operator) -> Operation(tag, type, arity, operator)
 
@@ -179,8 +179,8 @@ define sameHead(term)
         isImplication(term)
     case Implicit(_, _, _)
         isImplicit(term)
-    case Application(_, _, left, _)
-        with term as Application(_, _, left', _)
+    case Application(_, left, _)
+        with term as Application(_, left', _)
             sameHeadConstructor(left, left')
         False
     case Numeral(_, _, value)
@@ -200,7 +200,7 @@ define getComponents
     Abstraction(_, _, body) -> [body]
     Implication(_, parameter, body) -> [parameter, body]
     Implicit(_, type, body) -> [type, body]
-    Application(_, _, left, right) -> second(splitSpine(left)) ++ [right]
+    Application(_, left, right) -> second(splitSpine(left)) ++ [right]
     Numeral(_, _, _) -> []
     Operation(_, _, _, _) -> []
 
@@ -216,8 +216,8 @@ define mapComponents(f, term)
             Implication(tag, f(parameter), f(body))
         Implicit(tag, type, body) ->
             Implication(tag, f(type), f(type))
-        Application(tag, isLet, left, right) ->
-            Application(tag, isLet, mapComponents(f, left), f(right))
+        Application(tag, left, right) ->
+            Application(tag, mapComponents(f, left), f(right))
         Numeral(_, _, _) -> term
         Operation(_, _, _, _) -> term
 
@@ -267,7 +267,7 @@ define showTerm
                 showTerm(parameter) ++ " ⇒ " ++ showTerm(body)
     Implicit(tag, type, body) ->
         "(" ++ showTag(tag) ++ " ⇝ " ++ showTerm(body) ++ ")"
-    Application(_, _, applicand, argument) ->
+    Application(_, applicand, argument) ->
         showApplication(showTerm, applicand, argument)
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _, _) -> showTag(tag)
@@ -279,9 +279,9 @@ define showScheme(Scheme(universals, term))
 
 
 define getDefinitions(term)
-    with term as Application(_, isLet, applicand, argument)
-        if isLet
-            with applicand as Abstraction(_, _, body)
+    with term as Application(_, applicand, argument)
+        with applicand as Abstraction(_, constraint, body)
+            with constraint as Annotation(_)
                 (getTermTag(applicand), argument) :: getDefinitions(body)
             []
         []

@@ -51,8 +51,8 @@ define getStringType(stack, tag)
     natural := getNaturalType(stack)
     listType := findScheme("[]", stack).mapJust(getType) ??
         parseError("List not defined", tag)
-    with listType as Application(_, _, left, _)
-        Application(noTag, False, left, natural)
+    with listType as Application(_, left, _)
+        Application(noTag, left, natural)
     parseError("List type invalid", tag)
 
 
@@ -238,14 +238,14 @@ define bind(level, stack, context, node)
                 Abstraction(getTag(parameter), annotation, bodyTerm)
             syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
-            Application(tag, False, left.bind(level, stack, context),
+            Application(tag, left.bind(level, stack, context),
                 right.bind(level, stack, context))
         case Let(tag, name, value, scope)
             valueTerm := value.bind(level, stack, context)
             stack' := stack.pushParameter(name, level, Just((value, valueTerm)))
             scopeTerm := scope.bind(up level, stack', context)
             abstraction := Abstraction(getTag(name), NoConstraint, scopeTerm)
-            Application(tag, True, abstraction, valueTerm)
+            Application(tag, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNaturalType(stack), value)
         case Operator(_, _, _)
