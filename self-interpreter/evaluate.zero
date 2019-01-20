@@ -7,42 +7,46 @@ define expandNumeral(tag, type, n)
                 Application(tag, Variable(tag, 1), Numeral(tag, type, n'))))
 
 
-define evaluate(closure @ Closure(term, environment), stack)
+define evaluate(stack, closure @ Closure(term, environment))
     match term
         case Top(tag)
             runtimeError("Top", tag)
+        case Constant(tag, _, index)
+            with environment.seek(index) as Just(closure')
+                evaluate(stack, closure')
+            closure
         case Variable(_, debruijn)
-            with environment.seek(debruijn -- 1) as Just(closure')
-                evaluate(closure', stack)
+            with environment.rseek(debruijn -- 1) as Just(closure')
+                evaluate(stack, closure')
             closure
         case MetaVariable(tag, _)
             runtimeError("MetaVariable", tag)
         case Abstraction(_, _, body)
             with stack as argument :: stack'
-                evaluate(Closure(body, environment.push(argument)), stack')
+                evaluate(stack', Closure(body, environment.append(argument)))
             closure
         case Implication(tag, _, _)
             runtimeError("Implication", tag)
         case Implicit(tag, _, _)
             runtimeError("Implicit", tag)
         case Application(_, applicand, argument)
-            evaluate(Closure(applicand, environment),
-                     Closure(argument, environment) :: stack)
+            evaluate(Closure(argument, environment) :: stack,
+                Closure(applicand, environment))
         case Numeral(tag, type, n)
             with stack as _ :: _
                 numeral := expandNumeral(tag, type, n)
-                evaluate(Closure(numeral, environment), stack)
+                evaluate(stack, Closure(numeral, environment))
             closure
         case Operation(_, _, arity, operator)
-            result := operator(`evaluate([]), stack.take(arity))
-            evaluate(result, stack.drop(arity))
+            result := operator(evaluate([]), stack.take(arity))
+            evaluate(stack.drop(arity), result)
 
 
 define evaluateClosure(closure)
-    evaluate(closure, [])
+    evaluate([], closure)
 
 
-define evaluateTerm(term)
-    evaluateClosure(Closure(term, []))
+define evaluateTerm(environment, term)
+    evaluateClosure(Closure(term, environment))
 
 #*

@@ -8,6 +8,9 @@ newTable((=<), entries) := Table((=<), Tip.extendAA((=<), first, entries))
 Table((=<), data).lookup(key) := data.searchAA((=<), first, key).mapJust(second)
 Table((=<), data).set(key, value) :=
     Table((=<), data.insertAA((=<), first, (key, value)))
+Table((~<), data).extendTable(entries) :=
+    Table((~<), data.extendAA((~<), first, entries))
+Table(_, data).getEntries := flattenAA(data)
 Table(_, data).getKeys := flattenAA(data).map(first)
 Table(_, data).getValues := flattenAA(data).map(second)
 table.hasKey(key) := not isVoid(table.lookup(key))

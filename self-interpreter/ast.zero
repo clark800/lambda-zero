@@ -23,27 +23,27 @@ SyntaxT(ast) ::= {Syntax(
 )}
 
 AST ::= {
-    Reference(_ : Tag, _debruijn : ℕ),
-    Arrow(_ : Tag, _type : ArrowType, _constructors : List(AST),
+    Reference(_ : TagT, _debruijn : ℕ),
+    Arrow(_ : TagT, _type : ArrowType, _constructors : List(AST),
         _parameter : AST, _body : AST),
-    Juxtaposition(_ : Tag, _left : AST, _right : AST),
-    Let(_ : Tag, _name : AST, _value : AST, _scope : AST),
-    Number(_ : Tag, _value : ℕ),
-    Operator(_ : Tag, _rank : ℕ, _syntax : SyntaxT(AST)),
-    Definition(_ : Tag, _type : DefinitionType,
+    Juxtaposition(_ : TagT, _left : AST, _right : AST),
+    Let(_ : TagT, _name : AST, _value : AST, _scope : AST),
+    Number(_ : TagT, _value : ℕ),
+    Operator(_ : TagT, _rank : ℕ, _syntax : SyntaxT(AST)),
+    Definition(_ : TagT, _type : DefinitionType,
         _definiendum : AST, _definiens : AST),
-    AsPattern(_ : Tag, _left : AST, _pattern : AST),
-    CommaPair(_ : Tag, _left : AST, _right : AST),
-    Section(_ :  Tag, _side : SectionSide, _body : AST),
-    SetBuilder(_ : Tag, _forms : List(AST)),
-    ADT(_ : Tag, _forms : List(AST)),
-    Constructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
+    AsPattern(_ : TagT, _left : AST, _pattern : AST),
+    CommaPair(_ : TagT, _left : AST, _right : AST),
+    Section(_ :  TagT, _side : SectionSide, _body : AST),
+    SetBuilder(_ : TagT, _forms : List(AST)),
+    ADT(_ : TagT, _forms : List(AST)),
+    Constructor(_ : TagT, _parameterTypes : List(AST), _dataType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
-    Deconstructor(_ : Tag, _parameterTypes : List(AST), _dataType : AST,
+    Deconstructor(_ : TagT, _parameterTypes : List(AST), _dataType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
-    Accessor(_ : Tag, _dataType : AST, _returnType : AST,
+    Accessor(_ : TagT, _dataType : AST, _returnType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
-    Null(_ : Tag)
+    Null(_ : TagT)
 }
 
 define lockArrow(node)

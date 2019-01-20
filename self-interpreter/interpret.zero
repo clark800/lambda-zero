@@ -28,20 +28,22 @@ define evaluateMain(Closure(main, environment), input)
         runtimeError("expected string from", tag)
 
 
-define showDefinition((tag, definiens))
-    getTagLexeme(tag) ++ " := " ++ showTerm(definiens)
+define showDefinition((tag, term))
+    showTag(tag) ++ " := " ++ showTerm(term)
 
 
-define showDefinitions(term)
-    getDefinitions(term).map(showDefinition).joinWith("\n")
+define showDefinitions(tags, environment)
+    terms := environment.dump.map(second).map(getTerm)
+    zip(tags, terms).map(showDefinition).joinWith("\n")
 
 
 define main(input)
     (code, input') := splitCodeAndInput(input)
-    term := parse(code)
+    (tags, context, environment) := parse(code)
+    term := environment.rseek(0).mapJust(getTerm) ?? abort("No input")
     if code.startsWith("#% dump")
-        showDefinitions(term)
-    closure := evaluateTerm(parse(code))
+        showDefinitions(tags, environment)
+    closure := evaluateTerm(environment, term)
     if isMain(getTerm(closure))
         evaluateMain(closure, input')
     serialize(closure)

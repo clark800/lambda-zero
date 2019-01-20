@@ -109,15 +109,15 @@ define getConstructorBody(name, n, m, j)
 define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     parameters := getArguments(form)
     m := length(parameters)
-    scope' := zip(parameters, 0...).fold(
-        newGetterDefinition(tag, dataType, n, j, m), scope)
     name := getHead(form)
     body := getConstructorBody(name, n, m, j)
     if isNull(body)
         syntaxError("invalid constructor", name)   # force errors
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(tag, parameterTypes, dataType, body, n, j + 1)
-    applyPlainDefinition(tag, Name(getTag(name)), constructor, scope')
+    scope' := applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
+    zip(parameters, 0...).fold(
+        newGetterDefinition(tag, dataType, n, j, m), scope')
 
 
 define newFallbackCase(tag, m)
@@ -130,7 +130,7 @@ define newFallbackCase(tag, m)
 define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
     reconstructor := Underscore(tag, 3)
     arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
-        newFallbackCase(tag, ms.safeAt(k -- 1) ?? 0))
+        newFallbackCase(tag, ms.at(k -- 1) ?? 0))
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
     function := UnderscoreArrow(tag, UnderscoreArrow(tag,
         UnderscoreArrow(tag, body)))
@@ -142,8 +142,10 @@ define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
 
 
 define newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
-    scope' := newDeconstructorDefinition(tag, dataType, n, ms, formj, scope)
-    newConstructorDefinition(tag, dataType, n, formj, scope')
+    # define deconstructor first in case the constructor name is the same
+    # as the ADT name: this ensures that we always bind the ADT name
+    scope' := newConstructorDefinition(tag, dataType, n, formj, scope)
+    newDeconstructorDefinition(tag, dataType, n, ms, formj, scope')
 
 
 define applyADTDefinition(tag, left, right, scope)

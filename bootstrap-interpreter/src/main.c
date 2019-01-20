@@ -19,16 +19,11 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     switch (getTermType(node)) {
         case VARIABLE:
-            if (isGlobal(node)) {
-                Node* value = elementAt(globals, getGlobalIndex(node));
-                serializeNode(value, locals, globals, 0, stream);
-                break;
-            }
-            unsigned long long debruijn = getDebruijnIndex(node);
-            if (debruijn <= depth) {
+            if (isGlobal(node) || getDebruijnIndex(node) <= depth) {
                 printString(getLexeme(node), stream);
                 break;
             }
+            unsigned long long debruijn = getDebruijnIndex(node);
             Closure* next = getListElement(locals, debruijn - depth - 1);
             serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
             break;
@@ -48,7 +43,6 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             break;
         case NUMERAL: fputll(getValue(node), stream); break;
         case OPERATION: printString(getLexeme(node), stream); break;
-        default: fputs("#ERROR#", stream); break;
     }
 }
 
@@ -114,8 +108,9 @@ static char* readSourceCode(const char* filename) {
 int main(int argc, char* argv[]) {
     // note: setbuf(stdin, NULL) will leave unread input in stdin on exit
     // causing the shell to execute it, which is dangerous
-    setbuf(stdout, NULL);
-    setbuf(stderr, NULL);
+    // note: disabling buffering slows down I/O quite a bit
+    //setbuf(stdout, NULL);
+    //setbuf(stderr, NULL);
     const char* programName = argv[0];
     while (--argc > 0 && (*++argv)[0] == '-') {
         for (const char* flag = argv[0] + 1; flag[0] != '\0'; ++flag) {

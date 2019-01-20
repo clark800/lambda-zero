@@ -19,7 +19,7 @@ define getBuiltin(tag)
         with arguments as argument :: arguments'
             argument' := evaluate(argument)
             Closure(Numeral(tag', typeN,
-                f(checkNatural(getTerm(argument')))), [])
+                f(checkNatural(getTerm(argument')))), newStore([]))
         runtimeError("missing argument to", tag)
 
     define makeBinaryBuiltin(constructor, f, evaluate, arguments)
@@ -27,7 +27,7 @@ define getBuiltin(tag)
             with arguments' as right :: _
                 left' := evaluate(left)
                 right' := evaluate(right)
-                Closure(constructor(compute(f, left', right')), [])
+                Closure(constructor(compute(f, left', right')), newStore([]))
             runtimeError("missing argument to", tag)
         runtimeError("missing argument to", tag)
 
