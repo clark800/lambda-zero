@@ -2,7 +2,7 @@
 
 define getValue(type, variables)
     with type as MetaVariable(_, address)
-        with variables.seek(address) ?? Void as Just(type')
+        with variables.get(address) ?? Void as Just(type')
             type'
         throwError("internal error", getTermTag(type))
     type
@@ -10,13 +10,13 @@ define getValue(type, variables)
 
 define isFree(variable, variables)
     with variable as MetaVariable(_, address)
-        isVoid(variables.seek(address) ?? Void)
+        isVoid(variables.get(address) ?? Void)
     False
 
 
 define getFreeVariables(variables, type)
     with type as MetaVariable(_, address)
-        with variables.seek(address) ?? Void as Just(type')
+        with variables.get(address) ?? Void as Just(type')
             getFreeVariables(variables, type')
         [type]
     join(getComponents(type).map(getFreeVariables(variables))).
@@ -24,15 +24,16 @@ define getFreeVariables(variables, type)
 
 
 define getAllFreeVariables(variables, variables')
-    join(variables.dump.map(first).map(MetaVariable(noTag)).map(
+    indices := (0 ...)[0, variables.getSize]
+    join(indices.map(MetaVariable(noTag)).map(
         getFreeVariables(variables'))).deduplicateBy(sameHead)
 
 
 define substitute(variables, type)
     with type as MetaVariable(tag, address)
-        with variables.seek(address) ?? Void as Just(type')
+        with variables.get(address) ?? Void as Just(type')
             type'' := type'.setLocation(tag)
-            if type''.getFreeVariables(newStore([])).any(sameHead(type))
+            if type''.getFreeVariables(newArray([])).any(sameHead(type))
                 recursionError(type, type, variables)
             type''.substitute(variables)
         type
@@ -56,9 +57,9 @@ define unify'(originals, variables, (left, right))
         zip(getComponents(left), getComponents(right)).
             cascade(unify'(originals), variables)
     with left as MetaVariable(_, address)
-        variables.assign(address, Just(right))
+        variables.set(address, Just(right))
     with right as MetaVariable(_, address)
-        variables.assign(address, Just(left))
+        variables.set(address, Just(left))
     unifyFailure(originals, variables, (left, right))
 
 
@@ -113,14 +114,14 @@ define infer(stack, variables)
     case Top(tag)
         (Top(tag), variables)
     case Constant(tag, isTypeConstructor, index)
-        scheme := stack.seek(index) ?? throwError("unbound constant", tag)
+        scheme := stack.get(index) ?? throwError("unbound constant", tag)
         scheme.instantiate(tag, variables)
     case Variable(tag, debruijn)
-        scheme := stack.rseek(debruijn -- 1) ??
+        scheme := stack.peek(debruijn -- 1) ??
             throwError("unbound variable", tag)
         scheme.instantiate(tag, variables)
     case MetaVariable(tag, address)
-        with variables.seek(address) ?? Void as Just(term)
+        with variables.get(address) ?? Void as Just(term)
             infer(stack, variables, term)
         newMetaVariable(tag, variables)
     case Abstraction(tag, constraint, body)
@@ -130,26 +131,26 @@ define infer(stack, variables)
             case Annotation(scheme)
                 (parameterType, variables') :=
                     scheme.instantiate(tag, variables)
-                stack' := stack.append(Scheme([], parameterType))
+                stack' := stack.push(Scheme([], parameterType))
                 (bodyType, variables'') := infer(stack', variables', body)
                 (Implication(tag, parameterType, bodyType), variables'')
             case PolarAnnotation(outerScheme, innerScheme)
                 (outerType, innerScheme, variables') :=
                     coinstantiate(tag, variables, (outerScheme, innerScheme))
                 (bodyType, variables'') :=
-                    infer(stack.append(innerScheme), variables', body)
+                    infer(stack.push(innerScheme), variables', body)
                 (Implication(tag, outerType, bodyType), variables'')
     case Implication(tag, parameter, body)
         (parameterType, variables') := infer(stack, variables, parameter)
         (bodyType, variables'') := infer(stack, variables', body)
         (Top(veil(tag)), variables'')
     case Implicit(tag, type, body)
-        infer(stack.append(Scheme([], type)), variables, body)
+        infer(stack.push(Scheme([], type)), variables, body)
     case Application(tag, applicand, argument)
         (argumentType, variables') := infer(stack, variables, argument)
         with applicand as Abstraction(_, constraint, body)
             with constraint as Annotation(_)
-                stack' := stack.append(
+                stack' := stack.push(
                     argumentType.generalize(variables', variables))
                 infer(stack', variables', body)
             pass
@@ -173,17 +174,17 @@ define getFixScheme(tag)
 
 define inferType(stack, (tag, term))
     if getTagLexeme(tag) =*= "fix"
-        stack.append(getFixScheme(getTermTag(term)))
-    variables := newStore([])
+        stack.push(getFixScheme(getTermTag(term)))
+    variables := newArray([])
     (type, variables') := infer(stack, variables, term)
-    stack.append(type.generalize(variables', variables))
+    stack.push(type.generalize(variables', variables))
 
 
 define main(input)
     (tags, context, environment) := parse(input)
-    terms := environment.dump.map(second).map(getTerm)
-    stack := zip(tags, terms).cascade(inferType, newStore([]))
-    schemes := stack.dump.map(second)
+    terms := environment.toList.map(getTerm)
+    stack := zip(tags, terms).cascade(inferType, newArray([]))
+    schemes := stack.toList
     showTypings(zip(tags, schemes))
 
 #*

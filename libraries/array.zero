@@ -1,0 +1,15 @@
+#* array.zero
+
+ArrayT(a) ::= {Array(_size : ℕ, _data : List(ℕ && FullBinaryTree(a)))}
+
+newArray(xs) := Array(length(xs), newRandomAccessList(reverse(xs)))
+Array(size, data).getSize := size
+Array(size, data).toList := reverse(toListRAL(data))
+Array(size, data).get(n) := data.getRAL(size -- n -- 1)
+Array(size, data).set(n, x) := Array(size, data.setRAL(size -- n -- 1, x))
+Array(size, data).append(value) := (size, Array(up size, data.pushRAL(value)))
+Array(size, data).push(value) := Array(up size, data.pushRAL(value))
+Array(size, data).pop := Array(down size, data.popRAL)
+Array(size, data).peek(n) := data.getRAL(n)
+
+#*

@@ -10,7 +10,7 @@ Constraint(term) ::= {
 
 Closure(term) ::= {Closure(
     getTerm : term,
-    getEnvironment : StoreT(Closure(term))
+    getEnvironment : ArrayT(Closure(term))
 )}
 
 Term ::= {

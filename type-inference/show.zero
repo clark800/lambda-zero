@@ -12,7 +12,7 @@ define showMaybeType(maybeType)
     "Free"
 
 define showVariables(variables)
-    variables.dump.map((address, maybeValue) ->
+    zip(0 ..., variables.toList).map((address, maybeValue) ->
         showMetaVariable(address) ++ " := " ++
         showMaybeType(maybeValue)).joinWith("\n")
 
@@ -21,12 +21,12 @@ define addRenaming((renaming, variables), type)
         if renaming.hasKey(address)
             (renaming, variables)
         (type', variables') := variables.newMetaVariable(source)
-        (renaming.set(address, type'), variables')
+        (renaming.insert(address, type'), variables')
     getComponents(type).cascade(addRenaming, (renaming, variables))
 
 define makeRenaming(type)
     renaming := newRenaming([])
-    variables := newStore([])
+    variables := newArray([])
     first(addRenaming((renaming, variables), type))
 
 define showTypeWithRenaming(type, renaming)
