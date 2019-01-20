@@ -10,7 +10,7 @@ define serialize(closure)
             case Variable(tag, debruijn)
                 if debruijn <= depth
                     showTag(tag)
-                with environment.rseek(debruijn -- depth -- 1) as Just(closure)
+                with environment.peek(debruijn -- depth -- 1) as Just(closure)
                     serialize'(closure, 0)
                 showTag(tag)
             case MetaVariable(tag, n)
@@ -48,8 +48,8 @@ define serializeString(evaluateClosure, closure)
     if nil
         Just([])
 
-    dummy := Closure(Variable(noTag, 0), newStore([]))
-    environment' := getEnvironment(closure').append(dummy).append(dummy)
+    dummy := Closure(Variable(noTag, 0), newArray([]))
+    environment' := getEnvironment(closure').push(dummy).push(dummy)
     enclose := `Closure(environment')
 
     maybe headTerm := maybeHead(term)

@@ -1,7 +1,7 @@
 #* types.zero
 
 define newMetaVariable(tag, variables)
-    (address, variables') := variables.allocate(Void)
+    (address, variables') := variables.append(Void)
     (MetaVariable(tag, address), variables')
 
 

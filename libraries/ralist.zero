@@ -1,6 +1,6 @@
 #* ralist.zero
 
-define list.push(x)
+define list.pushRAL(x)
     match list
         case []; [(1, Leaf(x))]
         case (size, tree) :: rest
@@ -12,18 +12,18 @@ define list.push(x)
                     (1, Leaf(x)) :: list
 
 
-define list.pull
+define list.popRAL
     match list
-        case []; Void
+        case []; []
         case (size, tree) :: rest
             match tree
-                case Leaf(_); Just(rest)
+                case Leaf(_); rest
                 case Branch(_, left, right)
                     size' := size // 2
-                    Just((size', left) :: (size', right) :: rest)
+                    (size', left) :: (size', right) :: rest
 
 
-define list.peek
+define list.peekRAL
     match list
         case []; Void
         case (size, tree) :: _
@@ -45,11 +45,11 @@ define seekTree(n, size, tree)
             seekTree(n -- size' -- 1, size', right)
 
 
-define list.pick(n)
+define list.getRAL(n)
     match list
         case []; Void
         case (size, tree) :: rest
-            if n < size then seekTree(n, size, tree) else rest.pick(n -- size)
+            if n < size then seekTree(n, size, tree) else rest.getRAL(n -- size)
 
 
 define updateTree(n, x, size, tree)
@@ -65,13 +65,13 @@ define updateTree(n, x, size, tree)
             Branch(x', left, updateTree(n -- size' -- 1, x, size', right))
 
 
-define list.update(n, x)
+define list.setRAL(n, x)
     match list
         case []; []
         case (size, tree) :: rest
             if n < size
                 (size, updateTree(n, x, size, tree)) :: rest
-            (size, tree) :: rest.update(n -- size, x)
+            (size, tree) :: rest.setRAL(n -- size, x)
 
 
 define flattenPreorderTree(tree)
@@ -81,18 +81,18 @@ define flattenPreorderTree(tree)
             x :: flattenPreorderTree(left) ++ flattenPreorderTree(right)
 
 
-define list.getList
+define list.toListRAL
     match list
         case []; []
         case (_, tree) :: rest
-            flattenPreorderTree(tree) ++ getList(rest)
+            flattenPreorderTree(tree) ++ toListRAL(rest)
 
 
-define list.showRandomAccessList(showValue)
+define list.showRAL(showValue)
     list.map(second).map(showFullBinaryTree(showValue)).joinWith("\n")
 
 
 define newRandomAccessList(elements)
-    elements.fold(push, [])
+    elements.fold(pushRAL, [])
 
 #*

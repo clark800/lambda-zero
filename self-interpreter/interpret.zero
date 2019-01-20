@@ -33,14 +33,14 @@ define showDefinition((tag, term))
 
 
 define showDefinitions(tags, environment)
-    terms := environment.dump.map(second).map(getTerm)
+    terms := environment.toList.map(getTerm)
     zip(tags, terms).map(showDefinition).joinWith("\n")
 
 
 define main(input)
     (code, input') := splitCodeAndInput(input)
     (tags, context, environment) := parse(code)
-    term := environment.rseek(0).mapJust(getTerm) ?? abort("No input")
+    term := environment.peek(0).mapJust(getTerm) ?? abort("No input")
     if code.startsWith("#% dump")
         showDefinitions(tags, environment)
     closure := evaluateTerm(environment, term)

@@ -15,7 +15,7 @@ define findDefiniens(stack, lexeme)
 define pushParameter(parameter, level, maybeNode, stack)
     lexeme := getLexeme(parameter)
     with stack as top :: stack'
-        top.set(lexeme, (level, maybeNode)) :: stack'
+        top.insert(lexeme, (level, maybeNode)) :: stack'
     [newDictionary([(lexeme, (level, maybeNode))])]
 
 
@@ -308,9 +308,9 @@ define bindGlobal(context, node)
 define bindDefinition(state, (tag, isTypeConstructor, node))
     (tags, context, environment) := state
     term := bindGlobal(context, node)
-    (index, environment') := environment.allocate(Closure(term, environment))
+    (index, environment') := environment.append(Closure(term, environment))
     constant := Constant(tag, isTypeConstructor, index)
-    context' := context.set(getTagLexeme(tag), ((node, term), constant))
+    context' := context.insert(getTagLexeme(tag), ((node, term), constant))
     (tag :: tags, context', environment')
 
 
@@ -329,7 +329,7 @@ define maybeIndex(term)
 
 define bindAST(node)
     # TODO: make state a parameter so we can bind with an existing state
-    state := ([], newDictionary([]), newStore([]))
+    state := ([], newDictionary([]), newArray([]))
     state' := getDefinitions(node).cascade(bindDefinition, state)
     (tags, context, environment) := state'
     (reverse(tags), context, environment)

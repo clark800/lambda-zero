@@ -6,7 +6,7 @@ TableT(k, v) ::= {
 
 newTable((=<), entries) := Table((=<), Tip.extendAA((=<), first, entries))
 Table((=<), data).lookup(key) := data.searchAA((=<), first, key).mapJust(second)
-Table((=<), data).set(key, value) :=
+Table((=<), data).insert(key, value) :=
     Table((=<), data.insertAA((=<), first, (key, value)))
 Table((~<), data).extendTable(entries) :=
     Table((~<), data.extendAA((~<), first, entries))

@@ -250,7 +250,7 @@ define defineSyntax(operators, definition, name, right)
 
 define pushSyntax(lexeme, syntax, operators)
     with operators as top :: _
-        top.set(lexeme, syntax) :: operators
+        top.insert(lexeme, syntax) :: operators
     [newDictionary([(lexeme, syntax)])]
 
 
