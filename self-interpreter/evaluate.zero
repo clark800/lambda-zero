@@ -10,7 +10,7 @@ define expandNumeral(tag, type, n)
 define evaluate(stack, closure @ Closure(term, environment))
     match term
         case Top(tag)
-            runtimeError("Top", tag)
+            closure
         case Constant(tag, _, index)
             with environment.get(index) as Just(closure')
                 evaluate(stack, closure')
@@ -20,7 +20,9 @@ define evaluate(stack, closure @ Closure(term, environment))
                 evaluate(stack, closure')
             closure
         case MetaVariable(tag, _)
-            runtimeError("MetaVariable", tag)
+            with stack as _ :: _
+                runtimeError("MetaVariable", tag)
+            closure
         case Abstraction(_, _, body)
             with stack as argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))

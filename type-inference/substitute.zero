@@ -1,0 +1,59 @@
+#* substitute.zero
+
+define newMetaVariable(tag, metacontext)
+    (address, metacontext') := metacontext.append(Void)
+    (MetaVariable(tag, address), metacontext')
+
+
+newMetaVariables(originals, metacontext) :=
+    originals.map(getTermTag).cascadeMap(newMetaVariable, metacontext)
+
+
+newRenaming(mappings) := newTable((<=), mappings)
+
+
+define rename(renaming, type)
+    with type as MetaVariable(_, address)
+        renaming.lookup(address) ?? type
+    type.mapComponents(rename(renaming))
+
+
+define getFreeVariables(metacontext, type)
+    with type as MetaVariable(_, address)
+        with metacontext.get(address) ?? Void as Just(Closure(type', _))
+            getFreeVariables(metacontext, type')
+        [type]
+    join(getComponents(type).map(getFreeVariables(metacontext))).
+        deduplicateBy(sameHead)
+
+
+define showMaybeClosure(maybeClosure)
+    with maybeClosure as Just(Closure(type, _))
+        showTerm(type)
+    "Free"
+
+
+define showMetacontext(metacontext)
+    zip(0 ..., metacontext.toList).map((address, maybeClosure) ->
+        showMetaVariable(address) ++ " := " ++
+        showMaybeClosure(maybeClosure)).joinWith("\n")
+
+
+define recursionError(type, type', metacontext)
+    abort("Type error: recursive type at " ++
+        showTermLocation(type) ++ " and " ++ showTermLocation(type') ++
+        ":\n" ++ showTerm(type) ++ " = " ++ showTerm(type') ++ "\n\n" ++
+        showMetacontext(metacontext))
+
+
+define substitute(metacontext, type)
+    with type as MetaVariable(tag, address)
+        with metacontext.get(address) ?? Void as Just(Closure(type', _))
+            type'' := type'.setLocation(tag)
+            if type''.getFreeVariables(newArray([])).any(sameHead(type))
+                recursionError(type, type, metacontext)
+            type''.substitute(metacontext)
+        type
+    type.mapComponents(substitute(metacontext))
+
+#*
