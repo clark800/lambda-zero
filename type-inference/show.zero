@@ -1,48 +1,38 @@
 #* show.zero
 
-define showTypeLocation(type)
-    showLocation(getTagLocation(getTermTag(type)))
-
-define showTypeAndLocation(type)
-    showTerm(type) ++ " at " ++ showTypeLocation(type)
-
-define showMaybeType(maybeType)
-    with maybeType as Just(type)
-        showTerm(type)
-    "Free"
-
-define showVariables(variables)
-    zip(0 ..., variables.toList).map((address, maybeValue) ->
-        showMetaVariable(address) ++ " := " ++
-        showMaybeType(maybeValue)).joinWith("\n")
-
-define addRenaming((renaming, variables), type)
+define addRenaming((renaming, metacontext), type)
     with type as MetaVariable(source, address)
         if renaming.hasKey(address)
-            (renaming, variables)
-        (type', variables') := variables.newMetaVariable(source)
-        (renaming.insert(address, type'), variables')
-    getComponents(type).cascade(addRenaming, (renaming, variables))
+            (renaming, metacontext)
+        (type', metacontext') := metacontext.newMetaVariable(source)
+        (renaming.insert(address, type'), metacontext')
+    getComponents(type).cascade(addRenaming, (renaming, metacontext))
+
 
 define makeRenaming(type)
     renaming := newRenaming([])
-    variables := newArray([])
-    first(addRenaming((renaming, variables), type))
+    metacontext := newArray([])
+    first(addRenaming((renaming, metacontext), type))
+
 
 define showTypeWithRenaming(type, renaming)
     showTerm(type.rename(renaming))
 
+
 define showUniversalsWithRenaming(universals, renaming)
     universals.map(universal ->
         "∀" ++ showTypeWithRenaming(universal, renaming) ++ " ").join
+
 
 define showPrettyScheme(Scheme(universals, type))
     renaming := makeRenaming(type)
     showUniversalsWithRenaming(universals, renaming) ++
         showTypeWithRenaming(type, renaming)
 
+
 define showTyping((tag, scheme))
     showTag(tag) ++ " : " ++ showPrettyScheme(scheme)
+
 
 define showTypings(typings)
     typings.map(showTyping).joinWith("\n")

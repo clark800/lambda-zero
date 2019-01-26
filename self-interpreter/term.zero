@@ -3,8 +3,9 @@
 SchemeT(term) ::= {Scheme(getUniversals : List(term), getType : term)}
 
 Constraint(term) ::= {
+    NoConstraint,
+    Annotation(_ : term),
     Ascription(_ : SchemeT(term)),
-    Annotation(_ : SchemeT(term)),
     PolarAnnotation(_ : SchemeT(term), _ : SchemeT(term))
 }
 
@@ -27,8 +28,6 @@ Term ::= {
         ((Closure(Term) => Closure(Term)) =>
             List(Closure(Term)) => Closure(Term)))
 }
-
-NoConstraint := Annotation(Scheme([v], v)) where v := MetaVariable(noTag, 0)
 
 define getTermTag
     Top(tag) -> tag
@@ -53,6 +52,13 @@ isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
+
+
+define isLambdaConstraint
+    NoConstraint -> True
+    Annotation(_) -> True
+    Ascription(_) -> False
+    PolarAnnotation(_, _) -> False
 
 
 define splitSpine(term)
@@ -279,6 +285,14 @@ define showTerm
         showApplication(showTerm, applicand, argument)
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _, _) -> showTag(tag)
+
+
+define showTermLocation(term)
+    showLocation(getTagLocation(getTermTag(term)))
+
+
+define showTermAndLocation(term)
+    showTerm(term) ++ " at " ++ showTermLocation(term)
 
 
 define showScheme(Scheme(universals, term))

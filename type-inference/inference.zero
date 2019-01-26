@@ -1,168 +1,114 @@
 #* inference.zero
 
-define getValue(type, variables)
-    with type as MetaVariable(_, address)
-        with variables.get(address) ?? Void as Just(type')
-            type'
-        throwError("internal error", getTermTag(type))
-    type
+define pushContext(term, scheme, context @ (terms, schemes))
+    # TODO: replace schemes with an array of closures of types
+    (terms.push(Closure(term, terms)), schemes.push(scheme))
 
 
-define isFree(variable, variables)
-    with variable as MetaVariable(_, address)
-        isVoid(variables.get(address) ?? Void)
-    False
+define pushParameter(scheme, context)
+    # TODO: term should be an atom
+    pushContext(Top(noTag), scheme, context)
 
 
-define getFreeVariables(variables, type)
-    with type as MetaVariable(_, address)
-        with variables.get(address) ?? Void as Just(type')
-            getFreeVariables(variables, type')
-        [type]
-    join(getComponents(type).map(getFreeVariables(variables))).
-        deduplicateBy(sameHead)
-
-
-define getAllFreeVariables(variables, variables')
-    indices := (0 ...)[0, variables.getSize]
+define getAllFreeVariables(metacontext, metacontext')
+    indices := (0 ...)[0, metacontext.getSize]
     join(indices.map(MetaVariable(noTag)).map(
-        getFreeVariables(variables'))).deduplicateBy(sameHead)
+        getFreeVariables(metacontext'))).deduplicateBy(sameHead)
 
 
-define substitute(variables, type)
-    with type as MetaVariable(tag, address)
-        with variables.get(address) ?? Void as Just(type')
-            type'' := type'.setLocation(tag)
-            if type''.getFreeVariables(newArray([])).any(sameHead(type))
-                recursionError(type, type, variables)
-            type''.substitute(variables)
-        type
-    type.mapComponents(substitute(variables))
-
-
-define unifyFailure(originals, variables, (left, right))
-    unificationError(originals.mapPair(substitute(variables)),
-        left.substitute(variables), right.substitute(variables))
-
-
-# Robinson's Unification Algorithm
-# see Comparing Unification Algorithms in First-Order Theorem Proving
-# by Krystof Hoder and Andrei Voronkov
-define unify'(originals, variables, (left, right))
-    if isMetaVariable(left) and not isFree(left, variables)
-        unify'(originals, variables, (variables.getValue(left), right))
-    if isMetaVariable(right) and not isFree(right, variables)
-        unify'(originals, variables, (left, variables.getValue(right)))
-    if sameHead(left, right)
-        zip(getComponents(left), getComponents(right)).
-            cascade(unify'(originals), variables)
-    with left as MetaVariable(_, address)
-        variables.set(address, Just(right))
-    with right as MetaVariable(_, address)
-        variables.set(address, Just(left))
-    unifyFailure(originals, variables, (left, right))
-
-
-define unify(variables, types)
-    unify'(types, variables, types)
-
-
-define unifyAll(variables, types)
-    with types as type :: types'
-        zip(repeat(type), types').cascade(unify, variables)
-    variables
-
-
-define generalize(variables, oldVariables, type)
+define generalize(metacontext, oldMetacontext, type)
     syntax(\\) := syntax(\)
     vs \\ vs' := vs |: (v -> not vs'.any(sameHead(v)))
-    type' := type.substitute(variables)
-    universals := type'.getFreeVariables(variables) \\
-        variables.getAllFreeVariables(oldVariables)
+    type' := type.substitute(metacontext)
+    universals := type'.getFreeVariables(metacontext) \\
+        metacontext.getAllFreeVariables(oldMetacontext)
     Scheme(universals, type')
 
 
-define newInstantiationMap(universals, variables)
-    (freshVariables, variables') := newMetaVariables(universals, variables)
+define newInstantiationMap(universals, metacontext)
+    (metaVariables, metacontext') := newMetaVariables(universals, metacontext)
     addresses := universals.map(maybeAddress).prune
-    renaming := newRenaming(zip(addresses, freshVariables))
-    (renaming, variables')
+    renaming := newRenaming(zip(addresses, metaVariables))
+    (renaming, metacontext')
 
 
 define instantiateType(tag, mapping, type)
     type.rename(mapping).setLocation(tag)
 
 
-define coinstantiate(tag, variables, schemes)
+define coinstantiate(tag, metacontext, schemes)
     (Scheme(universalsA, typeA), Scheme(universalsB, typeB)) := schemes
     universals := universalsB ++ universalsA
-    (mapping, variables') := newInstantiationMap(universals, variables)
+    (mapping, metacontext') := newInstantiationMap(universals, metacontext)
     (typeA', typeB') := (typeA, typeB).mapPair(instantiateType(tag, mapping))
     universals' := universalsB.map(instantiateType(tag, mapping))
-    (typeA', Scheme(universals', typeB'), variables')
+    (typeA', Scheme(universals', typeB'), metacontext')
 
 
-define instantiate(tag, variables, Scheme(universals, type))
-    (mapping, variables') := newInstantiationMap(universals, variables)
-    (type.instantiateType(tag, mapping), variables')
+define instantiate(tag, metacontext, Scheme(universals, type))
+    (mapping, metacontext') := newInstantiationMap(universals, metacontext)
+    (type.instantiateType(tag, mapping), metacontext')
 
 
-# stack is a list of type schemes for all the lambda-bound symbols in scope
-# variables is a table that maps type variables to types (either type
-#   variables or concrete types); every type variable appears in variables
-define infer(stack, variables)
+define infer(context @ (terms, types), metacontext)
     case Top(tag)
-        (Top(tag), variables)
+        (Top(tag), metacontext)
     case Constant(tag, isTypeConstructor, index)
-        scheme := stack.get(index) ?? throwError("unbound constant", tag)
-        scheme.instantiate(tag, variables)
+        scheme := types.get(index) ?? throwError("unbound constant", tag)
+        scheme.instantiate(tag, metacontext)
     case Variable(tag, debruijn)
-        scheme := stack.peek(debruijn -- 1) ??
+        scheme := types.peek(debruijn -- 1) ??
             throwError("unbound variable", tag)
-        scheme.instantiate(tag, variables)
+        scheme.instantiate(tag, metacontext)
     case MetaVariable(tag, address)
-        with variables.get(address) ?? Void as Just(term)
-            infer(stack, variables, term)
-        newMetaVariable(tag, variables)
+        with metacontext.get(address) ?? Void as Just(Closure(term, _))
+            infer(context, metacontext, term)
+        newMetaVariable(tag, metacontext)
     case Abstraction(tag, constraint, body)
         match constraint
+            case NoConstraint
+                (parameterType, metacontext') :=
+                    metacontext.newMetaVariable(tag)
+                context' := context.pushParameter(Scheme([], parameterType))
+                (bodyType, metacontext'') := infer(context', metacontext', body)
+                (Implication(tag, parameterType, bodyType), metacontext'')
+            case Annotation(parameterType)
+                context' := context.pushParameter(Scheme([], parameterType))
+                (bodyType, metacontext') := infer(context', metacontext, body)
+                (Implication(tag, parameterType, bodyType), metacontext')
             case Ascription(scheme)
-                scheme.instantiate(tag, variables)
-            case Annotation(scheme)
-                (parameterType, variables') :=
-                    scheme.instantiate(tag, variables)
-                stack' := stack.push(Scheme([], parameterType))
-                (bodyType, variables'') := infer(stack', variables', body)
-                (Implication(tag, parameterType, bodyType), variables'')
+                scheme.instantiate(tag, metacontext)
             case PolarAnnotation(outerScheme, innerScheme)
-                (outerType, innerScheme, variables') :=
-                    coinstantiate(tag, variables, (outerScheme, innerScheme))
-                (bodyType, variables'') :=
-                    infer(stack.push(innerScheme), variables', body)
-                (Implication(tag, outerType, bodyType), variables'')
+                (outerType, innerScheme, metacontext') :=
+                    coinstantiate(tag, metacontext, (outerScheme, innerScheme))
+                context' := context.pushParameter(innerScheme)
+                (bodyType, metacontext'') := infer(context', metacontext', body)
+                (Implication(tag, outerType, bodyType), metacontext'')
     case Implication(tag, parameter, body)
-        (parameterType, variables') := infer(stack, variables, parameter)
-        (bodyType, variables'') := infer(stack, variables', body)
-        (Top(veil(tag)), variables'')
+        (parameterType, metacontext') := infer(context, metacontext, parameter)
+        (bodyType, metacontext'') := infer(context, metacontext', body)
+        (Top(veil(tag)), metacontext'')
     case Implicit(tag, type, body)
-        infer(stack.push(Scheme([], type)), variables, body)
+        infer(context.pushParameter(Scheme([], type)), metacontext, body)
     case Application(tag, applicand, argument)
-        (argumentType, variables') := infer(stack, variables, argument)
+        (argumentType, metacontext') := infer(context, metacontext, argument)
         with applicand as Abstraction(_, constraint, body)
-            with constraint as Annotation(_)
-                stack' := stack.push(
-                    argumentType.generalize(variables', variables))
-                infer(stack', variables', body)
+            if isLambdaConstraint(constraint)
+                context' := context.pushParameter(
+                    argumentType.generalize(metacontext', metacontext))
+                infer(context', metacontext', body)
             pass
-        (applicandType, variables'') := infer(stack, variables', applicand)
-        (returnType, variables''') := variables''.newMetaVariable(tag)
+        (applicandType, metacontext'') :=
+            infer(context, metacontext', applicand)
+        (returnType, metacontext''') := metacontext''.newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
-        (returnType, unify(variables''', (applicandType, functionType)))
+        (returnType, unify(context, metacontext''',
+            (applicandType, functionType)))
     case Numeral(tag, type, value)
-        (type, variables)
+        (type, metacontext)
     case Operation(tag, type, _, _)
-        Scheme([MetaVariable(noTag, 0)], type).instantiate(tag, variables)
+        Scheme([MetaVariable(noTag, 0)], type).instantiate(tag, metacontext)
 
 
 define getFixScheme(tag)
@@ -172,19 +118,21 @@ define getFixScheme(tag)
     Scheme([a], (a >-> a) >-> a)
 
 
-define inferType(stack, (tag, term))
+define inferType(context, (tag, term))
     if getTagLexeme(tag) =*= "fix"
-        stack.push(getFixScheme(getTermTag(term)))
-    variables := newArray([])
-    (type, variables') := infer(stack, variables, term)
-    stack.push(type.generalize(variables', variables))
+        context.pushContext(term, getFixScheme(getTermTag(term)))
+    metacontext := newArray([])
+    (type, metacontext') := infer(context, metacontext, term)
+    scheme := type.generalize(metacontext', metacontext)
+    context.pushContext(term, scheme)
 
 
 define main(input)
-    (tags, context, environment) := parse(input)
+    (tags, _, environment) := parse(input)
     terms := environment.toList.map(getTerm)
-    stack := zip(tags, terms).cascade(inferType, newArray([]))
-    schemes := stack.toList
+    context := (newArray([]), newArray([]))
+    context' := zip(tags, terms).cascade(inferType, context)
+    schemes := second(context').toList
     showTypings(zip(tags, schemes))
 
 #*

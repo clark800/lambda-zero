@@ -1,0 +1,82 @@
+#* unify.zero
+
+define unificationError(originals, left, right)
+    abort("Type error: Can't unify\n" ++
+        showTerm(left) ++ "\nwith\n" ++ showTerm(right) ++
+        "\nwhile trying to unify\n" ++
+        showTermAndLocation(first(originals)) ++
+        "\nwith\n" ++
+        showTermAndLocation(second(originals)))
+
+
+define unifyFailure(originals, metacontext, (left, right))
+    unificationError(originals.mapPair(substitute(metacontext)),
+        left.substitute(metacontext), right.substitute(metacontext))
+
+
+define isFree(variable, metacontext)
+    with variable as MetaVariable(_, address)
+        isVoid(metacontext.get(address) ?? Void)
+    False
+
+
+define getValue(type, metacontext)
+    with type as MetaVariable(_, address)
+        with metacontext.get(address) ?? Void as Just(closure)
+            closure
+        pass
+    throwError("internal error", getTermTag(type))
+
+
+define getComponentClosures(Closure(term, environment))
+    # TODO: right side of binders need an extra item in the environment
+    getComponents(term).map(`Closure(environment))
+
+
+# Robinson's Unification Algorithm
+# see Comparing Unification Algorithms in First-Order Theorem Proving
+# by Krystof Hoder and Andrei Voronkov
+define unify'(fail, metacontext, (leftClosure, rightClosure))
+    _ @ Closure(left, leftEnvironment) := leftClosure
+    _ @ Closure(right, rightEnvironment) := rightClosure
+
+    if isMetaVariable(left) and not isFree(left, metacontext)
+        unify'(fail, metacontext, (metacontext.getValue(left), rightClosure))
+    if isMetaVariable(right) and not isFree(right, metacontext)
+        unify'(fail, metacontext, (leftClosure, metacontext.getValue(right)))
+    with left as Variable(_, debruijn)
+        with leftEnvironment.peek(debruijn -- 1) as Just(closure)
+            unify'(fail, metacontext, (closure, rightClosure))
+        fail(metacontext, (left, right))
+    with right as Variable(_, debruijn)
+        with rightEnvironment.peek(debruijn -- 1) as Just(closure)
+            unify'(fail, metacontext, (leftClosure, closure))
+        fail(metacontext, (left, right))
+    with left as Implicit(tag, type, body)
+        (metavariable, metacontext') := metacontext.newMetaVariable(tag)
+        closure := Closure(metavariable, leftEnvironment)
+        environment := leftEnvironment.push(closure)
+        unify'(fail, metacontext', (Closure(body, environment), rightClosure))
+    with right as Implicit(tag, type, body)
+        (metavariable, metacontext') := metacontext.newMetaVariable(tag)
+        closure := Closure(metavariable, rightEnvironment)
+        environment := rightEnvironment.push(closure)
+        unify'(fail, metacontext', (leftClosure, Closure(body, environment)))
+    if sameHead(left, right)
+        zip(getComponentClosures(leftClosure),
+            getComponentClosures(rightClosure)).
+            cascade(unify'(fail), metacontext)
+    with left as MetaVariable(_, address)
+        metacontext.set(address, Just(rightClosure))
+    with right as MetaVariable(_, address)
+        metacontext.set(address, Just(leftClosure))
+    fail(metacontext, (left, right))
+
+
+define unify(context, metacontext, types @ (left, right))
+    (environment, _) := context
+    closures := (Closure(left, environment), Closure(right, environment))
+    fail := unifyFailure(types)
+    unify'(fail, metacontext, closures)
+
+#*
