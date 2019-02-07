@@ -49,4 +49,6 @@ static inline unsigned long long getGlobalIndex(Term* t) {
 
 static inline Node* getParameter(Node* n) {return getLeft(n);}
 static inline Node* getBody(Node* n) {return getRight(n);}
-static inline OperationCode getOperationCode(Term* t) {return getValue(t);}
+static inline OperationCode getOperationCode(Term* t) {
+  return (OperationCode)getValue(t);
+}

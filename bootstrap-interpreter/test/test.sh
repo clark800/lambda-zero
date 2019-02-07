@@ -39,6 +39,11 @@ function check {
     fi
 }
 
+function insert_newlines {
+  sed 's/\\n/\
+/g'
+}
+
 function oneline_suite {
     local testcases_path="$DIR/$1"
     local name="$(basename "$testcases_path" ".test")"
@@ -52,8 +57,8 @@ function oneline_suite {
     header "$name"
     while read -r line; do
         read -r output_line
-        local expected_output=$(echo "$output_line" | sed 's/\\n/\n/g')
-        local sedline=$(echo "$line" | sed 's/\\n/\n/g')
+        local expected_output=$(echo "$output_line" | insert_newlines)
+        local sedline=$(echo "$line" | insert_newlines)
         local input="$prelude$sedline"
         local output=$(echo "$input" | $CMD 2>&1)
         check "$line" "$expected_output" "$output" || ((failures++)) || true
@@ -95,7 +100,7 @@ function run {
         "infinite.test $LIB/operators.zero $LIB/prelude.zero"
     )
     if [[ "$META" -eq 1 ]]; then
-        ulimit -s unlimited     # prevent segfaults due to high recursion depth
+        ulimit -s unlimited || true # prevent segfaults due to high recursion depth
         suites=(
             "tokens.test"
             "quote.test"

@@ -18,13 +18,14 @@ CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-CC_FLAGS="-c -std=c99 -pedantic -pedantic-errors -Isrc/ \
+CC_FLAGS="-std=c99 -pedantic -pedantic-errors -Isrc/ \
 -Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
 -Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
 -fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"
 
 # gcc sets --hash-style to a non-default setting when calling ld, which
-# increases the executable size; here we set it back to the default
+# increases the executable size; we can set it back to the default with
+# --hash-style=sysv
 
 LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
 SOURCES=`find -L ./src -name "*.c" -not -path "./src/shared/lib/libc/*"`
@@ -49,10 +50,22 @@ build_libc() {
     (cd src/shared/lib/libc && ./make)
 }
 
+build_advanced() {
+    if ! is_up_to_date "$OUT"; then
+        echoexec $CC -c $CC_FLAGS $SOURCES &&
+        echoexec $CC $LINK_FLAGS -o "$OUT" $OBJECTS &&
+        rm -f $OBJECTS &&
+        echo &&
+        echo "BUILD SUCCESSFUL:" &&
+        ls -gG "$OUT" || (rm -f $OBJECTS ; false)
+        return
+    fi
+    echo "$OUT up-to-date"
+}
+
 build() {
     if ! is_up_to_date "$OUT"; then
-        echoexec $CC $CC_FLAGS $SOURCES &&
-        echoexec $CC $LINK_FLAGS -o "$OUT" $OBJECTS &&
+        echoexec $CC -o "$OUT" $CC_FLAGS $SOURCES &&
         rm -f $OBJECTS &&
         echo &&
         echo "BUILD SUCCESSFUL:" &&
