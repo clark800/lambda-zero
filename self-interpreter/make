@@ -28,7 +28,9 @@ declare -a files=(
     "$DIR/interpret.zero"
 )
 
-chmod -f +w "$OUT" || true
+# BSD chmod still prints an error when the file is not found even with
+# the -f flag, so we redirect stderr to /dev/null to hide that message
+chmod -f +w "$OUT" 2> /dev/null || true
 echo '#!../bootstrap-interpreter/main -t' > "$OUT"
 
 # cat sources files and erase lines containing only comments to speed parsing

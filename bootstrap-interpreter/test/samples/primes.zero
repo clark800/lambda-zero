@@ -1,1 +1,1 @@
-main(input) := showList(showNatural, primes)
+main(input) := primes.map(showNatural).joinWith("\n")
