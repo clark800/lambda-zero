@@ -1,0 +1,4 @@
+#!/bin/bash
+ROOT=$(git rev-parse --show-toplevel)
+mkdir -p "$ROOT/bin"
+gcc -o "$ROOT/bin/xc" -std=c99 -pedantic -Wall -Wextra -O3 xc.c

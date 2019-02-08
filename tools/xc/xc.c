@@ -14,7 +14,7 @@ void error(const char* message) {
     exit(1);
 }
 
-int bindIO(const char* command, char* const argv[], const char* display) {
+int connectIO(const char* command, char* const argv[], const char* display) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd == -1)
         error("socket error");
@@ -36,11 +36,11 @@ int bindIO(const char* command, char* const argv[], const char* display) {
 
 int main(int argc, char* argv[]) {
     if (argc < 2)
-        error("usage: xbind [command]\n");
+        error("usage: xc [command]\n");
     const char* display = getenv("DISPLAY");
     if (display == NULL)
         error("DISPLAY environment variable not set\n");
     const char* command = argv[1];
     char* const* arguments = &(argv[1]);
-    return bindIO(command, arguments, display);
+    return connectIO(command, arguments, display);
 }

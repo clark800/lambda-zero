@@ -1,0 +1,19 @@
+#* draw.zero
+
+define handleEvent(event, state)
+    eventCode := event.lookup("code") ?? 0
+    if eventCode = ERROR
+        abort(showEvent(event))
+    if eventCode = BUTTON_PRESS
+        windowID := event.lookup("event") ?? 0
+        contextID := state
+        x := event.lookup("event-x") ?? 0
+        y := event.lookup("event-y") ?? 0
+        (fillRectangle(contextID, windowID, x, y, 10, 10), state)
+    (NO_RESPONSE, state)
+
+
+define main(input)
+    XWindow(defaultWindow(600, 500), handleEvent, input)
+
+#*

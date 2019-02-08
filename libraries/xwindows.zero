@@ -1,0 +1,437 @@
+#* xwindows.zero
+
+# constants
+UNUSED := 0
+INHERIT := 0
+INPUT_OUTPUT := 1
+REPLACE_PROPERTY := 0
+PREPEND_PROPERTY := 1
+APPEND_PROPERTY := 2
+EVENT_MASK := 2048
+P_POSITION := 4
+P_SIZE := 8
+FUNCTION := 1
+PLANE_MASK := 2
+FOREGROUND := 4
+BACKGROUND := 8
+INVERT := 10
+SET := 15
+NO_RESPONSE := ""
+
+# event flags
+KEY_PRESS_NOTIFY := 1
+KEY_RELEASE_NOTIFY := 2
+BUTTON_PRESS_NOTIFY := 4
+BUTTON_RELEASE_NOTIFY := 8
+ENTER_WINDOW := 16
+LEAVE_WINDOW := 32
+POINTER_MOTION := 64
+POINTER_MOTION_HINT := 128
+BUTTON1_MOTION := 256
+BUTTON2_MOTION := 512
+BUTTON3_MOTION := 1024
+BUTTON4_MOTION := 2048
+BUTTON5_MOTION := 4096
+BUTTON_MOTION := 8192
+KEYMAP_STATE := 16384
+EXPOSURE := 32768
+VISIBILITY_CHANGE := 65536
+STRUCTURE_NOTIFY := 131072
+RESIZE_REDIRECT := 262144
+SUBSTRUCTURE_NOTIFY := 524288
+SUBSTRUCTURE_REDIRECT := 1048576
+FOCUS_CHANGE := 2097152
+PROPERTY_CHANGE := 4194304
+COLORMAP_CHANGE := 8388608
+OWNER_GRAB_BUTTON := 16777216
+
+# event codes
+ERROR := 0
+KEY_PRESS := 2
+KEY_RELEASE := 3
+BUTTON_PRESS := 4
+BUTTON_RELEASE := 5
+MOTION_NOTIFY := 6
+ENTER_NOTIFY := 7
+LEAVE_NOTIFY := 8
+FOCUS_IN := 9
+FOCUS_OUT := 10
+KEYMAP_NOTIFY := 11
+EXPOSE := 12  # a portion of the window needs to be redrawn
+GRAPHICS_EXPOSURE := 13
+NO_EXPOSURE := 14
+VISIBILITY_NOTIFY := 15
+CREATE_NOTIFY := 16
+DESTROY_NOTIFY := 17
+UNMAP_NOTIFY := 18
+MAP_NOTIFY := 19
+MAP_REQUEST := 20
+REPARENT_NOTIFY := 21
+CONFIGURE_NOTIFY := 22
+CONFIGURE_REQUEST := 23
+GRAVITY_NOTIFY := 24
+RESIZE_REQUEST := 25
+CIRCULATE_NOTIFY := 26
+CIRCULATE_REQUEST := 27
+PROPERTY_NOTIFY := 28
+SELECTION_CLEAR := 29
+SELECTION_REQUEST := 30
+SELECTION_NOTIFY := 31
+COLORMAP_NOTIFY := 32
+CLIENT_MESSAGE := 33
+MAPPING_NOTIFY := 34
+
+# atoms
+WM_HINTS := 35
+WM_NORMAL_HINTS := 40
+WM_SIZE_HINTS := 41
+
+# opcodes
+CREATE_WINDOW := 1
+MAP_WINDOW := 8
+CHANGE_PROPERTY := 18
+CREATE_GC := 55
+POLY_FILL_RECTANGLE := 70
+
+
+define byte(n)
+    [n % 256]
+
+
+define word(n)
+    [n % 256, (n // 256) % 256]
+
+
+define quad(n)
+    n1 := n // 256
+    n2 := n1 // 256
+    n3 := n2 // 256
+    [n % 256, n1 % 256, n2 % 256, n3 % 256]
+
+
+define pad(n)
+    (4 -- n % 4) % 4
+
+
+define align(n)
+    n + pad(n)
+
+
+define zeros(n)
+    replicate(n, 0)
+
+
+define stream.read(n)
+    result := stream.splitAt(n)
+    if length(first(result)) =/= n
+        abort("connection dropped")
+    result
+
+
+define parseBytes(data)
+    data.fold(n -> N -> 256 * N + n, 0)
+
+
+define connectRequest
+    byteOrder := byte(108)   # least significant byte first
+    protocolMajorVersion := word(11)
+    protocolMinorVersion := word(0)
+    lengthOfAuthorizationProtocolName := word(0)
+    lengthOfAuthorizationProtocolData := word(0)
+
+    byteOrder ++
+    byte(UNUSED) ++
+    protocolMajorVersion ++
+    protocolMinorVersion ++
+    lengthOfAuthorizationProtocolName ++
+    lengthOfAuthorizationProtocolData ++
+    word(UNUSED)
+
+
+define parseHeader(header)
+    newDictionary([
+        ("status", parseBytes(header[0, 1])),
+        ("unused", parseBytes(header[1, 2])),
+        ("protocol-major-version", parseBytes(header[2, 4])),
+        ("protocol-minor-version", parseBytes(header[4, 6])),
+        ("additional-data-length", parseBytes(header[6, 8]))
+    ])
+
+
+define parseFormat(data)
+    newDictionary([
+        ("depth", parseBytes(data[0, 1])),
+        ("bits-per-pixel", parseBytes(data[1, 2])),
+        ("scanline-pad", parseBytes(data[2, 3]))
+    ])
+
+
+define parseFormats(data)
+    # TODO: parse multiple formats
+    [parseFormat(data)]
+
+
+define parseScreen(data)
+    newDictionary([
+        ("root", parseBytes(data[0, 4])),
+        ("default-colormap", parseBytes(data[4, 8])),
+        ("white-pixel", parseBytes(data[8, 12])),
+        ("black-pixel", parseBytes(data[12, 16])),
+        ("current-input-masks", parseBytes(data[16, 20])),
+        ("width-in-pixels", parseBytes(data[20, 22])),
+        ("height-in-pixels", parseBytes(data[22, 24])),
+        ("width-in-millimeters", parseBytes(data[24, 26])),
+        ("height-in-millimeters", parseBytes(data[26, 28])),
+        ("min-installed-maps", parseBytes(data[28, 30])),
+        ("max-installed-maps", parseBytes(data[30, 32])),
+        ("root-visual", parseBytes(data[32, 36])),
+        ("backing-stores", parseBytes(data[36, 37])),
+        ("save-unders", parseBytes(data[37, 38])),
+        ("root-depth", parseBytes(data[38, 39])),
+        ("number-of-depths", parseBytes(data[39, 40])),
+        ("depth", parseBytes(data[40, 41]))  # TODO: parse depths
+    ])
+
+
+define parseScreens(data)
+    # TODO: parse multiple screens
+    [parseScreen(data)]
+
+
+define parseServerData(header, data)
+    info := newDictionary([
+        ("status", parseBytes(header[0, 1])),
+        ("unused1", parseBytes(header[1, 2])),
+        ("protocol-major-version", parseBytes(header[2, 4])),
+        ("protocol-minor-version", parseBytes(header[4, 6])),
+        ("additional-data-length", parseBytes(header[6, 8])),
+        ("release-number", parseBytes(data[0, 4])),
+        ("resource-id-base", parseBytes(data[4, 8])),
+        ("resource-id-mask", parseBytes(data[8, 12])),
+        ("motion-buffer-size", parseBytes(data[12, 16])),
+        ("length-of-vendor", parseBytes(data[16, 18])),
+        ("maximum-request-length", parseBytes(data[18, 20])),
+        ("number-of-screens", parseBytes(data[20, 21])),
+        ("number-of-formats", parseBytes(data[21, 22])),
+        ("image-byte-order", parseBytes(data[22, 23])),
+        ("bitmap-format-bit-order", parseBytes(data[23, 24])),
+        ("bitmap-format-scanline-unit", parseBytes(data[24, 25])),
+        ("bitmap-format-scanline-pad", parseBytes(data[25, 26])),
+        ("min-keycode", parseBytes(data[26, 27])),
+        ("max-keycode", parseBytes(data[27, 28])),
+        ("unused2", parseBytes(data[28, 32]))
+    ])
+    vendorStart := 32
+    vendorEnd := vendorStart + (info.lookup("length-of-vendor") ?? 0)
+    formatsStart := align(vendorEnd)
+    numberOfFormats := info.lookup("number-of-formats") ?? 0
+    formatsEnd := formatsStart + 8 * numberOfFormats
+    vendor := data[vendorStart, vendorEnd]
+    formats := parseFormats(data[formatsStart, formatsEnd])
+    screens := parseScreens(data.drop(formatsEnd))
+    (info, vendor, formats, screens)
+
+
+define getConnectionSuccessResponse(stream)
+    (header, stream') := stream.read(8)
+    length := 4 * parseBytes(header[6, 8])
+    (data, stream'') := stream'.read(length)
+    (parseServerData(header, data), stream'')
+
+
+define getConnectionResponse(stream)
+    with stream as status :: stream'
+        if status = 0
+            abort("Failed to connect to X Server")
+        if status = 1
+            getConnectionSuccessResponse(stream)
+        if status = 2
+            abort("Authentication required to connect to X server")
+        abort("Unrecognized connection response code")
+    abort("No response from server")
+
+
+# note: request length includes the header and is expressed in units of 4 bytes
+define makeHeader(opcode, data, length)
+    byte(opcode) ++ byte(data) ++ word(length)
+
+
+define createWindow(windowID, parentID, x, y, width, height)
+    borderWidth := 1
+    windowClass := word(INPUT_OUTPUT)
+    visualID := quad(INHERIT)
+    valueMask := quad(EVENT_MASK)
+    eventMask := quad(BUTTON_PRESS_NOTIFY + STRUCTURE_NOTIFY)
+
+    makeHeader(CREATE_WINDOW, INHERIT, 9) ++
+    quad(windowID) ++
+    quad(parentID) ++
+    word(x) ++
+    word(y) ++
+    word(width) ++
+    word(height) ++
+    word(borderWidth) ++
+    windowClass ++
+    visualID ++
+    valueMask ++
+    eventMask
+
+
+define mapWindow(windowID)
+    makeHeader(MAP_WINDOW, UNUSED, 2) ++ quad(windowID)
+
+
+define wmHint(windowID)
+    # WM_NORMAL_HINTS is stored with a type of WM_SIZE_HINTS and a format of 32
+    # # https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html
+    propertyID := WM_NORMAL_HINTS
+    typeID := WM_SIZE_HINTS
+    formatCode := 32
+    dataLength := 18
+    requestLength := 6 + dataLength
+    flags := P_POSITION + P_SIZE
+
+    makeHeader(CHANGE_PROPERTY, REPLACE_PROPERTY, requestLength) ++
+    quad(windowID) ++
+    quad(propertyID) ++
+    quad(typeID) ++
+    byte(formatCode) ++
+    byte(UNUSED) ++
+    word(UNUSED) ++
+    quad(dataLength) ++
+    quad(flags) ++
+    zeros(4 * (dataLength -- 1))
+
+
+define createGC(contextID, windowID, foreground, background)
+    makeHeader(CREATE_GC, UNUSED, 6) ++
+    quad(contextID) ++
+    quad(windowID) ++
+    quad(FOREGROUND + BACKGROUND) ++
+    quad(foreground) ++
+    quad(background)
+
+
+define fillRectangle(contextID, windowID, x, y, width, height)
+    makeHeader(POLY_FILL_RECTANGLE, UNUSED, 5) ++
+    quad(windowID) ++
+    quad(contextID) ++
+    word(x) ++
+    word(y) ++
+    word(width) ++
+    word(height)
+
+
+define parseError(error)
+    newDictionary([
+        ("code", parseBytes(error[0, 1])),
+        ("error-code", parseBytes(error[1, 2])),
+        ("sequence-number", parseBytes(error[2, 4])),
+        ("bad-id", parseBytes(error[4, 8])),
+        ("minor-opcode", parseBytes(error[8, 10])),
+        ("major-opcode", parseBytes(error[10, 11]))
+    ])
+
+
+define parseExpose(event)
+    newDictionary([
+        ("code", parseBytes(event[0, 1])),
+        ("unused", parseBytes(event[1, 2])),
+        ("sequence-number", parseBytes(event[2, 4])),
+        ("window", parseBytes(event[4, 8])),
+        ("x", parseBytes(event[8, 10])),
+        ("y", parseBytes(event[10, 12])),
+        ("width", parseBytes(event[12, 14])),
+        ("height", parseBytes(event[14, 16])),
+        ("count", parseBytes(event[16, 18]))
+    ])
+
+
+define parseMapNotify(event)
+    newDictionary([
+        ("code", parseBytes(event[0, 1])),
+        ("unused", parseBytes(event[1, 2])),
+        ("sequence-number", parseBytes(event[2, 4])),
+        ("event", parseBytes(event[4, 8])),
+        ("window", parseBytes(event[8, 12])),
+        ("override-redirect", parseBytes(event[12, 13]))
+    ])
+
+
+define parseClick(event)
+    newDictionary([
+        ("code", parseBytes(event[0, 1])),
+        ("detail", parseBytes(event[1, 2])),
+        ("sequence-number", parseBytes(event[2, 4])),
+        ("time", parseBytes(event[4, 8])),
+        ("root", parseBytes(event[8, 12])),
+        ("event", parseBytes(event[12, 16])),
+        ("child", parseBytes(event[16, 20])),
+        ("root-x", parseBytes(event[20, 22])),
+        ("root-y", parseBytes(event[22, 24])),
+        ("event-x", parseBytes(event[24, 26])),
+        ("event-y", parseBytes(event[26, 28])),
+        ("state", parseBytes(event[28, 30])),
+        ("same-screen", parseBytes(event[30, 31])),
+        ("unused", parseBytes(event[31, 32]))
+    ])
+
+
+define parseEvent(event)
+    eventCode := parseBytes(event[0, 1])
+    if eventCode = ERROR
+        parseError(event)
+    if eventCode = BUTTON_PRESS
+        parseClick(event)
+    if eventCode = EXPOSE
+        parseExpose(event)
+    if eventCode = MAP_NOTIFY
+        parseMapNotify(event)
+    newDictionary([("code", eventCode)])
+
+
+define showEvent(event)
+    event.showDictionary(showNatural)
+
+
+define handleEvents(eventHandler, stream, state)
+    if isNil(stream)
+        []
+    (eventBytes, stream') := stream.read(32)
+    event := parseEvent(eventBytes)
+    (response, state') := eventHandler(event, state)
+    response ++ handleEvents(eventHandler, stream', state')
+
+
+define defaultWindow(width, height, serverData)
+    (info, vendor, formats, screens) := serverData
+    windowID := info.lookup("resource-id-base") ?? 0
+    with screens as screen :: _
+        rootID := screen.lookup("root") ?? 0
+        screenWidth := screen.lookup("width-in-pixels") ?? 0
+        screenHeight := screen.lookup("height-in-pixels") ?? 0
+        x := screenWidth // 2 -- width // 2
+        y := screenHeight // 2 -- height // 2
+        contextID := windowID + 1
+        background := screen.lookup("white-pixel") ??
+            parseBytes([255, 255, 255])
+        foreground := screen.lookup("black-pixel") ?? 0
+        response :=
+            createWindow(windowID, rootID, x, y, width, height) ++
+            wmHint(windowID) ++
+            mapWindow(windowID) ++
+            createGC(contextID, windowID, foreground, background)
+        (response, contextID)
+    abort("Error: no screens")
+
+
+define runX(initializer, eventHandler, stream)
+    (serverData, stream') := getConnectionResponse(stream)
+    (response, state) := initializer(serverData)
+    response ++ handleEvents(eventHandler, stream', state)
+
+
+define XWindow(initializer, eventHandler, stream)
+    connectRequest ++ runX(initializer, eventHandler, stream)
+
+#*

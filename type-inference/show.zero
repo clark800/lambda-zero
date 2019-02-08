@@ -35,6 +35,6 @@ define showTyping((tag, scheme))
 
 
 define showTypings(typings)
-    typings.map(showTyping).joinWith("\n")
+    typings.map(showTyping).joinWith("\n") ++ "\n"
 
 #*
