@@ -6,3 +6,5 @@ tags
 *.swp
 *~
 *.dSYM
+a.out
+xbind
