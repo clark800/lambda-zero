@@ -36,6 +36,7 @@ if b then x else y ≔ b ⦊ False ↦ y; True ↦ x
 not b ≔ if b then False else True
 b and c ≔ if b then c else False
 b or c ≔ if b then True else c
+b xor c ≔ if b then not c else c
 until(p, f, z) ≔ if p(z) then z else until(p, f, f(z))
 while(p, f, z) ≔ until((not) ∘ p, f, z)
 

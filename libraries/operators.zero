@@ -15,6 +15,7 @@ syntax(??) ≔ infixR(14)
 syntax(of) := infixL(16)
 
 syntax(or) ≔ infixR(17)
+syntax(xor) := infixR(17)
 syntax(and) ≔ infixR(18)
 syntax(not) ≔ prefix(19)
 

@@ -1,0 +1,32 @@
+#!/bin/bash -e
+
+ROOT=$(git rev-parse --show-toplevel)
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB="$ROOT/libraries"
+OUT="$DIR/main"
+
+declare -a files=(
+    "$LIB/operators.zero"
+    "$LIB/prelude.zero"
+    "$LIB/ralist.zero"
+    "$LIB/array.zero"
+    "$LIB/aatree.zero"
+    "$LIB/table.zero"
+    "$LIB/xwindows.zero"
+    "$DIR/life.zero"
+)
+
+(cd $ROOT/tools/xc; ./make)
+
+# BSD chmod still prints an error when the file is not found even with
+# the -f flag, so we redirect stderr to /dev/null to hide that message
+chmod -f +w "$OUT" 2> /dev/null || true
+echo "#!$ROOT/bin/xc $ROOT/bootstrap-interpreter/main -t" > "$OUT"
+
+# cat sources files and erase lines containing only comments to speed parsing
+# note: can't remove blank lines because it would change line numbers in errors
+# note: can't safely remove inline comments because they could be inside quotes
+# note: also have to avoid erasing file markers
+cat ${files[@]} | sed -e 's/^[ ]*# .*$//' >> "$OUT"
+chmod -w "$OUT"
+chmod +x "$OUT"

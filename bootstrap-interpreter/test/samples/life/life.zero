@@ -1,0 +1,147 @@
+#* life.zero
+
+
+define newMatrix(nx, ny)
+    newArray(replicate(ny, newArray(replicate(nx, 0))))
+
+
+define getCell(ix, iy, matrix)
+    row := matrix.get(iy) ?? abort("internal error")
+    row.get(ix) ?? abort("internal error")
+
+
+define getDimensions(matrix)
+    ny := getSize(matrix)
+    nx := getSize(matrix.get(0) ?? newArray([]))
+    (nx, ny)
+
+
+define crossProduct(xs, ys)
+    match xs
+        case []; []
+        case x :: xs'
+            ys.map(y -> (x, y)) ++ crossProduct(xs', ys)
+
+
+define getCoordinates(matrix)
+    (nx, ny) := getDimensions(matrix)
+    xs := (0 ...)[0, nx]
+    ys := (0 ...)[0, ny]
+    crossProduct(xs, ys)
+
+
+define toggleCell(ix, iy, matrix)
+    row := matrix.get(iy) ?? abort("internal error")
+    value := row.get(ix) ?? abort("internal error")
+    matrix.set(iy, row.set(ix, 1 -- value))
+
+
+define clickCell(x, y, pixelsPerCell, matrix)
+    ix := x // pixelsPerCell
+    iy := y // pixelsPerCell
+    toggleCell(ix, iy, matrix)
+
+
+define createMask(x, y, nx, ny)
+    dx := (x + nx -- 1) % nx
+    ux := (x + 1) % nx
+    dy := (y + ny -- 1) % ny
+    uy := (y + 1) % ny
+
+    [(dx, dy), (dx, y), (dx, uy),
+     (x, dy),           (x, uy),
+     (ux, dy), (ux, y), (ux, uy)]
+
+
+define isAlive(matrix, (ix, iy))
+    getCell(ix, iy, matrix) =/= 0
+
+
+define countNeighbors(matrix, ix, iy)
+    (nx, ny) := getDimensions(matrix)
+    createMask(ix, iy, nx, ny).count(isAlive(matrix))
+
+
+define stepCell(matrix, matrix', (ix, iy))
+    alive := isAlive(matrix, (ix, iy))
+    neighbors := countNeighbors(matrix, ix, iy)
+    alive' := if alive then neighbors = 2 or neighbors = 3 else neighbors = 3
+    if alive xor alive' then toggleCell(ix, iy, matrix') else matrix'
+
+
+define stepMatrix(matrix)
+    getCoordinates(matrix).cascade(stepCell(matrix), matrix)
+
+
+define updateGridCell(contextID, windowID, pixelsPerCell, (ix, iy))
+    x1 := ix * pixelsPerCell
+    y1 := iy * pixelsPerCell
+    fillRectangle(contextID, windowID, x1, y1, pixelsPerCell, pixelsPerCell)
+
+
+define flattenMatrix(matrix)
+    # matrix to [((ix, iy), value), ...]
+    zip((0 ...), toList(matrix)).map((iy, row) ->
+        zip(zip((0 ...), repeat(iy)), toList(row))).join
+
+
+define updateCells(updateCell, matrix, matrix')
+    cells := flattenMatrix(matrix)
+    cells' := flattenMatrix(matrix')
+    coordinates := (zip(cells, cells') |:
+        (x -> x.first.second =/= x.second.second)).map(first <> first)
+    coordinates.map(updateCell).join
+
+
+define handleEvent(event, state)
+    (contextID, pixelsPerCell, matrix) := state
+    eventCode := event.lookup("code") ?? 0
+    windowID := event.lookup("event") ?? abort("internal error")
+    if eventCode = ERROR
+        abort(showEvent(event))
+    if eventCode = KEY_PRESS
+        matrix' := stepMatrix(matrix)
+        state' := (contextID, pixelsPerCell, matrix')
+        updateCell := updateGridCell(contextID, windowID, pixelsPerCell)
+        (updateCells(updateCell, matrix, matrix'), state')
+    if eventCode = BUTTON_PRESS
+        x := event.lookup("event-x") ?? 0
+        y := event.lookup("event-y") ?? 0
+        matrix' := clickCell(x, y, pixelsPerCell, matrix)
+        state' := (contextID, pixelsPerCell, matrix')
+        d := pixelsPerCell
+        x1 := (x // d) * d
+        y1 := (y // d) * d
+        (fillRectangle(contextID, windowID, x1, y1, d, d), state')
+    (NO_RESPONSE, state)
+
+
+define initialize(nx, ny, pixelsPerCell, serverData)
+    width := nx * pixelsPerCell
+    height := ny * pixelsPerCell
+    (info, vendor, formats, screens) := serverData
+    windowID := info.lookup("resource-id-base") ?? 0
+    with screens as screen :: _
+        rootID := screen.lookup("root") ?? 0
+        screenWidth := screen.lookup("width-in-pixels") ?? 0
+        screenHeight := screen.lookup("height-in-pixels") ?? 0
+        x := screenWidth // 2 -- width // 2
+        y := screenHeight // 2 -- height // 2
+        contextID := windowID + 1
+        background := screen.lookup("white-pixel") ??
+            parseBytes([255, 255, 255])
+        foreground := screen.lookup("black-pixel") ?? 0
+        response :=
+            createWindow(windowID, rootID, x, y, width, height) ++
+            wmHint(windowID) ++
+            mapWindow(windowID) ++
+            createGC(contextID, windowID, INVERT, foreground, background)
+        matrix := newMatrix(nx, ny)
+        (response, (contextID, pixelsPerCell, matrix))
+    abort("Error: no screens")
+
+
+define main(input)
+    XWindow(initialize(12, 12, 50), handleEvent, input)
+
+#*
