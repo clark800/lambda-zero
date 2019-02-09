@@ -14,9 +14,25 @@ FUNCTION := 1
 PLANE_MASK := 2
 FOREGROUND := 4
 BACKGROUND := 8
-INVERT := 10
-SET := 15
 NO_RESPONSE := ""
+
+# GC functions
+CLEAR := 0
+AND := 1
+AND_REVERSE := 2
+COPY := 3
+AND_INVERTED := 4
+NO_OP := 5
+XOR := 6
+OR := 7
+NOR := 8
+EQUIV := 9
+INVERT := 10
+OR_REVERSE := 11
+COPY_INVERTED := 12
+OR_INVERTED := 13
+NAND := 14
+SET := 15
 
 # event flags
 KEY_PRESS_NOTIFY := 1
@@ -261,7 +277,7 @@ define createWindow(windowID, parentID, x, y, width, height)
     windowClass := word(INPUT_OUTPUT)
     visualID := quad(INHERIT)
     valueMask := quad(EVENT_MASK)
-    eventMask := quad(BUTTON_PRESS_NOTIFY + STRUCTURE_NOTIFY)
+    eventMask := quad(KEY_PRESS_NOTIFY + BUTTON_PRESS_NOTIFY + STRUCTURE_NOTIFY)
 
     makeHeader(CREATE_WINDOW, INHERIT, 9) ++
     quad(windowID) ++
@@ -303,11 +319,12 @@ define wmHint(windowID)
     zeros(4 * (dataLength -- 1))
 
 
-define createGC(contextID, windowID, foreground, background)
-    makeHeader(CREATE_GC, UNUSED, 6) ++
+define createGC(contextID, windowID, function, foreground, background)
+    makeHeader(CREATE_GC, UNUSED, 7) ++
     quad(contextID) ++
     quad(windowID) ++
-    quad(FOREGROUND + BACKGROUND) ++
+    quad(FUNCTION + FOREGROUND + BACKGROUND) ++
+    quad(function) ++
     quad(foreground) ++
     quad(background)
 
@@ -381,7 +398,7 @@ define parseEvent(event)
     eventCode := parseBytes(event[0, 1])
     if eventCode = ERROR
         parseError(event)
-    if eventCode = BUTTON_PRESS
+    if eventCode = KEY_PRESS or eventCode = BUTTON_PRESS
         parseClick(event)
     if eventCode = EXPOSE
         parseExpose(event)
@@ -420,7 +437,7 @@ define defaultWindow(width, height, serverData)
             createWindow(windowID, rootID, x, y, width, height) ++
             wmHint(windowID) ++
             mapWindow(windowID) ++
-            createGC(contextID, windowID, foreground, background)
+            createGC(contextID, windowID, COPY, foreground, background)
         (response, contextID)
     abort("Error: no screens")
 
