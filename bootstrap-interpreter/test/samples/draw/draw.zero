@@ -9,8 +9,8 @@ define handleEvent(event, state)
         contextID := state
         x := event.lookup("event-x") ?? 0
         y := event.lookup("event-y") ?? 0
-        (fillRectangle(contextID, windowID, x, y, 10, 10), state)
-    (NO_RESPONSE, state)
+        Just((fillRectangle(contextID, windowID, x, y, 10, 10), state))
+    Just((NO_RESPONSE, state))
 
 
 define main(input)

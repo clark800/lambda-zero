@@ -8,6 +8,8 @@ OUT="$DIR/main"
 declare -a files=(
     "$LIB/operators.zero"
     "$LIB/prelude.zero"
+    "$LIB/ralist.zero"
+    "$LIB/array.zero"
     "$LIB/aatree.zero"
     "$LIB/table.zero"
     "$LIB/xwindows.zero"

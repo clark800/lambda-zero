@@ -1,6 +1,5 @@
 #* life.zero
 
-
 define newMatrix(nx, ny)
     newArray(replicate(ny, newArray(replicate(nx, 0))))
 
@@ -93,6 +92,11 @@ define updateCells(updateCell, matrix, matrix')
     coordinates.map(updateCell).join
 
 
+define runForever(updateCell, matrix)
+    matrix' := stepMatrix(matrix)
+    updateCells(updateCell, matrix, matrix') ++ runForever(updateCell, matrix')
+
+
 define handleEvent(event, state)
     (contextID, pixelsPerCell, matrix) := state
     eventCode := event.lookup("code") ?? 0
@@ -100,10 +104,22 @@ define handleEvent(event, state)
     if eventCode = ERROR
         abort(showEvent(event))
     if eventCode = KEY_PRESS
-        matrix' := stepMatrix(matrix)
-        state' := (contextID, pixelsPerCell, matrix')
+        keysym := event.lookup("keysym") ?? 0
         updateCell := updateGridCell(contextID, windowID, pixelsPerCell)
-        (updateCells(updateCell, matrix, matrix'), state')
+        if keysym = BACKSPACE_KEY
+            (nx, ny) := getDimensions(matrix)
+            matrix' := newMatrix(nx, ny)
+            state' := (contextID, pixelsPerCell, matrix')
+            Just((updateCells(updateCell, matrix, matrix'), state'))
+        if keysym = RETURN_KEY
+            Just((runForever(updateCell, matrix), state))
+        if keysym = ' '
+            matrix' := stepMatrix(matrix)
+            state' := (contextID, pixelsPerCell, matrix')
+            Just((updateCells(updateCell, matrix, matrix'), state'))
+        if keysym = ESCAPE_KEY
+            Void
+        Just((NO_RESPONSE, state))
     if eventCode = BUTTON_PRESS
         x := event.lookup("event-x") ?? 0
         y := event.lookup("event-y") ?? 0
@@ -112,8 +128,8 @@ define handleEvent(event, state)
         d := pixelsPerCell
         x1 := (x // d) * d
         y1 := (y // d) * d
-        (fillRectangle(contextID, windowID, x1, y1, d, d), state')
-    (NO_RESPONSE, state)
+        Just((fillRectangle(contextID, windowID, x1, y1, d, d), state'))
+    Just((NO_RESPONSE, state))
 
 
 define initialize(nx, ny, pixelsPerCell, serverData)
