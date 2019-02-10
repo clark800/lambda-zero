@@ -15,6 +15,13 @@ PLANE_MASK := 2
 FOREGROUND := 4
 BACKGROUND := 8
 NO_RESPONSE := ""
+ESCAPE_KEY := 65307
+RETURN_KEY := 65293
+BACKSPACE_KEY := 65288
+
+SHIFT := 1
+LOCK := 2
+CONTROL := 3
 
 # GC functions
 CLEAR := 0
@@ -108,6 +115,7 @@ MAP_WINDOW := 8
 CHANGE_PROPERTY := 18
 CREATE_GC := 55
 POLY_FILL_RECTANGLE := 70
+GET_KEYBOARD_MAPPING := 101
 
 
 define byte(n)
@@ -339,6 +347,13 @@ define fillRectangle(contextID, windowID, x, y, width, height)
     word(height)
 
 
+define getKeyboardMapping(firstKeycode, count)
+    makeHeader(GET_KEYBOARD_MAPPING, UNUSED, 2) ++
+    byte(firstKeycode) ++
+    byte(count) ++
+    word(UNUSED)
+
+
 define parseError(error)
     newDictionary([
         ("code", parseBytes(error[0, 1])),
@@ -394,16 +409,24 @@ define parseClick(event)
     ])
 
 
-define parseEvent(event)
-    eventCode := parseBytes(event[0, 1])
+define parseEvent(keymap, eventBytes)
+    eventCode := parseBytes(eventBytes[0, 1])
     if eventCode = ERROR
-        parseError(event)
-    if eventCode = KEY_PRESS or eventCode = BUTTON_PRESS
-        parseClick(event)
+        parseError(eventBytes)
+    if eventCode = KEY_PRESS
+        event := parseClick(eventBytes)
+        keycode := event.lookup("detail") ?? 0
+        state := event.lookup("state") ?? 0
+        keysyms := keymap.get(keycode) ?? []
+        keysymIndex := if state % 4 > 0 then 1 else 0
+        keysym := keysyms.at(keysymIndex) ?? 0
+        event.insert("keysym", keysym)
+    if eventCode = BUTTON_PRESS
+        parseClick(eventBytes)
     if eventCode = EXPOSE
-        parseExpose(event)
+        parseExpose(eventBytes)
     if eventCode = MAP_NOTIFY
-        parseMapNotify(event)
+        parseMapNotify(eventBytes)
     newDictionary([("code", eventCode)])
 
 
@@ -411,13 +434,14 @@ define showEvent(event)
     event.showDictionary(showNatural)
 
 
-define handleEvents(eventHandler, stream, state)
+define handleEvents(eventHandler, stream, keymap, state)
     if isNil(stream)
         []
     (eventBytes, stream') := stream.read(32)
-    event := parseEvent(eventBytes)
-    (response, state') := eventHandler(event, state)
-    response ++ handleEvents(eventHandler, stream', state')
+    event := parseEvent(keymap, eventBytes)
+    with eventHandler(event, state) as Just((response, state'))
+        response ++ handleEvents(eventHandler, stream', keymap, state')
+    []
 
 
 define defaultWindow(width, height, serverData)
@@ -442,10 +466,45 @@ define defaultWindow(width, height, serverData)
     abort("Error: no screens")
 
 
+define parseKeycodeKeysyms(keysyms)
+    if isNil(keysyms) then []
+    (keysym, keysyms') := keysyms.splitAt(4)
+    parseBytes(keysym) :: parseKeycodeKeysyms(keysyms')
+
+
+define parseKeysyms(firstKeycode, keysymsPerKeycode, keysyms)
+    keysymChunks := keysyms.splitEvery(4 * keysymsPerKeycode)
+    keycodeKeysyms := keysymChunks.map(parseKeycodeKeysyms)
+    filler := replicate(firstKeycode, []).fold(push, newArray([]))
+    keycodeKeysyms.cascade(`push, filler)
+
+
+define receiveKeyboardMapping(firstKeycode, stream)
+    (response, stream') := stream.read(32)
+    code := parseBytes(response[0, 1])
+    if code =/= 1
+        abort("invalid response to GET_KEYBOARD_MAPPING")
+    keysymsPerKeycode := parseBytes(response[1, 2])
+    sequenceNumber := parseBytes(response[2, 4])
+    numberOfKeysyms := parseBytes(response[4, 8])
+    (keysyms, stream'') := stream'.read(4 * numberOfKeysyms)
+    (parseKeysyms(firstKeycode, keysymsPerKeycode, keysyms), stream'')
+
+
+define runX'(serverData, minKeycode, initializer, eventHandler, stream)
+    (keymap, stream') := receiveKeyboardMapping(minKeycode, stream)
+    (response, state) := initializer(serverData)
+    response ++ handleEvents(eventHandler, stream', keymap, state)
+
+
 define runX(initializer, eventHandler, stream)
     (serverData, stream') := getConnectionResponse(stream)
-    (response, state) := initializer(serverData)
-    response ++ handleEvents(eventHandler, stream', state)
+    (info, _, _, _) := serverData
+    minKeycode := info.lookup("min-keycode") ?? abort("invalid serverData")
+    maxKeycode := info.lookup("max-keycode") ?? abort("invalid serverData")
+    keycodeCount := maxKeycode -- minKeycode + 1
+    getKeyboardMapping(minKeycode, keycodeCount) ++
+        runX'(serverData, minKeycode, initializer, eventHandler, stream')
 
 
 define XWindow(initializer, eventHandler, stream)
