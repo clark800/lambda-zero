@@ -137,10 +137,11 @@ build_graph() {
 }
 
 case "$1" in
-    "") config_debug && build;;
-    test) config_debug && build && test/test.sh;;
+    "") config_fast && build;;
     fast) clean && config_fast && build;;
-    small) clean && config_small && build_libc && build;;
+    test) config_fast && build && test/test.sh;;
+    debug) clean && config_debug && build;;
+    small) clean && config_small && build_libc && build_advanced;;
     unused) clean && config_unused && build_libc && build;;
     clean) clean;;
     tree) tree --noreport -C -P *.[hc] -I lib src;;

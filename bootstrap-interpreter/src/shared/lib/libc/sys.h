@@ -23,8 +23,16 @@ pid_t getpid(void);
 int open(const char *path, int oflag);
 
 // signal.h
+#define SIG_DFL 0
+#define SIGINT 2
 #define SIGABRT 6
 int kill(pid_t pid, int sig);
+
+// dummy implementation
+static inline void (*signal(int sig, void (*func)(int)))(int) {
+    (void)sig;
+    return func;
+}
 
 // sys/mman.h
 #define MAP_FAILED    ((void*)-1)
