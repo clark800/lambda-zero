@@ -2,7 +2,7 @@
 
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
-ArrowType ::= {Simple, Strict, Locked, DoubleArrow}
+ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 StateT(ast, syntax) ::= {State(
@@ -146,6 +146,10 @@ StrictArrow(tag, constructors, body) :=
     Arrow(tag, Strict, constructors, Name(veil(tag)), body)
 LockedArrow(parameter, body) :=
     Arrow(getTag(parameter), Locked, [], parameter, body)
+DoubleArrow(left, right) :=
+    Arrow(getTag(left), Double, [], left, right)
+ImplicitArrow(parameter, body) :=
+    Arrow(getTag(parameter), Squiggle, [], parameter, body)
 
 isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
     (with type as SyntaxDefinition; True <| False) <| False

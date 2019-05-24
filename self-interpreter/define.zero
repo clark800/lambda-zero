@@ -45,7 +45,7 @@ define isValidPattern(node)
     with node as Juxtaposition(_, left, right)
         isValidPattern(left) and isValidPattern(right)
     with node as Arrow(_, arrowType, _, left, right)
-        with arrowType as DoubleArrow
+        with arrowType as Double
             isValidPattern(left) and isValidPattern(right)
         False
     False

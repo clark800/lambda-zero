@@ -155,7 +155,7 @@ define setTag(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Abstraction(_, metadata, body) -> Abstraction(tag, metadata, body)
     Implication(_, parameter, body) -> Implication(tag, parameter, body)
-    Implicit(_, type, body) -> Implication(tag, type, body)
+    Implicit(_, type, body) -> Implicit(tag, type, body)
     Application(_, left, right) -> Application(tag, left, right)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, type, arity, operator) -> Operation(tag, type, arity, operator)
@@ -227,8 +227,7 @@ define mapComponents(f, term)
             Abstraction(tag, metadata, f(body))
         Implication(tag, parameter, body) ->
             Implication(tag, f(parameter), f(body))
-        Implicit(tag, type, body) ->
-            Implication(tag, f(type), f(type))
+        Implicit(tag, type, body) -> Implicit(tag, f(type), f(type))
         Application(tag, left, right) ->
             Application(tag, mapComponents(f, left), f(right))
         Numeral(_, _, _) -> term
