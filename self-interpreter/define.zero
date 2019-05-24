@@ -114,7 +114,8 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     if isNull(body)
         syntaxError("invalid constructor", name)   # force errors
     parameterTypes := readParameterTypes(form)
-    constructor := Constructor(tag, parameterTypes, dataType, body, n, j + 1)
+    constructor := Constructor(getTag(name), parameterTypes,
+        dataType, body, n, j + 1)
     scope' := applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
     zip(parameters, 0...).fold(
         newGetterDefinition(tag, dataType, n, j, m), scope')
