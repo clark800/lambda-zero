@@ -151,6 +151,7 @@ define newReconstructorAST(parameterTypeASTs, returnTypeAST)
 
 
 define newDeconstructorAST(tag, parameterTypeASTs, adtTypeAST)
+    # todo: change name from "r" so it can't clash with user's names
     returnType := Name(renameTag(tag, "r", NOFIX))
     reconstructorType := newReconstructorAST'(parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
@@ -247,22 +248,6 @@ define getAnnotation(node)
     syntaxError("missing annotation", node)
 
 
-# ADT component types like "a" in List(a) don't have a binder in the AST
-# so here we put them in a temporary context that will bind them to
-# metavariables
-define extendContext(adtTypeAST, context)
-    name := getHead(adtTypeAST)
-    components := getArguments(adtTypeAST)
-    if not components.all(isName)
-        syntaxError("all components should be names", adtTypeAST)
-    tags := components.map(getTag)
-    # note: metavariable 0 is reserved for the polymorphic return type
-    parameterTypes := zip(tags, 1 ...).map(uncurry(MetaVariable))
-    values := zip(zip(components, parameterTypes), parameterTypes)
-    entries := zip(components.map(getLexeme), values)
-    (context.extendTable(entries), parameterTypes)
-
-
 define bind(level, stack, context, node)
     match node
         case Reference(tag, debruijn)
@@ -311,6 +296,7 @@ define bind(level, stack, context, node)
             syntaxError("must appear on the right side of '::='", node)
         case ADT(tag, forms)
             # the ADT parameters are already on the stack at this point
+            # todo: change name from "r" so it can't clash with user's names
             returnType := Name(renameTag(tag, "r", NOFIX))
             annotations := forms.map(getArguments).map(map(getAnnotation))
             argumentTypes := annotations.map(fold(DoubleArrow, returnType))
@@ -329,11 +315,10 @@ define bind(level, stack, context, node)
             scheme := convertToScheme(0, type)
             function.bind(level, stack, context).setAscription(scheme)
         case Accessor(tag, adtType, returnType, function, count, index)
-            (context', universals) := context.extendContext(adtType)
-            adtType' := adtType.bind(level, stack, context')
-            returnType' := returnType.bind(level, stack, context')
-            type := Implication(tag, adtType', returnType')
-            scheme := Scheme(universals, type)
+            arrowAST := DoubleArrow(adtType, returnType)
+            parameters := getArguments(adtType)
+            typeAST := parameters.fold(ImplicitArrow, arrowAST)
+            scheme := convertToScheme(0, typeAST.bind(level, stack, context))
             function.bind(level, stack, context).setAscription(scheme)
         case Null(_)
             abort "internal error: Null reached bind"
