@@ -51,7 +51,7 @@ define reduceArrow(operator, left, right)
 
 
 define reduceDoubleArrow(operator, left, right)
-    Arrow(getTag(operator), DoubleArrow, [], left, right)
+    Arrow(getTag(operator), Double, [], left, right)
 
 
 define reducePipeline(operator, left, right)
