@@ -136,9 +136,9 @@ define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
     function := UnderscoreArrow(tag, UnderscoreArrow(tag,
         UnderscoreArrow(tag, body)))
     parameterTypes := readParameterTypes(form)
-    deconstructor := Deconstructor(tag, parameterTypes, dataType,
-        function, n, j + 1)
     name := Name(addPrefix(getTag(getHead(form)), '@'))
+    deconstructor := Deconstructor(getTag(name), parameterTypes, dataType,
+        function, n, j + 1)
     applyPlainDefinition(tag, name, deconstructor, scope)
 
 
