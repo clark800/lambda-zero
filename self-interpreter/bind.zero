@@ -1,5 +1,32 @@
 #* bind.zero
 
+# temporary function that can be removed after schemes are removed
+define convertToSchemeType(implicits, level, type)
+    with type as Implication(tag, left, right)
+        left' := convertToSchemeType(implicits, level, left)
+        right' := convertToSchemeType(implicits, up level, right)
+        Implication(tag, left', right')
+    with type as Application(tag, left, right)
+        left' := convertToSchemeType(implicits, level, left)
+        right' := convertToSchemeType(implicits, level, right)
+        Application(tag, left', right')
+    with type as Variable(tag, debruijn)
+        if debruijn > level -- implicits
+            MetaVariable(tag, level -- debruijn + 1)
+        Variable(tag, debruijn)
+    type
+
+
+# temporary function that can be removed after schemes are removed
+define convertToScheme(level, type)
+    with type as Implicit(tag, parameter, body)
+        match convertToScheme(up level, body)
+            case Scheme(universals, type')
+                id := length(universals) + 1
+                Scheme(universals ++ [MetaVariable(tag, id)], type')
+    Scheme([], convertToSchemeType(level, level, type))
+
+
 define findParameter(level, stack, lexeme)
     with stack as table :: _
         table.lookup(lexeme).mapJust(mapFirst(level --))
@@ -110,6 +137,19 @@ define newReconstructorType(parameterTypes, returnType)
     returnType
 
 
+define newReconstructorAST'(parameterTypeASTs, returnTypeAST)
+    with parameterTypeASTs as parameterTypeAST :: parameterTypeASTs'
+        bodyTypeAST := newReconstructorAST'(parameterTypeASTs', returnTypeAST)
+        DoubleArrow(parameterTypeAST, bodyTypeAST)
+    returnTypeAST
+
+
+define newReconstructorAST(parameterTypeASTs, returnTypeAST)
+    typeAST := newReconstructorAST'(parameterTypeASTs, returnTypeAST)
+    parameters := getArguments(returnTypeAST)
+    parameters.fold(ImplicitArrow, typeAST)
+
+
 define newDeconstructorScheme(tag, parameterTypes, adtType, universals)
     returnType := MetaVariable(veil(tag), 0)
     reconstructorType := newReconstructorType(parameterTypes, returnType)
@@ -206,6 +246,9 @@ define getAnnotation(node)
     syntaxError("missing annotation", node)
 
 
+# ADT component types like "a" in List(a) don't have a binder in the AST
+# so here we put them in a temporary context that will bind them to
+# metavariables
 define extendContext(adtTypeAST, context)
     name := getHead(adtTypeAST)
     components := getArguments(adtTypeAST)
@@ -228,6 +271,7 @@ define bind(level, stack, context, node)
         case Arrow(tag, arrowType, constructorNames, parameter, body)
             with arrowType as Double
                 parameterTerm := parameter.bind(level, stack, context)
+                # todo: add support for names on left side of double arrows
                 stack' := stack.pushParameter(Name(veil(tag)), level, Void)
                 bodyTerm := body.bind(up level, stack', context)
                 Implication(tag, parameterTerm, bodyTerm)
@@ -272,13 +316,11 @@ define bind(level, stack, context, node)
             bodyType := argumentTypes.fold(DoubleArrow, returnType)
             ImplicitArrow(returnType, bodyType).bind(level, stack, context)
         case Constructor(tag, parameterTypes, adtType, function, count, index)
-            (context', universals) := context.extendContext(adtType)
-            parameterTypes' := parameterTypes.map(bind(level, stack, context'))
-            adtType' := adtType.bind(level, stack, context')
-            type := newReconstructorType(parameterTypes', adtType')
+            typeAST := newReconstructorAST(parameterTypes, adtType)
+            type := typeAST.bind(level, stack, context)
             with function as Number(_, value)
                 Numeral(tag, type, value)
-            scheme := Scheme(universals, type)
+            scheme := convertToScheme(0, type)
             function.bind(level, stack, context).setAscription(scheme)
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
             (context', universals) := context.extendContext(adtType)

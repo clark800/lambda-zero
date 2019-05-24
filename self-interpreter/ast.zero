@@ -93,10 +93,20 @@ define containsName(name)
     Accessor(_, _, _, _, _, _) -> False
     Null(_) -> False
 
+
+define showArrow
+    Simple -> " -> "
+    Strict -> " -> "
+    Locked -> " -> "
+    Double -> " => "
+    Squiggle -> " ~> "
+
+
 define showAST
     Reference(tag, _) -> showTag(tag)
-    Arrow(tag, _, _, parameter, body) ->
-        "(" ++ showTag(getTag(parameter)) ++ " -> " ++ showAST(body) ++ ")"
+    Arrow(tag, arrowType, _, parameter, body) ->
+        "(" ++ showTag(getTag(parameter)) ++
+            showArrow(arrowType) ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
     Let(tag, name, value, scope) ->
