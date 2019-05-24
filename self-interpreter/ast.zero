@@ -105,7 +105,7 @@ define showArrow
 define showAST
     Reference(tag, _) -> showTag(tag)
     Arrow(tag, arrowType, _, parameter, body) ->
-        "(" ++ showTag(getTag(parameter)) ++
+        "(" ++ showAST(parameter) ++
             showArrow(arrowType) ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"

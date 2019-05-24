@@ -150,14 +150,15 @@ define newReconstructorAST(parameterTypeASTs, returnTypeAST)
     parameters.fold(ImplicitArrow, typeAST)
 
 
-define newDeconstructorScheme(tag, parameterTypes, adtType, universals)
-    returnType := MetaVariable(veil(tag), 0)
-    reconstructorType := newReconstructorType(parameterTypes, returnType)
+define newDeconstructorAST(tag, parameterTypeASTs, adtTypeAST)
+    returnType := Name(renameTag(tag, "r", NOFIX))
+    reconstructorType := newReconstructorAST'(parameterTypeASTs, returnType)
     syntax(>->) := syntax(++)
-    (>->) := Implication(veil(tag))
-    fallbackType := adtType >-> returnType
-    type := reconstructorType >-> fallbackType >-> adtType >-> returnType
-    Scheme(returnType :: universals, type)
+    (>->) := DoubleArrow
+    fallbackType := adtTypeAST >-> returnType
+    typeAST := reconstructorType >-> fallbackType >-> adtTypeAST >-> returnType
+    parameters := getArguments(adtTypeAST)
+    ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
 
 
 define getResultType(type)
@@ -323,11 +324,9 @@ define bind(level, stack, context, node)
             scheme := convertToScheme(0, type)
             function.bind(level, stack, context).setAscription(scheme)
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
-            (context', universals) := context.extendContext(adtType)
-            parameterTypes' := parameterTypes.map(bind(level, stack, context'))
-            adtType' := adtType.bind(level, stack, context')
-            scheme := universals.newDeconstructorScheme(
-                tag, parameterTypes', adtType')
+            typeAST := newDeconstructorAST(tag, parameterTypes, adtType)
+            type := typeAST.bind(level, stack, context)
+            scheme := convertToScheme(0, type)
             function.bind(level, stack, context).setAscription(scheme)
         case Accessor(tag, adtType, returnType, function, count, index)
             (context', universals) := context.extendContext(adtType)
