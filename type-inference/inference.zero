@@ -1,5 +1,32 @@
 #* inference.zero
 
+# temporary function that can be removed after schemes are removed
+define convertToSchemeType(implicits, level, type)
+    with type as Implication(tag, left, right)
+        left' := convertToSchemeType(implicits, level, left)
+        right' := convertToSchemeType(implicits, up level, right)
+        Implication(tag, left', right')
+    with type as Application(tag, left, right)
+        left' := convertToSchemeType(implicits, level, left)
+        right' := convertToSchemeType(implicits, level, right)
+        Application(tag, left', right')
+    with type as Variable(tag, debruijn)
+        if debruijn > level -- implicits
+            MetaVariable(tag, level -- debruijn + 1)
+        Variable(tag, debruijn)
+    type
+
+
+# temporary function that can be removed after schemes are removed
+define convertToScheme(level, type)
+    with type as Implicit(tag, parameter, body)
+        match convertToScheme(up level, body)
+            case Scheme(universals, type')
+                id := length(universals) + 1
+                Scheme(universals ++ [MetaVariable(tag, id)], type')
+    Scheme([], convertToSchemeType(level, level, type))
+
+
 define pushContext(term, scheme, context @ (terms, schemes))
     # TODO: replace schemes with an array of closures of types
     (terms.push(Closure(term, terms)), schemes.push(scheme))
@@ -38,10 +65,11 @@ define instantiateType(tag, mapping, type)
 
 define coinstantiate(tag, metacontext, schemes)
     (Scheme(universalsA, typeA), Scheme(universalsB, typeB)) := schemes
-    universals := universalsB ++ universalsA
+    universalsB' := universalsB.drop(length(universalsA))
+    universals := universalsB' ++ universalsA
     (mapping, metacontext') := newInstantiationMap(universals, metacontext)
     (typeA', typeB') := (typeA, typeB).mapPair(instantiateType(tag, mapping))
-    universals' := universalsB.map(instantiateType(tag, mapping))
+    universals' := universalsB'.map(instantiateType(tag, mapping))
     (typeA', Scheme(universals', typeB'), metacontext')
 
 
@@ -79,12 +107,14 @@ define infer(context @ (terms, types), metacontext)
             case Ascription(type)
                 scheme := convertToScheme(0, type)
                 scheme.instantiate(tag, metacontext)
-            case PolarAnnotation(outerScheme, innerScheme)
-                (outerType, innerScheme, metacontext') :=
+            case PolarAnnotation(outerType, innerType)
+                outerScheme := convertToScheme(0, outerType)
+                innerScheme := convertToScheme(0, innerType)
+                (outerType', innerScheme', metacontext') :=
                     coinstantiate(tag, metacontext, (outerScheme, innerScheme))
-                context' := context.pushParameter(innerScheme)
+                context' := context.pushParameter(innerScheme')
                 (bodyType, metacontext'') := infer(context', metacontext', body)
-                (Implication(tag, outerType, bodyType), metacontext'')
+                (Implication(tag, outerType', bodyType), metacontext'')
     case Implication(tag, parameter, body)
         (parameterType, metacontext') := infer(context, metacontext, parameter)
         context' := context.pushParameter(Scheme([], parameterType))

@@ -1,5 +1,13 @@
 #* show.zero
 
+SchemeT(term) ::= {Scheme(getUniversals : List(term), getType : term)}
+
+
+define showScheme(Scheme(universals, term))
+    universals.map(universal -> "∀" ++ showTerm(universal) ++ " ").join ++
+        showTerm(term)
+
+
 define addRenaming((renaming, metacontext), type)
     with type as MetaVariable(source, address)
         if renaming.hasKey(address)

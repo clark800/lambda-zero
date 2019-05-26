@@ -1,32 +1,5 @@
 #* bind.zero
 
-# temporary function that can be removed after schemes are removed
-define convertToSchemeType(implicits, level, type)
-    with type as Implication(tag, left, right)
-        left' := convertToSchemeType(implicits, level, left)
-        right' := convertToSchemeType(implicits, up level, right)
-        Implication(tag, left', right')
-    with type as Application(tag, left, right)
-        left' := convertToSchemeType(implicits, level, left)
-        right' := convertToSchemeType(implicits, level, right)
-        Application(tag, left', right')
-    with type as Variable(tag, debruijn)
-        if debruijn > level -- implicits
-            MetaVariable(tag, level -- debruijn + 1)
-        Variable(tag, debruijn)
-    type
-
-
-# temporary function that can be removed after schemes are removed
-define convertToScheme(level, type)
-    with type as Implicit(tag, parameter, body)
-        match convertToScheme(up level, body)
-            case Scheme(universals, type')
-                id := length(universals) + 1
-                Scheme(universals ++ [MetaVariable(tag, id)], type')
-    Scheme([], convertToSchemeType(level, level, type))
-
-
 define findParameter(level, stack, lexeme)
     with stack as table :: _
         table.lookup(lexeme).mapJust(mapFirst(level --))
@@ -157,21 +130,38 @@ define newDeconstructorAST(tag, parameterTypeASTs, adtTypeAST)
     ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
 
 
-define getResultType(type)
-    with type as Implication(_, _, bodyType)
-        getResultType(bodyType)
-    type
+define getADTName(constructor)
+    with constructor as Constructor(_, _, adtType, _, _, _)
+        getLexeme(getHead(adtType))
+    syntaxError("invalid constructor", constructor)
 
 
-define replaceReturnType(returnType, constructorType)
-    with constructorType as Implication(tag, parameterType, bodyType)
-        Implication(tag, parameterType, replaceReturnType(returnType, bodyType))
-    returnType
+define getConstructionTypeAST(constructor)
+    with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
+        getArguments(adtType).fold(ImplicitArrow, adtType)
+    syntaxError("invalid constructor", constructor)
 
 
-define constructObjectType(tag, constructorTypes, returnType)
-    types' := constructorTypes.map(replaceReturnType(returnType))
-    types'.fold(Implication(tag), returnType)
+define getParameterTypeASTs(constructor)
+    with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
+        parameterTypes
+    syntaxError("invalid constructor", constructor)
+
+
+define getImplicitNames(constructor)
+    with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
+        getArguments(adtType)
+    syntaxError("invalid constructor", constructor)
+
+
+define constructObjectTypeAST(tag, constructors)
+    returnTypeAST := Name(renameTag(tag, "r", NOFIX))
+    reconstructors := constructors.map(getParameterTypeASTs).map(
+        `newReconstructorAST'(returnTypeAST))
+    type := ImplicitArrow(returnTypeAST,
+        reconstructors.fold(DoubleArrow, returnTypeAST))
+    constructor := safeHead(constructors) ?? throwError("no constructors", tag)
+    getImplicitNames(constructor).fold(ImplicitArrow, type)
 
 
 define maybeCount(node)
@@ -186,18 +176,14 @@ define maybeConstructorIndex(node)
     Void
 
 
-define constructCaseAnnotation(tag, constructorPairs)
-    if isNil(constructorPairs)
+define constructCaseAnnotation(tag, constructors)
+    if isNil(constructors)
         throwError("Type error: no cases:", tag)
-    (constructors, constructorSchemes) := unzip(constructorPairs)
     if not constructors.all(isConstructor)
         throwError("Type error: invalid cases:", tag)
-    constructorTypes := constructorSchemes.map(getType)
-    constructionTypes := constructorTypes.map(getResultType)
-    names := deduplicateBy((=*=),
-        constructionTypes.map(getTagLexeme <> getTermTag))
+    adtNames := deduplicateBy((=*=), constructors.map(getADTName))
     counts := deduplicate(constructors.map(maybeCount).prune)
-    if length(names) =/= 1 or length(counts) =/= 1
+    if length(adtNames) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
     count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
     indices := constructors.map(maybeConstructorIndex).prune
@@ -208,29 +194,19 @@ define constructCaseAnnotation(tag, constructorPairs)
     if not indices =*= sort(indices)
         throwError("Type error: cases out of order:", tag)
 
-    # note: all schemes should have the same universals
-    universals := getUniversals(safeHead(constructorSchemes) ??
-        throwError("Type error: invalid cases", tag))
-    returnType := MetaVariable(tag, 0)
-
-    constructionType := safeHead(constructionTypes) ??
+    constructor := safeHead(constructors) ??
         throwError("Type error: invalid cases", tag)
-    objectType := constructObjectType(veil(tag), constructorTypes, returnType)
-    # note: the metsvariables in the two types must be instantiated together
-    # so we need a new instantiation method that merges the universals and
-    # instantiates two types with the same universals.
-    PolarAnnotation(Scheme(universals, constructionType),
-        Scheme([returnType], objectType))
+    constructionTypeAST := getConstructionTypeAST(constructor)
+    objectTypeAST := constructObjectTypeAST(veil(tag), constructors)
+    # note: the implicits in the two types must be instantiated together
+    (constructionTypeAST, objectTypeAST)
 
 
 define buildCaseAnnotation(tag, constructorNames, context)
     with constructorNames.map(getLexeme).map(`lookup(context)).sequence as
             Just(constructorPairs)
-        (constructors, constructorTerms) := unzip(constructorPairs.map(first))
-        with constructorTerms.map(maybeAscription).sequence as Just(types)
-            schemes := types.map(convertToScheme(0))
-            Just(constructCaseAnnotation(tag, zip(constructors, schemes)))
-        Void
+        constructors := constructorPairs.map(first).map(first)
+        Just(constructCaseAnnotation(tag, constructors))
     Void
 
 
@@ -264,7 +240,10 @@ define bind(level, stack, context, node)
             if isNil(constructorNames)
                 Abstraction(getTag(parameter), NoConstraint, bodyTerm)
             with buildCaseAnnotation(tag, constructorNames, context) as
-                    Just(annotation)
+                    Just((outerTypeAST, innerTypeAST))
+                outerType := outerTypeAST.bind(level, stack, context)
+                innerType := innerTypeAST.bind(level, stack, context)
+                annotation := PolarAnnotation(outerType, innerType)
                 Abstraction(getTag(parameter), annotation, bodyTerm)
             syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
@@ -337,12 +316,6 @@ define getDefinitions(node)
         # TODO: set isTypeConstructor
         (getTag(name), False, value) :: getDefinitions(scope)
     [(veil(getTag(node)), False, node)]
-
-
-define maybeIndex(term)
-    with term as Constant(_, _, index)
-        Just(index)
-    Void
 
 
 define bindAST(node)

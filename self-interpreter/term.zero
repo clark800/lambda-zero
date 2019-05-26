@@ -1,12 +1,10 @@
 #* term.zero
 
-SchemeT(term) ::= {Scheme(getUniversals : List(term), getType : term)}
-
 Constraint(term) ::= {
     NoConstraint,
     Annotation(_ : term),
     Ascription(_ : term),
-    PolarAnnotation(_ : SchemeT(term), _ : SchemeT(term))
+    PolarAnnotation(_ : term, _ : term)
 }
 
 Closure(term) ::= {Closure(
@@ -292,10 +290,5 @@ define showTermLocation(term)
 
 define showTermAndLocation(term)
     showTerm(term) ++ " at " ++ showTermLocation(term)
-
-
-define showScheme(Scheme(universals, term))
-    universals.map(universal -> "∀" ++ showTerm(universal) ++ " ").join ++
-        showTerm(term)
 
 #*
