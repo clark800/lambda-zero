@@ -48,42 +48,44 @@ define pushParameter(parameter, level, maybeNode, stack)
 
 define maybeAscription(node)
     with node as Abstraction(_, constraint, _)
-        with constraint as Ascription(scheme)
-            Just(scheme)
+        with constraint as Ascription(type)
+            Just(type)
         Void
     with node as Numeral(_, type, _)
-        Just(Scheme([], type))
+        Just(type)
     with node as Operation(_, type, _, _)
-        Just(Scheme([MetaVariable(veil(getTermTag(node)), 0)], type))
+        Just(type)
     Void
 
 
-define findScheme(lexeme, context)
+define findType(lexeme, context)
     with context.lookup(lexeme) as Just(((_, term), _))
         maybeAscription(term)
     Void
 
 
 define getNaturalType(context)
-    context.findScheme("0").mapJust(getType) ??
-        Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
+    context.findType("0") ?? Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
 
 
 define getBooleanType(context)
-    context.findScheme("False").mapJust(getType) ??
+    context.findType("False") ??
         Variable(renameTag(noTag, "#BOOLEAN#", NOFIX), 0)
 
 
 define getStringType(context, tag)
     natural := getNaturalType(context)
-    listType := context.findScheme("[]").mapJust(getType) ??
+    listType := context.findType("[]") ??
         parseError("List not defined", tag)
-    with listType as Application(_, left, _)
-        Application(noTag, left, natural)
+    with listType as Implicit(_, _, type)
+        with type as Application(_, left, _)
+            Application(noTag, left, natural)
+        parseError("List type invalid", tag)
     parseError("List type invalid", tag)
 
 
 define getOperationType(context, tag)
+    tag' := veil(tag)
     lexeme := getTagLexeme(tag)
     syntax(>->) := syntax(++)
     (>->) := Implication(noTag)
@@ -98,10 +100,10 @@ define getOperationType(context, tag)
         natural := getNaturalType(context)
         Just(natural >-> natural)
     if lexeme =*= "(undefined)"
-        Just(MetaVariable(noTag, 0))
+        Just(Implicit(tag', Top(tag'), Variable(tag', 1)))
     if lexeme =*= "abort"
         string := getStringType(context, tag)
-        Just(string >-> MetaVariable(noTag, 0))
+        Just(Implicit(tag', Top(tag'), string >-> Variable(tag', 2)))
     Void
 
 
@@ -128,13 +130,6 @@ define bindName(level, stack, context, tag)
         bindContextTerm(context, tag) ??
         bindOperation(context, tag) ??
         parseError("undefined symbol", tag)
-
-
-define newReconstructorType(parameterTypes, returnType)
-    with parameterTypes as parameterType :: parameterTypes'
-        bodyType := newReconstructorType(parameterTypes', returnType)
-        Implication(getTermTag(parameterType), parameterType, bodyType)
-    returnType
 
 
 define newReconstructorAST'(parameterTypeASTs, returnTypeAST)
@@ -232,7 +227,8 @@ define buildCaseAnnotation(tag, constructorNames, context)
     with constructorNames.map(getLexeme).map(`lookup(context)).sequence as
             Just(constructorPairs)
         (constructors, constructorTerms) := unzip(constructorPairs.map(first))
-        with constructorTerms.map(maybeAscription).sequence as Just(schemes)
+        with constructorTerms.map(maybeAscription).sequence as Just(types)
+            schemes := types.map(convertToScheme(0))
             Just(constructCaseAnnotation(tag, zip(constructors, schemes)))
         Void
     Void
@@ -307,19 +303,17 @@ define bind(level, stack, context, node)
             type := typeAST.bind(level, stack, context)
             with function as Number(_, value)
                 Numeral(tag, type, value)
-            scheme := convertToScheme(0, type)
-            function.bind(level, stack, context).setAscription(scheme)
+            function.bind(level, stack, context).setAscription(type)
         case Deconstructor(tag, parameterTypes, adtType, function, count, index)
             typeAST := newDeconstructorAST(tag, parameterTypes, adtType)
             type := typeAST.bind(level, stack, context)
-            scheme := convertToScheme(0, type)
-            function.bind(level, stack, context).setAscription(scheme)
+            function.bind(level, stack, context).setAscription(type)
         case Accessor(tag, adtType, returnType, function, count, index)
             arrowAST := DoubleArrow(adtType, returnType)
             parameters := getArguments(adtType)
             typeAST := parameters.fold(ImplicitArrow, arrowAST)
-            scheme := convertToScheme(0, typeAST.bind(level, stack, context))
-            function.bind(level, stack, context).setAscription(scheme)
+            type := typeAST.bind(level, stack, context)
+            function.bind(level, stack, context).setAscription(type)
         case Null(_)
             abort "internal error: Null reached bind"
 

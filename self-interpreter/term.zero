@@ -5,7 +5,7 @@ SchemeT(term) ::= {Scheme(getUniversals : List(term), getType : term)}
 Constraint(term) ::= {
     NoConstraint,
     Annotation(_ : term),
-    Ascription(_ : SchemeT(term)),
+    Ascription(_ : term),
     PolarAnnotation(_ : SchemeT(term), _ : SchemeT(term))
 }
 
@@ -68,13 +68,13 @@ define splitSpine(term)
     (term, [])
 
 
-define setAscription(scheme, term)
+define setAscription(type, term)
     with term as Abstraction(tag, _, body)
-        Abstraction(tag, Ascription(scheme), body)
+        Abstraction(tag, Ascription(type), body)
     with term as Numeral(tag, _, value)
-        Numeral(tag, getType(scheme), value)
+        Numeral(tag, type, value)
     with term as Operation(tag, _, arity, operator)
-        Operation(tag, getType(scheme), arity, operator)
+        Operation(tag, type, arity, operator)
     term
 
 
