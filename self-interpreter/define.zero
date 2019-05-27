@@ -150,6 +150,25 @@ define newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
     newDeconstructorDefinition(tag, dataType, n, ms, formj, scope')
 
 
+define getAnnotation(node)
+    with node as Juxtaposition(_, left, right)
+        with left as Juxtaposition(_, left', _)
+            if isThisName(left', ":")
+                right
+            syntaxError("missing annotation", node)
+        syntaxError("missing annotation", node)
+    syntaxError("missing annotation", node)
+
+
+define newADT(tag, forms)
+    # todo: change name from "r" so it can't clash with user's names
+    returnType := Name(renameTag(tag, "r", NOFIX))
+    annotations := forms.map(getArguments).map(map(getAnnotation))
+    argumentTypes := annotations.map(fold(DoubleArrow, returnType))
+    bodyType := argumentTypes.fold(DoubleArrow, returnType)
+    ImplicitArrow(returnType, bodyType)
+
+
 define applyADTDefinition(tag, left, right, scope)
     with right as SetBuilder(_, forms)
         n := length(forms)
@@ -161,7 +180,7 @@ define applyADTDefinition(tag, left, right, scope)
         # todo: use the same method for parameters as with normal functions
         if not parameters.all(isName)
             syntaxError("parameters to type constructor must be names", name)
-        value := parameters.fold(LockedArrow, ADT(getTag(name), forms))
+        value := parameters.fold(LockedArrow, newADT(getTag(name), forms))
         value' := if forms.any(containsName(name)) then
             applyFix(name, value) else value
         applyPlainDefinition(tag, name, value', scope')
