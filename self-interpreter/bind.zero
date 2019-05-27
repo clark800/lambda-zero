@@ -210,16 +210,6 @@ define buildCaseAnnotation(tag, constructorNames, context)
     Void
 
 
-define getAnnotation(node)
-    with node as Juxtaposition(_, left, right)
-        with left as Juxtaposition(_, left', _)
-            if isThisName(left', ":")
-                right
-            syntaxError("missing annotation", node)
-        syntaxError("missing annotation", node)
-    syntaxError("missing annotation", node)
-
-
 define bind(level, stack, context, node)
     match node
         case Reference(tag, debruijn)
@@ -269,14 +259,6 @@ define bind(level, stack, context, node)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
-        case ADT(tag, forms)
-            # the ADT parameters are already on the stack at this point
-            # todo: change name from "r" so it can't clash with user's names
-            returnType := Name(renameTag(tag, "r", NOFIX))
-            annotations := forms.map(getArguments).map(map(getAnnotation))
-            argumentTypes := annotations.map(fold(DoubleArrow, returnType))
-            bodyType := argumentTypes.fold(DoubleArrow, returnType)
-            ImplicitArrow(returnType, bodyType).bind(level, stack, context)
         case Constructor(tag, parameterTypes, adtType, function, count, index)
             typeAST := newReconstructorAST(parameterTypes, adtType)
             type := typeAST.bind(level, stack, context)
