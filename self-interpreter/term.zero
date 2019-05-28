@@ -6,9 +6,9 @@ Constraint(term) ::= {
     PolarAnnotation(_ : term, _ : term)  # annotation for case lambdas
 }
 
-Closure(term) ::= {Closure(
+ClosureT(term) ::= {Closure(
     getTerm : term,
-    getEnvironment : ArrayT(Closure(term))
+    getEnvironment : ArrayT(ClosureT(term))
 )}
 
 Term ::= {
@@ -22,8 +22,8 @@ Term ::= {
     Application(_ : TagT, _applicand : Term, _argument : Term),
     Numeral(_ :  TagT, _type : Term, _value : ℕ),
     Operation(_ : TagT, _type : Term, _arity : ℕ, _operator :
-        ((Closure(Term) => Closure(Term)) =>
-            List(Closure(Term)) => Closure(Term)))
+        ((ClosureT(Term) => ClosureT(Term)) =>
+            List(ClosureT(Term)) => ClosureT(Term)))
 }
 
 define getTermTag
@@ -189,10 +189,12 @@ define setLocation(Tag(_, _, location), term)
     term.setTag(getTermTag(term).setTagLocation(location))
 
 
-define sameHeadConstructor(a, b)
-    headA := first(splitSpine(a))
-    headB := first(splitSpine(b))
-    getTagLexeme(getTermTag(headA)) =*= getTagLexeme(getTermTag(headB))
+define sameConstant(a, b)
+    with a as Constant(_, _, indexA)
+        with b as Constant(_, _, indexB)
+            indexA = indexB
+        False
+    False
 
 
 define sameHead(term)
@@ -216,7 +218,9 @@ define sameHead(term)
         isImplicit(term)
     case Application(_, left, _)
         with term as Application(_, left', _)
-            sameHeadConstructor(left, left')
+            # note: can't recur on sameHead here because head could be an
+            # abstraction, which would break it
+            sameConstant(first(splitSpine(left)), first(splitSpine(left')))
         False
     case Numeral(_, _, value)
         with term as Numeral(_, _, value')
@@ -233,7 +237,7 @@ define getComponents
     Constant(_, _, _) -> []
     Variable(_, _) -> []
     MetaVariable(_, _) -> []
-    Abstraction(_, _, body) -> [body]
+    Abstraction(_, _, body) -> [body]  # todo: should also include annotation
     Implication(_, parameter, body) -> [parameter, body]
     Implicit(_, type, body) -> [type, body]
     Application(_, left, right) -> second(splitSpine(left)) ++ [right]
