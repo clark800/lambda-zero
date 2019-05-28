@@ -186,7 +186,7 @@ define constructCaseAnnotation(tag, constructors)
     if length(adtNames) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
     count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
-    indices := constructors.map(maybeConstructorIndex).prune
+    indices := deduplicate(constructors.map(maybeConstructorIndex).prune)
     if length(indices) < count
         throwError("Type error: missing case:", tag)
     if length(indices) > count
