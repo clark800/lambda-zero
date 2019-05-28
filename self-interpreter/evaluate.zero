@@ -10,7 +10,9 @@ define evaluate(stack, closure @ Closure(term, environment))
     match term
         case Top(tag)
             closure
-        case Constant(tag, _, index)
+        case Constant(tag, isTypeConstructor, index)
+            if isTypeConstructor
+                closure
             with environment.get(index) as Just(closure')
                 evaluate(stack, closure')
             closure
@@ -19,17 +21,15 @@ define evaluate(stack, closure @ Closure(term, environment))
                 evaluate(stack, closure')
             closure
         case MetaVariable(tag, _)
-            with stack as _ :: _
-                runtimeError("MetaVariable", tag)
-            closure
+            if isNil(stack) then closure else runtimeError("metavariable", tag)
         case Abstraction(_, _, body)
             with stack as argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
         case Implication(tag, _, _)
-            runtimeError("Implication", tag)
+            if isNil(stack) then closure else runtimeError("implication", tag)
         case Implicit(tag, _, _)
-            runtimeError("Implicit", tag)
+            if isNil(stack) then closure else runtimeError("implicit", tag)
         case Application(_, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))

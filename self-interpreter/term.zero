@@ -57,6 +57,12 @@ define isLambdaConstraint
     PolarAnnotation(_, _) -> False
 
 
+define isTypeConstructor(term)
+    with term as Constant(_, isTypeConstructor', _)
+        isTypeConstructor'
+    False
+
+
 define FreeAbstraction(tag, body)
     Abstraction(tag, Annotation(MetaVariable(veil(tag), 0)), body)
 
@@ -66,6 +72,10 @@ define splitSpine(term)
         (applicand, arguments) := splitSpine(left)
         (applicand, arguments ++ [right])
     (term, [])
+
+
+define getTermHead(term)
+    first(splitSpine(term))
 
 
 define setAscription(type, term)
@@ -216,12 +226,8 @@ define sameHead(term)
         isImplication(term)
     case Implicit(_, _, _)
         isImplicit(term)
-    case Application(_, left, _)
-        with term as Application(_, left', _)
-            # note: can't recur on sameHead here because head could be an
-            # abstraction, which would break it
-            sameConstant(first(splitSpine(left)), first(splitSpine(left')))
-        False
+    case Application(_, _, _)
+        isApplication(term)
     case Numeral(_, _, value)
         with term as Numeral(_, _, value')
             value = value'
@@ -240,7 +246,7 @@ define getComponents
     Abstraction(_, _, body) -> [body]  # todo: should also include annotation
     Implication(_, parameter, body) -> [parameter, body]
     Implicit(_, type, body) -> [type, body]
-    Application(_, left, right) -> second(splitSpine(left)) ++ [right]
+    Application(_, left, right) -> [left, right]
     Numeral(_, _, _) -> []
     Operation(_, _, _, _) -> []
 
