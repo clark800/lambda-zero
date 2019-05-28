@@ -76,7 +76,10 @@ define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
             body := UnderscoreArrow(tag,
                 arguments.cascade(Juxtaposition(tag), Underscore(tag, 1)))
             tag' := getTag(name)
-            accessor := Accessor(tag', dataType, returnType, body, n, j + 1)
+
+            type := getArguments(dataType).fold(ImplicitArrow,
+                DoubleArrow(dataType, returnType))
+            accessor := TypedNode(tag', type, body)
             applyPlainDefinition(tag, name, accessor, scope)
         syntaxError("invalid constructor parameter", parameter)
     syntaxError("invalid constructor parameter", parameter)
@@ -88,6 +91,19 @@ define readParameterTypes(form)
             readParameterTypes(left) ++ [right']
         syntaxError("invalid form", form)
     []
+
+
+define newReconstructorAST'(parameterTypeASTs, returnTypeAST)
+    with parameterTypeASTs as parameterTypeAST :: parameterTypeASTs'
+        bodyTypeAST := newReconstructorAST'(parameterTypeASTs', returnTypeAST)
+        DoubleArrow(parameterTypeAST, bodyTypeAST)
+    returnTypeAST
+
+
+define newReconstructorAST(parameterTypeASTs, returnTypeAST)
+    typeAST := newReconstructorAST'(parameterTypeASTs, returnTypeAST)
+    parameters := getArguments(returnTypeAST)
+    parameters.fold(ImplicitArrow, typeAST)
 
 
 define getConstructorBody(name, n, m, j)
@@ -129,6 +145,18 @@ define newFallbackCase(tag, m)
     (1 .. m).cascade(b -> _ -> UnderscoreArrow(tag, b), body)
 
 
+define newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
+    # todo: change name from "r" so it can't clash with user's names
+    returnType := Name(renameTag(tag, "r", NOFIX))
+    reconstructorType := newReconstructorAST'(parameterTypeASTs, returnType)
+    syntax(>->) := syntax(++)
+    (>->) := DoubleArrow
+    fallbackType := adtTypeAST >-> returnType
+    typeAST := reconstructorType >-> fallbackType >-> adtTypeAST >-> returnType
+    parameters := getArguments(adtTypeAST)
+    ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
+
+
 define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
     reconstructor := Underscore(tag, 3)
     arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
@@ -138,8 +166,8 @@ define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
         UnderscoreArrow(tag, body)))
     parameterTypes := readParameterTypes(form)
     name := Name(addPrefix(getTag(getHead(form)), '@'))
-    deconstructor := Deconstructor(getTag(name), parameterTypes, dataType,
-        function, n, j + 1)
+    type := newDeconstructorType(getTag(name), parameterTypes, dataType)
+    deconstructor := TypedNode(getTag(name), type, function)
     applyPlainDefinition(tag, name, deconstructor, scope)
 
 

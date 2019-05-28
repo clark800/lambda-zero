@@ -19,18 +19,6 @@ define pushParameter(parameter, level, maybeNode, stack)
     [newDictionary([(lexeme, (level, maybeNode))])]
 
 
-define maybeAscription(node)
-    with node as Abstraction(_, constraint, _)
-        with constraint as Ascription(type)
-            Just(type)
-        Void
-    with node as Numeral(_, type, _)
-        Just(type)
-    with node as Operation(_, type, _, _)
-        Just(type)
-    Void
-
-
 define findType(lexeme, context)
     with context.lookup(lexeme) as Just(((_, term), _))
         maybeAscription(term)
@@ -105,31 +93,6 @@ define bindName(level, stack, context, tag)
         parseError("undefined symbol", tag)
 
 
-define newReconstructorAST'(parameterTypeASTs, returnTypeAST)
-    with parameterTypeASTs as parameterTypeAST :: parameterTypeASTs'
-        bodyTypeAST := newReconstructorAST'(parameterTypeASTs', returnTypeAST)
-        DoubleArrow(parameterTypeAST, bodyTypeAST)
-    returnTypeAST
-
-
-define newReconstructorAST(parameterTypeASTs, returnTypeAST)
-    typeAST := newReconstructorAST'(parameterTypeASTs, returnTypeAST)
-    parameters := getArguments(returnTypeAST)
-    parameters.fold(ImplicitArrow, typeAST)
-
-
-define newDeconstructorAST(tag, parameterTypeASTs, adtTypeAST)
-    # todo: change name from "r" so it can't clash with user's names
-    returnType := Name(renameTag(tag, "r", NOFIX))
-    reconstructorType := newReconstructorAST'(parameterTypeASTs, returnType)
-    syntax(>->) := syntax(++)
-    (>->) := DoubleArrow
-    fallbackType := adtTypeAST >-> returnType
-    typeAST := reconstructorType >-> fallbackType >-> adtTypeAST >-> returnType
-    parameters := getArguments(adtTypeAST)
-    ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
-
-
 define getADTName(constructor)
     with constructor as Constructor(_, _, adtType, _, _, _)
         getLexeme(getHead(adtType))
@@ -162,18 +125,6 @@ define constructObjectTypeAST(tag, constructors)
         reconstructors.fold(DoubleArrow, returnTypeAST))
     constructor := safeHead(constructors) ?? throwError("no constructors", tag)
     getImplicitNames(constructor).fold(ImplicitArrow, type)
-
-
-define maybeCount(node)
-    with node as Constructor(_, _, _, _, count, _)
-        Just(count)
-    Void
-
-
-define maybeConstructorIndex(node)
-    with node as Constructor(_, _, _, _, _, index)
-        Just(index)
-    Void
 
 
 define constructCaseAnnotation(tag, constructors)
@@ -265,16 +216,9 @@ define bind(level, stack, context, node)
             with function as Number(_, value)
                 Numeral(tag, type, value)
             function.bind(level, stack, context).setAscription(type)
-        case Deconstructor(tag, parameterTypes, adtType, function, count, index)
-            typeAST := newDeconstructorAST(tag, parameterTypes, adtType)
-            type := typeAST.bind(level, stack, context)
-            function.bind(level, stack, context).setAscription(type)
-        case Accessor(tag, adtType, returnType, function, count, index)
-            arrowAST := DoubleArrow(adtType, returnType)
-            parameters := getArguments(adtType)
-            typeAST := parameters.fold(ImplicitArrow, arrowAST)
-            type := typeAST.bind(level, stack, context)
-            function.bind(level, stack, context).setAscription(type)
+        case TypedNode(tag, type, node)
+            node.bind(level, stack, context).setAscription(
+                type.bind(level, stack, context))
         case Null(_)
             abort "internal error: Null reached bind"
 
