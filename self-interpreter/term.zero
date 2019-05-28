@@ -76,6 +76,18 @@ define setAscription(type, term)
     term
 
 
+define maybeAscription(node)
+    with node as Abstraction(_, constraint, _)
+        with constraint as Ascription(type)
+            Just(type)
+        Void
+    with node as Numeral(_, type, _)
+        Just(type)
+    with node as Operation(_, type, _, _)
+        Just(type)
+    Void
+
+
 define maybeDebruijnIndex(term)
     with term as Variable(_, debruijn)
         Just(debruijn)
@@ -109,6 +121,18 @@ define maybeNatural(term)
 define maybeAddress(type)
     with type as MetaVariable(_, address)
         Just(address)
+    Void
+
+
+define maybeCount(node)
+    with node as Constructor(_, _, _, _, count, _)
+        Just(count)
+    Void
+
+
+define maybeConstructorIndex(node)
+    with node as Constructor(_, _, _, _, _, index)
+        Just(index)
     Void
 
 
