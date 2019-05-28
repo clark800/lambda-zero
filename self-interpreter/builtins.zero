@@ -9,7 +9,7 @@ define getBuiltin(tag)
         maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
 
     define newBoolean(b)
-        Abstraction(tag', NoConstraint, Abstraction(tag', NoConstraint,
+        FreeAbstraction(tag', FreeAbstraction(tag',
                 Variable(tag', if b then 1 else 2)))
 
     define compute(f, left, right)

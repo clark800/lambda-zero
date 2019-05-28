@@ -1,7 +1,6 @@
 #* term.zero
 
 Constraint(term) ::= {
-    NoConstraint,         # infer type of lambda parameter
     Annotation(_ : term), # assume type of lambda parameter and verify body
     Ascription(_ : term), # assume type of lambda parameter but don't check body
     PolarAnnotation(_ : term, _ : term)  # annotation for case lambdas
@@ -53,10 +52,13 @@ isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 
 define isLambdaConstraint
-    NoConstraint -> True
     Annotation(_) -> True
     Ascription(_) -> False
     PolarAnnotation(_, _) -> False
+
+
+define FreeAbstraction(tag, body)
+    Abstraction(tag, Annotation(MetaVariable(veil(tag), 0)), body)
 
 
 define splitSpine(term)

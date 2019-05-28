@@ -94,16 +94,14 @@ define infer(context @ (terms, types), metacontext)
         newMetaVariable(tag, metacontext)
     case Abstraction(tag, constraint, body)
         match constraint
-            case NoConstraint
-                (parameterType, metacontext') :=
-                    metacontext.newMetaVariable(tag)
-                context' := context.pushParameter(Scheme([], parameterType))
-                (bodyType, metacontext'') := infer(context', metacontext', body)
-                (Implication(tag, parameterType, bodyType), metacontext'')
             case Annotation(parameterType)
-                context' := context.pushParameter(Scheme([], parameterType))
-                (bodyType, metacontext') := infer(context', metacontext, body)
-                (Implication(tag, parameterType, bodyType), metacontext')
+                (parameterType', metacontext') :=
+                    if isMetaVariable(parameterType) then
+                    metacontext.newMetaVariable(tag) else
+                    (parameterType, metacontext)
+                context' := context.pushParameter(Scheme([], parameterType'))
+                (bodyType, metacontext'') := infer(context', metacontext', body)
+                (Implication(tag, parameterType', bodyType), metacontext'')
             case Ascription(type)
                 scheme := convertToScheme(0, type)
                 scheme.instantiate(tag, metacontext)
