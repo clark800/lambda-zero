@@ -1,10 +1,10 @@
 #* term.zero
 
 Constraint(term) ::= {
-    NoConstraint,
-    Annotation(_ : term),
-    Ascription(_ : term),
-    PolarAnnotation(_ : term, _ : term)
+    NoConstraint,         # infer type of lambda parameter
+    Annotation(_ : term), # assume type of lambda parameter and verify body
+    Ascription(_ : term), # assume type of lambda parameter but don't check body
+    PolarAnnotation(_ : term, _ : term)  # annotation for case lambdas
 }
 
 Closure(term) ::= {Closure(
