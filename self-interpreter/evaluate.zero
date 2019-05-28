@@ -1,8 +1,7 @@
 #* evaluate.zero
 
 define expandNumeral(tag, type, n)
-    Abstraction(tag, NoConstraint,
-        Abstraction(tag, NoConstraint,
+    FreeAbstraction(tag, FreeAbstraction(tag,
             n |> 0 -> Variable(tag, 2); up n' ->
                 Application(tag, Variable(tag, 1), Numeral(tag, type, n'))))
 

@@ -11,8 +11,7 @@ define isMain(term)
 
 
 define newNilTerm(tag)
-    Abstraction(tag, NoConstraint,
-        Abstraction(tag, NoConstraint, Variable(tag, 2)))
+    FreeAbstraction(tag, FreeAbstraction(tag, Variable(tag, 2)))
 
 
 define constructString(tag, string)
