@@ -12,7 +12,7 @@ define isTuple(node)
 
 define applyPlainDefinition(tag, name, value, scope)
     if isName(name)
-        Let(tag, name, value, scope)
+        Let(tag, False, name, value, scope)
     Juxtaposition(tag, newPatternArrow(name, scope), value)
 
 
@@ -204,6 +204,8 @@ define applyADTDefinition(tag, left, right, scope)
         scope' := zip(forms, 0...).fold(
             newConstructorDefinitions(tag, left, n, ms), scope)
         name := getHead(left)
+        if not isName(name)
+            syntaxError("expected name", name)
         parameters := getArguments(left)
         # todo: use the same method for parameters as with normal functions
         if not parameters.all(isName)
@@ -211,7 +213,7 @@ define applyADTDefinition(tag, left, right, scope)
         value := parameters.fold(LockedArrow, newADT(getTag(name), forms))
         value' := if forms.any(containsName(name)) then
             applyFix(name, value) else value
-        applyPlainDefinition(tag, name, value', scope')
+        Let(tag, True, name, value', scope')
     syntaxError("internal error", left)
 
 

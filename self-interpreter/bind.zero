@@ -190,7 +190,9 @@ define bind(level, stack, context, node)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind(level, stack, context),
                 right.bind(level, stack, context))
-        case Let(tag, name, value, scope)
+        case Let(tag, isTypeConstructor, name, value, scope)
+            if isTypeConstructor
+                syntaxError("type constructors must be at the top level", node)
             valueTerm := value.bind(level, stack, context)
             stack' := stack.pushParameter(name, level, Just((value, valueTerm)))
             scopeTerm := scope.bind(up level, stack', context)
@@ -238,9 +240,8 @@ define bindDefinition(state, (tag, isTypeConstructor, node))
 
 
 define getDefinitions(node)
-    with node as Let(tag, name, value, scope)
-        # TODO: set isTypeConstructor
-        (getTag(name), False, value) :: getDefinitions(scope)
+    with node as Let(tag, isTypeConstructor, name, value, scope)
+        (getTag(name), isTypeConstructor, value) :: getDefinitions(scope)
     [(veil(getTag(node)), False, node)]
 
 
