@@ -27,7 +27,8 @@ AST ::= {
     Arrow(_ : TagT, _type : ArrowType, _constructors : List(AST),
         _parameter : AST, _body : AST),
     Juxtaposition(_ : TagT, _left : AST, _right : AST),
-    Let(_ : TagT, _name : AST, _value : AST, _scope : AST),
+    Let(_ : TagT, _isTypeConstructor ∈ 𝔹,
+        _name : AST, _value : AST, _scope : AST),
     Number(_ : TagT, _value : ℕ),
     Operator(_ : TagT, _rank : ℕ, _syntax : SyntaxT(AST)),
     Definition(_ : TagT, _type : DefinitionType,
@@ -55,7 +56,7 @@ define getTag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
-    Let(tag, _, _, _) -> tag
+    Let(tag, _, _, _, _) -> tag
     Number(tag, _) -> tag
     Operator(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
@@ -72,7 +73,7 @@ define containsName(name)
     Arrow(_, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
         containsName(name, left) or containsName(name, right)
-    Let(_, _, value, scope) ->
+    Let(_, _, _, value, scope) ->
         containsName(name, value) or containsName(name, scope)
     Number(_, _) -> False
     Operator(_, _, _) -> False
@@ -101,7 +102,7 @@ define showAST
             showArrow(arrowType) ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
-    Let(tag, name, value, scope) ->
+    Let(tag, _, name, value, scope) ->
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
             ";;" ++ showAST(scope) ++ ")"
     Number(tag, value) -> showNatural(value)
@@ -121,7 +122,7 @@ define showAST
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
-isLet := Let(_, _, _, _) -> True; _ -> False
+isLet := Let(_, _, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
 isOperator := Operator(_, _, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
