@@ -28,6 +28,12 @@ define getValue(type, metacontext)
     throwError("internal error", getTermTag(type))
 
 
+define unifyEvaluate(closure @ Closure(term, environment))
+    if isTypeConstructor(getTermHead(term))
+        closure
+    evaluateClosure(closure)
+
+
 define getComponentClosures(Closure(term, environment))
     # TODO: right side of binders need an extra item in the environment
     getComponents(term).map(`Closure(environment))
@@ -36,7 +42,9 @@ define getComponentClosures(Closure(term, environment))
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
-define unify'(fail, metacontext, (leftClosure, rightClosure))
+define unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
+    leftClosure := unifyEvaluate(leftClosureRaw)
+    rightClosure := unifyEvaluate(rightClosureRaw)
     _ @ Closure(left, leftEnvironment) := leftClosure
     _ @ Closure(right, rightEnvironment) := rightClosure
 
@@ -44,14 +52,6 @@ define unify'(fail, metacontext, (leftClosure, rightClosure))
         unify'(fail, metacontext, (metacontext.getValue(left), rightClosure))
     if isMetaVariable(right) and not isFree(right, metacontext)
         unify'(fail, metacontext, (leftClosure, metacontext.getValue(right)))
-    with left as Variable(_, debruijn)
-        with leftEnvironment.peek(debruijn -- 1) as Just(closure)
-            unify'(fail, metacontext, (closure, rightClosure))
-        fail(metacontext, (left, right))
-    with right as Variable(_, debruijn)
-        with rightEnvironment.peek(debruijn -- 1) as Just(closure)
-            unify'(fail, metacontext, (leftClosure, closure))
-        fail(metacontext, (left, right))
     with left as Implicit(tag, type, body)
         (metavariable, metacontext') := metacontext.newMetaVariable(tag)
         closure := Closure(metavariable, leftEnvironment)
