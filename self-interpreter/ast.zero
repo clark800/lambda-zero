@@ -37,6 +37,7 @@ AST ::= {
     CommaPair(_ : TagT, _left : AST, _right : AST),
     Section(_ :  TagT, _side : SectionSide, _body : AST),
     SetBuilder(_ : TagT, _forms : List(AST)),
+    ADT(_ : TagT, _parameters : List(AST), _objectType : AST),
     Constructor(_ : TagT, _parameterTypes : List(AST), _dataType : AST,
         _function : AST, _count : ℕ, _index : ℕ),
     TypedNode(_ : TagT, _type : AST, _node : AST),
@@ -64,6 +65,7 @@ define getTag
     CommaPair(tag, _, _) -> tag
     Section(tag, _, _) -> tag
     SetBuilder(tag, _) -> tag
+    ADT(tag, _, _) -> tag
     Constructor(tag, _, _, _, _, _) -> tag
     TypedNode(tag, _, _) -> tag
     Null(tag) -> tag
@@ -82,6 +84,7 @@ define containsName(name)
     CommaPair(_, _, _) -> False
     Section(_, _, _) -> False
     SetBuilder(_, _) -> False
+    ADT(_, _, objectType) -> containsName(name, objectType)
     Constructor(_, _, _, _, _, _) -> False
     TypedNode(_, _, _) -> False
     Null(_) -> False
@@ -115,6 +118,8 @@ define showAST
         "(" ++ showAST(left) ++ ", " ++ showAST(right) ++ ")"
     Section(_, _, body) -> showAST(body)
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
+    ADT(tag, parameters, objectType) ->
+        showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
     Constructor(_, _, _, body, _, _) -> showAST(body)
     TypedNode(_, _, node) -> showAST(node)
     Null(_) -> "#NULL#"
@@ -130,6 +135,7 @@ isAsPattern := AsPattern(_, _, _) -> True; _ -> False
 isCommaPair := CommaPair(_, _, _) -> True; _ -> False
 isSection := Section(_, _, _) -> True; _ -> False
 isSetBuilder := SetBuilder(_, _) -> True; _ -> False
+isADT := ADT(_, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 isNull := Null(_) -> True; _ -> False

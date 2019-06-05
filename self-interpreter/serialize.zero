@@ -29,6 +29,9 @@ define serialize(closure)
             case Application(_, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++
                 " " ++ serialize'(Closure(argument, environment), depth) ++ ")"
+            case Construction(tag, parameters, _)
+                showTag(tag) ++ "(" ++ parameters.map(x -> serialize'(
+                    Closure(x, environment), depth)).joinWith(", ") ++ ")"
             case Numeral(_, _, n)
                 showNatural(n)
             case Operation(tag, _, _, _)

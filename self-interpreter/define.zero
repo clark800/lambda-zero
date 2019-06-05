@@ -188,13 +188,14 @@ define getAnnotation(node)
     syntaxError("missing annotation", node)
 
 
-define newADT(tag, forms)
+define newADT(tag, parameters, forms)
     # todo: change name from "r" so it can't clash with user's names
     returnType := Name(renameTag(tag, "r", NOFIX))
     annotations := forms.map(getArguments).map(map(getAnnotation))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))
     bodyType := argumentTypes.fold(DoubleArrow, returnType)
-    ImplicitArrow(returnType, bodyType)
+    objectType := ImplicitArrow(returnType, bodyType)
+    ADT(tag, parameters, objectType)
 
 
 define applyADTDefinition(tag, left, right, scope)
@@ -210,7 +211,8 @@ define applyADTDefinition(tag, left, right, scope)
         # todo: use the same method for parameters as with normal functions
         if not parameters.all(isName)
             syntaxError("parameters to type constructor must be names", name)
-        value := parameters.fold(LockedArrow, newADT(getTag(name), forms))
+        adt := newADT(getTag(name), parameters, forms)
+        value := parameters.fold(LockedArrow, adt)
         value' := if forms.any(containsName(name)) then
             applyFix(name, value) else value
         Let(tag, True, name, value', scope')

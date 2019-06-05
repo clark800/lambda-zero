@@ -135,6 +135,8 @@ define infer(context @ (terms, types), metacontext)
         functionType := Implication(applicandTag, argumentType, returnType)
         (returnType, unify(context, metacontext''',
             (applicandType, functionType)))
+    case Construction(tag, parameters, objectType)
+        (Top(veil(tag)), metacontext)
     case Numeral(tag, type, value)
         (type, metacontext)
     case Operation(tag, type, _, _)
