@@ -18,6 +18,10 @@ setTagLocation(location, Tag(lexeme, fixity, _)) :=
     Tag(lexeme, fixity, location)
 addPrefix(Tag(lexeme, fixity, location), prefix) :=
     Tag(prefix :: lexeme, fixity, location)
+isSameLocation(Location(file1, line1, col1), Location(file2, line2, col2)) :=
+    file1 =*= file2 and line1 = line2 and col1 = col2
+isSameTag(tag1, tag2) :=
+    isSameLocation(getTagLocation(tag1), getTagLocation(tag2))
 
 isComment(c) := c = '#'
 isLineFeed(c) := c = '\n'

@@ -212,6 +212,9 @@ define bind(level, stack, context, node)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)
             syntaxError("must appear on the right side of '::='", node)
+        case ADT(tag, parameters, objectType)
+            Construction(tag, parameters.map(bind(level, stack, context)),
+                objectType.bind(level, stack, context))
         case Constructor(tag, parameterTypes, adtType, function, count, index)
             typeAST := newReconstructorAST(parameterTypes, adtType)
             type := typeAST.bind(level, stack, context)
@@ -230,19 +233,19 @@ define bindGlobal(context, node)
     bind(0, stack, context, node)
 
 
-define bindDefinition(state, (tag, isTypeConstructor, node))
+define bindDefinition(state, (tag, node))
     (tags, context, environment) := state
     term := bindGlobal(context, node)
     (index, environment') := environment.append(Closure(term, environment))
-    constant := Constant(tag, isTypeConstructor, index)
+    constant := Constant(tag, index)
     context' := context.insert(getTagLexeme(tag), ((node, term), constant))
     (tag :: tags, context', environment')
 
 
 define getDefinitions(node)
     with node as Let(tag, isTypeConstructor, name, value, scope)
-        (getTag(name), isTypeConstructor, value) :: getDefinitions(scope)
-    [(veil(getTag(node)), False, node)]
+        (getTag(name), value) :: getDefinitions(scope)
+    [(veil(getTag(node)), node)]
 
 
 define bindAST(node)

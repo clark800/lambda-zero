@@ -10,9 +10,7 @@ define evaluate(stack, closure @ Closure(term, environment))
     match term
         case Top(tag)
             closure
-        case Constant(tag, isTypeConstructor, index)
-            if isTypeConstructor
-                closure
+        case Constant(tag, index)
             with environment.get(index) as Just(closure')
                 evaluate(stack, closure')
             closure
@@ -33,6 +31,8 @@ define evaluate(stack, closure @ Closure(term, environment))
         case Application(_, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
+        case Construction(tag, _, _)
+            if isNil(stack) then closure else runtimeError("construction", tag)
         case Numeral(tag, type, n)
             with stack as _ :: _
                 numeral := expandNumeral(tag, type, n)
