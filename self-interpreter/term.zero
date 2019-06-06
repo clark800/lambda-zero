@@ -13,7 +13,7 @@ ClosureT(term) ::= {Closure(
 
 Term ::= {
     Top(_ : TagT),
-    Constant(_ : TagT, _isTypeConstructor : 𝔹, _id : ℕ),
+    Constant(_ : TagT, _id : ℕ),
     Variable(_ : TagT, _debruijn : ℕ),
     MetaVariable(_ : TagT, _id : ℕ),
     Abstraction(_ : TagT, _ : Constraint(Term), _body : Term),
@@ -29,7 +29,7 @@ Term ::= {
 
 define getTermTag
     Top(tag) -> tag
-    Constant(tag, _, _) -> tag
+    Constant(tag, _) -> tag
     Variable(tag, _) -> tag
     MetaVariable(tag, _) -> tag
     Abstraction(tag, _, _) -> tag
@@ -42,7 +42,7 @@ define getTermTag
 
 
 isTop := Top(_) -> True; _ -> False
-isConstant := Constant(_, _, _) -> True; _ -> False
+isConstant := Constant(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isAbstraction := Abstraction(_, _, _) -> True; _ -> False
@@ -58,12 +58,6 @@ define isLambdaConstraint
     Annotation(_) -> True
     Ascription(_) -> False
     PolarAnnotation(_, _) -> False
-
-
-define isTypeConstructor(term)
-    with term as Constant(_, isTypeConstructor', _)
-        isTypeConstructor'
-    False
 
 
 define FreeAbstraction(tag, body)
@@ -187,7 +181,7 @@ define maybeIsNil(term)
 
 define setTag(tag)
     Top(_) -> Top(tag)
-    Constant(_, isType, index) -> Constant(tag, isType, index)
+    Constant(_, index) -> Constant(tag, index)
     Variable(_, debruijn) -> Variable(tag, debruijn)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Abstraction(_, metadata, body) -> Abstraction(tag, metadata, body)
@@ -204,8 +198,8 @@ define setLocation(Tag(_, _, location), term)
 
 
 define sameConstant(a, b)
-    with a as Constant(_, _, indexA)
-        with b as Constant(_, _, indexB)
+    with a as Constant(_, indexA)
+        with b as Constant(_, indexB)
             indexA = indexB
         False
     False
@@ -214,8 +208,8 @@ define sameConstant(a, b)
 define sameHead(term)
     case Top(_)
         isTop(term)
-    case Constant(_, _, index)
-        with term as Constant(_, _, index')
+    case Constant(_, index)
+        with term as Constant(_, index')
             index = index'
         False
     case Variable(tag, _)
@@ -247,7 +241,7 @@ define sameHead(term)
 
 define getComponents
     Top(_) -> []
-    Constant(_, _, _) -> []
+    Constant(_, _) -> []
     Variable(_, _) -> []
     MetaVariable(_, _) -> []
     Abstraction(_, _, body) -> [body]  # todo: should also include annotation
@@ -262,7 +256,7 @@ define getComponents
 define mapComponents(f, term)
     match term
         Top(_) -> term
-        Constant(_, _, _) -> term
+        Constant(_, _) -> term
         Variable(_, _) -> term
         MetaVariable(_, _) -> term
         Abstraction(tag, metadata, body) ->
@@ -316,7 +310,7 @@ define showMetaVariable(n)
 
 define showTerm
     Top(_) -> "⊤"
-    Constant(tag, _, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
+    Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
     MetaVariable(tag, n) -> showMetaVariable(n)
     Abstraction(tag, _, body) ->
@@ -356,7 +350,7 @@ define flattenClosure(Closure(term, environment))
     match term
         case Top(_)
             term
-        case Constant(_, _, _)
+        case Constant(_, _)
             term
         case Variable(tag, debruijn)
             with environment.peek(debruijn -- 1) as Just(closure)

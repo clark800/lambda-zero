@@ -10,7 +10,7 @@ define evaluate(stack, closure @ Closure(term, environment))
     match term
         case Top(tag)
             closure
-        case Constant(tag, isTypeConstructor, index)
+        case Constant(tag, index)
             with environment.get(index) as Just(closure')
                 evaluate(stack, closure')
             closure

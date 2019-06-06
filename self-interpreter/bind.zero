@@ -233,19 +233,19 @@ define bindGlobal(context, node)
     bind(0, stack, context, node)
 
 
-define bindDefinition(state, (tag, isTypeConstructor, node))
+define bindDefinition(state, (tag, node))
     (tags, context, environment) := state
     term := bindGlobal(context, node)
     (index, environment') := environment.append(Closure(term, environment))
-    constant := Constant(tag, isTypeConstructor, index)
+    constant := Constant(tag, index)
     context' := context.insert(getTagLexeme(tag), ((node, term), constant))
     (tag :: tags, context', environment')
 
 
 define getDefinitions(node)
     with node as Let(tag, isTypeConstructor, name, value, scope)
-        (getTag(name), isTypeConstructor, value) :: getDefinitions(scope)
-    [(veil(getTag(node)), False, node)]
+        (getTag(name), value) :: getDefinitions(scope)
+    [(veil(getTag(node)), node)]
 
 
 define bindAST(node)
