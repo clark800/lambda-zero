@@ -3,7 +3,7 @@
 Constraint(term) ::= {
     Annotation(_ : term), # assume type of lambda parameter and verify body
     Ascription(_ : term), # assume type of lambda parameter but don't check body
-    PolarAnnotation(_ : term, _ : term)  # annotation for case lambdas
+    CaseAnnotation(_ : term)  # annotation for case lambdas
 }
 
 ClosureT(term) ::= {Closure(
@@ -57,7 +57,7 @@ isOperation := Operation(_, _, _, _) -> True; _ -> False
 define isLambdaConstraint
     Annotation(_) -> True
     Ascription(_) -> False
-    PolarAnnotation(_, _) -> False
+    CaseAnnotation(_) -> False
 
 
 define FreeAbstraction(tag, body)
@@ -205,6 +205,52 @@ define sameConstant(a, b)
     False
 
 
+define isSameTerm(a, b)
+    match a
+        case Top(_)
+            isTop(b)
+        case Constant(_, index)
+            with b as Constant(_, index')
+                index = index'
+            False
+        case Variable(_, debruijn)
+            with b as Variable(_, debruijn')
+                debruijn = debruijn'
+            False
+        case MetaVariable(_, index)
+            with b as MetaVariable(_, index')
+                index = index'
+            False
+        case Abstraction(_, _, body)
+            with b as Abstraction(_, _, body')
+                isSameTerm(body, body')
+            False
+        case Implication(_, type, body)
+            with b as Implication(_, type', body')
+                isSameTerm(type, type') and isSameTerm(body, body')
+            False
+        case Implicit(_, type, body)
+            with b as Implicit(_, type', body')
+                isSameTerm(type, type') and isSameTerm(body, body')
+            False
+        case Application(_, type, body)
+            with b as Application(_, type', body')
+                isSameTerm(type, type') and isSameTerm(body, body')
+            False
+        case Construction(_, parameters, type)
+            with b as Construction(_, parameters', type')
+                isSameTerm(type, type') and zip(parameters, parameters').all(
+                    uncurry(isSameTerm))
+            False
+        case Numeral(_, _, value)
+            with b as Numeral(_, _, value')
+                value = value'
+            False
+        case Operation(tag, _, _, _)
+            with b as Operation(tag', _, _, _)
+                getTagLexeme(tag) =*= getTagLexeme(tag')
+            False
+
 define sameHead(term)
     case Top(_)
         isTop(term)
@@ -341,48 +387,5 @@ define showTermAndLocation(term)
 define pushMeta(environment)
     # use MetaVariable 0 to indicate that we don't have a value for the variable
     environment.push(Closure(MetaVariable(noTag, 0), newArray([])))
-
-
-# for any variable in term that has a value in the environment, substitute
-# the variable with the value from the environment recursively
-# todo: can remove this when we use closures instead of schemes for types
-define flattenClosure(Closure(term, environment))
-    match term
-        case Top(_)
-            term
-        case Constant(_, _)
-            term
-        case Variable(tag, debruijn)
-            with environment.peek(debruijn -- 1) as Just(closure)
-                with getTerm(closure) as MetaVariable(_, n)
-                    if n = 0 then term else pass
-                flattenClosure(closure)
-            term
-        case MetaVariable(_, _)
-            term
-        case Abstraction(tag, constraint, body)
-            # todo: flatten constraint too
-            body' := flattenClosure(Closure(body, pushMeta(environment)))
-            Abstraction(tag, constraint, body')
-        case Implication(tag, type, body)
-            type' := flattenClosure(Closure(type, environment))
-            body' := flattenClosure(Closure(body, pushMeta(environment)))
-            Implication(tag, type', body')
-        case Implicit(tag, type, body)
-            type' := flattenClosure(Closure(type, environment))
-            body' := flattenClosure(Closure(body, pushMeta(environment)))
-            Implicit(tag, type', body')
-        case Application(tag, left, right)
-            left' := flattenClosure(Closure(left, environment))
-            right' := flattenClosure(Closure(right, environment))
-            Application(tag, left', right')
-        case Construction(tag, parameters, objectType)
-            parameters' := parameters.map(x ->
-                flattenClosure(Closure(x, environment)))
-            Construction(tag, parameters', objectType)
-        case Numeral(_, _, _)
-            term
-        case Operation(_, _, _, _)
-            term
 
 #*
