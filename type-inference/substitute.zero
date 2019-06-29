@@ -20,8 +20,8 @@ define rename(renaming, type)
 
 define getFreeVariables(metacontext, type)
     with type as MetaVariable(_, address)
-        with metacontext.get(address) ?? Void as Just(Closure(type', _))
-            getFreeVariables(metacontext, type')
+        with metacontext.get(address) ?? Void as Just(closure)
+            getFreeVariables(metacontext, flattenClosure(closure))
         [type]
     join(getComponents(type).map(getFreeVariables(metacontext))).
         deduplicateBy(sameHead)
