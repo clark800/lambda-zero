@@ -78,6 +78,18 @@ define instantiate(tag, metacontext, Scheme(universals, type))
     (type.instantiateType(tag, mapping), metacontext')
 
 
+define getInnerScheme(tag, outerScheme, environment)
+    outerType := getType(outerScheme)
+    _ @ Closure(construction, environment') :=
+        evaluateClosure(Closure(outerType, environment))
+    with construction as Construction(tag, parameters, type)
+        type' := flattenClosure(Closure(type, environment'))
+        type'' := parameters.map(getTermTag).fold(
+            tag' -> body -> Implicit(tag', Top(tag'), body), type')
+        convertToScheme(0, type'')
+    throwError("expected construction in case annotation", tag)
+
+
 define infer(context @ (terms, types), metacontext)
     case Top(tag)
         (Top(tag), metacontext)
@@ -105,9 +117,9 @@ define infer(context @ (terms, types), metacontext)
             case Ascription(type)
                 scheme := convertToScheme(0, type)
                 scheme.instantiate(tag, metacontext)
-            case PolarAnnotation(outerType, innerType)
+            case CaseAnnotation(outerType)
                 outerScheme := convertToScheme(0, outerType)
-                innerScheme := convertToScheme(0, innerType)
+                innerScheme := getInnerScheme(tag, outerScheme, first(context))
                 (outerType', innerScheme', metacontext') :=
                     coinstantiate(tag, metacontext, (outerScheme, innerScheme))
                 context' := context.pushParameter(innerScheme')

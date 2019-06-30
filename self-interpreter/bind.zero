@@ -105,28 +105,6 @@ define getConstructionTypeAST(constructor)
     syntaxError("invalid constructor", constructor)
 
 
-define getParameterTypeASTs(constructor)
-    with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
-        parameterTypes
-    syntaxError("invalid constructor", constructor)
-
-
-define getImplicitNames(constructor)
-    with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
-        getArguments(adtType)
-    syntaxError("invalid constructor", constructor)
-
-
-define constructObjectTypeAST(tag, constructors)
-    returnTypeAST := Name(renameTag(tag, "r", NOFIX))
-    reconstructors := constructors.map(getParameterTypeASTs).map(
-        `newReconstructorAST'(returnTypeAST))
-    type := ImplicitArrow(returnTypeAST,
-        reconstructors.fold(DoubleArrow, returnTypeAST))
-    constructor := safeHead(constructors) ?? throwError("no constructors", tag)
-    getImplicitNames(constructor).fold(ImplicitArrow, type)
-
-
 define constructCaseAnnotation(tag, constructors)
     if isNil(constructors)
         throwError("Type error: no cases:", tag)
@@ -147,10 +125,7 @@ define constructCaseAnnotation(tag, constructors)
 
     constructor := safeHead(constructors) ??
         throwError("Type error: invalid cases", tag)
-    constructionTypeAST := getConstructionTypeAST(constructor)
-    objectTypeAST := constructObjectTypeAST(veil(tag), constructors)
-    # note: the implicits in the two types must be instantiated together
-    (constructionTypeAST, objectTypeAST)
+    getConstructionTypeAST(constructor)
 
 
 define buildCaseAnnotation(tag, constructorNames, context)
@@ -181,10 +156,9 @@ define bind(level, stack, context, node)
             if isNil(constructorNames)
                 FreeAbstraction(getTag(parameter), bodyTerm)
             with buildCaseAnnotation(tag, constructorNames, context) as
-                    Just((outerTypeAST, innerTypeAST))
-                outerType := outerTypeAST.bind(level, stack, context)
-                innerType := innerTypeAST.bind(level, stack, context)
-                annotation := PolarAnnotation(outerType, innerType)
+                    Just(typeAST)
+                type := typeAST.bind(level, stack, context)
+                annotation := CaseAnnotation(type)
                 Abstraction(getTag(parameter), annotation, bodyTerm)
             syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)

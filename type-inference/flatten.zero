@@ -1,0 +1,53 @@
+
+define flattenConstraint(flattenClosure, constraint, environment)
+    match constraint
+        Annotation(type) ->
+            Annotation(flattenClosure(Closure(type, environment)))
+        Ascription(type) ->
+            Ascription(flattenClosure(Closure(type, environment)))
+        CaseAnnotation(type) ->
+            CaseAnnotation(flattenClosure(Closure(type, environment)))
+
+# for any variable in term that has a value in the environment, substitute
+# the variable with the value from the environment recursively
+# todo: can remove this when we use closures instead of schemes for types
+define flattenClosure(Closure(term, environment))
+    match term
+        case Top(_)
+            term
+        case Constant(_, index)
+            term
+        case Variable(tag, debruijn)
+            with environment.peek(debruijn -- 1) as Just(closure)
+                with getTerm(closure) as MetaVariable(_, n)
+                    if n = 0 then term else pass
+                flattenClosure(evaluateClosure(closure))
+            term
+        case MetaVariable(_, _)
+            term
+        case Abstraction(tag, constraint, body)
+            constraint' := flattenConstraint(
+                flattenClosure, constraint, environment)
+            body' := flattenClosure(Closure(body, pushMeta(environment)))
+            Abstraction(tag, constraint', body')
+        case Implication(tag, type, body)
+            type' := flattenClosure(Closure(type, environment))
+            body' := flattenClosure(Closure(body, pushMeta(environment)))
+            Implication(tag, type', body')
+        case Implicit(tag, type, body)
+            type' := flattenClosure(Closure(type, environment))
+            body' := flattenClosure(Closure(body, pushMeta(environment)))
+            Implicit(tag, type', body')
+        case Application(tag, left, right)
+            left' := flattenClosure(Closure(left, environment))
+            right' := flattenClosure(Closure(right, environment))
+            Application(tag, left', right')
+        case Construction(tag, parameters, objectType)
+            parameters' := parameters.map(x ->
+                flattenClosure(Closure(x, environment)))
+            Construction(tag, parameters', objectType)
+        case Numeral(_, _, _)
+            term
+        case Operation(_, _, _, _)
+            term
+
