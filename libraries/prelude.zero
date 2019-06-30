@@ -150,7 +150,7 @@ n ‥ m ≔ if n > m then [] else n ∷ (↑ n ‥ m)
 find(p, xs) ≔ safeHead(xs ¦ p)
 contains(p, xs) ≔ not isVoid(xs.find(p))
 findIndices(p, xs) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
-findIndex(p, xs) ≔ safeHead(findIndices(xs, p))
+findIndex(p, xs) ≔ safeHead(findIndices(p, xs))
 
 cascadeMaybe(f, z, xs) ≔ xs ⦊ [] ↦ Just(z); x ∷ xs′ ↦
     f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′))
