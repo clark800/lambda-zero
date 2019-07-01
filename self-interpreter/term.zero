@@ -1,10 +1,15 @@
 #* term.zero
 
-Constraint(term) ::= {
-    Annotation(_ : term), # assume type of lambda parameter and verify body
-    Ascription(_ : term), # assume type of lambda parameter but don't check body
-    CaseAnnotation(_ : term)  # annotation for case lambdas
+BinderT ::= {
+    Abstraction,     # assume type of lambda parameter and verify body
+    CaseAbstraction, # annotation for case lambdas
+    Instance        # assume type of lambda parameter but don't check body
 }
+
+isAbstraction := Abstraction -> True; _ -> False
+isCaseAbstraction := CaseAbstraction -> True; _ -> False
+isInstance := Instance -> True; _ -> False
+
 
 ClosureT(term) ::= {Closure(
     getTerm : term,
@@ -16,7 +21,7 @@ Term ::= {
     Constant(_ : TagT, _id : ℕ),
     Variable(_ : TagT, _debruijn : ℕ),
     MetaVariable(_ : TagT, _id : ℕ),
-    Abstraction(_ : TagT, _ : Constraint(Term), _body : Term),
+    Binder(_ : TagT, _ : BinderT, _type : Term, _body : Term),
     Implication(_ : TagT, _antecedent : Term, _consequent : Term),
     Implicit(_ : TagT, _type : Term, _body : Term),
     Application(_ : TagT, _applicand : Term, _argument : Term),
@@ -32,7 +37,7 @@ define getTermTag
     Constant(tag, _) -> tag
     Variable(tag, _) -> tag
     MetaVariable(tag, _) -> tag
-    Abstraction(tag, _, _) -> tag
+    Binder(tag, _, _, _) -> tag
     Implication(tag, _, _) -> tag
     Implicit(tag, _, _) -> tag
     Application(tag, _, _) -> tag
@@ -45,7 +50,7 @@ isTop := Top(_) -> True; _ -> False
 isConstant := Constant(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
-isAbstraction := Abstraction(_, _, _) -> True; _ -> False
+isBinder := Binder(_, _, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
@@ -54,14 +59,8 @@ isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 
-define isLambdaConstraint
-    Annotation(_) -> True
-    Ascription(_) -> False
-    CaseAnnotation(_) -> False
-
-
 define FreeAbstraction(tag, body)
-    Abstraction(tag, Annotation(MetaVariable(veil(tag), 0)), body)
+    Binder(tag, Abstraction, MetaVariable(veil(tag), 0), body)
 
 
 define splitSpine(term)
@@ -76,8 +75,8 @@ define getTermHead(term)
 
 
 define setAscription(type, term)
-    with term as Abstraction(tag, _, body)
-        Abstraction(tag, Ascription(type), body)
+    with term as Binder(tag, binderType, _, body)
+        Binder(tag, Instance, type, body)
     with term as Numeral(tag, _, value)
         Numeral(tag, type, value)
     with term as Operation(tag, _, arity, operator)
@@ -86,8 +85,8 @@ define setAscription(type, term)
 
 
 define maybeAscription(node)
-    with node as Abstraction(_, constraint, _)
-        with constraint as Ascription(type)
+    with node as Binder(_, binderType, type, _)
+        with binderType as Instance
             Just(type)
         Void
     with node as Numeral(_, type, _)
@@ -104,7 +103,7 @@ define maybeDebruijnIndex(term)
 
 
 define maybeBody(term)
-    with term as Abstraction(_, _, body)
+    with term as Binder(_, _, _, body)
         Just(body)
     Void
 
@@ -184,7 +183,7 @@ define setTag(tag)
     Constant(_, index) -> Constant(tag, index)
     Variable(_, debruijn) -> Variable(tag, debruijn)
     MetaVariable(_, index) -> MetaVariable(tag, index)
-    Abstraction(_, metadata, body) -> Abstraction(tag, metadata, body)
+    Binder(_, binderType, type, body) -> Binder(tag, binderType, type, body)
     Implication(_, parameter, body) -> Implication(tag, parameter, body)
     Implicit(_, type, body) -> Implicit(tag, type, body)
     Application(_, left, right) -> Application(tag, left, right)
@@ -205,6 +204,13 @@ define sameConstant(a, b)
     False
 
 
+define isSameBinderType(a, b)
+    match a
+        Abstraction -> isAbstraction(b)
+        CaseAbstraction -> isCaseAbstraction(b)
+        Instance -> isInstance(b)
+
+
 define isSameTerm(a, b)
     match a
         case Top(_)
@@ -221,9 +227,10 @@ define isSameTerm(a, b)
             with b as MetaVariable(_, index')
                 index = index'
             False
-        case Abstraction(_, _, body)
-            with b as Abstraction(_, _, body')
-                isSameTerm(body, body')
+        case Binder(_, binderType, type, body)
+            with b as Binder(_, binderType', type', body')
+                isSameBinderType(binderType, binderType') and
+                    isSameTerm(type, type') and isSameTerm(body, body')
             False
         case Implication(_, type, body)
             with b as Implication(_, type', body')
@@ -264,8 +271,8 @@ define sameHead(term)
         with term as MetaVariable(_, address')
             address = address'
         False
-    case Abstraction(_, _, _)
-        isAbstraction(term)
+    case Binder(_, _, _, _)
+        isBinder(term)
     case Implication(_, _, _)
         isImplication(term)
     case Implicit(_, _, _)
@@ -290,7 +297,7 @@ define getComponents
     Constant(_, _) -> []
     Variable(_, _) -> []
     MetaVariable(_, _) -> []
-    Abstraction(_, _, body) -> [body]  # todo: should also include annotation
+    Binder(_, _, type, body) -> [type, body]
     Implication(_, parameter, body) -> [parameter, body]
     Implicit(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
@@ -305,8 +312,8 @@ define mapComponents(f, term)
         Constant(_, _) -> term
         Variable(_, _) -> term
         MetaVariable(_, _) -> term
-        Abstraction(tag, metadata, body) ->
-            Abstraction(tag, metadata, f(body))
+        Binder(tag, binderType, type, body) ->
+            Binder(tag, binderType, f(type), f(body))
         Implication(tag, parameter, body) ->
             Implication(tag, f(parameter), f(body))
         Implicit(tag, type, body) -> Implicit(tag, f(type), f(type))
@@ -359,7 +366,7 @@ define showTerm
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
     MetaVariable(tag, n) -> showMetaVariable(n)
-    Abstraction(tag, _, body) ->
+    Binder(tag, binderType, _, body) ->
         "(" ++ showTag(tag) ++ " ↦ " ++ showTerm(body) ++ ")"
     Implication(tag, parameter, body) ->
         if isImplication(parameter) then

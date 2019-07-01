@@ -1,12 +1,4 @@
-
-define flattenConstraint(flattenClosure, constraint, environment)
-    match constraint
-        Annotation(type) ->
-            Annotation(flattenClosure(Closure(type, environment)))
-        Ascription(type) ->
-            Ascription(flattenClosure(Closure(type, environment)))
-        CaseAnnotation(type) ->
-            CaseAnnotation(flattenClosure(Closure(type, environment)))
+#* flatten.zero
 
 # for any variable in term that has a value in the environment, substitute
 # the variable with the value from the environment recursively
@@ -25,11 +17,10 @@ define flattenClosure(Closure(term, environment))
             term
         case MetaVariable(_, _)
             term
-        case Abstraction(tag, constraint, body)
-            constraint' := flattenConstraint(
-                flattenClosure, constraint, environment)
+        case Binder(tag, binderType, type, body)
+            type' := flattenClosure(Closure(type, environment))
             body' := flattenClosure(Closure(body, pushMeta(environment)))
-            Abstraction(tag, constraint', body')
+            Binder(tag, binderType, type', body')
         case Implication(tag, type, body)
             type' := flattenClosure(Closure(type, environment))
             body' := flattenClosure(Closure(body, pushMeta(environment)))
@@ -51,3 +42,4 @@ define flattenClosure(Closure(term, environment))
         case Operation(_, _, _, _)
             term
 
+#*
