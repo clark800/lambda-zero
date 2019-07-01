@@ -158,8 +158,7 @@ define bind(level, stack, context, node)
             with buildCaseAnnotation(tag, constructorNames, context) as
                     Just(typeAST)
                 type := typeAST.bind(level, stack, context)
-                annotation := CaseAnnotation(type)
-                Abstraction(getTag(parameter), annotation, bodyTerm)
+                Binder(getTag(parameter), CaseAbstraction, type, bodyTerm)
             syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind(level, stack, context),

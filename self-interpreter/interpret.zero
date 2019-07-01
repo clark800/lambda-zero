@@ -7,7 +7,7 @@ define splitCodeAndInput(input)
 
 define isMain(term)
     # todo: detect the name "main" rather than parameter name "input"
-    isAbstraction(term) and getTagLexeme(getTermTag(term)) =*= "input"
+    isBinder(term) and getTagLexeme(getTermTag(term)) =*= "input"
 
 
 define newNilTerm(tag)
