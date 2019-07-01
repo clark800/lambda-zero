@@ -16,7 +16,7 @@ define serialize(closure)
             case MetaVariable(tag, n)
                 showTag(tag)
             case Abstraction(tag, _, body)
-                "(" ++ showTag(tag) ++ " -> " ++
+                "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
             case Implication(tag, parameter, body)
                 "(" ++ serialize'(Closure(parameter, environment), depth) ++
