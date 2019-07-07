@@ -15,17 +15,21 @@ define serialize(closure)
                 showTag(tag)
             case MetaVariable(tag, n)
                 showTag(tag)
-            case Binder(tag, _, _, body)
+            case Binder(tag, variety, type, body)
+                with variety as ImplicationV
+                    "(" ++
+                    serialize'(Closure(type, environment), depth) ++
+                    " ⇒ " ++
+                    serialize'(Closure(body, environment), depth + 1) ++
+                    ")"
+                with variety as ImplicitV
+                    "(" ++
+                    serialize'(Closure(type, environment), depth) ++
+                    " ⇝ " ++
+                    serialize'(Closure(body, environment), depth + 1) ++
+                    ")"
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Implication(tag, parameter, body)
-                "(" ++ serialize'(Closure(parameter, environment), depth) ++
-                " ⇒ " ++ serialize'(Closure(body, environment), depth + 1) ++
-                ")"
-            case Implicit(tag, type, body)
-                "(" ++ serialize'(Closure(type, environment), depth) ++
-                " ⇝ " ++ serialize'(Closure(body, environment), depth + 1) ++
-                ")"
             case Application(_, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++
                 " " ++ serialize'(Closure(argument, environment), depth) ++ ")"
