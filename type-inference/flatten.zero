@@ -1,5 +1,16 @@
 #* flatten.zero
 
+define isUnknown(term)
+    with term as Variable(_, n)
+        n = 0
+    False
+
+
+define pushUnknown(environment)
+    # use Variable 0 to indicate that we don't have a value for the variable
+    environment.push(Closure(Variable(noTag, 0), newArray([])))
+
+
 # for any variable in term that has a value in the environment, substitute
 # the variable with the value from the environment recursively
 # todo: can remove this when we use closures instead of schemes for types
@@ -11,8 +22,8 @@ define flattenClosure(Closure(term, environment))
             term
         case Variable(tag, debruijn)
             with environment.peek(debruijn -- 1) as Just(closure)
-                with getTerm(closure) as Variable(_, n)
-                    if n = 0 then term else pass
+                if isUnknown(getTerm(closure))
+                    term
                 flattenClosure(evaluateClosure(closure))
             term
         case MetaVariable(_, _)

@@ -9,13 +9,13 @@ newMetaVariables(tags, metacontext) :=
     tags.cascadeMap(newMetaVariable, metacontext)
 
 
-newRenaming(mappings) := newTable((<=), mappings)
+newMapping(mappings) := newTable((<=), mappings)
 
 
-define rename(renaming, type)
+define applyMapping(mapping, type)
     with type as MetaVariable(_, address)
-        renaming.lookup(address) ?? type
-    type.mapComponents(rename(renaming))
+        mapping.lookup(address) ?? type
+    type.mapComponents(applyMapping(mapping))
 
 
 define getFreeVariables(metacontext, type)

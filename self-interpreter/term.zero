@@ -389,9 +389,4 @@ define showTermLocation(term)
 define showTermAndLocation(term)
     showTerm(term) ++ " at " ++ showTermLocation(term)
 
-
-define pushUnknown(environment)
-    # use MetaVariable 0 to indicate that we don't have a value for the variable
-    environment.push(Closure(Variable(noTag, 0), newArray([])))
-
 #*
