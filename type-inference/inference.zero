@@ -25,17 +25,17 @@ define generalize(metacontext, oldMetacontext, type)
     Scheme(universals, type')
 
 
-define newInstantiationMap(universals, metacontext)
+define newInstantiationMapping(universals, metacontext)
     tags := universals.map(getTermTag)
     (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
     addresses := universals.map(maybeAddress).prune
-    renaming := newRenaming(zip(addresses, metaVariables))
-    (renaming, metacontext')
+    mapping := newMapping(zip(addresses, metaVariables))
+    (mapping, metacontext')
 
 
 define instantiate(tag, metacontext, Scheme(universals, type))
-    (mapping, metacontext') := newInstantiationMap(universals, metacontext)
-    (type.rename(mapping).setLocation(tag), metacontext')
+    (mapping, metacontext') := newInstantiationMapping(universals, metacontext)
+    (type.applyMapping(mapping).setLocation(tag), metacontext')
 
 
 define peelImplicits(type)
@@ -47,13 +47,18 @@ define peelImplicits(type)
     ([], type)
 
 
-define instantiateType(metacontext, type)
+define convertToScheme(metacontext, type)
     # type may be wrapped in some implicits; we create a new metavariable
     # for each implicit, then substitute them in the type
     (tags, type') := peelImplicits(type)
     (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
     environment := newArray(metaVariables.map(v -> Closure(v, newArray([]))))
-    (flattenClosure(Closure(type', environment)), metacontext')
+    type'' := flattenClosure(Closure(type', environment))
+    (Scheme(metaVariables, type''), metacontext')
+
+
+define instantiateType(metacontext, type)
+    convertToScheme(metacontext, type).mapFirst(getType)
 
 
 define getInnerType(tag, outerType, environment)
@@ -64,15 +69,7 @@ define getInnerType(tag, outerType, environment)
     throwError("expected construction in case annotation", tag)
 
 
-define convertToScheme(metacontext, type)
-    (tags, type') := peelImplicits(type)
-    (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
-    environment := newArray(metaVariables.map(v -> Closure(v, newArray([]))))
-    type'' := flattenClosure(Closure(type', environment))
-    (Scheme(metaVariables, type''), metacontext')
-
-
-define infer(context @ (terms, types), metacontext)
+define infer(context @ (environment, types), metacontext)
     case Top(tag)
         (Top(tag), metacontext)
     case Constant(tag, index)
@@ -87,40 +84,34 @@ define infer(context @ (terms, types), metacontext)
             infer(context, metacontext, term)
         newMetaVariable(tag, metacontext)
     case Binder(tag, variety, type, body)
+        # a metavariable in the annotation field means there is no annotation
+        (type, metacontext) := if isMetaVariable(type) then
+            metacontext.newMetaVariable(tag) else (type, metacontext)
+        context' := context.pushParameter(Scheme([], type))
         match variety
             case AbstractionV
-                (parameterType', metacontext') :=
-                    if isMetaVariable(type) then
-                    metacontext.newMetaVariable(tag) else
-                    (type, metacontext)
-                context' := context.pushParameter(Scheme([], parameterType'))
-                (bodyType, metacontext'') := infer(context', metacontext', body)
-                (Implication(tag, parameterType', bodyType), metacontext'')
+                (bodyType, metacontext') := infer(context', metacontext, body)
+                (Implication(tag, type, bodyType), metacontext')
             case CaseAbstractionV
-                (outerType, metacontext') := instantiateType(metacontext, type)
-                (innerScheme, metacontext'') := convertToScheme(metacontext',
-                    getInnerType(tag, outerType, first(context)))
-                context' := context.pushParameter(innerScheme)
-                (bodyType, metacontext''') :=
-                    infer(context', metacontext'', body)
-                (Implication(tag, outerType, bodyType), metacontext''')
+                (outerType, metacontext) := instantiateType(metacontext, type)
+                type' := getInnerType(tag, outerType, environment)
+                (scheme, metacontext) := convertToScheme(metacontext, type')
+                context' := context.pushParameter(scheme)
+                (bodyType, metacontext) := infer(context', metacontext, body)
+                (Implication(tag, outerType, bodyType), metacontext)
             case InstanceV
                 instantiateType(metacontext, type)
             case ImplicationV
-                (parameterType, metacontext') :=
-                    infer(context, metacontext, type)
-                context' := context.pushParameter(Scheme([], parameterType))
-                (bodyType, metacontext'') := infer(context', metacontext', body)
-                (Top(veil(tag)), metacontext'')
+                infer(context', metacontext, body).mapFirst(_ -> Top(veil(tag)))
             case ImplicitV
-                context' := context.pushParameter(Scheme([], type))
                 infer(context', metacontext, body)
     case Application(tag, applicand, argument)
         (argumentType, metacontext') := infer(context, metacontext, argument)
         with applicand as Binder(_, variety, type, body)
             if isAbstractionV(variety)
-                context' := context.pushParameter(
-                    argumentType.generalize(metacontext', metacontext))
+                # suppport polymorphism in nested functions
+                scheme := argumentType.generalize(metacontext', metacontext)
+                context' := context.pushParameter(scheme)
                 infer(context', metacontext', body)
             pass
         (applicandType, metacontext'') :=

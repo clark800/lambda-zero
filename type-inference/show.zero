@@ -18,13 +18,13 @@ define addRenaming((renaming, metacontext), type)
 
 
 define makeRenaming(type)
-    renaming := newRenaming([])
+    renaming := newMapping([])
     metacontext := newArray([])
     first(addRenaming((renaming, metacontext), type))
 
 
 define showTypeWithRenaming(type, renaming)
-    showTerm(type.rename(renaming))
+    showTerm(type.applyMapping(renaming))
 
 
 define showUniversalsWithRenaming(universals, renaming)
