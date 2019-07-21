@@ -5,8 +5,8 @@ define newMetaVariable(tag, metacontext)
     (MetaVariable(tag, address), metacontext')
 
 
-newMetaVariables(originals, metacontext) :=
-    originals.map(getTermTag).cascadeMap(newMetaVariable, metacontext)
+newMetaVariables(tags, metacontext) :=
+    tags.cascadeMap(newMetaVariable, metacontext)
 
 
 newRenaming(mappings) := newTable((<=), mappings)
