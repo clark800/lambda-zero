@@ -11,7 +11,7 @@ define flattenClosure(Closure(term, environment))
             term
         case Variable(tag, debruijn)
             with environment.peek(debruijn -- 1) as Just(closure)
-                with getTerm(closure) as MetaVariable(_, n)
+                with getTerm(closure) as Variable(_, n)
                     if n = 0 then term else pass
                 flattenClosure(evaluateClosure(closure))
             term
@@ -19,7 +19,7 @@ define flattenClosure(Closure(term, environment))
             term
         case Binder(tag, variety, type, body)
             type' := flattenClosure(Closure(type, environment))
-            body' := flattenClosure(Closure(body, pushMeta(environment)))
+            body' := flattenClosure(Closure(body, pushUnknown(environment)))
             Binder(tag, variety, type', body')
         case Application(tag, left, right)
             left' := flattenClosure(Closure(left, environment))
@@ -28,7 +28,8 @@ define flattenClosure(Closure(term, environment))
         case Construction(tag, parameters, objectType)
             parameters' := parameters.map(x ->
                 flattenClosure(Closure(x, environment)))
-            Construction(tag, parameters', objectType)
+            objectType' := flattenClosure(Closure(objectType, environment))
+            Construction(tag, parameters', objectType')
         case Numeral(_, _, _)
             term
         case Operation(_, _, _, _)

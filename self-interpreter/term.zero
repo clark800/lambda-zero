@@ -364,7 +364,7 @@ define showTerm
     Top(_) -> "⊤"
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
-    MetaVariable(tag, n) -> showMetaVariable(n)
+    MetaVariable(tag, n) -> showMetaVariable(n) # ++ "%" ++ showNatural(n)
     Binder(tag, variety, type, body) -> (
         with variety as ImplicationV
             if isBinder(type) then
@@ -390,8 +390,8 @@ define showTermAndLocation(term)
     showTerm(term) ++ " at " ++ showTermLocation(term)
 
 
-define pushMeta(environment)
+define pushUnknown(environment)
     # use MetaVariable 0 to indicate that we don't have a value for the variable
-    environment.push(Closure(MetaVariable(noTag, 0), newArray([])))
+    environment.push(Closure(Variable(noTag, 0), newArray([])))
 
 #*

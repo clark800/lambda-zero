@@ -1,34 +1,5 @@
 #* inference.zero
 
-# temporary function that can be removed after schemes are removed
-define convertToSchemeType(implicits, level, type)
-    with type as Binder(tag, variety, left, right)
-        left' := convertToSchemeType(implicits, level, left)
-        right' := convertToSchemeType(implicits, up level, right)
-        Binder(tag, variety, left', right')
-    with type as Application(tag, left, right)
-        left' := convertToSchemeType(implicits, level, left)
-        right' := convertToSchemeType(implicits, level, right)
-        Application(tag, left', right')
-    with type as Variable(tag, debruijn)
-        if debruijn > level -- implicits
-            MetaVariable(tag, level -- debruijn + 1)
-        Variable(tag, debruijn)
-    type
-
-
-# temporary function that can be removed after schemes are removed
-define convertToScheme(level, type)
-    if isImplicit(type)
-        with type as Binder(tag, variety, _, body)
-            match convertToScheme(up level, body)
-                case Scheme(universals, type')
-                    id := length(universals) + 1
-                    Scheme(universals ++ [MetaVariable(tag, id)], type')
-        Scheme([], convertToSchemeType(level, level, type))
-    Scheme([], convertToSchemeType(level, level, type))
-
-
 define pushContext(term, scheme, context @ (terms, schemes))
     # TODO: replace schemes with an array of closures of types
     (terms.push(Closure(term, terms)), schemes.push(scheme))
@@ -55,41 +26,50 @@ define generalize(metacontext, oldMetacontext, type)
 
 
 define newInstantiationMap(universals, metacontext)
-    (metaVariables, metacontext') := newMetaVariables(universals, metacontext)
+    tags := universals.map(getTermTag)
+    (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
     addresses := universals.map(maybeAddress).prune
     renaming := newRenaming(zip(addresses, metaVariables))
     (renaming, metacontext')
 
 
-define instantiateType(tag, mapping, type)
-    type.rename(mapping).setLocation(tag)
-
-
-define coinstantiate(tag, metacontext, schemes)
-    (Scheme(universalsA, typeA), Scheme(universalsB, typeB)) := schemes
-    universalsB' := universalsB.drop(length(universalsA))
-    universals := universalsB' ++ universalsA
-    (mapping, metacontext') := newInstantiationMap(universals, metacontext)
-    (typeA', typeB') := (typeA, typeB).mapPair(instantiateType(tag, mapping))
-    universals' := universalsB'.map(instantiateType(tag, mapping))
-    (typeA', Scheme(universals', typeB'), metacontext')
-
-
 define instantiate(tag, metacontext, Scheme(universals, type))
     (mapping, metacontext') := newInstantiationMap(universals, metacontext)
-    (type.instantiateType(tag, mapping), metacontext')
+    (type.rename(mapping).setLocation(tag), metacontext')
 
 
-define getInnerScheme(tag, outerScheme, environment)
-    outerType := getType(outerScheme)
+define peelImplicits(type)
+    with type as Binder(tag, variety, _, body)
+        if isImplicitV(variety)
+            (tags, type') := peelImplicits(body)
+            (tag :: tags, type')
+        pass
+    ([], type)
+
+
+define instantiateType(metacontext, type)
+    # type may be wrapped in some implicits; we create a new metavariable
+    # for each implicit, then substitute them in the type
+    (tags, type') := peelImplicits(type)
+    (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
+    environment := newArray(metaVariables.map(v -> Closure(v, newArray([]))))
+    (flattenClosure(Closure(type', environment)), metacontext')
+
+
+define getInnerType(tag, outerType, environment)
     _ @ Closure(construction, environment') :=
         evaluateClosure(Closure(outerType, environment))
-    with construction as Construction(tag, parameters, type)
-        type' := flattenClosure(Closure(type, environment'))
-        type'' := parameters.map(getTermTag).fold(
-            tag' -> body -> Implicit(tag', Top(tag'), body), type')
-        convertToScheme(0, type'')
+    with construction as Construction(_, _, type)
+        flattenClosure(Closure(type, environment'))
     throwError("expected construction in case annotation", tag)
+
+
+define convertToScheme(metacontext, type)
+    (tags, type') := peelImplicits(type)
+    (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
+    environment := newArray(metaVariables.map(v -> Closure(v, newArray([]))))
+    type'' := flattenClosure(Closure(type', environment))
+    (Scheme(metaVariables, type''), metacontext')
 
 
 define infer(context @ (terms, types), metacontext)
@@ -117,16 +97,15 @@ define infer(context @ (terms, types), metacontext)
                 (bodyType, metacontext'') := infer(context', metacontext', body)
                 (Implication(tag, parameterType', bodyType), metacontext'')
             case CaseAbstractionV
-                outerScheme := convertToScheme(0, type)
-                innerScheme := getInnerScheme(tag, outerScheme, first(context))
-                (outerType', innerScheme', metacontext') :=
-                    coinstantiate(tag, metacontext, (outerScheme, innerScheme))
-                context' := context.pushParameter(innerScheme')
-                (bodyType, metacontext'') := infer(context', metacontext', body)
-                (Implication(tag, outerType', bodyType), metacontext'')
+                (outerType, metacontext') := instantiateType(metacontext, type)
+                (innerScheme, metacontext'') := convertToScheme(metacontext',
+                    getInnerType(tag, outerType, first(context)))
+                context' := context.pushParameter(innerScheme)
+                (bodyType, metacontext''') :=
+                    infer(context', metacontext'', body)
+                (Implication(tag, outerType, bodyType), metacontext''')
             case InstanceV
-                scheme := convertToScheme(0, type)
-                scheme.instantiate(tag, metacontext)
+                instantiateType(metacontext, type)
             case ImplicationV
                 (parameterType, metacontext') :=
                     infer(context, metacontext, type)
@@ -156,8 +135,7 @@ define infer(context @ (terms, types), metacontext)
     case Numeral(tag, type, value)
         (type, metacontext)
     case Operation(tag, type, _, _)
-        scheme := convertToScheme(0, type)
-        scheme.instantiate(tag, metacontext)
+        instantiateType(metacontext, type)
 
 
 define getFixScheme(tag)
