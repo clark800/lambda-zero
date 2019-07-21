@@ -87,6 +87,7 @@ define infer(context @ (environment, types), metacontext)
         # a metavariable in the annotation field means there is no annotation
         (type, metacontext) := if isMetaVariable(type) then
             metacontext.newMetaVariable(tag) else (type, metacontext)
+        # todo: type may contain variables which would get lost here
         context' := context.pushParameter(Scheme([], type))
         match variety
             case AbstractionV
@@ -108,7 +109,7 @@ define infer(context @ (environment, types), metacontext)
     case Application(tag, applicand, argument)
         (argumentType, metacontext') := infer(context, metacontext, argument)
         with applicand as Binder(_, variety, type, body)
-            if isAbstractionV(variety)
+            if isAbstractionV(variety) and isMetaVariable(type)
                 # suppport polymorphism in nested functions
                 scheme := argumentType.generalize(metacontext', metacontext)
                 context' := context.pushParameter(scheme)
