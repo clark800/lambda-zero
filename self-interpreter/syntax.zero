@@ -295,8 +295,11 @@ define shiftSemicolon(state, operator)
 
 define shiftNewline(state @ State(stack, operators), operator)
     stack' := erase(stack, " ")
+    # ignore newlines after operators for line continuations
     if isOperatorTop(stack')
         State(stack', operators)
+    if getRank(operator) % 2 =/= 0
+        syntaxError("odd-width indent after", operator)
     shiftSemicolon(state, operator)
 
 

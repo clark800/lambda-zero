@@ -1,11 +1,7 @@
 #* errors.zero
 
-define showErrorLocation(Tag(lexeme, _, location))
-    "'" ++ lexeme ++ "' at " ++ showLocation(location) ++ "\n"
-
-
 define throwError(message, tag)
-    abort message ++ " " ++ showErrorLocation(tag)
+    abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
 
 
 define parseError(message, tag)
