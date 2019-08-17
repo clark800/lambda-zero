@@ -159,6 +159,7 @@ ImplicitArrow(parameter, body) :=
 isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
     (with type as SyntaxDefinition; True <| False) <| False
 getLexeme(node) := getTagLexeme(getTag(node))
+getRank := Operator(_, rank, _) -> rank; _ -> 0
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
 isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme

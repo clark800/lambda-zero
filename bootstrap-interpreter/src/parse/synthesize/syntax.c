@@ -234,10 +234,13 @@ static void shiftSemicolon(Stack* stack, Node* operator) {
 }
 
 static void shiftNewline(Stack* stack, Node* operator) {
-    // ignore newlines after operators for line continuations
     erase(stack, " ");
-    if (!isOperator(peek(stack, 0)))
+    // ignore newlines after operators for line continuations
+    if (!isOperator(peek(stack, 0))) {
+        if (getValue(operator) % 2 != 0)
+            syntaxError("odd-width indent after", operator);
         shiftSemicolon(stack, operator);
+    }
 }
 
 void initSymbols(void) {

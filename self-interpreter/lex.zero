@@ -110,9 +110,6 @@ define showLocation(Location(file, line, column))
     (if isNil(file) then "" else file ++ " ") ++
         "line " ++ showNatural(line) ++ " column " ++ showNatural(column)
 
-define showFullTag(Tag(lexeme, _, location))
-    "'" ++ lexeme ++ "' at " ++ showLocation(location)
-
 define showTag(Tag(lexeme, fixity, _))
     with lexeme as c :: _
         if c = 0 then "\\0"
@@ -121,6 +118,13 @@ define showTag(Tag(lexeme, fixity, _))
         "(" ++ lexeme ++ ")"
     "\\0"
 
+define showQuotedLexeme(lexeme)
+    with lexeme as c :: _
+        if c = '\n' then "(end of line)" else pass
+    "'" ++ lexeme ++ "'"
+
+define showTagWithLocation(Tag(lexeme, _, location))
+    showQuotedLexeme(lexeme) ++ " at " ++ showLocation(location)
 
 TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
@@ -167,21 +171,6 @@ define START
 define lex(string)
     pairs(scan(string) ++ [noTag]).map(uncurry(createToken))
 
-define showFullToken(token)
-    showFullTag(getTokenTag(token)) ++ " " ++ (
-        match getTokenCode(token)
-            Space -> "Space"
-            VSpace -> "VSpace"
-            Newline -> "Newline"
-            Symbolic -> "Symbolic"
-            Numeric -> "Numeric"
-            Character -> "Character"
-            String -> "String"
-            Comment -> "Comment"
-            Invalid -> "Invalid"
-    )
-
 #main(input) := scan(input).map(showTag).joinWith("\n")
-#main(input) := lex(input).map(showFullToken).joinWith("\n")
 
 #*

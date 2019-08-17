@@ -51,9 +51,13 @@ void printLine(const char* line, FILE* stream) {
 }
 
 void printTag(Tag tag, const char* quote, FILE* stream) {
-    fputs(quote, stream);
-    printString(tag.lexeme, stream);
-    fputs(quote, stream);
+    if (tag.lexeme.length > 0 && tag.lexeme.start[0] == '\n') {
+        fputs("(end of line)", stream);
+    } else {
+        fputs(quote, stream);
+        printString(tag.lexeme, stream);
+        fputs(quote, stream);
+    }
     fputs(" at ", stream);
     if (tag.location.file != NULL) {
         printLine(tag.location.file, stream);

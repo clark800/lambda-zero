@@ -1,23 +1,23 @@
 ===============================================================================
-syntax(+) := infixL(20) \n 1 + 2
+syntax(+) := infixL(20) \n1 + 2
 3
 ===============================================================================
-(syntax(%%) := infixL(20) \n x -> x) \n %% := 1 \n %%
+(syntax(%%) := infixL(20) \nx -> x) \n%% := 1 \n%%
 1
 ===============================================================================
-%% := 1 \n syntax(%%) := infix(20) \n 0
+%% := 1 \nsyntax(%%) := infix(20) \n0
 0
 ===============================================================================
-syntax( ) := infixR(20) \n 0
+syntax( ) := infixR(20) \n0
 Syntax error: syntax must be infixL or interfix 'infixR' at line 1 column 14
 ===============================================================================
-syntax( ) := infixL(20) \n syntax( ) := infixL(20) \n 0
-Syntax error: syntax already defined ' ' at line 2 column 8
+syntax( ) := infixL(20) \nsyntax( ) := infixL(20) \n0
+Syntax error: syntax already defined ' ' at line 2 column 7
 ===============================================================================
-syntax( ) := infixL(20) \n syntax(*) := infixL(20) \n a b := a * b \n 2 3
+syntax( ) := infixL(20) \nsyntax(*) := infixL(20) \na b := a * b \n2 3
 6
 ===============================================================================
-syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n 5 ++ 5
+syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n5 ++ 5
 10
 ===============================================================================
 syntax(if) := prefix(10)\nsyntax(then) := infixL(if _)\n1 then 0
