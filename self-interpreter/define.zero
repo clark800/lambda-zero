@@ -62,29 +62,6 @@ define isValidConstructorParameter(parameter)
     False
 
 
-define newGetterDefinition(tag, dataType, n, j, m, (parameter, k), scope)
-    if not isValidConstructorParameter(parameter)
-        syntaxError("invalid constructor parameter", parameter)
-    with parameter as Juxtaposition(_, left, returnType)
-        with left as Juxtaposition(_, _, name)
-            if isUnused(getTag(name))
-                scope
-            projector := newProjector(tag, m, k)
-            undefined' := Name(renameTag(tag, "(undefined)", NOFIX))
-            arguments := (0 .. n -- 1).map(q ->
-                if q = j then projector else undefined')
-            body := UnderscoreArrow(tag,
-                arguments.cascade(Juxtaposition(tag), Underscore(tag, 1)))
-            tag' := getTag(name)
-
-            type := getArguments(dataType).fold(ImplicitArrow,
-                DoubleArrow(dataType, returnType))
-            accessor := TypedNode(tag', type, body)
-            applyPlainDefinition(tag, name, accessor, scope)
-        syntaxError("invalid constructor parameter", parameter)
-    syntaxError("invalid constructor parameter", parameter)
-
-
 define readParameterTypes(form)
     with form as Juxtaposition(_, left, right)
         with right as Juxtaposition(_, left', right')
@@ -133,9 +110,10 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(getTag(name), parameterTypes,
         dataType, body, n, j + 1)
-    scope' := applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
-    zip(parameters, 0...).fold(
-        newGetterDefinition(tag, dataType, n, j, m), scope')
+    invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
+    with invalidParameters as parameter :: _
+        syntaxError("invalid constructor parameter", parameter)
+    applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
 
 
 define newFallbackCase(tag, m)

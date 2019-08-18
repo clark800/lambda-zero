@@ -1,6 +1,9 @@
 #* show.zero
 
-SchemeT(term) ::= {Scheme(getUniversals : List(term), getType : term)}
+SchemeT(term) ::= {Scheme(universals : List(term), type : term)}
+
+getUniversals(Scheme(universals, _)) := universals
+getType(Scheme(_, type)) := type
 
 
 define showScheme(Scheme(universals, term))
