@@ -17,7 +17,9 @@ fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 𝕌 ⩴ {()}
 
 # pair
-a ⊓ b ⩴ {(first ∈ a, second ∈ b)}
+a ⊓ b ⩴ {(_ ∈ a, _ ∈ b)}
+first((a, b)) ≔ a
+second((a, b)) ≔ b
 pair(a, b) ≔ (a, b)
 swap((x, y)) ≔ (y, x)
 mapFirst(f, xy) ≔ (f(first(xy)), second(xy))
@@ -27,8 +29,8 @@ curry(f) ≔ x ↦ y ↦ f((x, y))
 uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
 # more tuples
-Triple(a, b, c) ⩴ {(first_3 ∈ a, second_3 ∈ b, third_3 ∈ c)}
-Quadruple(a, b, c, d) ⩴ {(first_4 ∈ a, second_4 ∈ b, third_4 ∈ c, fourth_4 ∈ d)}
+Triple(a, b, c) ⩴ {(_ ∈ a, _ ∈ b, _ ∈ c)}
+Quadruple(a, b, c, d) ⩴ {(_ ∈ a, _ ∈ b, _ ∈ c, _ ∈ d)}
 
 # boolean
 𝔹 ⩴ {False, True}
@@ -59,8 +61,8 @@ mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
 toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 
 # numbers
-ℕ ⩴ {0, ↑(_ ∈ ℕ)}
-ℤ ⩴ {+(_ ∈ ℕ), -(_ ∈ ℕ)}
+ℕ ⩴ {0, ↑(n ∈ ℕ)}
+ℤ ⩴ {+(n ∈ ℕ), -(n ∈ ℕ)}
 ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
 ↓ n ≔ n ⦊ 0 ↦ 0; ↑ n′ ↦ n′
 positive(n) ≔ + n
@@ -92,7 +94,7 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 # n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 # list
-List(a) ⩴ {[], (_head ∈ a) ∷ (_tail ∈ List(a))}
+List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
 prepend ≔ (∷)
 isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
@@ -125,9 +127,9 @@ map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 filterMap(f, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦
     (f(x) ⦊ Void ↦ xs″; Just(x′) ↦ x′ ∷ xs″ where xs″ ≔ filterMap(f, xs′))
 prune(mxs) ≔ filterMap(id, mxs)
-sequence(mxs) := mxs |> [] -> Just([]); mx :: mxs' ->
-    (mx |> Void -> Void; Just(x) ->
-        (sequence(mxs') |> Void -> Void; Just(xs) -> Just(x :: xs)))
+sequence(mxs) ≔ mxs ⦊ [] ↦ Just([]); mx ∷ mxs′ ↦
+    (mx ⦊ Void ↦ Void; Just(x) ↦
+        (sequence(mxs′) ⦊ Void ↦ Void; Just(xs) ↦ Just(x ∷ xs)))
 zipWith(f, xs, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
@@ -207,7 +209,7 @@ define splitWhen(p, xs)
 
 splitAt(n, xs) ≔ (xs.take(n), xs.drop(n))
 splitEvery(n, xs) ≔ if isNil(xs) then [] else
-    ys :: splitEvery(n, xs') where (ys, xs') ≔ xs.splitAt(n)
+    ys ∷ splitEvery(n, xs′) where (ys, xs′) ≔ xs.splitAt(n)
 splitOn(delimiter, ns) ≔ ns.split(startsWith(delimiter))
 
 define splitWith(splitter, ns)
@@ -270,12 +272,12 @@ parseNatural(ns) ≔ if isNil(ns) then Void else
 repl(prompt, f, input) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
 # tree
-Tree(a) ⩴ {Node(_datum ∈ a, _children ∈ List(Tree(a)))}
+Tree(a) ⩴ {Node(datum ∈ a, children ∈ List(Tree(a)))}
 
 # binary tree
 BinaryTree(a) ⩴ {
     Tip,
-    Fork(_datum ∈ a, _left ∈ BinaryTree(a), _right ∈ BinaryTree(a))
+    Fork(datum ∈ a, left ∈ BinaryTree(a), right ∈ BinaryTree(a))
 }
 
 define search((≾), hash, key, tree)
@@ -296,8 +298,8 @@ define flatten(tree)
 
 # full binary tree
 FullBinaryTree(a) ⩴ {
-    Leaf(_datum ∈ a),
-    Branch(_datum ∈ a, _left ∈ FullBinaryTree(a), _right ∈ FullBinaryTree(a))
+    Leaf(datum ∈ a),
+    Branch(datum ∈ a, left ∈ FullBinaryTree(a), right ∈ FullBinaryTree(a))
 }
 
 

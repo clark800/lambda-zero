@@ -6,42 +6,55 @@ ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 StateT(ast, syntax) ::= {State(
-    getStack : List(ast),
-    getOperators : List(TableT(List(ℕ), syntax))
+    stack : List(ast),
+    operators : List(TableT(List(ℕ), syntax))
 )}
+
+getStack(State(stack, _)) := stack
+getOperators(State(_, operators)) := operators
 
 SyntaxT(ast) ::= {Syntax(
-    getAlias : List(ℕ),
-    getLeftPrecedence : ℕ,
-    getRightPrecedence : ℕ,
-    getFixity : ℕ,
-    getAssociativity : ℕ,
-    getSpecial : 𝔹,
-    getShift : (StateT(ast, SyntaxT(ast)) => ast => StateT(ast, SyntaxT(ast))),
-    getReduce : (ast => ast => ast => ast),
-    getPrior : List(ℕ)
+    alias : List(ℕ),
+    leftPrecedence : ℕ,
+    rightPrecedence : ℕ,
+    fixity : ℕ,
+    associativity : ℕ,
+    special : 𝔹,
+    shift : (StateT(ast, SyntaxT(ast)) => ast => StateT(ast, SyntaxT(ast))),
+    reduce : (ast => ast => ast => ast),
+    prior : List(ℕ)
 )}
 
+getAlias(Syntax(alias, _, _, _, _, _, _, _, _)) := alias
+getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _)) := leftP
+getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _)) := rightP
+getFixity(Syntax(_, _, _, fixity, _, _, _, _, _)) := fixity
+getAssociativity(Syntax(_, _, _, _, assoc, _, _, _, _)) := assoc
+getSpecial(Syntax(_, _, _, _, _, special, _, _, _)) := special
+getShift(Syntax(_, _, _, _, _, _, shift, _, _)) := shift
+getReduce(Syntax(_, _, _, _, _, _, _, reduce, _)) := reduce
+getPrior(Syntax(_, _, _, _, _, _, _, _, prior)) := prior
+
 AST ::= {
-    Reference(_ : TagT, _debruijn : ℕ),
-    Arrow(_ : TagT, _type : ArrowType, _constructors : List(AST),
-        _parameter : AST, _body : AST),
-    Juxtaposition(_ : TagT, _left : AST, _right : AST),
-    Let(_ : TagT, _isTypeConstructor ∈ 𝔹,
-        _name : AST, _value : AST, _scope : AST),
-    Number(_ : TagT, _value : ℕ),
-    Operator(_ : TagT, _rank : ℕ, _syntax : SyntaxT(AST)),
-    Definition(_ : TagT, _type : DefinitionType,
-        _definiendum : AST, _definiens : AST),
-    AsPattern(_ : TagT, _left : AST, _pattern : AST),
-    CommaPair(_ : TagT, _left : AST, _right : AST),
-    Section(_ :  TagT, _side : SectionSide, _body : AST),
-    SetBuilder(_ : TagT, _forms : List(AST)),
-    ADT(_ : TagT, _parameters : List(AST), _objectType : AST),
-    Constructor(_ : TagT, _parameterTypes : List(AST), _dataType : AST,
-        _function : AST, _count : ℕ, _index : ℕ),
-    TypedNode(_ : TagT, _type : AST, _node : AST),
-    Null(_ : TagT)
+    Reference(tag : TagT, debruijn : ℕ),
+    Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
+        parameter : AST, body : AST),
+    Juxtaposition(tag : TagT, left : AST, right : AST),
+    Let(tag : TagT, isTypeConstructor ∈ 𝔹,
+        name : AST, value : AST, scope : AST),
+    Number(tag : TagT, value : ℕ),
+    Operator(tag : TagT, rank : ℕ, syntax : SyntaxT(AST)),
+    Definition(tag : TagT, type : DefinitionType,
+        definiendum : AST, definiens : AST),
+    AsPattern(tag : TagT, left : AST, pattern : AST),
+    CommaPair(tag : TagT, left : AST, right : AST),
+    Section(tag : TagT, side : SectionSide, body : AST),
+    SetBuilder(tag : TagT, forms : List(AST)),
+    ADT(tag : TagT, parameters : List(AST), objectType : AST),
+    Constructor(tag : TagT, parameterTypes : List(AST), dataType : AST,
+        function : AST, count : ℕ, index : ℕ),
+    TypedNode(tag : TagT, type : AST, node : AST),
+    Null(tag : TagT)
 }
 
 define lockArrow(node)

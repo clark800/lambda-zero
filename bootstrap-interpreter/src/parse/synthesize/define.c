@@ -87,27 +87,6 @@ static bool isValidConstructorParameter(Node* parameter) {
          isThisName(getLeft(getLeft(parameter)), "\u2208"));
 }
 
-static Node* newGetterDefinition(Tag tag, Node* parameter, Node* scope,
-        unsigned int i, unsigned int n, unsigned int j, unsigned int m) {
-    if (!isValidConstructorParameter(parameter))
-        syntaxError("invalid constructor parameter", parameter);
-    Node* name = getRight(getLeft(parameter));
-    if (isUnused(name))
-        return scope;
-    // defined argument = c_1 -> ... -> c_n -> c_i P_1 ... P_m
-    // undefined argument = c_1 -> ... -> c_n -> c_x ...    (x != i)
-    // getter is a function that returns P_j for defined arguments and
-    // undefined for undefined arguments:
-    // getter = _ -> _ undefined (1) ... projector (i) ... undefined (n)
-    Node* projector = newProjector(tag, m, j);
-    Node* getter = Underscore(tag, 1);
-    for (unsigned int k = 0; k < n; ++k)
-        getter = Juxtaposition(tag, getter, k == i ? projector :
-            FixedName(tag, "(undefined)"));
-    getter = UnderscoreArrow(tag, getter);
-    return applyPlainDefinition(tag, name, getter, scope);
-}
-
 static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
         unsigned int i, unsigned int n) {
     // form is an application of a constructor name to a number of parameters
@@ -140,13 +119,12 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
             Underscore(tag, (unsigned long long)(n + m - j)));
     for (unsigned int q = 0; q < n + m; ++q)
         constructor = UnderscoreArrow(tag, constructor);
-    scope = applyPlainDefinition(tag, name, constructor, scope);
 
     Node* node = form;
     for (unsigned int k = 0; k < m; ++k, node = getLeft(node))
-        scope = newGetterDefinition(tag, getRight(node), scope, i, n,
-            m - k - 1, m);
-    return scope;
+        if (!isValidConstructorParameter(getRight(node)))
+            syntaxError("invalid constructor parameter", getRight(node));
+    return applyPlainDefinition(tag, name, constructor, scope);
 }
 
 static Node* newFallbackCase(Tag tag, unsigned int m) {

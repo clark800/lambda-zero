@@ -1,6 +1,6 @@
 #* array.zero
 
-ArrayT(a) ::= {Array(_size : ℕ, _data : List(ℕ && FullBinaryTree(a)))}
+ArrayT(a) ::= {Array(size : ℕ, data : List(ℕ && FullBinaryTree(a)))}
 
 newArray(xs) := Array(length(xs), newRandomAccessList(reverse(xs)))
 Array(size, data).getSize := size

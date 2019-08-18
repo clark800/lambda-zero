@@ -9,20 +9,23 @@ BinderVariety ::= {
 }
 
 ClosureT(term) ::= {Closure(
-    getTerm : term,
-    getEnvironment : ArrayT(ClosureT(term))
+    term : term,
+    environment : ArrayT(ClosureT(term))
 )}
 
+getTerm(Closure(term, _)) := term
+getEnvironment(Closure(_, environment)) := environment
+
 Term ::= {
-    Top(_ : TagT),
-    Constant(_ : TagT, _id : ℕ),
-    Variable(_ : TagT, _debruijn : ℕ),
-    MetaVariable(_ : TagT, _id : ℕ),
-    Binder(_ : TagT, _ : BinderVariety, _type : Term, _body : Term),
-    Application(_ : TagT, _applicand : Term, _argument : Term),
-    Construction(_ : TagT, _parameters : List(Term), _objectType : Term),
-    Numeral(_ :  TagT, _type : Term, _value : ℕ),
-    Operation(_ : TagT, _type : Term, _arity : ℕ, _operator :
+    Top(tag : TagT),
+    Constant(tag : TagT, id : ℕ),
+    Variable(tag : TagT, debruijn : ℕ),
+    MetaVariable(tag : TagT, id : ℕ),
+    Binder(tag : TagT, variety : BinderVariety, type : Term, body : Term),
+    Application(tag : TagT, applicand : Term, argument : Term),
+    Construction(tag : TagT, parameters : List(Term), objectType : Term),
+    Numeral(tag : TagT, type : Term, value : ℕ),
+    Operation(tag : TagT, type : Term, arity : ℕ, operator :
         ((ClosureT(Term) => ClosureT(Term)) =>
             List(ClosureT(Term)) => ClosureT(Term)))
 }
