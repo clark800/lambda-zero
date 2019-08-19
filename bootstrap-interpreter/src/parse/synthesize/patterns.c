@@ -2,6 +2,11 @@
 #include "parse/shared/errors.h"
 #include "parse/shared/ast.h"
 
+bool isValidPattern(Node* node) {
+    return isName(node) || (isJuxtaposition(node) &&
+        isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
+}
+
 unsigned int getArgumentCount(Node* application) {
     unsigned int i = 0;
     for (Node* n = application; isJuxtaposition(n); ++i)
@@ -17,6 +22,8 @@ Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
 }
 
 Node* newLazyArrow(Node* left, Node* right) {
+    if (isColonPair(left))
+        return newLazyArrow(getLeft(left), right);
     if (isName(left))
         return LockedArrow(left, right);
 

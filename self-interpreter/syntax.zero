@@ -46,12 +46,14 @@ define reduceInfixR(operator, left, right)
 
 define reduceArrow(operator, left, right)
     if isName(left)
-        SimpleArrow(left, right)
+        SimpleArrow(left, right)  # might be a case or might not be a case
+    if isColonPair(left)
+        newPatternArrow(left, right)
     newCaseArrow(left, right)
 
 
 define reduceDoubleArrow(operator, left, right)
-    Arrow(getTag(operator), Double, [], left, right)
+    Arrow(getTag(operator), Double, [], left, Null(noTag), right)
 
 
 define reducePipeline(operator, left, right)
@@ -60,6 +62,14 @@ define reducePipeline(operator, left, right)
 
 define reduceCommaPair(operator, left, right)
     CommaPair(getTag(operator), left, right)
+
+
+define reduceColonPair(operator, left, right)
+    if not isValidPattern(left)
+        syntaxError("invalid left side of colon", left)
+    if not isValidPattern(right)
+        syntaxError("invalid right side of colon", right)
+    ColonPair(getTag(operator), left, right)
 
 
 define reduceAsPattern(operator, left, right)
@@ -338,12 +348,14 @@ OPERATORS := [newDictionary([
     coreSyntax("<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
     coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
     coreSyntax(";", 8, 8, INFIX, RIGHT, shiftSemicolon, reduceNewline),
-    coreSyntax("->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
-    coreAlias("↦", "->", 9, 9, INFIX, RIGHT, shiftInfix, reduceArrow),
-    coreSyntax("=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),
-    coreAlias("⇒", "=>", 9, 9, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),
-    coreSyntax("case", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
-    coreSyntax("with", 10, 10, PREFIX, NEITHER, shiftPrefix, reducePrefix),
+    coreSyntax(":", 9, 9, INFIX, NEITHER, shiftInfix, reduceColonPair),
+    coreAlias("∈", ":", 9, 9, INFIX, NEITHER, shiftInfix, reduceColonPair),
+    coreSyntax("->", 10, 10, INFIX, RIGHT, shiftInfix, reduceArrow),
+    coreAlias("↦", "->", 10, 10, INFIX, RIGHT, shiftInfix, reduceArrow),
+    coreSyntax("=>", 10, 10, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),
+    coreAlias("⇒", "=>", 10, 10, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),
+    coreSyntax("case", 11, 11, PREFIX, NEITHER, shiftPrefix, reducePrefix),
+    coreSyntax("with", 11, 11, PREFIX, NEITHER, shiftPrefix, reducePrefix),
     coreSyntax("@", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("as", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),

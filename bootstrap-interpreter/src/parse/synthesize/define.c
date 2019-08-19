@@ -74,17 +74,9 @@ static Node* transformRecursion(Node* name, Node* value) {
     return Juxtaposition(tag, fix, LockedArrow(name, value));
 }
 
-static inline bool isValidPattern(Node* node) {
-    return isName(node) || (isJuxtaposition(node) &&
-        isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
-}
-
 static bool isValidConstructorParameter(Node* parameter) {
-    return isJuxtaposition(parameter) && isJuxtaposition(getLeft(parameter)) &&
-        isValidPattern(getRight(parameter)) &&
-        isName(getRight(getLeft(parameter))) &&
-        (isThisName(getLeft(getLeft(parameter)), ":") ||
-         isThisName(getLeft(getLeft(parameter)), "\u2208"));
+    return isColonPair(parameter) && isName(getLeft(parameter)) &&
+        isValidPattern(getRight(parameter));
 }
 
 static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,

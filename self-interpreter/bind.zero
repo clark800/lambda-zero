@@ -144,7 +144,8 @@ define bind(level, stack, context, node)
             if debruijn = 0
                 bindName(level, stack, context, tag)
             Variable(tag, debruijn)
-        case Arrow(tag, arrowType, constructorNames, parameter, body)
+        case Arrow(tag, arrowType, constructorNames,
+                   parameter, annotation, body)
             with arrowType as Double
                 parameterTerm := parameter.bind(level, stack, context)
                 # todo: add support for names on left side of double arrows
@@ -156,7 +157,10 @@ define bind(level, stack, context, node)
             with arrowType as Squiggle
                 Implicit(tag, Top(tag), bodyTerm)
             if isNil(constructorNames)
-                FreeAbstraction(getTag(parameter), bodyTerm)
+                if isNull(annotation)
+                    FreeAbstraction(getTag(parameter), bodyTerm)
+                annotationTerm := annotation.bind(level, stack, context)
+                Abstraction(getTag(parameter), annotationTerm, bodyTerm)
             with buildCaseAnnotation(tag, constructorNames, context) as
                     Just(typeAST)
                 type := typeAST.bind(level, stack, context)
@@ -183,6 +187,8 @@ define bind(level, stack, context, node)
             syntaxError("as pattern not in parameter position", node)
         case CommaPair(_, _, _)
             syntaxError("comma not inside brackets", node)
+        case ColonPair(_, _, _)
+            syntaxError("colon not in valid location", node)
         case Section(_, _, _)
             syntaxError("invalid section", node)
         case SetBuilder(_, _)

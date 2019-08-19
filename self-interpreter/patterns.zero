@@ -17,6 +17,8 @@ define newProjector(tag, size, index)
 
 
 define newPatternArrow(pattern, body)
+    with pattern as ColonPair(tag, left, right)
+        newPatternArrow(left, body).setAnnotation(right)
     if isName(pattern)
         LockedArrow(pattern, body)
     with pattern as AsPattern(tag, left, right)
@@ -38,7 +40,7 @@ define newPatternArrow(pattern, body)
 
 define getNameAndValue(f, left, right)
     if isNull(right)
-        abort "NULL"                    # force syntax errors
+        abort("NULL")                    # force syntax errors
     with left as Juxtaposition(_, left', right')
         getNameAndValue(f, left', f(right', right))
     (left, right)
@@ -67,10 +69,10 @@ define addCases(tag, base, extension)
 
 
 define newCaseBody(tag, left, right)
-    with left as Arrow(_, type, _, _, body)
+    with left as Arrow(_, type, _, _, _, body)
         base := with type as Simple;
             Juxtaposition(tag, Underscore(tag, 1), body) <| body
-        with right as Arrow(_, type', _, _, body')
+        with right as Arrow(_, type', _, _, _, body')
             with type' as Simple
                 Juxtaposition(tag, base, body')
             addCases(tag, base, body')
@@ -79,7 +81,7 @@ define newCaseBody(tag, left, right)
 
 
 define getCaseConstructors(arrow)
-    with arrow as Arrow(_, type, constructors, parameter, _)
+    with arrow as Arrow(_, type, constructors, parameter, _, _)
         with type as Simple
             [parameter]
         constructors
@@ -87,7 +89,7 @@ define getCaseConstructors(arrow)
 
 
 define isDefaultCase(arrow)
-    with arrow as Arrow(_, type, _, parameter, _)
+    with arrow as Arrow(_, type, _, parameter, _, _)
         with type as Simple
             isUnderscore(getTag(parameter))
         False
@@ -95,7 +97,7 @@ define isDefaultCase(arrow)
 
 
 define getReconstructor(arrow)
-    with arrow as Arrow(_, type, _, _, body)
+    with arrow as Arrow(_, type, _, _, _, body)
         with type as Simple
             body
         with body as Juxtaposition(_, _, right)

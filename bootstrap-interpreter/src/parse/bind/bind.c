@@ -63,6 +63,8 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
             syntaxError("as pattern not in parameter position", node); break;
         case COMMAPAIR:
             syntaxError("comma not inside brackets", node); break;
+        case COLONPAIR:
+            syntaxError("colon not in valid location", node); break;
         case SETBUILDER:
             syntaxError("must appear on the right side of '::='", node); break;
         case OPERATOR:

@@ -44,7 +44,7 @@ define isValidPattern(node)
         True
     with node as Juxtaposition(_, left, right)
         isValidPattern(left) and isValidPattern(right)
-    with node as Arrow(_, arrowType, _, left, right)
+    with node as Arrow(_, arrowType, _, left, _, right)
         with arrowType as Double
             isValidPattern(left) and isValidPattern(right)
         False
@@ -52,20 +52,15 @@ define isValidPattern(node)
 
 
 define isValidConstructorParameter(parameter)
-    with parameter as Juxtaposition(_, left, right)
-        if not isValidPattern(right)
-            False
-        with left as Juxtaposition(_, left', right')
-            isName(right') and
-                (isThisName(left', ":") or isThisName(left', "∈"))
-        False
+    with parameter as ColonPair(_, left, right)
+        isName(left) and isValidPattern(right)
     False
 
 
 define readParameterTypes(form)
     with form as Juxtaposition(_, left, right)
-        with right as Juxtaposition(_, left', right')
-            readParameterTypes(left) ++ [right']
+        with right as ColonPair(_, _, type)
+            readParameterTypes(left) ++ [type]
         syntaxError("invalid form", form)
     []
 
@@ -157,12 +152,8 @@ define newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
 
 
 define getAnnotation(node)
-    with node as Juxtaposition(_, left, right)
-        with left as Juxtaposition(_, left', _)
-            if isThisName(left', ":")
-                right
-            syntaxError("missing annotation", node)
-        syntaxError("missing annotation", node)
+    with node as ColonPair(_, _, right)
+        right
     syntaxError("missing annotation", node)
 
 
