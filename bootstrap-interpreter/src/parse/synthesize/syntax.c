@@ -49,6 +49,8 @@ static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     (void)operator;
     if (isName(left))
         return SimpleArrow(left, right);
+    if (isColonPair(left))
+        return newLazyArrow(left, right);
     return newCaseArrow(left, right);
 }
 
@@ -58,6 +60,14 @@ static Node* reducePipeline(Node* operator, Node* left, Node* right) {
 
 static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
     return CommaPair(getTag(operator), left, right);
+}
+
+static Node* reduceColonPair(Node* operator, Node* left, Node* right) {
+    if (!isValidPattern(left))
+        syntaxError("invalid left side of colon", left);
+    if (!isValidPattern(right))
+        syntaxError("invalid right side of colon", right);
+    return ColonPair(getTag(operator), left, right);
 }
 
 static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
@@ -262,10 +272,11 @@ void initSymbols(void) {
     addCoreSyntax("|>", 6, 6, INFIX, L, shiftInfix, reducePipeline);
     addCoreSyntax("<|", 6, 6, INFIX, R, shiftInfix, reduceApply);
     addCoreSyntax(";", 8, 8, INFIX, R, shiftSemicolon, reduceNewline);
-    addCoreSyntax("->", 9, 9, INFIX, R, shiftInfix, reduceArrow);
-    addCoreSyntax("=>", 9, 9, INFIX, R, shiftInfix, reduceInfix);
-    addCoreSyntax("case", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
-    addCoreSyntax("with", 10, 10, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax(":", 9, 9, INFIX, N, shiftInfix, reduceColonPair);
+    addCoreSyntax("->", 10, 10, INFIX, R, shiftInfix, reduceArrow);
+    addCoreSyntax("=>", 10, 10, INFIX, R, shiftInfix, reduceInfix);
+    addCoreSyntax("case", 11, 11, PREFIX, N, shiftPrefix, reducePrefix);
+    addCoreSyntax("with", 11, 11, PREFIX, N, shiftPrefix, reducePrefix);
     addCoreSyntax("@", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("as", 12, 12, INFIX, N, shiftInfix, reduceAsPattern);
     addCoreSyntax("abort", 15, 15, PREFIX, L, shiftPrefix, reduceAbort);
@@ -278,4 +289,5 @@ void initSymbols(void) {
     addCoreAlias("\u21D2", "=>");
     addCoreAlias("\u298A", "|>");
     addCoreAlias("\u2989", "<|");
+    addCoreAlias("\u2208", ":");
 }

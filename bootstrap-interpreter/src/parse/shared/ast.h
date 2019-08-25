@@ -1,5 +1,5 @@
-typedef enum {REFERENCE, ARROW, JUXTAPOSITION, NUMBER, LET,
-    OPERATOR, DEFINITION, SECTION, ASPATTERN, COMMAPAIR, SETBUILDER} ASTType;
+typedef enum {REFERENCE, ARROW, JUXTAPOSITION, NUMBER, LET, OPERATOR,
+    DEFINITION, SECTION, ASPATTERN, COMMAPAIR, COLONPAIR, SETBUILDER} ASTType;
 typedef enum {LEFTSECTION, RIGHTSECTION, LEFTRIGHTSECTION} SectionVariety;
 typedef enum {SIMPLEARROW, STRICTARROW, LOCKEDARROW} ArrowVariety;
 typedef enum {PLAINDEFINITION, MAYBEDEFINITION, TRYDEFINITION,
@@ -25,6 +25,7 @@ static inline bool isDefinition(Node* n) {return getASTType(n) == DEFINITION;}
 static inline bool isSection(Node* n) {return getASTType(n) == SECTION;}
 static inline bool isAsPattern(Node* n) {return getASTType(n) == ASPATTERN;}
 static inline bool isCommaPair(Node* n) {return getASTType(n) == COMMAPAIR;}
+static inline bool isColonPair(Node* n) {return getASTType(n) == COLONPAIR;}
 static inline bool isSetBuilder(Node* n) {return getASTType(n) == SETBUILDER;}
 
 static inline bool isSimpleArrow(Node* n) {
@@ -96,6 +97,10 @@ static inline Node* AsPattern(Tag tag, Node* left, Node* right) {
 
 static inline Node* CommaPair(Tag tag, Node* left, Node* right) {
     return newBranch(tag, COMMAPAIR, 0, left, right);
+}
+
+static inline Node* ColonPair(Tag tag, Node* left, Node* right) {
+    return newBranch(tag, COLONPAIR, 0, left, right);
 }
 
 static inline Node* Let(Tag tag, Node* left, Node* right) {
