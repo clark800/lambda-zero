@@ -38,11 +38,9 @@ define getStringType(context, tag)
     natural := getNaturalType(context)
     listType := context.findType("[]") ??
         parseError("List not defined", tag)
-    with listType as Binder(_, variety, _, type)
-        with variety as ImplicitV
-            with type as Application(_, left, _)
-                Application(noTag, left, natural)
-            parseError("List type invalid", tag)
+    with listType as Implicit(_, _, type)
+        with type as Application(_, left, _)
+            Application(noTag, left, natural)
         parseError("List type invalid", tag)
     parseError("List type invalid", tag)
 

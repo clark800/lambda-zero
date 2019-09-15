@@ -39,11 +39,9 @@ define instantiate(tag, metacontext, Scheme(universals, type))
 
 
 define peelImplicits(type)
-    with type as Binder(tag, variety, _, body)
-        if isImplicitV(variety)
-            (tags, type') := peelImplicits(body)
-            (tag :: tags, type')
-        pass
+    with type as Implicit(tag, _, body)
+        (tags, type') := peelImplicits(body)
+        (tag :: tags, type')
     ([], type)
 
 
@@ -102,10 +100,16 @@ define infer(context @ (environment, types), metacontext)
                 (Implication(tag, outerType, bodyType), metacontext)
             case InstanceV
                 instantiateType(metacontext, type)
-            case ImplicationV
-                infer(context', metacontext, body).mapFirst(_ -> Top(veil(tag)))
-            case ImplicitV
-                infer(context', metacontext, body)
+    case Implication(tag, type, body)
+        (type, metacontext) := if isMetaVariable(type) then
+            metacontext.newMetaVariable(tag) else (type, metacontext)
+        context' := context.pushParameter(Scheme([], type))
+        infer(context', metacontext, body).mapFirst(_ -> Top(veil(tag)))
+    case Implicit(tag, type, body)
+        (type, metacontext) := if isMetaVariable(type) then
+            metacontext.newMetaVariable(tag) else (type, metacontext)
+        context' := context.pushParameter(Scheme([], type))
+        infer(context', metacontext, body)
     case Application(tag, applicand, argument)
         (argumentType, metacontext') := infer(context, metacontext, argument)
         with applicand as Binder(_, variety, type, body)
