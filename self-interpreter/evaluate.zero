@@ -24,6 +24,10 @@ define evaluate(stack, closure @ Closure(term, environment))
             with stack as argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
+        case Implication(tag, _, _)
+            if isNil(stack) then closure else runtimeError("implication", tag)
+        case Implicit(tag, _, _)
+            if isNil(stack) then closure else runtimeError("implicit", tag)
         case Application(_, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
