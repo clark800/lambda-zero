@@ -9,8 +9,8 @@ define getBuiltin(tag)
         maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
 
     define newBoolean(b)
-        FreeAbstraction(tag', FreeAbstraction(tag',
-                Variable(tag', if b then 1 else 2)))
+        FreeFunction(tag', FreeFunction(tag',
+            Variable(tag', if b then 1 else 2)))
 
     define compute(f, left, right)
         f(checkNatural(getTerm(left)), checkNatural(getTerm(right)))

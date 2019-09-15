@@ -1,7 +1,7 @@
 #* evaluate.zero
 
 define expandNumeral(tag, type, n)
-    FreeAbstraction(tag, FreeAbstraction(tag,
+    FreeFunction(tag, FreeFunction(tag,
             n |> 0 -> Variable(tag, 2); up n' ->
                 Application(tag, Variable(tag, 1), Numeral(tag, type, n'))))
 
@@ -20,7 +20,7 @@ define evaluate(stack, closure @ Closure(term, environment))
             closure
         case MetaVariable(tag, _)
             if isNil(stack) then closure else runtimeError("metavariable", tag)
-        case Binder(_, _, _, body)
+        case Function(_, _, _, body)
             with stack as argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure

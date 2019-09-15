@@ -15,7 +15,7 @@ define serialize(closure)
                 showTag(tag)
             case MetaVariable(tag, n)
                 showTag(tag)
-            case Binder(tag, variety, type, body)
+            case Function(tag, _, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
             case Implication(tag, type, body)

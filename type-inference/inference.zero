@@ -81,23 +81,21 @@ define infer(context @ (environment, types), metacontext)
         with metacontext.get(address) ?? Void as Just(Closure(term, _))
             infer(context, metacontext, term)
         newMetaVariable(tag, metacontext)
-    case Binder(tag, variety, type, body)
-        # a metavariable in the annotation field means there is no annotation
-        (type, metacontext) := if isMetaVariable(type) then
-            metacontext.newMetaVariable(tag) else (type, metacontext)
+    case Function(tag, isCase, domain, body)
+        # a metavariable in the domain field means there is no annotation
+        (domain, metacontext) := if isMetaVariable(domain) then
+            metacontext.newMetaVariable(tag) else (domain, metacontext)
         # todo: type may contain variables which would get lost here
-        context' := context.pushParameter(Scheme([], type))
-        match variety
-            case AbstractionV
-                (bodyType, metacontext') := infer(context', metacontext, body)
-                (Implication(tag, type, bodyType), metacontext')
-            case CaseAbstractionV
-                (outerType, metacontext) := instantiateType(metacontext, type)
-                type' := getInnerType(tag, outerType, environment)
-                (scheme, metacontext) := convertToScheme(metacontext, type')
-                context' := context.pushParameter(scheme)
-                (bodyType, metacontext) := infer(context', metacontext, body)
-                (Implication(tag, outerType, bodyType), metacontext)
+        context' := context.pushParameter(Scheme([], domain))
+        if not isCase
+            (bodyType, metacontext') := infer(context', metacontext, body)
+            (Implication(tag, domain, bodyType), metacontext')
+        (outerDomain, metacontext) := instantiateType(metacontext, domain)
+        innerDomain := getInnerType(tag, outerDomain, environment)
+        (scheme, metacontext) := convertToScheme(metacontext, innerDomain)
+        context' := context.pushParameter(scheme)
+        (bodyType, metacontext) := infer(context', metacontext, body)
+        (Implication(tag, outerDomain, bodyType), metacontext)
     case Implication(tag, type, body)
         (type, metacontext) := if isMetaVariable(type) then
             metacontext.newMetaVariable(tag) else (type, metacontext)
@@ -110,8 +108,8 @@ define infer(context @ (environment, types), metacontext)
         infer(context', metacontext, body)
     case Application(tag, applicand, argument)
         (argumentType, metacontext') := infer(context, metacontext, argument)
-        with applicand as Binder(_, variety, type, body)
-            if isAbstractionV(variety) and isMetaVariable(type)
+        with applicand as Function(_, isCase, domain, body)
+            if not isCase and isMetaVariable(domain)
                 # suppport polymorphism in nested functions
                 scheme := argumentType.generalize(metacontext', metacontext)
                 context' := context.pushParameter(scheme)
