@@ -2,8 +2,7 @@
 
 BinderVariety ::= {
     AbstractionV,     # assume type of lambda parameter and verify body
-    CaseAbstractionV, # annotation for case lambdas
-    InstanceV         # assume type of lambda parameter but don't check body
+    CaseAbstractionV  # annotation for case lambdas
 }
 
 ClosureT(term) ::= {Closure(
@@ -24,6 +23,7 @@ Term ::= {
     Implicit(tag : TagT, type : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
     Construction(tag : TagT, parameters : List(Term), type : Term),
+    Element(tag : TagT, type : Term, term : Term),
     Numeral(tag : TagT, type : Term, value : ℕ),
     Operation(tag : TagT, type : Term, arity : ℕ, operator :
         ((ClosureT(Term) => ClosureT(Term)) =>
@@ -40,6 +40,7 @@ define getTermTag
     Implicit(tag, _, _) -> tag
     Application(tag, _, _) -> tag
     Construction(tag, _, _) -> tag
+    Element(tag, _, _) -> tag
     Numeral(tag, _, _) -> tag
     Operation(tag, _, _, _) -> tag
 
@@ -53,20 +54,18 @@ isImplication := Implication(_, _, _) -> True; _ -> False
 isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
 isConstruction := Construction(_, _, _) -> True; _ -> False
+isElement := Element(_, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 isAbstractionV := AbstractionV -> True; _ -> False
 isCaseAbstractionV := CaseAbstractionV -> True; _ -> False
-isInstanceV := InstanceV -> True; _ -> False
 
 isAbstraction := Binder(_, v, _, _) -> isAbstractionV(v); _ -> False
 isCaseAbstraction := Binder(_, v, _, _) -> isCaseAbstractionV(v); _ -> False
-isInstance := Binder(_, v, _, _) -> isInstanceV(v); _ -> False
 
 Abstraction(tag, type, body) := Binder(tag, AbstractionV, type, body)
 CaseAbstraction(tag, type, body) := Binder(tag, CaseAbstractionV, type, body)
-Instance(tag, type, body) := Binder(tag, InstanceV, type, body)
 
 
 define FreeAbstraction(tag, body)
@@ -87,9 +86,8 @@ define getTermHead(term)
 define setAscription(type, term)
     with term as Binder(tag, variety, _, body)
         match variety
-            AbstractionV -> Instance(tag, type, body)
+            AbstractionV -> Element(tag, type, term)
             CaseAbstractionV -> term
-            InstanceV -> Instance(tag, type, body)
     with term as Numeral(tag, _, value)
         Numeral(tag, type, value)
     with term as Operation(tag, _, arity, operator)
@@ -98,10 +96,8 @@ define setAscription(type, term)
 
 
 define maybeAscription(node)
-    with node as Binder(_, variety, type, _)
-        with variety as InstanceV
-            Just(type)
-        Void
+    with node as Element(_, type, _)
+        Just(type)
     with node as Numeral(_, type, _)
         Just(type)
     with node as Operation(_, type, _, _)
@@ -201,6 +197,7 @@ define setTag(tag)
     Implicit(_, type, body) -> Implicit(tag, type, body)
     Application(_, left, right) -> Application(tag, left, right)
     Construction(_, parameters, type) -> Construction(tag, parameters, type)
+    Element(_, type, term) -> Element(tag, type, term)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, type, arity, operator) -> Operation(tag, type, arity, operator)
 
@@ -221,7 +218,6 @@ define isSameBinderVariety(a, b)
     match a
         AbstractionV -> isAbstractionV(b)
         CaseAbstractionV -> isCaseAbstractionV(b)
-        InstanceV -> isInstanceV(b)
 
 
 define isSameTerm(a, b)
@@ -262,6 +258,10 @@ define isSameTerm(a, b)
                 isSameTerm(type, type') and zip(parameters, parameters').all(
                     uncurry(isSameTerm))
             False
+        case Element(_, type, term)
+            with b as Element(_, type', term')
+                isSameTerm(type, type') and isSameTerm(term, term')
+            False
         case Numeral(_, _, value)
             with b as Numeral(_, _, value')
                 value = value'
@@ -297,6 +297,8 @@ define sameHead(term)
     case Construction(tag, _, _)
         isConstruction(term) and
             getTagLexeme(tag) =*= getTagLexeme(getTermTag(term))
+    case Element(_, _, _)
+        isElement(term)
     case Numeral(_, _, value)
         with term as Numeral(_, _, value')
             value = value'
@@ -317,6 +319,7 @@ define getComponents
     Implicit(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
     Construction(_, parameters, _) -> parameters
+    Element(_, type, term) -> [type, term]
     Numeral(_, _, _) -> []
     Operation(_, _, _, _) -> []
 
@@ -335,6 +338,7 @@ define mapComponents(f, term)
             Application(tag, mapComponents(f, left), f(right))
         Construction(tag, parameters, type) ->
             Construction(tag, parameters.map(f), type)
+        Element(tag, type, term) -> Element(tag, f(type), f(term))
         Numeral(_, _, _) -> term
         Operation(_, _, _, _) -> term
 
@@ -380,7 +384,7 @@ define showTerm
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
     MetaVariable(tag, n) -> showMetaVariable(n) # ++ "%" ++ showNatural(n)
-    Binder(tag, variety, type, body) ->
+    Binder(tag, _, _, body) ->
         "(" ++ showTag(tag) ++ " ↦ " ++ showTerm(body) ++ ")"
     Implication(tag, type, body) ->
         if isImplication(type) then
@@ -392,6 +396,7 @@ define showTerm
         showApplication(showTerm, applicand, argument)
     Construction(tag, parameters, _) ->
         showConstruction(showTerm, tag, parameters)
+    Element(tag, _, term) -> showTerm(term)
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _, _) -> showTag(tag)
 

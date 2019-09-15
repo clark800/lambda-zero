@@ -33,6 +33,8 @@ define evaluate(stack, closure @ Closure(term, environment))
                 Closure(applicand, environment))
         case Construction(tag, _, _)
             if isNil(stack) then closure else runtimeError("construction", tag)
+        case Element(_, _, term)
+            evaluate(stack, Closure(term, environment))
         case Numeral(tag, type, n)
             with stack as _ :: _
                 numeral := expandNumeral(tag, type, n)

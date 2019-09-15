@@ -30,6 +30,8 @@ define serialize(closure)
             case Construction(tag, parameters, _)
                 showTag(tag) ++ "(" ++ parameters.map(x -> serialize'(
                     Closure(x, environment), depth)).joinWith(", ") ++ ")"
+            case Element(tag, _, term)
+                serialize'(Closure(term, environment), depth)
             case Numeral(_, _, n)
                 showNatural(n)
             case Operation(tag, _, _, _)
