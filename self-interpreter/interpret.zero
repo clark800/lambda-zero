@@ -7,11 +7,11 @@ define splitCodeAndInput(input)
 
 define isMain(term)
     # todo: detect the name "main" rather than parameter name "input"
-    isAbstraction(term) and getTagLexeme(getTermTag(term)) =*= "input"
+    isFunction(term) and getTagLexeme(getTermTag(term)) =*= "input"
 
 
 define newNilTerm(tag)
-    FreeAbstraction(tag, FreeAbstraction(tag, Variable(tag, 2)))
+    FreeFunction(tag, FreeFunction(tag, Variable(tag, 2)))
 
 
 define constructString(tag, string)
