@@ -67,6 +67,21 @@ define getInnerType(tag, outerType, environment)
     throwError("expected construction in case annotation", tag)
 
 
+define instantiateDomain(domain, metacontext)
+    if isMetaVariable(domain)
+        metacontext.newMetaVariable(getTermTag(domain))
+    instantiateType(metacontext, domain)
+
+
+define unifyCodomain(codomain, bodyType, context, metacontext)
+    if isMetaVariable(codomain)
+        (bodyType, metacontext)
+    metacontext' := unify(context, metacontext, (codomain, bodyType))
+    if getSize(metacontext') < 0  # todo: remove this when unify returns Either
+        abort("force unification errors")
+    (codomain, metacontext')
+
+
 define infer(context @ (environment, types), metacontext)
     case Top(tag)
         (Top(tag), metacontext)
@@ -81,21 +96,18 @@ define infer(context @ (environment, types), metacontext)
         with metacontext.get(address) ?? Void as Just(Closure(term, _))
             infer(context, metacontext, term)
         newMetaVariable(tag, metacontext)
-    case Function(tag, isCase, domain, body)
+    case Function(tag, isCase, domain, codomain, body)
         # a metavariable in the domain field means there is no annotation
-        (domain, metacontext) := if isMetaVariable(domain) then
-            metacontext.newMetaVariable(tag) else (domain, metacontext)
+        (domain, metacontext) := instantiateDomain(domain, metacontext)
+        parameterType := if isCase then
+            getInnerType(tag, domain, environment) else domain
         # todo: type may contain variables which would get lost here
-        context' := context.pushParameter(Scheme([], domain))
-        if not isCase
-            (bodyType, metacontext') := infer(context', metacontext, body)
-            (Implication(tag, domain, bodyType), metacontext')
-        (outerDomain, metacontext) := instantiateType(metacontext, domain)
-        innerDomain := getInnerType(tag, outerDomain, environment)
-        (scheme, metacontext) := convertToScheme(metacontext, innerDomain)
+        (scheme, metacontext) := convertToScheme(metacontext, parameterType)
         context' := context.pushParameter(scheme)
         (bodyType, metacontext) := infer(context', metacontext, body)
-        (Implication(tag, outerDomain, bodyType), metacontext)
+        (codomain, metacontext) :=
+            unifyCodomain(codomain, bodyType, context, metacontext)
+        (Implication(tag, domain, codomain), metacontext)
     case Implication(tag, type, body)
         (type, metacontext) := if isMetaVariable(type) then
             metacontext.newMetaVariable(tag) else (type, metacontext)
@@ -108,7 +120,7 @@ define infer(context @ (environment, types), metacontext)
         infer(context', metacontext, body)
     case Application(tag, applicand, argument)
         (argumentType, metacontext') := infer(context, metacontext, argument)
-        with applicand as Function(_, isCase, domain, body)
+        with applicand as Function(_, isCase, domain, codomain, body)
             if not isCase and isMetaVariable(domain)
                 # suppport polymorphism in nested functions
                 scheme := argumentType.generalize(metacontext', metacontext)

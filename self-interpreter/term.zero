@@ -13,7 +13,8 @@ Term ::= {
     Constant(tag : TagT, id : ℕ),
     Variable(tag : TagT, debruijn : ℕ),
     MetaVariable(tag : TagT, id : ℕ),
-    Function(tag : TagT, isCase : 𝔹, domain : Term, body : Term),
+    Function(tag : TagT, isCase : 𝔹,
+        domain : Term, codomain : Term, body : Term),
     Implication(tag : TagT, type : Term, body : Term),
     Implicit(tag : TagT, type : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
@@ -30,7 +31,7 @@ define getTermTag
     Constant(tag, _) -> tag
     Variable(tag, _) -> tag
     MetaVariable(tag, _) -> tag
-    Function(tag, _, _, _) -> tag
+    Function(tag, _, _, _, _) -> tag
     Implication(tag, _, _) -> tag
     Implicit(tag, _, _) -> tag
     Application(tag, _, _) -> tag
@@ -44,7 +45,7 @@ isTop := Top(_) -> True; _ -> False
 isConstant := Constant(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
-isFunction := Function(_, _, _, _) -> True; _ -> False
+isFunction := Function(_, _, _, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
@@ -54,12 +55,13 @@ isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 
-define CaseFunction(tag, domain, body)
-    Function(tag, True, domain, body)
+define CaseFunction(tag, domain, codomain, body)
+    Function(tag, True, domain, codomain, body)
 
 
 define FreeFunction(tag, body)
-    Function(tag, False, MetaVariable(veil(tag), 0), body)
+    meta := MetaVariable(veil(tag), 0)
+    Function(tag, False, meta, meta, body)
 
 
 define splitSpine(term)
@@ -90,7 +92,7 @@ define maybeDebruijnIndex(term)
 
 
 define maybeBody(term)
-    with term as Function(_, _, _, body)
+    with term as Function(_, _, _, _, body)
         Just(body)
     Void
 
@@ -170,7 +172,8 @@ define setTag(tag)
     Constant(_, index) -> Constant(tag, index)
     Variable(_, debruijn) -> Variable(tag, debruijn)
     MetaVariable(_, index) -> MetaVariable(tag, index)
-    Function(_, isCase, domain, body) -> Function(tag, isCase, domain, body)
+    Function(_, isCase, domain, codomain, body) ->
+        Function(tag, isCase, domain, codomain, body)
     Implication(_, type, body) -> Implication(tag, type, body)
     Implicit(_, type, body) -> Implicit(tag, type, body)
     Application(_, left, right) -> Application(tag, left, right)
@@ -208,9 +211,11 @@ define isSameTerm(a, b)
             with b as MetaVariable(_, index')
                 index = index'
             False
-        case Function(_, _, domain, body)
-            with b as Function(_, _, domain', body')
-                isSameTerm(domain, domain') and isSameTerm(body, body')
+        case Function(_, _, domain, codomain, body)
+            with b as Function(_, _, domain', codomain', body')
+                isSameTerm(domain, domain') and
+                isSameTerm(codomain, codomain') and
+                isSameTerm(body, body')
             False
         case Implication(_, type, body)
             with b as Implication(_, type', body')
@@ -255,7 +260,7 @@ define sameHead(term)
         with term as MetaVariable(_, address')
             address = address'
         False
-    case Function(_, _, _, _)
+    case Function(_, _, _, _, _)
         isFunction(term)
     case Implication(_, _, _)
         isImplication(term)
@@ -283,7 +288,7 @@ define getComponents
     Constant(_, _) -> []
     Variable(_, _) -> []
     MetaVariable(_, _) -> []
-    Function(_, _, domain, body) -> [domain, body]
+    Function(_, _, domain, codomain, body) -> [domain, codomain, body]
     Implication(_, type, body) -> [type, body]
     Implicit(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
@@ -299,8 +304,8 @@ define mapComponents(f, term)
         Constant(_, _) -> term
         Variable(_, _) -> term
         MetaVariable(_, _) -> term
-        Function(tag, isCase, domain, body) ->
-            Function(tag, isCase, f(domain), f(body))
+        Function(tag, isCase, domain, codomain, body) ->
+            Function(tag, isCase, f(domain), f(codomain), f(body))
         Implication(tag, type, body) -> Implication(tag, f(type), f(body))
         Implicit(tag, type, body) -> Implicit(tag, f(type), f(body))
         Application(tag, left, right) ->
@@ -353,7 +358,7 @@ define showTerm
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
     MetaVariable(tag, n) -> showMetaVariable(n) # ++ "%" ++ showNatural(n)
-    Function(tag, _, _, body) ->
+    Function(tag, _, _, _, body) ->
         "(" ++ showTag(tag) ++ " ↦ " ++ showTerm(body) ++ ")"
     Implication(tag, type, body) ->
         if isImplication(type) then

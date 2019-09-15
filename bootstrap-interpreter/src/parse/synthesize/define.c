@@ -200,6 +200,10 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     } else if (isKeyphrase(left, "syntax"))
         return Definition(tag, SYNTAXDEFINITION, left, right);
 
+    if (isColonPair(right))
+        return reduceDefine(operator, left, getLeft(right));
+    if (isColonPair(left))
+        return reduceDefine(operator, getLeft(left), right);
     if (isTuple(left) || isAsPattern(left))
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))

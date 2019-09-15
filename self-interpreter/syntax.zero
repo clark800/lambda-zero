@@ -65,9 +65,9 @@ define reduceCommaPair(operator, left, right)
 
 
 define reduceColonPair(operator, left, right)
-    if not isValidPattern(left)
+    if isColonPair(left) or not isValidPattern(left)
         syntaxError("invalid left side of colon", left)
-    if not isValidPattern(right)
+    if isColonPair(right) or not isValidPattern(right)
         syntaxError("invalid right side of colon", right)
     ColonPair(getTag(operator), left, right)
 
