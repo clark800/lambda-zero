@@ -63,7 +63,7 @@ Syntax error: odd-width indent after (end of line) at line 1 column 9
 (x ↦ x)
 ===============================================================================
 x -> (x : x)
-Syntax error: colon not in valid location ':' at line 1 column 9
+(x ↦ x)
 ===============================================================================
 (x : y) -> x
 (x ↦ x)

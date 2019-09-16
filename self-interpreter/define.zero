@@ -42,6 +42,8 @@ define transformRecursion(name, value)
 define isValidPattern(node)
     if isName(node)
         True
+    with node as ColonPair(_, left, _)
+        isValidPattern(left)
     with node as Juxtaposition(_, left, right)
         isValidPattern(left) and isValidPattern(right)
     with node as Arrow(_, arrowType, _, left, _, right)
@@ -200,6 +202,9 @@ define applyDefinition(definition, scope)
 
 
 define reduceDefine'(tag, definitionType, left, right)
+    with left as ColonPair(tag', left', codomain)
+        reduceDefine'(tag, definitionType, left',
+            ColonPair(tag', right, codomain))
     if isTuple(left) or isAsPattern(left)
         Definition(tag, definitionType, left, right)
     (name, value) := getNameAndValue(newPatternArrow, left, right)

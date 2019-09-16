@@ -28,10 +28,11 @@ define flattenClosure(Closure(term, environment))
             term
         case MetaVariable(_, _)
             term
-        case Function(tag, isCase, domain, body)
+        case Function(tag, isCase, domain, codomain, body)
             domain' := flattenClosure(Closure(domain, environment))
+            codomain' := flattenClosure(Closure(codomain, environment))
             body' := flattenClosure(Closure(body, pushUnknown(environment)))
-            Function(tag, isCase, domain', body')
+            Function(tag, isCase, domain', codomain', body')
         case Implication(tag, type, body)
             type' := flattenClosure(Closure(type, environment))
             body' := flattenClosure(Closure(body, pushUnknown(environment)))

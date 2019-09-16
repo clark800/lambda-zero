@@ -150,19 +150,31 @@ define bind(level, stack, context, node)
                 stack' := stack.pushParameter(Name(veil(tag)), level, Void)
                 bodyTerm := body.bind(up level, stack', context)
                 Implication(tag, parameterTerm, bodyTerm)
-            stack' := stack.pushParameter(parameter, level, Void)
-            bodyTerm := body.bind(up level, stack', context)
+
             with arrowType as Squiggle
+                stack' := stack.pushParameter(parameter, level, Void)
+                bodyTerm := body.bind(up level, stack', context)
                 Implicit(tag, Top(tag), bodyTerm)
+
+            stack' := stack.pushParameter(parameter, level, Void)
+            (bodyTerm, codomain) := (
+                with body as ColonPair(_, body', type)
+                    (body'.bind(up level, stack', context),
+                        type.bind(up level, stack', context))
+                (body.bind(up level, stack', context),
+                    MetaVariable(veil(tag), 0))
+            )
             if isNil(constructorNames)
-                if isNull(annotation)
-                    FreeFunction(getTag(parameter), bodyTerm)
-                annotationTerm := annotation.bind(level, stack, context)
-                Function(getTag(parameter), False, annotationTerm, bodyTerm)
+                domain := if isNull(annotation) then
+                    MetaVariable(veil(tag), 0) else
+                    annotation.bind(level, stack, context)
+                Function(getTag(parameter), False, domain, codomain, bodyTerm)
+            if not isNull(annotation)
+                syntaxError("parameter annotation not permitted on case", node)
             with buildCaseAnnotation(tag, constructorNames, context) as
                     Just(typeAST)
-                type := typeAST.bind(level, stack, context)
-                CaseFunction(getTag(parameter), type, bodyTerm)
+                domain := typeAST.bind(level, stack, context)
+                CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
             syntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind(level, stack, context),

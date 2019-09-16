@@ -47,6 +47,8 @@ static Node* reduceInfixR(Node* operator, Node* left, Node* right) {
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     (void)operator;
+    if (isColonPair(right))
+        return reduceArrow(operator, left, getLeft(right));
     if (isName(left))
         return SimpleArrow(left, right);
     if (isColonPair(left))
@@ -63,9 +65,9 @@ static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
 }
 
 static Node* reduceColonPair(Node* operator, Node* left, Node* right) {
-    if (!isValidPattern(left))
+    if (isColonPair(left) || !isValidPattern(left))
         syntaxError("invalid left side of colon", left);
-    if (!isValidPattern(right))
+    if (isColonPair(right) || !isValidPattern(right))
         syntaxError("invalid right side of colon", right);
     return ColonPair(getTag(operator), left, right);
 }

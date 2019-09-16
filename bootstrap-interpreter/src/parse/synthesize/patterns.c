@@ -3,7 +3,9 @@
 #include "parse/shared/ast.h"
 
 bool isValidPattern(Node* node) {
-    return isName(node) || (isJuxtaposition(node) &&
+    return isName(node) ||
+        (isColonPair(node) && isValidPattern(getLeft(node))) ||
+        (isJuxtaposition(node) &&
         isValidPattern(getLeft(node)) && isValidPattern(getRight(node)));
 }
 
