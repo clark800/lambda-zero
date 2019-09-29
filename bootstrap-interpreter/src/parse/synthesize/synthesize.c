@@ -85,18 +85,27 @@ static Node* parseToken(Token token) {
     }
 }
 
+static void shiftToken(Stack* stack, Token token) {
+    debugParseState(token.tag, stack, DEBUG >= 2);
+    Node* node = parseToken(token);
+    if (token.type == NEWLINE) {
+        erase(stack, " ");
+        if (!isOperator(peek(stack, 0))) {
+            if (getValue(node) % 2 != 0)
+                syntaxError("odd-width indent after", node);
+            shift(stack, node);
+        }
+    } else shift(stack, node);
+    release(hold(node));
+}
+
 Hold* synthesize(Token (*lexer)(Token), Token start) {
     initSymbols();
     Stack* stack = newStack();
     push(stack, parseToken(start));
-    for (Token token = lexer(start); token.type != END; token = lexer(token)) {
-        debugParseState(token.tag, stack, DEBUG >= 2);
-        if (token.type != COMMENT && token.type != VSPACE) {
-            Node* node = parseToken(token);
-            shift(stack, node);
-            release(hold(node));
-        }
-    }
+    for (Token token = lexer(start); token.type != END; token = lexer(token))
+        if (token.type != COMMENT && token.type != VSPACE)
+            shiftToken(stack, token);
     Hold* ast = pop(stack);
     syntaxErrorIf(isEOF(getNode(ast)), "no input", getNode(ast));
     deleteStack(stack);

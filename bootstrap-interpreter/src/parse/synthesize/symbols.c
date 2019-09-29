@@ -7,6 +7,8 @@
 #include "parse/shared/ast.h"
 #include "symbols.h"
 
+void reduceLeft(Stack* stack, Node* operator);
+
 static Array* RULES = NULL;     // note: this never gets free'd
 
 typedef struct {
@@ -15,7 +17,6 @@ typedef struct {
     Fixity fixity;
     Associativity associativity;
     bool special;
-    void (*shift)(Stack* stack, Node* operator);
     Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
 
@@ -63,9 +64,115 @@ Node* reduce(Node* operator, Node* left, Node* right) {
     return result;
 }
 
+void shiftPrefix(Stack* stack, Node* operator) {
+    reduceLeft(stack, operator);
+    push(stack, operator);
+}
+
+void shiftPostfix(Stack* stack, Node* operator) {
+    erase(stack, " ");      // if we erase newlines it would break associativity
+    reduceLeft(stack, operator);
+    if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
+        push(stack, LeftPlaceholder(getTag(operator)));
+    if (isOperator(peek(stack, 0)))
+        syntaxError("missing left operand for", operator);
+    Hold* operand = pop(stack);
+    push(stack, reduce(operator, getNode(operand), VOID));
+    release(operand);
+}
+
+void shiftInfix(Stack* stack, Node* operator) {
+    erase(stack, " ");      // if we erase newlines it would break associativity
+    reduceLeft(stack, operator);
+    if (isOperator(peek(stack, 0))) {
+        if (isThisOperator(operator, "+"))
+            operator = parseSymbol(renameTag(getTag(operator), "(+)"), 0);
+        else if (isThisOperator(operator, "-"))
+            operator = parseSymbol(renameTag(getTag(operator), "(-)"), 0);
+        else if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
+            push(stack, LeftPlaceholder(getTag(operator)));
+        else syntaxError("missing left operand for", operator);
+    }
+    push(stack, operator);
+}
+
+void shiftSpace(Stack* stack, Node* operator) {
+    reduceLeft(stack, operator);
+    // ignore space after operators (note: close and postfix are never
+    // pushed onto the stack, so the operator must be expecting a right operand)
+    if (!isOperator(peek(stack, 0)))
+        push(stack, operator);
+}
+
+void shiftOpen(Stack* stack, Node* open) {
+    reduceLeft(stack, open);
+    push(stack, open);
+}
+
+void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
+    if (isEOF(open) || isOperator(peek(stack, 0))) {
+        push(stack, reduceBracket(open, close, NULL, contents));
+    } else {
+        Hold* left = pop(stack);
+        push(stack, reduceBracket(open, close, getNode(left), contents));
+        release(left);
+    }
+}
+
+void shiftClose(Stack* stack, Node* close) {
+    erase(stack, " ");
+    erase(stack, "\n");
+    erase(stack, ";");
+
+    Node* top = peek(stack, 0);
+    if (isOperator(top) && !isSpecial(top) && !isEOF(close)) {
+        if (isLeftPlaceholder(peek(stack, 1))) {
+            // bracketed infix operator
+            Hold* op = pop(stack);
+            release(pop(stack));
+            push(stack, Name(getTag(getNode(op))));
+            release(op);
+        } else if (isOpenOperator(peek(stack, 1))) {
+            // bracketed prefix operator
+            Hold* op = pop(stack);
+            Tag tag = getTag(getNode(op));
+            if (isThisOperator(getNode(op), "(+)"))
+                push(stack, FixedName(tag, "+"));
+            else if (isThisOperator(getNode(op), "(-)"))
+                push(stack, FixedName(tag, "-"));
+            else push(stack, Name(tag));
+            release(op);
+        } else if (getFixity(top) == INFIX || getFixity(top) == PREFIX)
+            push(stack, RightPlaceholder(getTag(top)));
+    }
+
+    reduceLeft(stack, close);
+    syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
+    Hold* contents = pop(stack);
+    if (isOpenOperator(getNode(contents))) {
+        pushBracket(stack, getNode(contents), close, NULL);
+    } else {
+        Hold* open = pop(stack);
+        if (isEOF(getNode(open)) && !isEOF(close))
+            syntaxError("missing open for", close);
+        if (isOperator(getNode(contents)))
+            syntaxError("missing right operand for", getNode(contents));
+        pushBracket(stack, getNode(open), close, getNode(contents));
+        release(open);
+    }
+    release(contents);
+}
+
 void shift(Stack* stack, Node* node) {
     if (isOperator(node)) {
-        getRules(node)->shift(stack, node);
+        switch(getRules(node)->fixity) {
+            case INFIX: shiftInfix(stack, node); break;
+            case PREFIX: shiftPrefix(stack, node); break;
+            case POSTFIX: shiftPostfix(stack, node); break;
+            case OPENFIX: shiftOpen(stack, node); break;
+            case CLOSEFIX: shiftClose(stack, node); break;
+            case SPACEFIX: shiftSpace(stack, node); break;
+        }
     } else {
         if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
             syntaxError("missing operator before", node);
@@ -126,12 +233,9 @@ Node* parseSymbol(Tag tag, long long value) {
 static void reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
-    Hold* left = getFixity(getNode(operator)) == INFIX ?
+    Fixity fixity = getFixity(getNode(operator));
+    Hold* left = fixity == INFIX || fixity == SPACEFIX ?
         pop(stack) : hold(VOID);
-    // if a syntax declaration marker is about to be an argument to a reducer
-    // then the scope of the syntax declaration has ended
-    if (isSyntaxDefinition(getNode(left)))
-        unappend(RULES);
     shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
     release(operator);
@@ -160,25 +264,27 @@ static void appendSyntax(Rules rules) {
 
 void addSyntax(Tag tag, String prior, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
+        Node* (*reducer)(Node*, Node*, Node*)) {
     bool special = prior.length != 0;
     if (special && associativity == N)
         tokenErrorIf(true, "expected numeric precedence", tag);
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
     appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, leftPrecedence,
-        rightPrecedence, fixity, associativity, special, shifter, reducer});
+        rightPrecedence, fixity, associativity, special, reducer});
 }
+
+void popSyntax(void) { unappend(RULES); }
 
 void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        void (*shifter)(Stack*, Node*), Node* (*reducer)(Node*, Node*, Node*)) {
+        Node* (*reducer)(Node*, Node*, Node*)) {
     if (RULES == NULL)
         RULES = newArray(1024);
     bool special = strncmp(symbol, "(+)", 4) && strncmp(symbol, "(-)", 4);
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
     String empty = newString("", 0);
     appendSyntax((Rules){lexeme, lexeme, empty, leftPrecedence,
-        rightPrecedence, fixity, associativity, special, shifter, reducer});
+        rightPrecedence, fixity, associativity, special, reducer});
 }
 
 void addCoreAlias(const char* alias, const char* name) {

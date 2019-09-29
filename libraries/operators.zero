@@ -1,6 +1,5 @@
 #* operators.zero
 
-syntax(by) := interfix(define _)
 syntax(match) := prefix(7)
 syntax(to) := interfix(match _)
 syntax(maybe) ≔ prefix(11)

@@ -1,6 +1,8 @@
 #include "shared/lib/tree.h"
 #include "parse/shared/errors.h"
 #include "parse/shared/ast.h"
+#include "shared/lib/stack.h"
+#include "symbols.h"
 #include "patterns.h"
 
 bool isIO = false;
@@ -188,6 +190,107 @@ Node* applyDefinition(Node* definition, Node* scope) {
     return NULL;
 }
 
+static Node* validatePrior(Node* operator, Node* node) {
+    String prior = getPrior(operator);
+    if (prior.length > 0)
+        if (!isJuxtaposition(node) || !isSameString(getLexeme(node), prior))
+            syntaxError("operator syntax error", operator);
+    return operator;
+}
+
+Node* reduceApply(Node* operator, Node* left, Node* right) {
+    return Juxtaposition(getTag(operator), left, right);
+}
+
+static Node* reduceAdfix(Node* operator, Node* argument) {
+    return reduceApply(operator, Name(getTag(operator)), argument);
+}
+
+Node* reducePrefix(Node* operator, Node* left, Node* right) {
+    (void)left;
+    return reduceAdfix(validatePrior(operator, right), right);
+}
+
+static Node* reducePostfix(Node* operator, Node* left, Node* right) {
+    (void)right;
+    return reduceAdfix(validatePrior(operator, left), left);
+}
+
+Node* reduceInfix(Node* operator, Node* left, Node* right) {
+    return reduceApply(operator, reduceAdfix(operator, left), right);
+}
+
+static Node* reduceInfixL(Node* operator, Node* left, Node* right) {
+    return reduceInfix(validatePrior(operator, left), left, right);
+}
+
+static Node* reduceInfixR(Node* operator, Node* left, Node* right) {
+    return reduceInfix(validatePrior(operator, right), left, right);
+}
+
+static Node* reduceInterfix(Node* operator, Node* left, Node* right) {
+    return reduceApply(validatePrior(operator, left), left, right);
+}
+
+static Precedence parsePrecedence(Node* node) {
+    Precedence precedence = isNumber(node) ?
+        (Precedence)getValue(node) : findPrecedence(node);
+    syntaxErrorIf(precedence > 99, "invalid precedence", node);
+    return precedence;
+}
+
+static void defineSyntax(Node* definition, Node* left, Node* right) {
+    syntaxErrorIf(!isJuxtaposition(left), "invalid left operand", left);
+    Node* name = getRight(left);
+    syntaxErrorIf(!isName(name), "expected symbol operand to", getLeft(left));
+    if (!isJuxtaposition(right))
+        syntaxError("invalid syntax definition", definition);
+
+    Tag tag = getTag(name);
+    Node* fixity = getLeft(right);
+    if (isThisName(fixity, "alias")) {
+        addSyntaxCopy(getLexeme(name), getRight(right), true);
+        return;
+    }
+    if (isThisName(fixity, "syntax")) {
+        addSyntaxCopy(getLexeme(name), getRight(right), false);
+        return;
+    }
+
+    Node* argument = getRight(right);
+    Precedence p = parsePrecedence(argument);
+    String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
+
+    if (isThisName(name, "()")) {
+        tag = renameTag(tag, " ");
+        if (isThisName(fixity, "infixL"))
+            addSyntax(tag, prior, p, p, SPACEFIX, L, reduceInfixL);
+        else if (isThisName(fixity, "interfix"))
+            addSyntax(tag, prior, p, p, SPACEFIX, L, reduceInterfix);
+        else syntaxError("syntax must be infixL or interfix", fixity);
+    }
+    else if (isThisName(fixity, "infix"))
+        addSyntax(tag, prior, p, p, INFIX, N, reduceInfix);
+    else if (isThisName(fixity, "infixL"))
+        addSyntax(tag, prior, p, p, INFIX, L, reduceInfixL);
+    else if (isThisName(fixity, "infixR"))
+        addSyntax(tag, prior, p, p, INFIX, R, reduceInfixR);
+    else if (isThisName(fixity, "interfix"))
+        addSyntax(tag, prior, p, p, INFIX, L, reduceInterfix);
+    else if (isThisName(fixity, "prefix"))
+        addSyntax(tag, prior, p, p, PREFIX, L, reducePrefix);
+    else if (isThisName(fixity, "postfix"))
+        addSyntax(tag, prior, p, p, POSTFIX, L, reducePostfix);
+    else syntaxError("invalid fixity", fixity);
+
+    // add special case prefix operators for "+" and "-"
+    // done here to avoid hard-coding a precedence for them
+    if (isThisName(name, "+"))
+        addCoreSyntax("(+)", p, p, PREFIX, L, reducePrefix);
+    if (isThisName(name, "-"))
+        addCoreSyntax("(-)", p, p, PREFIX, L, reducePrefix);
+}
+
 Node* reduceDefine(Node* operator, Node* left, Node* right) {
     Tag tag = getTag(operator);
     DefinitionVariety variety = PLAINDEFINITION;
@@ -197,8 +300,10 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
     } else if (isKeyphrase(left, "try")) {
         variety = TRYDEFINITION;
         left = getRight(left);
-    } else if (isKeyphrase(left, "syntax"))
+    } else if (isKeyphrase(left, "syntax")) {
+        defineSyntax(operator, left, right);
         return Definition(tag, SYNTAXDEFINITION, left, right);
+    }
 
     if (isColonPair(right))
         return reduceDefine(operator, left, getLeft(right));
