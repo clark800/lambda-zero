@@ -55,7 +55,8 @@ static const char* skipLexeme(const char* s) {
 
 static String getNextLexeme(Tag tag) {
     const char* start = tag.lexeme.start + tag.lexeme.length;
-    return newString(start, (unsigned int)(skipLexeme(start) - start));
+    long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
+    return newString(start, (unsigned int)length);
 }
 
 static Location advanceLocation(Tag tag) {

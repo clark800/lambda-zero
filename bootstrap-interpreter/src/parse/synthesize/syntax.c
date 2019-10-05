@@ -1,5 +1,4 @@
 #include "shared/lib/tree.h"
-#include "shared/lib/stack.h"
 #include "parse/shared/errors.h"
 #include "parse/shared/ast.h"
 #include "symbols.h"
@@ -99,6 +98,7 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
 }
 
 void initSymbols(void) {
+    addCoreSyntax("", 0, 0, OPENFIX, R, reduceUnmatched);
     addCoreSyntax("\0", 0, 0, CLOSEFIX, R, reduceEOF);
     addCoreSyntax("(", 95, 0, OPENFIX, R, reduceUnmatched);
     addCoreSyntax(")", 0, 95, CLOSEFIX, R, reduceParentheses);

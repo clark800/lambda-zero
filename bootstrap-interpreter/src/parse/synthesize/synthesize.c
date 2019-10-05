@@ -3,12 +3,11 @@
 #include <errno.h>
 #include <limits.h>
 #include "shared/lib/tree.h"
-#include "shared/lib/stack.h"
 #include "parse/shared/errors.h"
 #include "parse/shared/token.h"
 #include "parse/shared/ast.h"
-#include "parse/shared/debug.h"
 #include "symbols.h"
+#include "debug.h"
 #include "syntax.h"
 
 int DEBUG = 0;
@@ -85,12 +84,22 @@ static Node* parseToken(Token token) {
     }
 }
 
-static void shiftToken(Stack* stack, Token token) {
+void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
+    if (trace) {
+        fputs("Token: '", stderr);
+        printString(tag.lexeme, stderr);
+        fputs("'  Stack: ", stderr);
+        debugNodeStack(nodeStack, debugAST);
+        fputs("\n", stderr);
+    }
+}
+
+static void shiftToken(NodeStack* stack, Token token) {
     debugParseState(token.tag, stack, DEBUG >= 2);
     Node* node = parseToken(token);
     if (token.type == NEWLINE) {
         erase(stack, " ");
-        if (!isOperator(peek(stack, 0))) {
+        if (!isOperator(getTop(stack))) {
             if (getValue(node) % 2 != 0)
                 syntaxError("odd-width indent after", node);
             shift(stack, node);
@@ -101,14 +110,14 @@ static void shiftToken(Stack* stack, Token token) {
 
 Hold* synthesize(Token (*lexer)(Token), Token start) {
     initSymbols();
-    Stack* stack = newStack();
-    push(stack, parseToken(start));
+    NodeStack* stack = newNodeStack();
+    shiftToken(stack, start);
     for (Token token = lexer(start); token.type != END; token = lexer(token))
         if (token.type != COMMENT && token.type != VSPACE)
             shiftToken(stack, token);
-    Hold* ast = pop(stack);
+    Hold* ast = hold(getTop(stack));
     syntaxErrorIf(isEOF(getNode(ast)), "no input", getNode(ast));
-    deleteStack(stack);
+    deleteNodeStack(stack);
     return ast;
 }
 

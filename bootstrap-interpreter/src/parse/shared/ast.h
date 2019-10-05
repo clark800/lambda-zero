@@ -55,7 +55,12 @@ static inline bool isKeyphrase(Node* n, const char* key) {
     return isJuxtaposition(n) && isThisName(getLeft(n), key);
 }
 
-static inline bool isEOF(Node* n) {return isThisOperator(n, "\0");}
+// isEOF returns true for both start of file and end of file nodes
+static inline bool isEOF(Node* n) {
+    String lexeme = getLexeme(n);
+    return isOperator(n) && (lexeme.length == 0 || lexeme.start[0] == '\0');
+}
+
 static inline bool isUnderscore(Node* n) {return isThisName(n, "_");}
 
 static inline Node* Reference(Tag tag, long long value) {

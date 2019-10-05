@@ -1,6 +1,5 @@
 #include <string.h>
 #include "shared/lib/tree.h"
-#include "shared/lib/stack.h"
 #include "parse/shared/errors.h"
 #include "parse/shared/ast.h"
 #include "symbols.h"
