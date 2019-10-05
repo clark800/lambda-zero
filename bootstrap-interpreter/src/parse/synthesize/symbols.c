@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include "shared/lib/array.h"
 #include "shared/lib/tree.h"
@@ -20,6 +21,14 @@ typedef struct {
     Node* (*reduce)(Node* operator, Node* left, Node* right);
 } Rules;
 
+NodeStack* newNodeStack() { return (NodeStack*)newStack(); }
+void deleteNodeStack(NodeStack* stack) { deleteStack((Stack*)stack); }
+
+Node* getTop(NodeStack* stack) {
+    assert(!isEmpty((Stack*)stack));
+    return peek((Stack*)stack, 0);
+}
+
 static Rules* getRules(Node* node) {
     assert(isOperator(node));
     return (Rules*)getData(node);
@@ -29,9 +38,13 @@ Fixity getFixity(Node* op) {return getRules(op)->fixity;}
 Associativity getAssociativity(Node* op) {return getRules(op)->associativity;}
 String getPrior(Node* op) {return getRules(op)->prior;}
 
-void erase(Stack* stack, const char* lexeme) {
+void eraseNode(Stack* stack, const char* lexeme) {
     if (!isEmpty(stack) && isThisOperator(peek(stack, 0), lexeme))
         release(pop(stack));
+}
+
+void erase(NodeStack* stack, const char* lexeme) {
+    eraseNode((Stack*)stack, lexeme);
 }
 
 bool isSpecial(Node* node) {
@@ -70,7 +83,7 @@ void shiftPrefix(Stack* stack, Node* operator) {
 }
 
 void shiftPostfix(Stack* stack, Node* operator) {
-    erase(stack, " ");      // if we erase newlines it would break associativity
+    eraseNode(stack, " "); // if we erase newlines it would break associativity
     reduceLeft(stack, operator);
     if (!isSpecial(operator) && isOpenOperator(peek(stack, 0)))
         push(stack, LeftPlaceholder(getTag(operator)));
@@ -82,7 +95,7 @@ void shiftPostfix(Stack* stack, Node* operator) {
 }
 
 void shiftInfix(Stack* stack, Node* operator) {
-    erase(stack, " ");      // if we erase newlines it would break associativity
+    eraseNode(stack, " "); // if we erase newlines it would break associativity
     reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0))) {
         if (isThisOperator(operator, "+"))
@@ -120,9 +133,9 @@ void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
 }
 
 void shiftClose(Stack* stack, Node* close) {
-    erase(stack, " ");
-    erase(stack, "\n");
-    erase(stack, ";");
+    eraseNode(stack, " ");
+    eraseNode(stack, "\n");
+    eraseNode(stack, ";");
 
     Node* top = peek(stack, 0);
     if (isOperator(top) && !isSpecial(top) && !isEOF(close)) {
@@ -147,7 +160,8 @@ void shiftClose(Stack* stack, Node* close) {
     }
 
     reduceLeft(stack, close);
-    syntaxErrorIf(isEOF(peek(stack, 0)), "missing open for", close);
+    if (isEOF(peek(stack, 0)) && !isEOF(close))
+        syntaxError("missing open for", close);
     Hold* contents = pop(stack);
     if (isOpenOperator(getNode(contents))) {
         pushBracket(stack, getNode(contents), close, NULL);
@@ -163,7 +177,7 @@ void shiftClose(Stack* stack, Node* close) {
     release(contents);
 }
 
-void shift(Stack* stack, Node* node) {
+static void shiftNode(Stack* stack, Node* node) {
     if (isOperator(node)) {
         switch(getRules(node)->fixity) {
             case INFIX: shiftInfix(stack, node); break;
@@ -179,6 +193,8 @@ void shift(Stack* stack, Node* node) {
         push(stack, node);
     }
 }
+
+void shift(NodeStack* stack, Node* node) { shiftNode((Stack*)stack, node); }
 
 bool isHigherPrecedence(Node* left, Node* right) {
     assert(isOperator(left) && isOperator(right));
@@ -236,14 +252,14 @@ static void reduceTop(Stack* stack) {
     Fixity fixity = getFixity(getNode(operator));
     Hold* left = fixity == INFIX || fixity == SPACEFIX ?
         pop(stack) : hold(VOID);
-    shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
+    shiftNode(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
     release(operator);
     release(left);
 }
 
 void reduceLeft(Stack* stack, Node* operator) {
-    while (!isOperator(peek(stack, 0)) &&
+    while (!isEmpty(stack) && !isOperator(peek(stack, 0)) &&
             isHigherPrecedence(peek(stack, 1), operator))
         reduceTop(stack);
 }
@@ -281,7 +297,8 @@ void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
     if (RULES == NULL)
         RULES = newArray(1024);
     bool special = strncmp(symbol, "(+)", 4) && strncmp(symbol, "(-)", 4);
-    String lexeme = newString(symbol, (unsigned int)strlen(symbol));
+    size_t length = symbol[0] == 0 && fixity == CLOSEFIX ? 1 : strlen(symbol);
+    String lexeme = newString(symbol, (unsigned int)length);
     String empty = newString("", 0);
     appendSyntax((Rules){lexeme, lexeme, empty, leftPrecedence,
         rightPrecedence, fixity, associativity, special, reducer});
@@ -297,4 +314,16 @@ void addSyntaxCopy(String lexeme, Node* name, bool alias) {
     Rules* rules = findRules(getLexeme(name));
     syntaxErrorIf(rules == NULL, "syntax not defined", name);
     appendSyntaxCopy(rules, lexeme, alias ? rules->alias : lexeme);
+}
+
+void debugNodeStack(NodeStack* nodeStack, void debugNode(Node*)) {
+    Stack* stack = (Stack*)nodeStack;
+    Stack* reversed = newStack();
+    for (Iterator* it = iterate(stack); !end(it); it = next(it))
+        push(reversed, cursor(it));
+    for (Iterator* it = iterate(reversed); !end(it); it = next(it)) {
+        debugNode(cursor(it));
+        fputs(" | ", stderr);
+    }
+    deleteStack(reversed);
 }

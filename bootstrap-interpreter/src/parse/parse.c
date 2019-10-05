@@ -1,12 +1,22 @@
 #include "shared/lib/tree.h"
 #include "shared/lib/array.h"
-#include "shared/lib/stack.h"
-#include "parse/shared/token.h"
-#include "parse/shared/debug.h"
+#include "shared/token.h"
 #include "lex/lex.h"
 #include "synthesize/synthesize.h"
+#include "synthesize/debug.h"
 #include "bind/bind.h"
 #include "parse.h"
+
+static void debugParseStage(const char* label, Node* node, bool trace) {
+    if (trace) {
+        fputs("======================================", stderr);
+        fputs("======================================\n", stderr);
+        fputs(label, stderr);
+        fputs(": ", stderr);
+        debugAST(node);
+        fputs("\n", stderr);
+    }
+}
 
 Program parse(const char* input) {
     Hold* result = synthesize(lex, newStartToken(input));
