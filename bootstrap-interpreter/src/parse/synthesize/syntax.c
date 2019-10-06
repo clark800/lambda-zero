@@ -97,15 +97,50 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
+static Node* reduceCloseParenthesis(Node* close, Node* open, Node* contents) {
+    if (!isThisOperator(open, "(") && !isThisOperator(open, "(*"))
+        syntaxError("unbalanced parenthesis", close);
+    return contents;
+}
+
+static Node* reduceCloseSquareBracket(Node* close, Node* open, Node* contents) {
+    syntaxErrorIf(!isThisOperator(open, "["), "unbalanced bracket", close);
+    return contents;
+}
+
+static Node* reduceCloseBrace(Node* close, Node* open, Node* contents) {
+    syntaxErrorIf(!isThisOperator(open, "{"), "unbalanced brace", close);
+    return contents;
+}
+
+static Node* reduceOpenSection(Node* open, Node* before, Node* contents) {
+    syntaxErrorIf(before != NULL, "invalid section", open);
+    Node* body = reduceOpenParenthesis(open, before, contents);
+    return LockedArrow(FixedName(getTag(open), "*."), body);
+}
+
+static Node* reduceCloseSection(Node* close, Node* open, Node* contents) {
+    Node* body = reduceCloseParenthesis(close, open, contents);
+    return LockedArrow(FixedName(getTag(open), ".*"), body);
+}
+
+static Node* reduceCloseFile(Node* close, Node* open, Node* contents) {
+    (void)close;
+    syntaxErrorIf(!isEOF(open), "missing close for", open);
+    return contents;
+}
+
 void initSymbols(void) {
-    addCoreSyntax("", 0, 0, OPENFIX, R, reduceUnmatched);
-    addCoreSyntax("\0", 0, 0, CLOSEFIX, R, reduceEOF);
-    addCoreSyntax("(", 95, 0, OPENFIX, R, reduceUnmatched);
-    addCoreSyntax(")", 0, 95, CLOSEFIX, R, reduceParentheses);
-    addCoreSyntax("[", 95, 0, OPENFIX, R, reduceUnmatched);
-    addCoreSyntax("]", 0, 95, CLOSEFIX, R, reduceSquareBrackets);
-    addCoreSyntax("{", 95, 0, OPENFIX, R, reduceUnmatched);
-    addCoreSyntax("}", 0, 95, CLOSEFIX, R, reduceCurlyBrackets);
+    addCoreSyntax("", 0, 0, OPENFIX, R, reduceOpenFile);
+    addCoreSyntax("\0", 0, 0, CLOSEFIX, R, reduceCloseFile);
+    addCoreSyntax("(", 95, 0, OPENFIX, R, reduceOpenParenthesis);
+    addCoreSyntax(")", 0, 95, CLOSEFIX, R, reduceCloseParenthesis);
+    addCoreSyntax("(*", 95, 0, OPENFIX, R, reduceOpenSection);
+    addCoreSyntax("*)", 0, 95, CLOSEFIX, R, reduceCloseSection);
+    addCoreSyntax("[", 95, 0, OPENFIX, R, reduceOpenSquareBracket);
+    addCoreSyntax("]", 0, 95, CLOSEFIX, R, reduceCloseSquareBracket);
+    addCoreSyntax("{", 95, 0, OPENFIX, R, reduceOpenBrace);
+    addCoreSyntax("}", 0, 95, CLOSEFIX, R, reduceCloseBrace);
     addCoreSyntax("|", 1, 1, INFIX, N, reduceReserved);
     addCoreSyntax(",", 2, 2, INFIX, L, reduceCommaPair);
     addCoreSyntax("\n", 3, 3, INFIX, RV, reduceNewline);
