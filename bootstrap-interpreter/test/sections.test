@@ -1,6 +1,6 @@
 ==========================================================================
 List(a) ::= {[], (_ : a) :: (_ : List(a))} \n[1 +]
-Syntax error: invalid section '+' at line 2 column 4
+Syntax error: missing right operand for '+' at line 2 column 4
 ===============================================================================
 (// 2 + 2)(4)
 4
@@ -8,9 +8,24 @@ Syntax error: invalid section '+' at line 2 column 4
 (2 + 2 //)(2)
 3
 ===============================================================================
-f(g) := g(2) \nf(1 +)
+f(g) := g(2)\nf(1 +)
+Syntax error: invalid operand before section ' )' at line 2 column 6
+===============================================================================
+f(g) := g(2)\nf((1 +))
 3
 ===============================================================================
 f(g, n) := g(n) \nf(2, 2 +)
-Syntax error: operator does not support sections ',' at line 2 column 4
+Syntax error: invalid operand before section ' )' at line 2 column 9
+===============================================================================
+f(*)
+Syntax error: invalid operand before section '( ' at line 1 column 2
+===============================================================================
+(x -> x +)
+Syntax error: invalid section ' )' at line 1 column 10
+===============================================================================
+(+ x -> x)
+Syntax error: invalid section '( ' at line 1 column 1
+===============================================================================
+(2, 2 +)
+Syntax error: comma invalid in section ' )' at line 1 column 8
 ===============================================================================

@@ -86,8 +86,8 @@ define shiftOpen(state, open)
     State(open :: getStack(state'), getOperators(state'))
 
 define isOpenOperator(operator)
-    with operator as Operator(_, _, syntax)
-        getFixity(syntax) = OPENFIX
+    with operator as Operator(_, _, syntax')
+        getFixity(syntax') = OPENFIX
     False
 
 define pushBracket(stack, open, close, contents)
@@ -118,7 +118,7 @@ define shiftClose'(state, close)
 
 
 define preReduceOperator(operator, stack)
-    with operator as Operator(tag, _, syntax)
+    with operator as Operator(tag, _, syntax')
         with stack as left :: stack'
             if isLeftPlaceholder(left)
                 # bracketed infix operator
@@ -130,7 +130,7 @@ define preReduceOperator(operator, stack)
                 if isThisOperator(operator, "(-)")
                     Name(renameTag(tag, "-", INFIX)) :: stack
                 Name(tag) :: stack
-            fixity := getFixity(syntax)
+            fixity := getFixity(syntax')
             if fixity = INFIX or fixity = PREFIX
                 newRightPlaceholder(tag) :: operator :: stack   # LeftSection
             operator :: stack

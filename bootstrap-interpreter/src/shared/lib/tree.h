@@ -15,6 +15,7 @@ Node* newLeaf(Tag tag, char type, long long value, void* data);
 
 bool isLeaf(Node* node);
 Tag getTag(Node* node);
+String getLexeme(Node* node);
 void setTag(Node* node, Tag tag);
 Node* getLeft(Node* branchNode);
 Node* getRight(Node* branchNode);

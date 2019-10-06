@@ -7,8 +7,8 @@ NEITHER := 3
 
 
 define isSpecial(node)
-    with node as Operator(_, _, syntax)
-        getSpecial(syntax)
+    with node as Operator(_, _, syntax')
+        getSpecial(syntax')
     False
 
 
@@ -21,8 +21,8 @@ define propagateSection(operator, side, body)
 define reduceOperator(operator, left, right)
     left' := with left as Section(_, _, body); body <| left
     right' := with right as Section(_, _, body); body <| right
-    with operator as Operator(_, _, syntax)
-        result := getReduce(syntax)(operator, left', right')
+    with operator as Operator(_, _, syntax')
+        result := getReduce(syntax')(operator, left', right')
         if isSection(left)
             side := if isSection(right) then LeftRightSection else RightSection
             propagateSection(operator, side, result)
@@ -33,14 +33,14 @@ define reduceOperator(operator, left, right)
 
 
 define reduceBracket(open, close, left, right)
-    with close as Operator(_, _, syntax)
-        getReduce(syntax)(open, left, right)
+    with close as Operator(_, _, syntax')
+        getReduce(syntax')(open, left, right)
     syntaxError("internal error", close)
 
 
 define shift(state @ State(stack, operators), node)
-    with node as Operator(_, _, syntax)
-        getShift(syntax)(state, node)
+    with node as Operator(_, _, syntax')
+        getShift(syntax')(state, node)
     with stack as top :: _
         if not isOperator(top)
             syntaxError("missing operator before", node)
@@ -53,8 +53,8 @@ define erase(stack, lexeme)
 
 
 define reduceTop'(operator, right, stack, operators)
-    with operator as Operator(tag, _, syntax)
-        if getFixity(syntax) = PREFIX
+    with operator as Operator(tag, _, syntax')
+        if getFixity(syntax') = PREFIX
             shift(State(stack, operators),
                 reduceOperator(operator, Null(tag), right))
         with stack as left :: stack'
@@ -115,9 +115,9 @@ define reduceLeft(state, operator)
     while(shouldReduceTop(operator), reduceTop, state)
 
 
-define parseOperator(tag, value, syntax)
-    tag' := renameTag(tag, getAlias(syntax), getFixity(syntax))
-    Operator(tag', value, syntax)
+define parseOperator(tag, value, syntax')
+    tag' := renameTag(tag, getAlias(syntax'), getFixity(syntax'))
+    Operator(tag', value, syntax')
 
 
 define lookupSyntax(lexeme, operators)

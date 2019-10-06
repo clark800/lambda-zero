@@ -13,8 +13,6 @@
 bool TEST = false;
 extern bool isIO;
 
-static inline String getLexeme(Node* n) {return getTag(n).lexeme;}
-
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     switch (getTermType(node)) {

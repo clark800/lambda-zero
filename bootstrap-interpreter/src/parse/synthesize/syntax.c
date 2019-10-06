@@ -7,7 +7,6 @@
 #include "brackets.h"
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
-    (void)operator;
     if (isColonPair(right))
         return reduceArrow(operator, left, getLeft(right));
     if (isName(left))
@@ -97,53 +96,63 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
-static Node* reduceCloseParenthesis(Node* close, Node* open, Node* contents) {
-    if (!isThisOperator(open, "(") && !isThisOperator(open, "(*"))
-        syntaxError("unbalanced parenthesis", close);
-    return contents;
+static Node* reduceClose(Node* operator, Node* left, Node* right) {
+    (void)operator, (void)left;
+    return right;
 }
 
-static Node* reduceCloseSquareBracket(Node* close, Node* open, Node* contents) {
-    syntaxErrorIf(!isThisOperator(open, "["), "unbalanced bracket", close);
-    return contents;
+bool isParenthesizedAdfixOperator(Node* node) {
+    return isJuxtaposition(node) && isName(getLeft(node)) &&
+        (isThisName(getRight(node), "*.") || isThisName(getRight(node), ".*"));
 }
 
-static Node* reduceCloseBrace(Node* close, Node* open, Node* contents) {
-    syntaxErrorIf(!isThisOperator(open, "{"), "unbalanced brace", close);
-    return contents;
+bool isParenthesizedInfixOperator(Node* node) {
+    return isJuxtaposition(node) && isThisName(getRight(node), "*.") &&
+        isJuxtaposition(getLeft(node)) && isThisName(getRight(getLeft(node)),
+        ".*") && isName(getLeft(getLeft(node)));
 }
 
 static Node* reduceOpenSection(Node* open, Node* before, Node* contents) {
-    syntaxErrorIf(before != NULL, "invalid section", open);
-    Node* body = reduceOpenParenthesis(open, before, contents);
-    return LockedArrow(FixedName(getTag(open), "*."), body);
+    syntaxErrorIf(before != NULL, "invalid operand before section", open);
+    if (isCommaPair(contents))
+        syntaxError("comma invalid in section", open);
+    if (!isJuxtaposition(contents))
+        syntaxError("invalid section", open);
+    if (isParenthesizedAdfixOperator(contents))
+        return getLeft(contents);
+    if (isParenthesizedInfixOperator(contents))
+        return getLeft(getLeft(contents));
+    return LockedArrow(FixedName(getTag(open), ".*"), contents);
 }
 
-static Node* reduceCloseSection(Node* close, Node* open, Node* contents) {
-    Node* body = reduceCloseParenthesis(close, open, contents);
-    return LockedArrow(FixedName(getTag(open), ".*"), body);
-}
-
-static Node* reduceCloseFile(Node* close, Node* open, Node* contents) {
-    (void)close;
-    syntaxErrorIf(!isEOF(open), "missing close for", open);
-    return contents;
+static Node* reduceCloseSection(Node* close, Node* before, Node* contents) {
+    syntaxErrorIf(before != NULL, "invalid operand before section", close);
+    if (isTuple(contents))
+        syntaxError("comma invalid in section", close);
+    if (!isJuxtaposition(contents) && !isName(contents))
+        syntaxError("invalid section", close);
+    if (isParenthesizedAdfixOperator(contents))
+        return getLeft(contents);
+    if (isName(contents))
+        return contents;    // parenthesized operator
+    return LockedArrow(FixedName(getTag(close), "*."), contents);
 }
 
 void initSymbols(void) {
-    addCoreSyntax("", 0, 0, OPENFIX, R, reduceOpenFile);
-    addCoreSyntax("\0", 0, 0, CLOSEFIX, R, reduceCloseFile);
-    addCoreSyntax("(", 95, 0, OPENFIX, R, reduceOpenParenthesis);
-    addCoreSyntax(")", 0, 95, CLOSEFIX, R, reduceCloseParenthesis);
-    addCoreSyntax("(*", 95, 0, OPENFIX, R, reduceOpenSection);
-    addCoreSyntax("*)", 0, 95, CLOSEFIX, R, reduceCloseSection);
-    addCoreSyntax("[", 95, 0, OPENFIX, R, reduceOpenSquareBracket);
-    addCoreSyntax("]", 0, 95, CLOSEFIX, R, reduceCloseSquareBracket);
-    addCoreSyntax("{", 95, 0, OPENFIX, R, reduceOpenBrace);
-    addCoreSyntax("}", 0, 95, CLOSEFIX, R, reduceCloseBrace);
+    initSyntax();
+    addBracketSyntax("", '\0', 0, OPENFIX, reduceOpenFile);
+    addBracketSyntax("\0", '\0', 0, CLOSEFIX, reduceClose);
+    addBracketSyntax("(", '(', 95, OPENFIX, reduceOpenParenthesis);
+    addBracketSyntax(")", '(', 95, CLOSEFIX, reduceClose);
+    addBracketSyntax("( ", '(', 95, OPENFIX, reduceOpenSection);
+    addBracketSyntax(" )", '(', 95, CLOSEFIX, reduceCloseSection);
+    addBracketSyntax("[", '[', 95, OPENFIX, reduceOpenSquareBracket);
+    addBracketSyntax("]", '[', 95, CLOSEFIX, reduceClose);
+    addBracketSyntax("{", '{', 95, OPENFIX, reduceOpenBrace);
+    addBracketSyntax("}", '{', 95, CLOSEFIX, reduceClose);
     addCoreSyntax("|", 1, 1, INFIX, N, reduceReserved);
     addCoreSyntax(",", 2, 2, INFIX, L, reduceCommaPair);
-    addCoreSyntax("\n", 3, 3, INFIX, RV, reduceNewline);
+    addCoreSyntax("\n", 3, 3, INFIX, R, reduceNewline);
     addCoreSyntax(";;", 4, 4, INFIX, R, reduceNewline);
     addCoreSyntax("define", 5, 5, PREFIX, L, reducePrefix);
     addCoreSyntax(":=", 5, 5, INFIX, R, reduceDefine);
@@ -163,6 +172,8 @@ void initSymbols(void) {
     addCoreSyntax(".", 92, 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, 99, PREFIX, L, reduceReserved);
     addCoreSyntax("( )", 99, 99, SPACEFIX, L, reduceInvalid);
+    addCoreSyntax("syntax", 99, 99, PREFIX, L, reducePrefix);
+    addCoreSyntax("alias", 99, 99, PREFIX, L, reducePrefix);
     addCoreAlias("\u2254", ":=");
     addCoreAlias("\u2A74", "::=");
     addCoreAlias("\u21A6", "->");

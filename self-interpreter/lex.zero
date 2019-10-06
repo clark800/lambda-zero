@@ -30,7 +30,7 @@ isComment(c) := c = '#'
 isLineFeed(c) := c = '\n'
 isInvalid(c) := c =/= 0 and isControl(c) and not isLineFeed(c)
 isDelimiter(c) := " `.,;@#$()[]{}\"\n\0".any((= c)) or isInvalid(c)
-isRepeatable(c) := " `.,;".any(= c)
+isRepeatable(c) := " `.,;".any((= c))
 
 define startsWithDigit(lexeme)
     with lexeme as n :: _
@@ -74,7 +74,7 @@ define splitNumeric(ns)
 
 define splitNewline(ns)
     with ns as n :: ns'
-        (before, after) := ns'.splitWhen(=/= ' ')
+        (before, after) := ns'.splitWhen((=/= ' '))
         (n :: before, after)
     ([], [])
 
@@ -84,14 +84,14 @@ define splitLexeme(ns)
         if c.isQuote then splitQuote(ns)
         if c.isComment then ns.splitWhen(isLineFeed)
         if ns.isNumeric then splitNumeric(ns)
-        if c.isRepeatable then ns.splitWhen(=/= c)
+        if c.isRepeatable then ns.splitWhen((=/= c))
         if c.isDelimiter then ([c], ns')
         ns.splitWhen(isDelimiter)
     ([], [])
 
 define advanceLocation(Location(file, line, column), lexeme)
     if lexeme.startsWith("#*")
-        (_, after) := lexeme.drop(2).splitWhen(=/= ' ')
+        (_, after) := lexeme.drop(2).splitWhen((=/= ' '))
         (file', _) := after.splitWhen(isLineFeed)
         Location(file', if isNil(file') then 0 else 1, 0)
     if lexeme.startsWith("\n")
