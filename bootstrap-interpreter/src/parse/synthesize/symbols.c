@@ -55,8 +55,9 @@ bool isOpenOperator(Node* node) {
     return isOperator(node) && getFixity(node) == OPENFIX;
 }
 
-Node* reduceBracket(Node* open, Node* close, Node* left, Node* right) {
-    return getRules(close)->reduce(open, left, right);
+Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
+    return getRules(close)->reduce(close, open,
+        getRules(open)->reduce(open, before, contents));
 }
 
 static Node* propagateSection(Node* operator, SectionVariety side, Node* body) {
@@ -123,7 +124,7 @@ void shiftOpen(Stack* stack, Node* open) {
 }
 
 void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
-    if (isEOF(open) || isOperator(peek(stack, 0))) {
+    if (isEmpty(stack) || isOperator(peek(stack, 0))) {
         push(stack, reduceBracket(open, close, NULL, contents));
     } else {
         Hold* left = pop(stack);
@@ -198,8 +199,6 @@ void shift(NodeStack* stack, Node* node) { shiftNode((Stack*)stack, node); }
 
 bool isHigherPrecedence(Node* left, Node* right) {
     assert(isOperator(left) && isOperator(right));
-    if (isEOF(left))
-        return false;
 
     Rules* leftRules = getRules(left);
     Rules* rightRules = getRules(right);

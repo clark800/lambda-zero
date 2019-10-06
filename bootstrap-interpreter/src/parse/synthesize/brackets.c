@@ -51,19 +51,18 @@ static Node* wrapSection(Tag tag, Node* section) {
     return NULL;
 }
 
-Node* reduceParentheses(Node* open, Node* function, Node* contents) {
-    syntaxErrorIf(!isThisOperator(open, "("), "missing close for", open);
+Node* reduceOpenParenthesis(Node* open, Node* before, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL) {
         Node* unit = FixedName(tag, "()");
-        return function == NULL ? unit : Juxtaposition(tag, function, unit);
+        return before == NULL ? unit : Juxtaposition(tag, before, unit);
     }
     if (isDefinition(contents))
         syntaxError("missing scope for definition", contents);
     if (isSection(contents))
         contents = wrapSection(tag, contents);
-    if (function != NULL)
-        return applyToCommaList(tag, function, contents);
+    if (before != NULL)
+        return applyToCommaList(tag, before, contents);
     if (isCommaPair(contents))
         return newTuple(open, contents);
     if (isArrow(contents))
@@ -73,18 +72,18 @@ Node* reduceParentheses(Node* open, Node* function, Node* contents) {
     return contents;
 }
 
-Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
-    syntaxErrorIf(!isThisOperator(open, "["), "missing close for", open);
+Node* reduceOpenSquareBracket(Node* open, Node* before, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL) {
-        syntaxErrorIf(left != NULL, "missing argument to", open);
+        syntaxErrorIf(before != NULL, "missing argument to", open);
         return Nil(tag);
     }
     syntaxErrorIf(isSection(contents), "invalid section", contents);
-    if (left != NULL) {
+    if (before != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
         Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
-        return applyToCommaList(tag, Juxtaposition(tag, name, left), contents);
+        Node* base = Juxtaposition(tag, name, before);
+        return applyToCommaList(tag, base, contents);
     }
     Node* list = Nil(tag);
     if (!isCommaPair(contents))
@@ -94,24 +93,17 @@ Node* reduceSquareBrackets(Node* open, Node* left, Node* contents) {
     return prepend(tag, contents, list);
 }
 
-Node* reduceCurlyBrackets(Node* open, Node* left, Node* patterns) {
-    syntaxErrorIf(left != NULL, "missing space before", open);
-    syntaxErrorIf(!isThisOperator(open, "{"), "missing close for", open);
+Node* reduceOpenBrace(Node* open, Node* before, Node* patterns) {
+    syntaxErrorIf(before != NULL, "invalid operand before", open);
     if (patterns == NULL)
         return SetBuilder(renameTag(getTag(open), "{}"), VOID);
     syntaxErrorIf(isSection(patterns), "invalid section", patterns);
     return SetBuilder(getTag(open), newTuple(open, patterns));
 }
 
-Node* reduceEOF(Node* open, Node* left, Node* contents) {
-    syntaxErrorIf(left != NULL, "invalid syntax", open);  // should never happen
+Node* reduceOpenFile(Node* open, Node* before, Node* contents) {
+    syntaxErrorIf(before != NULL, "invalid operand before", open);
     syntaxErrorIf(!isEOF(open), "missing close for", open);
     syntaxErrorIf(isCommaPair(contents), "comma not inside brackets", contents);
     return contents;
-}
-
-Node* reduceUnmatched(Node* open, Node* left, Node* right) {
-    (void)left, (void)right;
-    syntaxError("missing close for", open);
-    return NULL;
 }
