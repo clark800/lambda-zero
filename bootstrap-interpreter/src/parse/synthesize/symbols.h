@@ -14,6 +14,8 @@ String getPrior(Node* operator);
 Precedence findPrecedence(Node* node);
 bool isLeftSectionOperator(Node* op);
 bool isRightSectionOperator(Node* op);
+bool isOpenOperator(Node* node);
+bool isCloseOperator(Node* node);
 
 void shift(NodeStack* stack, Node* node);
 

@@ -103,6 +103,12 @@ void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
 static void shiftToken(NodeStack* stack, Token token) {
     debugParseState(token.tag, stack, DEBUG >= 2);
     Node* node = parseToken(token);
+    if (isCloseOperator(node)) {
+        erase(stack, " ");
+        erase(stack, "\n");
+        if (isThisOperator(node, ")"))
+            erase(stack, ";");
+    }
     if (token.type == NEWLINE) {
         erase(stack, " ");
         if (!isOperator(getTop(stack))) {
