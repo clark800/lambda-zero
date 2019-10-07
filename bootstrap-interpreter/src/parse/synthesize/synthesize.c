@@ -7,6 +7,7 @@
 #include "parse/shared/token.h"
 #include "parse/shared/ast.h"
 #include "symbols.h"
+#include "brackets.h"
 #include "debug.h"
 #include "syntax.h"
 
@@ -70,6 +71,11 @@ static Node* parseStringLiteral(Tag tag) {
     return buildStringLiteral(tag, tag.lexeme.start + 1);
 }
 
+static Node* parseSymbol(Tag tag, long long subprecedence) {
+    Node* operator = parseOperator(tag, subprecedence);
+    return operator == NULL ? Name(tag) : operator;
+}
+
 static Node* parseToken(Token token) {
     switch (token.type) {
         case NUMERIC: return parseNumber(token.tag);
@@ -104,6 +110,26 @@ static void shiftToken(NodeStack* stack, Token token) {
                 syntaxError("odd-width indent after", node);
             shift(stack, node);
         }
+    } else if (isOperator(node) && !isEOF(node)) {
+        Node* top = getTop(stack);
+        // check for section syntax
+        if (isThisOperator(top, "(") && isRightSectionOperator(node)) {
+            erase(stack, "(");
+            Node* open = parseSymbol(renameTag(getTag(top), "( "), 0);
+            Node* placeholder = Name(renameTag(getTag(top), ".*"));
+            shift(stack, open);
+            shift(stack, placeholder);
+            shift(stack, node);
+            release(hold(open));
+            release(hold(placeholder));
+        } else if (isThisOperator(node, ")") && isLeftSectionOperator(top)) {
+            Node* close = parseSymbol(renameTag(getTag(node), " )"), 0);
+            Node* placeholder = Name(renameTag(getTag(node), "*."));
+            shift(stack, placeholder);
+            shift(stack, close);
+            release(hold(placeholder));
+            release(hold(close));
+        } else shift(stack, node);
     } else shift(stack, node);
     release(hold(node));
 }

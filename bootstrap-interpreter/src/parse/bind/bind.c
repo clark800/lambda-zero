@@ -68,7 +68,6 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
         case SETBUILDER:
             syntaxError("must appear on the right side of '::='", node); break;
         case OPERATOR:
-        case SECTION:
             assert(false); break;
     }
 }

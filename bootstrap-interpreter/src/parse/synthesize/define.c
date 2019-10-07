@@ -53,12 +53,6 @@ static Node* newMainCall(Node* name) {
     return Juxtaposition(tag, print, Juxtaposition(tag, name, input));
 }
 
-static bool isTuple(Node* node) {
-    // a tuple is a spine of applications headed by a name starting with comma
-    return isJuxtaposition(node) ? isTuple(getLeft(node)) :
-        (isName(node) && getLexeme(node).start[0] == ',');
-}
-
 static bool hasRecursiveCalls(Node* node, Node* name) {
     if (!isLeaf(node))
         return hasRecursiveCalls(getLeft(node), name)
@@ -247,16 +241,14 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
 
     Tag tag = getTag(name);
     Node* fixity = getLeft(right);
-    if (isThisName(fixity, "alias")) {
-        addSyntaxCopy(getLexeme(name), getRight(right), true);
-        return;
-    }
-    if (isThisName(fixity, "syntax")) {
-        addSyntaxCopy(getLexeme(name), getRight(right), false);
+    Node* argument = getRight(right);
+
+    if (isThisName(fixity, "alias") || isThisName(fixity, "syntax")) {
+        syntaxErrorIf(!isName(argument), "expected operator name", argument);
+        addSyntaxCopy(getLexeme(name), argument, isThisName(fixity, "alias"));
         return;
     }
 
-    Node* argument = getRight(right);
     Precedence p = parsePrecedence(argument);
     String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
 
@@ -281,13 +273,6 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     else if (isThisName(fixity, "postfix"))
         addSyntax(tag, prior, p, p, POSTFIX, L, reducePostfix);
     else syntaxError("invalid fixity", fixity);
-
-    // add special case prefix operators for "+" and "-"
-    // done here to avoid hard-coding a precedence for them
-    if (isThisName(name, "+"))
-        addCoreSyntax("(+)", p, p, PREFIX, L, reducePrefix);
-    if (isThisName(name, "-"))
-        addCoreSyntax("(-)", p, p, PREFIX, L, reducePrefix);
 }
 
 Node* reduceDefine(Node* operator, Node* left, Node* right) {

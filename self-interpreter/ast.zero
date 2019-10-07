@@ -5,16 +5,16 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
 ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
 SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
-StateT(ast, syntax) ::= {State(
-    stack : List(ast),
-    operators : List(TableT(List(ℕ), syntax))
+StateT(astT, syntaxT) ::= {State(
+    stack : List(astT),
+    operators : List(TableT(List(ℕ), syntaxT))
 )}
 
 getStack(State(stack, _)) := stack
 getOperators(State(_, operators)) := operators
 
 SyntaxT(ast) ::= {Syntax(
-    alias : List(ℕ),
+    aliasName : List(ℕ),
     leftPrecedence : ℕ,
     rightPrecedence : ℕ,
     fixity : ℕ,
@@ -25,7 +25,7 @@ SyntaxT(ast) ::= {Syntax(
     prior : List(ℕ)
 )}
 
-getAlias(Syntax(alias, _, _, _, _, _, _, _, _)) := alias
+getAlias(Syntax(aliasName, _, _, _, _, _, _, _, _)) := aliasName
 getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _)) := leftP
 getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _)) := rightP
 getFixity(Syntax(_, _, _, fixity, _, _, _, _, _)) := fixity
@@ -43,7 +43,7 @@ AST ::= {
     Let(tag : TagT, isTypeConstructor ∈ 𝔹,
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
-    Operator(tag : TagT, rank : ℕ, syntax : SyntaxT(AST)),
+    Operator(tag : TagT, rank : ℕ, syntax' : SyntaxT(AST)),
     Definition(tag : TagT, type : DefinitionType,
         definiendum : AST, definiens : AST),
     AsPattern(tag : TagT, left : AST, pattern : AST),

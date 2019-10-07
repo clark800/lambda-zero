@@ -2,7 +2,7 @@
 
 define findParameter(level, stack, lexeme)
     with stack as table :: _
-        table.lookup(lexeme).mapJust(mapFirst(level --))
+        table.lookup(lexeme).mapJust(mapFirst((level --)))
     Void
 
 
@@ -50,10 +50,10 @@ define getOperationType(context, tag)
     lexeme := getTagLexeme(tag)
     syntax(>->) := syntax(++)
     (>->) := Implication(noTag)
-    if ["+", "--", "*", "//", "%"].any(=*= lexeme)
+    if ["+", "--", "*", "//", "%"].any((=*= lexeme))
         natural := getNaturalType(context)
         Just(natural >-> natural >-> natural)
-    if ["=", "=/=", "<", ">", "<=", ">="].any(=*= lexeme)
+    if ["=", "=/=", "<", ">", "<=", ">="].any((=*= lexeme))
         natural := getNaturalType(context)
         boolean := getBooleanType(context)
         Just(natural >-> natural >-> boolean)

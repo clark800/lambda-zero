@@ -62,7 +62,7 @@ define parseNumericLiteral(tag)
     if lexeme.any((not) <> isDigit)
         parseError("invalid token", tag)
     maxNatural := "9223372036854775807"
-    natural := lexeme.dropWhile(= '0')
+    natural := lexeme.dropWhile((= '0'))
     if natural.length > maxNatural.length
         parseError("magnitude of numeral is too large", tag)
     if natural.length = maxNatural.length and

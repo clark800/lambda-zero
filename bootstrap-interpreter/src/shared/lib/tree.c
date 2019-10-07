@@ -25,6 +25,7 @@ void initNodeAllocator() {initPool(sizeof(Node), 4096);}
 void destroyNodeAllocator() {destroyPool();}
 bool isLeaf(Node* node) {return node->isBranch == 0;}
 Tag getTag(Node* node) {return node->tag;}
+String getLexeme(Node* node) {return node->tag.lexeme;}
 void setTag(Node* node, Tag tag) {node->tag = tag;}
 char getType(Node* node) {return node->type;}
 void setType(Node* node, char type) {node->type = type;}

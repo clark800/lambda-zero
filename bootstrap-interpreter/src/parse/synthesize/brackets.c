@@ -4,6 +4,12 @@
 #include "parse/shared/ast.h"
 #include "symbols.h"
 
+// isEOF returns true for both start of file and end of file nodes
+bool isEOF(Node* n) {
+    String lexeme = getTag(n).lexeme;
+    return isOperator(n) && (lexeme.length == 0 || lexeme.start[0] == '\0');
+}
+
 static unsigned int getCommaListLength(Node* node) {
     return !isCommaPair(node) ? 1 : 1 + getCommaListLength(getLeft(node));
 }
@@ -27,30 +33,6 @@ static Node* newTuple(Node* open, Node* commaList) {
     return applyToCommaList(getTag(open), name, commaList);
 }
 
-static Node* wrapLeftSection(Tag tag, Node* body) {
-    return LockedArrow(FixedName(tag, "*."), body);
-}
-
-static Node* wrapRightSection(Tag tag, Node* body) {
-    return LockedArrow(FixedName(tag, ".*"), body);
-}
-
-static Node* wrapSection(Tag tag, Node* section) {
-    Node* body = getSectionBody(section);
-    switch ((SectionVariety)getVariety(section)) {
-        case LEFTSECTION:
-            return wrapLeftSection(tag, body);
-        case RIGHTSECTION:
-            if (isName(getLeft(body)))
-                return getLeft(body);   // parenthesized postfix operator
-            return wrapRightSection(tag, body);
-        case LEFTRIGHTSECTION:
-            return wrapLeftSection(tag, wrapRightSection(tag, body));
-    }
-    assert(false);
-    return NULL;
-}
-
 Node* reduceOpenParenthesis(Node* open, Node* before, Node* contents) {
     Tag tag = getTag(open);
     if (contents == NULL) {
@@ -59,8 +41,6 @@ Node* reduceOpenParenthesis(Node* open, Node* before, Node* contents) {
     }
     if (isDefinition(contents))
         syntaxError("missing scope for definition", contents);
-    if (isSection(contents))
-        contents = wrapSection(tag, contents);
     if (before != NULL)
         return applyToCommaList(tag, before, contents);
     if (isCommaPair(contents))
@@ -78,7 +58,6 @@ Node* reduceOpenSquareBracket(Node* open, Node* before, Node* contents) {
         syntaxErrorIf(before != NULL, "missing argument to", open);
         return Nil(tag);
     }
-    syntaxErrorIf(isSection(contents), "invalid section", contents);
     if (before != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
         Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
@@ -97,7 +76,6 @@ Node* reduceOpenBrace(Node* open, Node* before, Node* patterns) {
     syntaxErrorIf(before != NULL, "invalid operand before", open);
     if (patterns == NULL)
         return SetBuilder(renameTag(getTag(open), "{}"), VOID);
-    syntaxErrorIf(isSection(patterns), "invalid section", patterns);
     return SetBuilder(getTag(open), newTuple(open, patterns));
 }
 

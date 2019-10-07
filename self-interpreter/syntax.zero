@@ -5,8 +5,8 @@ define isOperatorTop(stack)
 
 
 define isValidPrior(operator, node)
-    with operator as Operator(_, _, syntax)
-        prior := getPrior(syntax)
+    with operator as Operator(_, _, syntax')
+        prior := getPrior(syntax')
         isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
     False
 
@@ -228,11 +228,11 @@ define copySyntax(operators, tag, name)
 
 
 define findPrecedence(operators, node)
-    syntax := operators.lookupSyntax(getLexeme(node)) ??
+    syntax' := operators.lookupSyntax(getLexeme(node)) ??
         syntaxError("syntax not defined", node)
-    if getLeftPrecedence(syntax) =/= getRightPrecedence(syntax)
+    if getLeftPrecedence(syntax') =/= getRightPrecedence(syntax')
         syntaxError("operator not supported", node)
-    getLeftPrecedence(syntax)
+    getLeftPrecedence(syntax')
 
 
 define parsePrecedence(operators, node)
@@ -258,18 +258,18 @@ define defineSyntax(operators, definition, name, right)
     syntaxError("invalid syntax definition", definition)
 
 
-define pushSyntax(lexeme, syntax, operators)
+define pushSyntax(lexeme, syntax', operators)
     with operators as top :: _
-        top.insert(lexeme, syntax) :: operators
-    [newDictionary([(lexeme, syntax)])]
+        top.insert(lexeme, syntax') :: operators
+    [newDictionary([(lexeme, syntax')])]
 
 
 define addSyntax(operators, operator)
     if not isVoid(operators.lookupSyntax(getLexeme(operator)))
         syntaxError("syntax already defined", operator)
-    with operator as Operator(_, _, syntax)
-        operators' := operators.pushSyntax(getLexeme(operator), syntax)
-        p := getLeftPrecedence(syntax)
+    with operator as Operator(_, _, syntax')
+        operators' := operators.pushSyntax(getLexeme(operator), syntax')
+        p := getLeftPrecedence(syntax')
         if isThisOperator(operator, "+")
             s := Syntax("(+)", p, p, PREFIX, LEFT, False,
                 shiftPrefix, reducePrefix, "")
@@ -313,9 +313,9 @@ define shiftNewline(state @ State(stack, operators), operator)
     shiftSemicolon(state, operator)
 
 
-define coreAlias(lexeme, alias, leftPrecedence, rightPrecedence, fixity,
+define coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence, fixity,
         associativity, shifter, reducer)
-    (lexeme, Syntax(alias, leftPrecedence, rightPrecedence, fixity,
+    (lexeme, Syntax(aliasName, leftPrecedence, rightPrecedence, fixity,
         associativity, True, shifter, reducer, ""))
 
 
