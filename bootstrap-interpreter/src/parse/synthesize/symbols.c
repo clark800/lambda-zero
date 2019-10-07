@@ -77,13 +77,16 @@ bool isOpenOperator(Node* node) {
     return isOperator(node) && getFixity(node) == OPENFIX;
 }
 
-Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
-    return getRules(close)->reduce(close, before,
-        getRules(open)->reduce(open, before, contents));
+bool isCloseOperator(Node* node) {
+    return isOperator(node) && getFixity(node) == CLOSEFIX;
 }
 
 Node* reduce(Node* operator, Node* left, Node* right) {
     return getRules(operator)->reduce(operator, left, right);
+}
+
+Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
+    return reduce(close, before, reduce(open, before, contents));
 }
 
 void shiftPrefix(Stack* stack, Node* operator) {
@@ -143,8 +146,6 @@ void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
 
 void shiftClose(Stack* stack, Node* close) {
     eraseNode(stack, " ");
-    eraseNode(stack, "\n");
-    eraseNode(stack, ";");
     reduceLeft(stack, close);
 
     Hold* contents = pop(stack);
