@@ -1,11 +1,13 @@
+// operator precedence parser
+
 #include <stdio.h>
 #include <string.h>
-#include "shared/lib/array.h"
-#include "shared/lib/tree.h"
-#include "shared/lib/util.h"
-#include "shared/lib/stack.h"
-#include "parse/shared/errors.h"
-#include "symbols.h"
+#include "array.h"
+#include "tree.h"
+#include "util.h"
+#include "stack.h"
+#include "errors.h"
+#include "opp.h"
 
 void reduceLeft(Stack* stack, Node* operator);
 
@@ -25,8 +27,7 @@ NodeStack* newNodeStack() { return (NodeStack*)newStack(); }
 void deleteNodeStack(NodeStack* stack) { deleteStack((Stack*)stack); }
 
 Node* getTop(NodeStack* stack) {
-    assert(!isEmpty((Stack*)stack));
-    return peek((Stack*)stack, 0);
+    return isEmpty((Stack*)stack) ? NULL : peek((Stack*)stack, 0);
 }
 
 static inline Node* Operator(Tag tag, long long subprecedence, void* rules) {

@@ -1,9 +1,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "shared/lib/tree.h"
-#include "shared/lib/stack.h"
-#include "shared/term.h"
+#include "tree.h"
+#include "stack.h"
+#include "parse/term.h"
 #include "closure.h"
 
 static void printBacktrace(Closure* closure) {

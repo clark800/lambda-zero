@@ -1,11 +1,103 @@
-#include "shared/lib/tree.h"
-#include "shared/lib/array.h"
-#include "shared/token.h"
+#include <stdio.h>
+#include "tree.h"
+#include "util.h"
+#include "array.h"
+#include "lex/token.h"
 #include "lex/lex.h"
-#include "synthesize/synthesize.h"
-#include "synthesize/debug.h"
-#include "bind/bind.h"
+#include "opp/errors.h"
+#include "opp/opp.h"
+#include "ast.h"
+#include "syntax.h"
+#include "tokens.h"
+#include "bind.h"
 #include "parse.h"
+
+int DEBUG = 0;
+
+static void serializeAST(Node* node, FILE* stream) {
+    if (!isLeaf(node)) {
+        fputs("(", stream);
+        serializeAST(getLeft(node), stream);
+        fputs(isArrow(node) ? " -> " : " ", stream);
+        serializeAST(getRight(node), stream);
+        fputs(")", stream);
+    } else if (isNumber(node)) {
+        // numbers can be generated, so not all numbers will exist in input
+        fputll(getValue(node), stream);
+    } else {
+        printString(getLexeme(node), stream);
+        fputs("#", stream);
+        fputll(getValue(node), stream);
+    }
+}
+
+void debugAST(Node* node) {
+    serializeAST(node, stderr);
+}
+
+void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
+    if (trace) {
+        fputs("Token: '", stderr);
+        printString(tag.lexeme, stderr);
+        fputs("'  Stack: ", stderr);
+        debugNodeStack(nodeStack, debugAST);
+        fputs("\n", stderr);
+    }
+}
+
+void shiftNode(NodeStack* stack, Node* node) {
+    debugParseState(getTag(node), stack, DEBUG >= 2);
+    if (isCloseOperator(node)) {
+        erase(stack, " ");
+        erase(stack, "\n");
+        if (isThisOperator(node, ")"))
+            erase(stack, ";");
+    }
+    if (isThisOperator(node, "\n")) {
+        erase(stack, " ");
+        if (!isOperator(getTop(stack))) {
+            if (getValue(node) % 2 != 0)
+                syntaxError("odd-width indent after", node);
+            shift(stack, node);
+        }
+    } else if (isOperator(node)) {
+        Node* top = getTop(stack);
+        if (top == NULL) {
+            shift(stack, node);
+        } else if (isThisOperator(top, "(") && isRightSectionOperator(node)) {
+            erase(stack, "(");
+            Node* open = parseSymbol(renameTag(getTag(top), "( "), 0);
+            Node* placeholder = Name(renameTag(getTag(top), ".*"));
+            shift(stack, open);
+            shift(stack, placeholder);
+            shift(stack, node);
+            release(hold(open));
+            release(hold(placeholder));
+        } else if (isThisOperator(node, ")") && isLeftSectionOperator(top)) {
+            Node* close = parseSymbol(renameTag(getTag(node), " )"), 0);
+            Node* placeholder = Name(renameTag(getTag(node), "*."));
+            shift(stack, placeholder);
+            shift(stack, close);
+            release(hold(placeholder));
+            release(hold(close));
+        } else shift(stack, node);
+    } else shift(stack, node);
+    release(hold(node));
+}
+
+Hold* synthesize(Token (*lexer)(Token), Token start) {
+    initSymbols();
+    NodeStack* stack = newNodeStack();
+    Node* startNode = parseToken(start);
+    shiftNode(stack, startNode);
+    for (Token token = lexer(start); token.type != END; token = lexer(token))
+        if (token.type != COMMENT && token.type != VSPACE)
+            shiftNode(stack, parseToken(token));
+    Hold* ast = hold(getTop(stack));
+    syntaxErrorIf(getNode(ast) == startNode, "no input", getNode(ast));
+    deleteNodeStack(stack);
+    return ast;
+}
 
 static void debugParseStage(const char* label, Node* node, bool trace) {
     if (trace) {

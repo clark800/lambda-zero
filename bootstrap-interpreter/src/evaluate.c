@@ -1,8 +1,8 @@
 #include <signal.h>
-#include "shared/lib/tree.h"
-#include "shared/lib/array.h"
-#include "shared/lib/stack.h"
-#include "shared/term.h"
+#include "tree.h"
+#include "array.h"
+#include "stack.h"
+#include "parse/term.h"
 #include "closure.h"
 #include "exception.h"
 #include "operations.h"
@@ -125,9 +125,6 @@ static void interrupt(int parameter) {(void)parameter, INTERRUPT = true;}
 
 static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     while (true) {
-        //#include "debug.h"
-        //extern void debugState(Closure* closure, Stack* stack);
-        //debugState(closure, stack);
         if (INTERRUPT)
             runtimeError("interrupted", closure);
         switch (getTermType(getTerm(closure))) {

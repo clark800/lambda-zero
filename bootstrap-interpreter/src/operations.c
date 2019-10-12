@@ -1,10 +1,10 @@
 #include <stdlib.h>     // exit
 #include <stdio.h>      // fputs
 #include <limits.h>     // LLONG_MAX
-#include "shared/lib/util.h"   // error
-#include "shared/lib/tree.h"
-#include "shared/lib/stack.h"
-#include "shared/term.h"
+#include "util.h"       // error
+#include "tree.h"
+#include "stack.h"
+#include "parse/term.h"
 #include "closure.h"
 #include "exception.h"
 

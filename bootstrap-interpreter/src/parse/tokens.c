@@ -2,16 +2,11 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include "shared/lib/tree.h"
-#include "parse/shared/errors.h"
-#include "parse/shared/token.h"
-#include "parse/shared/ast.h"
-#include "symbols.h"
-#include "brackets.h"
-#include "debug.h"
-#include "syntax.h"
-
-int DEBUG = 0;
+#include "tree.h"
+#include "lex/token.h"
+#include "opp/errors.h"
+#include "opp/opp.h"
+#include "ast.h"
 
 static bool isNumberLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
@@ -71,12 +66,12 @@ static Node* parseStringLiteral(Tag tag) {
     return buildStringLiteral(tag, tag.lexeme.start + 1);
 }
 
-static Node* parseSymbol(Tag tag, long long subprecedence) {
+Node* parseSymbol(Tag tag, long long subprecedence) {
     Node* operator = parseOperator(tag, subprecedence);
     return operator == NULL ? Name(tag) : operator;
 }
 
-static Node* parseToken(Token token) {
+Node* parseToken(Token token) {
     switch (token.type) {
         case NUMERIC: return parseNumber(token.tag);
         case STRING: return parseStringLiteral(token.tag);
@@ -89,67 +84,3 @@ static Node* parseToken(Token token) {
         default: return parseSymbol(token.tag, 0);
     }
 }
-
-void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
-    if (trace) {
-        fputs("Token: '", stderr);
-        printString(tag.lexeme, stderr);
-        fputs("'  Stack: ", stderr);
-        debugNodeStack(nodeStack, debugAST);
-        fputs("\n", stderr);
-    }
-}
-
-static void shiftToken(NodeStack* stack, Token token) {
-    debugParseState(token.tag, stack, DEBUG >= 2);
-    Node* node = parseToken(token);
-    if (isCloseOperator(node)) {
-        erase(stack, " ");
-        erase(stack, "\n");
-        if (isThisOperator(node, ")"))
-            erase(stack, ";");
-    }
-    if (token.type == NEWLINE) {
-        erase(stack, " ");
-        if (!isOperator(getTop(stack))) {
-            if (getValue(node) % 2 != 0)
-                syntaxError("odd-width indent after", node);
-            shift(stack, node);
-        }
-    } else if (isOperator(node) && !isEOF(node)) {
-        Node* top = getTop(stack);
-        // check for section syntax
-        if (isThisOperator(top, "(") && isRightSectionOperator(node)) {
-            erase(stack, "(");
-            Node* open = parseSymbol(renameTag(getTag(top), "( "), 0);
-            Node* placeholder = Name(renameTag(getTag(top), ".*"));
-            shift(stack, open);
-            shift(stack, placeholder);
-            shift(stack, node);
-            release(hold(open));
-            release(hold(placeholder));
-        } else if (isThisOperator(node, ")") && isLeftSectionOperator(top)) {
-            Node* close = parseSymbol(renameTag(getTag(node), " )"), 0);
-            Node* placeholder = Name(renameTag(getTag(node), "*."));
-            shift(stack, placeholder);
-            shift(stack, close);
-            release(hold(placeholder));
-            release(hold(close));
-        } else shift(stack, node);
-    } else shift(stack, node);
-    release(hold(node));
-}
-
-Hold* synthesize(Token (*lexer)(Token), Token start) {
-    initSymbols();
-    NodeStack* stack = newNodeStack();
-    shiftToken(stack, start);
-    for (Token token = lexer(start); token.type != END; token = lexer(token))
-        if (token.type != COMMENT && token.type != VSPACE)
-            shiftToken(stack, token);
-    Hold* ast = hold(getTop(stack));
-    syntaxErrorIf(isEOF(getNode(ast)), "no input", getNode(ast));
-    deleteNodeStack(stack);
-    return ast;
-}
-

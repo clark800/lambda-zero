@@ -1,6 +1,6 @@
-#include "shared/lib/tree.h"
-#include "parse/shared/errors.h"
-#include "parse/shared/ast.h"
+#include "tree.h"
+#include "opp/errors.h"
+#include "ast.h"
 
 bool isValidPattern(Node* node) {
     return isName(node) ||
