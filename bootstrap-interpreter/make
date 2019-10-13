@@ -18,7 +18,7 @@ CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-CC_FLAGS="-std=c99 -pedantic -pedantic-errors -Isrc/ \
+CC_FLAGS="-std=c99 -pedantic -pedantic-errors -Ilib \
 -Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
 -Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
 -fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"
@@ -28,8 +28,8 @@ CC_FLAGS="-std=c99 -pedantic -pedantic-errors -Isrc/ \
 # --hash-style=sysv
 
 LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
-SOURCES=`find -L ./src -name "*.c" -not -path "./src/shared/lib/libc/*"`
-HEADERS=`find -L ./src -name "*.h" -not -path "./src/shared/lib/libc/*"`
+SOURCES=`find -L ./src ./lib -name "*.c" -not -path "./lib/libc/*"`
+HEADERS=`find -L ./src ./lib -name "*.h" -not -path "./lib/libc/*"`
 OBJECTS="*.o"
 
 echoexec() {
@@ -47,7 +47,7 @@ is_up_to_date() {
 }
 
 build_libc() {
-    (cd src/shared/lib/libc && ./make)
+    (cd lib/libc && ./make)
 }
 
 build_advanced() {
@@ -85,11 +85,11 @@ config_debug() {
 }
 
 config_custom() {
-    custom="-nostdlib -nostdinc -isystem ./src/shared/lib/libc/include/ -fno-builtin"
+    custom="-nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin"
     CC_FLAGS="$custom $CC_FLAGS"
     LINK_FLAGS="-nostdlib $LINK_FLAGS"
     SOURCES=`find -L . -name "*.c"`
-    OBJECTS="*.o src/shared/lib/libc/sys.o"
+    OBJECTS="*.o lib/libc/sys.o"
 }
 
 config_small() {
@@ -115,7 +115,7 @@ run_cloc() {
 
 get_includes() {
     filename="$(basename "$1" | cut -d'.' -f 1)"
-    gcc -MM -MT':' -I"." "$1" | tr -d ':\\\\' | xargs -n 1 echo |
+    gcc -MM -MT':' -I"." -Ilib "$1" | tr -d ':\\\\' | xargs -n 1 echo |
         grep -v "lib/" | xargs -n 1 basename |
         xargs -n 1 echo "    $filename ->" |
         grep '\.h' | cut -d'.' -f 1 | paste -d';' - <(echo -n) |
@@ -123,7 +123,6 @@ get_includes() {
 }
 
 build_graph() {
-    cd src
     echo "digraph graphname {"
     echo "    size=6;"
     echo "    ranksep=1.2;"

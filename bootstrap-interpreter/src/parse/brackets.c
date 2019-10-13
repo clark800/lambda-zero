@@ -1,14 +1,7 @@
 #include <string.h>
-#include "shared/lib/tree.h"
-#include "parse/shared/errors.h"
-#include "parse/shared/ast.h"
-#include "symbols.h"
-
-// isEOF returns true for both start of file and end of file nodes
-bool isEOF(Node* n) {
-    String lexeme = getTag(n).lexeme;
-    return isOperator(n) && (lexeme.length == 0 || lexeme.start[0] == '\0');
-}
+#include "tree.h"
+#include "opp/errors.h"
+#include "ast.h"
 
 static unsigned int getCommaListLength(Node* node) {
     return !isCommaPair(node) ? 1 : 1 + getCommaListLength(getLeft(node));
@@ -81,7 +74,5 @@ Node* reduceOpenBrace(Node* open, Node* before, Node* patterns) {
 
 Node* reduceOpenFile(Node* open, Node* before, Node* contents) {
     syntaxErrorIf(before != NULL, "invalid operand before", open);
-    syntaxErrorIf(!isEOF(open), "missing close for", open);
-    syntaxErrorIf(isCommaPair(contents), "comma not inside brackets", contents);
     return contents;
 }

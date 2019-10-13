@@ -1,9 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "shared/lib/tree.h"
-#include "shared/lib/util.h"
-
-extern bool TEST;
+#include <stdio.h>  // fputs
+#include <stdlib.h> // exit
+#include "tree.h"
 
 void tokenErrorIf(bool condition, const char* message, Tag tag) {
     if (condition) {

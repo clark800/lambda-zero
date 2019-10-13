@@ -1,8 +1,8 @@
-#include "shared/lib/tree.h"
-#include "shared/lib/array.h"
-#include "shared/term.h"
-#include "parse/shared/errors.h"
-#include "parse/shared/ast.h"
+#include "tree.h"
+#include "array.h"
+#include "opp/errors.h"
+#include "ast.h"
+#include "term.h"
 
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     if (isUnused(name))

@@ -1,14 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "shared/lib/readfile.h"
-#include "shared/lib/tree.h"
-#include "shared/lib/array.h"
-#include "shared/lib/freelist.h"
-#include "shared/lib/util.h"
-#include "shared/term.h"
+#include "readfile.h"
+#include "tree.h"
+#include "array.h"
+#include "freelist.h"
+#include "util.h"
+#include "parse/term.h"
 #include "parse/parse.h"
-#include "evaluate/closure.h"
-#include "evaluate/evaluate.h"
+#include "closure.h"
+#include "evaluate.h"
 
 bool TEST = false;
 extern bool isIO;
