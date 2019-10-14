@@ -6,8 +6,8 @@ syntax match zeroNiceOperator "\*" conceal cchar=⋅
 syntax match zeroNiceOperator "\*\*" conceal cchar=×
 syntax match zeroNiceOperator "><" conceal cchar=⪤
 syntax match zeroNiceOperator "\*:\*" conceal cchar=⨰
-syntax match zeroNiceOperator ":?" conceal cchar=∈
-syntax match zeroNiceOperator "/:?" conceal cchar=∉
+syntax match zeroNiceOperator ":<" conceal cchar=∈
+syntax match zeroNiceOperator ":/<" conceal cchar=∉
 syntax match zeroNiceOperator "::" conceal cchar=∷
 syntax match zeroNiceOperator "++" conceal cchar=⧺
 syntax match zeroNiceOperator "+=" conceal cchar=⧧
@@ -35,12 +35,12 @@ syntax match zeroNiceOperator "-:-" conceal cchar=⫬      " bitwise not
 syntax match zeroNiceOperator "||" conceal cchar=‖
 
 " comparison operators
-syntax match zeroNiceOperator "<:" conceal cchar=⊆
-syntax match zeroNiceOperator ":>" conceal cchar=⊇
+syntax match zeroNiceOperator "<:=" conceal cchar=⊆
+syntax match zeroNiceOperator "=:>" conceal cchar=⊇
 syntax match zeroNiceOperator "</:" conceal cchar=⊈
 syntax match zeroNiceOperator ":/>" conceal cchar=⊉
-syntax match zeroNiceOperator ":<" conceal cchar=⊂
-syntax match zeroNiceOperator ">:" conceal cchar=⊃
+syntax match zeroNiceOperator "<::" conceal cchar=⊂
+syntax match zeroNiceOperator "::>" conceal cchar=⊃
 syntax match zeroNiceOperator ":/<" conceal cchar=⊄
 syntax match zeroNiceOperator ">/:" conceal cchar=⊅
 syntax match zeroNiceOperator "<:<" conceal cchar=⪡     " bitwise shift left

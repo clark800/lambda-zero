@@ -40,7 +40,7 @@ AST ::= {
     Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
         parameter : AST, annotation : AST, body : AST),
     Juxtaposition(tag : TagT, left : AST, right : AST),
-    Let(tag : TagT, isTypeConstructor ∈ 𝔹,
+    Let(tag : TagT, isTypeConstructor : 𝔹,
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
     Operator(tag : TagT, rank : ℕ, syntax' : SyntaxT(AST)),
