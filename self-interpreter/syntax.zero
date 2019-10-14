@@ -333,7 +333,6 @@ OPERATORS := [newDictionary([
     coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
     coreSyntax(";", 8, 8, INFIX, RIGHT, shiftSemicolon, reduceNewline),
     coreSyntax(":", 9, 9, INFIX, NEITHER, shiftInfix, reduceColonPair),
-    coreAlias("∈", ":", 9, 9, INFIX, NEITHER, shiftInfix, reduceColonPair),
     coreSyntax("->", 10, 10, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreAlias("↦", "->", 10, 10, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreSyntax("=>", 10, 10, INFIX, RIGHT, shiftInfix, reduceDoubleArrow),

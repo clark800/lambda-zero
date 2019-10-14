@@ -17,7 +17,7 @@ fix(f) ≔ 𝛚(f ∘ 𝛚) where 𝛚(x) ≔ x(x)
 𝕌 ⩴ {()}
 
 # pair
-a ⊓ b ⩴ {(_ ∈ a, _ ∈ b)}
+a ⊓ b ⩴ {(_ : a, _ : b)}
 first((a, b)) ≔ a
 second((a, b)) ≔ b
 pair(a, b) ≔ (a, b)
@@ -29,8 +29,8 @@ curry(f) ≔ x ↦ y ↦ f((x, y))
 uncurry(f) ≔ xx ↦ f(first(xx), second(xx))
 
 # more tuples
-Triple(a, b, c) ⩴ {(_ ∈ a, _ ∈ b, _ ∈ c)}
-Quadruple(a, b, c, d) ⩴ {(_ ∈ a, _ ∈ b, _ ∈ c, _ ∈ d)}
+Triple(a, b, c) ⩴ {(_ : a, _ : b, _ : c)}
+Quadruple(a, b, c, d) ⩴ {(_ : a, _ : b, _ : c, _ : d)}
 
 # boolean
 𝔹 ⩴ {False, True}
@@ -43,14 +43,14 @@ until(p, f, z) ≔ if p(z) then z else until(p, f, f(z))
 while(p, f, z) ≔ until((not) ∘ p, f, z)
 
 # maybe
-(a)? ⩴ {Void, Just(_ ∈ a)}
+(a)? ⩴ {Void, Just(_ : a)}
 isVoid ≔ Void ↦ True; Just(_) ↦ False
 onJust(f, mx) ≔ mx ⦊ Void ↦ Void; Just(x) ↦ f(x)
 mapJust(f, mx) ≔ mx.onJust(Just ∘ f)
 mx ⁇ x ≔ mx ⦊ Void ↦ x; Just(x′) ↦ x′
 
 # either
-a ⊔ b ⩴ {Left(_ ∈ a), Right(_ ∈ b)}
+a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 isLeft ≔ Left(_) ↦ True; Right(_) ↦ False
 isRight ≔ Left(_) ↦ False; Right(_) ↦ True
 try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
@@ -61,9 +61,9 @@ mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
 toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 
 # numbers
-ℕ ⩴ {0, ↑(n ∈ ℕ)}
-ℤ ⩴ {⧾(n ∈ ℕ), ⧿(n ∈ ℕ)}
-ℚ ⩴ {(numerator ∈ ℤ) / (denominator ∈ ℤ)}
+ℕ ⩴ {0, ↑(n : ℕ)}
+ℤ ⩴ {⧾(n : ℕ), ⧿(n : ℕ)}
+ℚ ⩴ {(numerator : ℤ) / (denominator : ℤ)}
 ↓ n ≔ n ⦊ 0 ↦ 0; ↑ n′ ↦ n′
 positive(n) ≔ ⧾ n
 negative(n) ≔ ⧿ n
@@ -94,7 +94,7 @@ n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n
 # n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 # list
-List(a) ⩴ {[], (head ∈ a) ∷ (tail ∈ List(a))}
+List(a) ⩴ {[], (head : a) ∷ (tail : List(a))}
 prepend ≔ (∷)
 isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
@@ -272,12 +272,12 @@ parseNatural(ns) ≔ if isNil(ns) then Void else
 repl(prompt, f, input) ≔ prompt ⧺ input.lines.map(f).joinWith("\n" ⧺ prompt)
 
 # tree
-Tree(a) ⩴ {Node(datum ∈ a, children ∈ List(Tree(a)))}
+Tree(a) ⩴ {Node(datum : a, children : List(Tree(a)))}
 
 # binary tree
 BinaryTree(a) ⩴ {
     Tip,
-    Fork(datum ∈ a, left ∈ BinaryTree(a), right ∈ BinaryTree(a))
+    Fork(datum : a, left : BinaryTree(a), right : BinaryTree(a))
 }
 
 define search((≾), hash, key, tree)
@@ -298,8 +298,8 @@ define flatten(tree)
 
 # full binary tree
 FullBinaryTree(a) ⩴ {
-    Leaf(datum ∈ a),
-    Branch(datum ∈ a, left ∈ FullBinaryTree(a), right ∈ FullBinaryTree(a))
+    Leaf(datum : a),
+    Branch(datum : a, left : FullBinaryTree(a), right : FullBinaryTree(a))
 }
 
 

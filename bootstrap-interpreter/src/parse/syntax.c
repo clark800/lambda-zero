@@ -173,5 +173,4 @@ void initSymbols(void) {
     addCoreAlias("\u21D2", "=>");
     addCoreAlias("\u298A", "|>");
     addCoreAlias("\u2989", "<|");
-    addCoreAlias("\u2208", ":");
 }
