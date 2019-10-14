@@ -159,12 +159,11 @@ define createToken(tag @ Tag(lexeme, _, _), nextTag)
     Token(tag, Symbolic)
 
 define isElided(token)
-    code := getTokenCode(token)
-    with code as Comment
-        True
-    with code as VSpace
-        True
-    False
+    match getTokenCode(token)
+        Comment -> True
+        Space -> True
+        VSpace -> True
+        _ -> False
 
 define showToken(token)
     showTag(getTokenTag(token))

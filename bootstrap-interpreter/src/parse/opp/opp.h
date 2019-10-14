@@ -1,6 +1,6 @@
 // operator precedence parser
 
-typedef enum {INFIX, PREFIX, POSTFIX, OPENFIX, CLOSEFIX, SPACEFIX} Fixity;
+typedef enum {INFIX, PREFIX, POSTFIX, OPENFIX, CLOSEFIX} Fixity;
 typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
 typedef struct NodeStack NodeStack;

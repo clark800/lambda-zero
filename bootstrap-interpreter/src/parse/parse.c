@@ -48,13 +48,11 @@ void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
 void shiftNode(NodeStack* stack, Node* node) {
     debugParseState(getTag(node), stack, DEBUG >= 2);
     if (isCloseOperator(node)) {
-        erase(stack, " ");
         erase(stack, "\n");
         if (isThisOperator(node, ")"))
             erase(stack, ";");
     }
     if (isThisOperator(node, "\n")) {
-        erase(stack, " ");
         if (!isOperator(getTop(stack))) {
             if (getValue(node) % 2 != 0)
                 syntaxError("odd-width indent after", node);
@@ -91,7 +89,8 @@ Hold* synthesize(Token (*lexer)(Token), Token start) {
     Node* startNode = parseToken(start);
     shiftNode(stack, startNode);
     for (Token token = lexer(start); token.type != END; token = lexer(token))
-        if (token.type != COMMENT && token.type != VSPACE)
+        if (token.type != COMMENT && token.type != VSPACE
+                && token.type != SPACE)
             shiftNode(stack, parseToken(token));
     Hold* ast = hold(getTop(stack));
     syntaxErrorIf(getNode(ast) == startNode, "no input", getNode(ast));

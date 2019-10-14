@@ -252,15 +252,7 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     Precedence p = parsePrecedence(argument);
     String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
 
-    if (isThisName(name, "()")) {
-        tag = renameTag(tag, " ");
-        if (isThisName(fixity, "infixL"))
-            addSyntax(tag, prior, p, p, SPACEFIX, L, reduceInfixL);
-        else if (isThisName(fixity, "interfix"))
-            addSyntax(tag, prior, p, p, SPACEFIX, L, reduceInterfix);
-        else syntaxError("syntax must be infixL or interfix", fixity);
-    }
-    else if (isThisName(fixity, "infix"))
+    if (isThisName(fixity, "infix"))
         addSyntax(tag, prior, p, p, INFIX, N, reduceInfix);
     else if (isThisName(fixity, "infixL"))
         addSyntax(tag, prior, p, p, INFIX, L, reduceInfixL);

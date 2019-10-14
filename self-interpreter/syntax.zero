@@ -130,7 +130,7 @@ define shiftPrefix(state, operator)
 
 
 define shiftPostfix(state, operator)
-    stack := erase(getStack(state), " ")
+    stack := getStack(state)
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
     with stack' as operand :: stack''
@@ -147,7 +147,7 @@ define shiftPostfix(state, operator)
 
 
 define shiftInfix(state, operator)
-    stack := erase(getStack(state), " ")
+    stack := getStack(state)
     state' := reduceLeft(State(stack, getOperators(state)), operator)
     stack' := getStack(state')
     with stack' as top :: _
@@ -168,13 +168,6 @@ define shiftInfix(state, operator)
     syntaxError("missing left operand for", operator)
 
 
-define shiftSpace(state, operator)
-    state' := reduceLeft(state, operator)
-    if isOperatorTop(getStack(state'))
-        state'
-    State(operator :: getStack(state'), getOperators(state'))
-
-
 define newOperator'(tag, prior, precedence, fixity, associativity,
         shifter, reducer)
     special := not isNil(prior)
@@ -186,14 +179,6 @@ define newOperator'(tag, prior, precedence, fixity, associativity,
 
 define newSyntaxOperator(tag, precedence, fixity, prior)
     p := precedence
-    if getTagLexeme(tag) =*= "()"
-        tag' := renameTag(tag, " ", INFIX)
-        if getLexeme(fixity) =*= "infixL"
-            newOperator'(tag', prior, p, INFIX, LEFT, shiftSpace, reduceInfixL)
-        if getLexeme(fixity) =*= "interfix"
-            newOperator'(tag', prior, p, INFIX, LEFT,
-                shiftSpace, reduceInterfix)
-        syntaxError("syntax must be infixL or interfix", fixity)
     if getLexeme(fixity) =*= "infix"
         newOperator'(tag, prior, p, INFIX, NEITHER, shiftInfix, reduceInfix)
     if getLexeme(fixity) =*= "infixL"
@@ -283,7 +268,7 @@ define addSyntax(operators, operator)
 
 
 define reduceLeftErase(State(stack, operators), operator)
-    reduceLeft(State(erase(stack, " "), operators), operator)
+    reduceLeft(State(stack, operators), operator)
 
 
 define shiftSemicolon(state, operator)
@@ -304,10 +289,9 @@ define shiftSemicolon(state, operator)
 
 
 define shiftNewline(state @ State(stack, operators), operator)
-    stack' := erase(stack, " ")
     # ignore newlines after operators for line continuations
-    if isOperatorTop(stack')
-        State(stack', operators)
+    if isOperatorTop(stack)
+        State(stack, operators)
     if getRank(operator) % 2 =/= 0
         syntaxError("odd-width indent after", operator)
     shiftSemicolon(state, operator)
@@ -360,8 +344,7 @@ OPERATORS := [newDictionary([
     coreSyntax("as", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(".", 92, 92, INFIX, LEFT, shiftInfix, reducePipeline),
-    coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved),
-    coreSyntax("( )", 99, 99, INFIX, LEFT, shiftSpace, reduceInvalid)
+    coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
 ])]
 
 #*

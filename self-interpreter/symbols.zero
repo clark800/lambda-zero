@@ -129,7 +129,6 @@ define lookupSyntax(lexeme, operators)
 define parseSymbol(tag, value, operators)
     lexeme := getTagLexeme(tag)
     operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
-        (if lexeme =*= " " then (operators.lookupSyntax("( )").
-            mapJust(Operator(tag, value)) ?? Name(tag)) else Name(tag))
+        Name(tag)
 
 #*

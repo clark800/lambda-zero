@@ -90,14 +90,7 @@ Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
     return reduce(close, before, reduce(open, before, contents));
 }
 
-void shiftPrefix(Stack* stack, Node* operator) {
-    reduceLeft(stack, operator);
-    push(stack, operator);
-}
-
 void shiftPostfix(Stack* stack, Node* operator) {
-    eraseNode(stack, " "); // if we erase newlines it would break associativity
-    reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);
@@ -106,24 +99,9 @@ void shiftPostfix(Stack* stack, Node* operator) {
 }
 
 void shiftInfix(Stack* stack, Node* operator) {
-    eraseNode(stack, " "); // if we erase newlines it would break associativity
-    reduceLeft(stack, operator);
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     push(stack, operator);
-}
-
-void shiftSpace(Stack* stack, Node* operator) {
-    reduceLeft(stack, operator);
-    // ignore space after operators (note: close and postfix are never
-    // pushed onto the stack, so the operator must be expecting a right operand)
-    if (!isOperator(peek(stack, 0)))
-        push(stack, operator);
-}
-
-void shiftOpen(Stack* stack, Node* open) {
-    reduceLeft(stack, open);
-    push(stack, open);
 }
 
 void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
@@ -146,9 +124,6 @@ void pushBracket(Stack* stack, Node* open, Node* close, Node* contents) {
 }
 
 void shiftClose(Stack* stack, Node* close) {
-    eraseNode(stack, " ");
-    reduceLeft(stack, close);
-
     Hold* contents = pop(stack);
     if (isOpenOperator(getNode(contents))) {
         pushBracket(stack, getNode(contents), close, NULL);
@@ -162,13 +137,12 @@ void shiftClose(Stack* stack, Node* close) {
 
 static void shiftNode(Stack* stack, Node* node) {
     if (isOperator(node)) {
-        switch(getRules(node)->fixity) {
+        reduceLeft(stack, node);
+        switch(getFixity(node)) {
             case INFIX: shiftInfix(stack, node); break;
-            case PREFIX: shiftPrefix(stack, node); break;
             case POSTFIX: shiftPostfix(stack, node); break;
-            case OPENFIX: shiftOpen(stack, node); break;
             case CLOSEFIX: shiftClose(stack, node); break;
-            case SPACEFIX: shiftSpace(stack, node); break;
+            default: push(stack, node); break;
         }
     } else {
         if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
@@ -220,8 +194,6 @@ Precedence findPrecedence(Node* node) {
 
 Node* parseOperator(Tag tag, long long subprecedence) {
     Rules* rules = findRules(tag.lexeme);
-    if (rules == NULL && isThisString(tag.lexeme, " "))
-        return Operator(tag, subprecedence, findRules(newString("( )", 3)));
     return rules == NULL ? NULL :
         Operator(newTag(rules->alias, tag.location), subprecedence, rules);
 }
@@ -230,8 +202,7 @@ static void reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
     Fixity fixity = getFixity(getNode(operator));
-    Hold* left = fixity == INFIX || fixity == SPACEFIX ?
-        pop(stack) : hold(VOID);
+    Hold* left = fixity == INFIX ? pop(stack) : hold(VOID);
     shiftNode(stack, reduce(getNode(operator), getNode(left), getNode(right)));
     release(right);
     release(operator);
