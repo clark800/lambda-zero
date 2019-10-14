@@ -84,12 +84,6 @@ static Node* reduceAbort(Node* operator, Node* left, Node* right) {
         Juxtaposition(tag, FixedName(tag, "abort"), right)));
 }
 
-static Node* reduceInvalid(Node* operator, Node* left, Node* right) {
-    (void)left, (void)right;
-    syntaxError("missing operator", operator);
-    return NULL;
-}
-
 static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     (void)left, (void)right;
     syntaxError("reserved operator", operator);
@@ -171,7 +165,6 @@ void initSymbols(void) {
     addCoreSyntax("abort", 15, 15, PREFIX, L, reduceAbort);
     addCoreSyntax(".", 92, 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, 99, PREFIX, L, reduceReserved);
-    addCoreSyntax("( )", 99, 99, SPACEFIX, L, reduceInvalid);
     addCoreSyntax("syntax", 99, 99, PREFIX, L, reducePrefix);
     addCoreSyntax("alias", 99, 99, PREFIX, L, reducePrefix);
     addCoreAlias("\u2254", ":=");

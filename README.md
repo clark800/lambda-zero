@@ -10,12 +10,12 @@ Lambda Zero is a minimalist pure lazy functional programming language with:
 * Automatic garbage collection
 * Semantic whitespace
 * Unicode support (UTF8)
-* User-defined lexically-scoped operator syntax and semantics (even spaces)
-* Uniform function call syntax (`x.f(y, z)` means `f(x, y, z)`)
+* User-defined lexically-scoped operator syntax and semantics
+* Uniform function call syntax (`z.f(x, y)` means `f(x, y, z)`)
 * Hindley-Milner static type inference (implemented in Lambda Zero)
 * A self-interpreter
 
-And the whole language can be interpreted with just over 2000 lines of C code!
+And the whole language can be interpreted with less than 2500 lines of C code!
 
 # Sample Code
 

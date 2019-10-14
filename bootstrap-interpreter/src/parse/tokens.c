@@ -78,7 +78,6 @@ Node* parseToken(Token token) {
         case CHARACTER: return parseCharacterLiteral(token.tag);
         case INVALID: tokenErrorIf(true, "invalid character", token.tag);
             return NULL;
-        case SPACE: return parseSymbol(renameTag(token.tag, " "), 0);
         case NEWLINE: return parseSymbol(renameTag(token.tag, "\n"),
             token.tag.lexeme.length - 1);
         default: return parseSymbol(token.tag, 0);
