@@ -1,32 +1,8 @@
-#!/bin/bash -e
+#!/bin/sh
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR=$(dirname "$0")
 LIB="$DIR/../libraries"
 OUT="$DIR/main"
-
-declare -a files=(
-    "$LIB/operators.zero"
-    "$LIB/prelude.zero"
-    "$LIB/ralist.zero"
-    "$LIB/array.zero"
-    "$LIB/aatree.zero"
-    "$LIB/table.zero"
-    "$DIR/lex.zero"
-    "$DIR/ast.zero"
-    "$DIR/errors.zero"
-    "$DIR/symbols.zero"
-    "$DIR/term.zero"
-    "$DIR/patterns.zero"
-    "$DIR/define.zero"
-    "$DIR/brackets.zero"
-    "$DIR/syntax.zero"
-    "$DIR/serialize.zero"
-    "$DIR/builtins.zero"
-    "$DIR/bind.zero"
-    "$DIR/parse.zero"
-    "$DIR/evaluate.zero"
-    "$DIR/interpret.zero"
-)
 
 # BSD chmod still prints an error when the file is not found even with
 # the -f flag, so we redirect stderr to /dev/null to hide that message
@@ -37,11 +13,33 @@ echo '#!../bootstrap-interpreter/main -t' > "$OUT"
 # note: can't remove blank lines because it would change line numbers in errors
 # note: can't safely remove inline comments because they could be inside quotes
 # note: also have to avoid erasing file markers
-cat ${files[@]} | sed -e 's/^[ ]*# .*$//' >> "$OUT"
+cat "$LIB/operators.zero" \
+    "$LIB/prelude.zero" \
+    "$LIB/ralist.zero" \
+    "$LIB/array.zero" \
+    "$LIB/aatree.zero" \
+    "$LIB/table.zero" \
+    "$DIR/lex.zero" \
+    "$DIR/ast.zero" \
+    "$DIR/errors.zero" \
+    "$DIR/symbols.zero" \
+    "$DIR/term.zero" \
+    "$DIR/patterns.zero" \
+    "$DIR/define.zero" \
+    "$DIR/brackets.zero" \
+    "$DIR/syntax.zero" \
+    "$DIR/serialize.zero" \
+    "$DIR/builtins.zero" \
+    "$DIR/bind.zero" \
+    "$DIR/parse.zero" \
+    "$DIR/evaluate.zero" \
+    "$DIR/interpret.zero" |
+sed -e 's/^[ ]*# .*$//' >> "$OUT"
+
 chmod -w "$OUT"
 chmod +x "$OUT"
 
 case "$1" in
-        loc) cat "$OUT" | sed -e '/^#/d' | sed -e '/^[ ]*$/d' | wc -l;;
-        test) ../bootstrap-interpreter/test/test.sh meta;;
+    loc) cat "$OUT" | sed -e '/^#/d' | sed -e '/^[ ]*$/d' | wc -l;;
+    test) ../bootstrap-interpreter/test/test.sh meta;;
 esac

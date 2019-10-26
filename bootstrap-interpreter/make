@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 # http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Shell
 
-OUT="main"
-CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
+OUT=${OUT:-"main"}
+CC=${CC:-"cc"}
 
 # stack-protector should be off by default, but some linux distributions
 # patch gcc to turn it on by default, so we explicitly disable it here; it
@@ -18,77 +18,91 @@ CC=${CC:-"gcc"}     # check for CC env var to support clang's scan-build
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-CC_FLAGS="-std=c99 -pedantic -pedantic-errors -Ilib \
+GCC_FLAGS="-std=c99 -pedantic -pedantic-errors -Ilib \
 -Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
 -Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
 -fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"
+TCC_FLAGS="-Ilib -Wall -Werror -Wunsupported -Wwrite-strings"
+XCC_FLAGS="-Ilib"  # for unknown C compiler
 
 # gcc sets --hash-style to a non-default setting when calling ld, which
 # increases the executable size; we can set it back to the default with
 # --hash-style=sysv
 
 LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
-SOURCES=`find -L ./src ./lib -name "*.c" -not -path "./lib/libc/*"`
-HEADERS=`find -L ./src ./lib -name "*.h" -not -path "./lib/libc/*"`
+SOURCES=$(find -L ./src ./lib -name "*.c" -not -path "./lib/libc/*")
+HEADERS=$(find -L ./src ./lib -name "*.h" -not -path "./lib/libc/*")
 OBJECTS="*.o"
 
 echoexec() {
-    echo "$@"
-    "$@"
+    echo "$@" && "$@"
 }
 
 clean() {
-    rm -f $OBJECTS
-    rm -f "$OUT"
+    rm -f $OBJECTS "$OUT"
 }
 
 is_up_to_date() {
-    [[ -f "$1" && -z `find -L . -name "*.[c|h]" -newer "$1"` ]]
+    test -f "$1" && test -z "$(find -L . -name "*.[c|h]" -newer "$1")"
 }
 
 build_libc() {
     (cd lib/libc && ./make)
 }
 
-build_advanced() {
-    if ! is_up_to_date "$OUT"; then
-        echoexec $CC -c $CC_FLAGS $SOURCES &&
-        echoexec $CC $LINK_FLAGS -o "$OUT" $OBJECTS &&
-        rm -f $OBJECTS &&
-        echo &&
-        echo "BUILD SUCCESSFUL:" &&
-        ls -gG "$OUT" || (rm -f $OBJECTS ; false)
-        return
-    fi
-    echo "$OUT up-to-date"
+finish() {
+    rm -f $OBJECTS
+    echo
+    echo "BUILD SUCCESSFUL:"
+    ls -gG "$OUT"
+}
+
+build_one_stage() {
+    echoexec "$CC" -o "$OUT" $CC_FLAGS $SOURCES &&
+    finish
+}
+
+build_two_stage() {
+    echoexec "$CC" -c $CC_FLAGS $SOURCES &&
+    echoexec "$CC" $LINK_FLAGS -o "$OUT" $OBJECTS &&
+    finish || (clean ; false)
+}
+
+is_cc() {
+    "$CC" -v 2>&1 | grep -q "^$1"
 }
 
 build() {
-    if ! is_up_to_date "$OUT"; then
-        echoexec $CC -o "$OUT" $CC_FLAGS $SOURCES &&
-        rm -f $OBJECTS &&
-        echo &&
-        echo "BUILD SUCCESSFUL:" &&
-        ls -gG "$OUT" || (rm -f $OBJECTS ; false)
+    if is_up_to_date "$OUT"; then
+        echo "$OUT up-to-date"
         return
     fi
-    echo "$OUT up-to-date"
+
+    if is_cc "gcc" || is_cc "clang"; then
+        CC_FLAGS="$GCC_FLAGS" build_two_stage
+    elif is_cc "tcc"; then
+        CC_FLAGS="$TCC_FLAGS" build_one_stage
+    else
+        CC_FLAGS="$XCC_FLAGS" build_one_stage
+    fi
 }
 
 config_fast() {
-    CC_FLAGS="-DNDEBUG -O3 -flto $CC_FLAGS"
+    GCC_FLAGS="-DNDEBUG -O3 -flto $GCC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 
 config_debug() {
-    CC_FLAGS="-g -Og $CC_FLAGS"
+    GCC_FLAGS="-g -Og $GCC_FLAGS"
+    TCC_FLAGS="-g $TCC_FLAGS"
+    XCC_FLAGS="-g $XCC_FLAGS"
 }
 
 config_custom() {
     custom="-nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin"
-    CC_FLAGS="$custom $CC_FLAGS"
+    GCC_FLAGS="$custom $GCC_FLAGS"
     LINK_FLAGS="-nostdlib $LINK_FLAGS"
-    SOURCES=`find -L . -name "*.c"`
+    SOURCES=$(find -L . -name "*.c")
     OBJECTS="*.o lib/libc/sys.o"
 }
 
@@ -96,30 +110,28 @@ config_small() {
     config_custom
     # would like to use -Os optimization level, but there is an issue with
     # -ftree-slp-vectorize and possibly other optimizations
-    CC_FLAGS="-s -O0 -flto $CC_FLAGS"
+    GCC_FLAGS="-s -O0 -flto $GCC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 
 config_unused() {
     config_custom
-    CC_FLAGS="-O0 -fdata-sections -ffunction-sections $CC_FLAGS"
+    GCC_FLAGS="-O0 -fdata-sections -ffunction-sections $GCC_FLAGS"
 }
 
 get_loc() {
-    $CC -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
+    "$CC" -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
 }
 
 run_cloc() {
-    cloc --quiet --exclude-list-file=.clocignore --by-file $*
+    cloc --quiet --exclude-list-file=.clocignore --by-file "$@"
 }
 
 get_includes() {
     filename="$(basename "$1" | cut -d'.' -f 1)"
-    gcc -MM -MT':' -I"." -Ilib "$1" | tr -d ':\\\\' | xargs -n 1 echo |
-        grep -v "lib/" | xargs -n 1 basename |
-        xargs -n 1 echo "    $filename ->" |
-        grep '\.h' | cut -d'.' -f 1 | paste -d';' - <(echo -n) |
-        grep -v -- "-> $filename"
+    "$CC" -MM -MT':' -I"." -Ilib "$1" | tr -d ':\\\\' | xargs -n 1 echo |
+        grep -v "lib/" | xargs -n 1 basename | grep '\.h' | cut -d'.' -f 1 |
+        xargs -n 1 -I{} echo "    $filename -> {};" | grep -v -- "-> $filename"
 }
 
 build_graph() {
@@ -129,21 +141,21 @@ build_graph() {
     echo "    nodesep=0.8;"
     echo "    mclimit=100;"
     echo
-    export -f get_includes
-    find . -name "*.c" | grep -v "lib/" |
-        xargs -n 1 -I{} bash -c "get_includes {}"
+    for file in $(find . -name "*.c" | grep -v "lib/"); do
+        get_includes "$file"
+    done
     echo "}"
 }
 
 case "$1" in
     "") config_fast && build;;
     fast) clean && config_fast && build;;
-    test) config_fast && build && test/test.sh;;
+    test) config_fast && build && time test/test.sh;;
     debug) clean && config_debug && build;;
-    small) clean && config_small && build_libc && build_advanced;;
+    small) clean && config_small && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
     clean) clean;;
-    tree) tree --noreport -C -P *.[hc] -I lib src;;
+    tree) tree --noreport -C -P '*.[hc]' -I lib src;;
     dot) build_graph;;
     graph) build_graph | dot -o architecture.pdf -T pdf;;
     loc) get_loc;;
