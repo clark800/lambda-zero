@@ -164,12 +164,15 @@ for more examples.
 
 # Building
 
-Make sure gcc and bash are installed and run the `make` script in the
-bootstrap-interpreter directory.
+Make sure a C compiler is installed and run the `make` script in
+the bootstrap-interpreter directory:
+
+    cd bootstrap-interpreter
+    ./make
 
 # Running
 
-First `cd` to the bootstrap-interpreter directory.
+From the bootstrap-interpreter directory:
 
     ./run SOURCEFILE
 
@@ -177,10 +180,6 @@ For example, try this sample program that prints out an infinite list of prime
 numbers:
 
     ./run test/samples/primes.zero
-
-This sample program runs an interactive REPL that reverses each line entered:
-
-    ./run test/samples/repl.zero
 
 The `run` script prepends the [prelude](libraries/prelude.zero) to the `SOURCEFILE` and
 passes the result to `main`.

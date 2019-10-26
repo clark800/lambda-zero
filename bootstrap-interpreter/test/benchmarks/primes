@@ -1,5 +1,9 @@
-#!/bin/bash -e
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#!/bin/sh
+DIR=$(dirname "$0")
 CODE='main(input) := primes.take(1000).showList(showNatural) ++ "\n"'
 ulimit -s unlimited
-\time "$DIR/../../main" -t <(cat "$DIR/../../../libraries/operators.zero" "$DIR/../../../libraries/prelude.zero" <(echo "$CODE"))
+
+printf "%s" "$CODE" | cat \
+"$DIR/../../../libraries/operators.zero" \
+"$DIR/../../../libraries/prelude.zero" - |
+\time "$DIR/../../main" -t

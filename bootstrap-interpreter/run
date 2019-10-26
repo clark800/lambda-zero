@@ -1,12 +1,9 @@
-#!/bin/bash -e
-# use bash process substitution to prepend prelude to source file
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# read input first to check for errors accessing files
-INPUT=$(cat \
-    "$DIR/../libraries/operators.zero" \
-    "$DIR/../libraries/prelude.zero" \
-    "$DIR/../libraries/aatree.zero" \
-    "$DIR/../libraries/table.zero" \
-    "${1-"-"}")
+#!/bin/sh
+DIR=$(dirname "$0")
 #stty -icanon
-"$DIR/main" <(echo "$INPUT")
+cat \
+"$DIR/../libraries/operators.zero" \
+"$DIR/../libraries/prelude.zero" \
+"$DIR/../libraries/aatree.zero" \
+"$DIR/../libraries/table.zero" \
+"${1-"-"}" | "$DIR/main"

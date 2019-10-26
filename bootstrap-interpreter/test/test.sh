@@ -1,14 +1,15 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NOCOLOR='\033[0m'
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR=$(dirname "$0")
+LIB="$DIR/../../libraries"
 CMD="$DIR/../main -t"
-if [[ "$#" > 0 && "$1" == "meta" ]]; then
+
+if test "$#" -gt 0 && test "$1" = "meta"; then
     META=1
     "$DIR/../../self-interpreter/make"
     CMD="$DIR/../../self-interpreter/main"
@@ -16,21 +17,19 @@ else
     META=0
 fi
 
-function header {
-    echo -e "${BLUE}========== $1 ==========${NOCOLOR}"
+header() {
+    printf "%b\n" "${BLUE}========== $1 ==========${NOCOLOR}"
 }
 
-function check {
-    local label="$1"
-    local expected_output="$2"
-    local output="$3"
-    if [[ "$output" == "$expected_output" ]]; then
-        echo -en "${GREEN}PASS${NOCOLOR} "
-        echo "$label"
+check() {
+    label="$1"
+    expected_output="$2"
+    output="$3"
+    if test "$output" = "$expected_output"; then
+        printf "%b %s\n" "${GREEN}PASS${NOCOLOR}" "$label"
         return 0
     else
-        echo -en "${RED}FAIL${NOCOLOR} "
-        echo "$label"
+        printf "%b %s\n" "${RED}FAIL${NOCOLOR}" "$label"
         echo "== EXPECTED =="
         echo "$expected_output"
         echo "=== OUTPUT ==="
@@ -39,89 +38,81 @@ function check {
     fi
 }
 
-function insert_newlines {
+insert_newlines() {
   sed 's/\\n/\
 /g'
 }
 
-function oneline_suite {
-    local testcases_path="$DIR/$1"
-    local name="$(basename "$testcases_path" ".test")"
-    local failures=0
-    local newline=$'\n'
-    local prelude=""
+oneline_suite() {
+    testcases_path="$DIR/$1"
+    name="$(basename "$testcases_path" ".test")"
+    failures=0
+    prelude=""
     shift
     for filename in "$@"; do
-        prelude+="$(cat "$DIR/$filename")$newline"
+        prelude=$(printf "%s\n%s" "$prelude" "$(cat "$filename")")
     done
     header "$name"
     while read -r line; do
         read -r output_line
-        local expected_output=$(echo "$output_line" | insert_newlines)
-        local sedline=$(echo "$line" | insert_newlines)
-        local input="$prelude$sedline"
-        local output=$(echo "$input" | $CMD 2>&1)
-        check "$line" "$expected_output" "$output" || ((failures++)) || true
-    done < <(grep -v "====" "$testcases_path")
-    if [[ $failures -eq 0 ]]; then return 0; else return 1; fi
+        expected_output=$(printf "%s" "$output_line" | insert_newlines)
+        sedline=$(printf "%s" "$line" | insert_newlines)
+        input=$(printf "%s\n%s" "$prelude" "$sedline")
+        # sed command removes any leading newlines (when prelude is empty)
+        output=$(printf "%s" "$input" | sed '/./,$!d' | $CMD 2>&1)
+        if ! check "$line" "$expected_output" "$output"; then
+            failures=$((failures+1))
+        fi
+    done << EOF
+    $(grep -v "====" "$testcases_path")
+EOF
+    test "$failures" -eq 0
 }
 
-function summarize {
-    local failures="$1"
+summarize() {
+    failures="$1"
     header "summary"
-    if [[ "$failures" -eq 0 ]]; then
-        echo -en "${GREEN}PASS${NOCOLOR} "
+    if test "$failures" -eq 0; then
+        printf "%b" "${GREEN}PASS${NOCOLOR} "
         echo "all tests passed"
         exit 0
     else
-        echo -en "${RED}FAIL${NOCOLOR} "
+        printf "%b" "${RED}FAIL${NOCOLOR} "
         echo "$failures test suite(s) failed"
         exit 1
     fi
 }
 
-function run {
-    local failures=0
-    local LIB="../../libraries"
-    declare -a suites=(
-        "tokens.test"
-        "quote.test"
-        "brackets.test"
-        "lambda.test"
-        "syntax.test"
-        "adt.test"
-        "arithmetic.test $LIB/operators.zero"
-        "definition.test $LIB/operators.zero"
-        "sections.test $LIB/operators.zero"
-        "tuples.test $LIB/operators.zero $LIB/prelude.zero"
-        "math.test $LIB/operators.zero $LIB/prelude.zero"
-        "prelude.test $LIB/operators.zero $LIB/prelude.zero"
-        "show.test $LIB/operators.zero $LIB/prelude.zero"
-        "infinite.test $LIB/operators.zero $LIB/prelude.zero"
-    )
-    if [[ "$META" -eq 1 ]]; then
-        ulimit -s unlimited || true # prevent segfaults due to high recursion depth
-        suites=(
-            "tokens.test"
-            "quote.test"
-            "brackets.test"
-            "lambda.test"
-            "syntax.test"
-            "adt.test"
-            "arithmetic.test $LIB/operators.zero"
-            "definition.test $LIB/operators.zero"
-            "sections.test $LIB/operators.zero"
-            "tuples.test $LIB/operators.zero $LIB/prelude.zero"
-            "math.test $LIB/operators.zero $LIB/prelude.zero"
-            "prelude.test $LIB/operators.zero $LIB/prelude.zero"
-        )
+SUITES="tokens.test quote.test brackets.test lambda.test syntax.test adt.test"
+OPERATOR_SUITES="arithmetic.test definition.test sections.test"
+PRELUDE_SUITES="tuples.test math.test prelude.test show.test infinite.test"
+META_PRELUDE_SUITES="tuples.test math.test prelude.test"
+
+run() {
+    suite_failures=0
+    if [ "$META" -eq 1 ]; then
+        # prevent segfaults due to high recursion depth
+        ulimit -s unlimited || true
+        PRELUDE_SUITES=$META_PRELUDE_SUITES
     fi
-    for suite in "${suites[@]}"; do
-        # the next line allows us to continue running tests after a
-        # suite fails with set -e mode enabled
-        oneline_suite $suite || ((failures++)) || true
+
+    for suite in $SUITES; do
+        if ! oneline_suite "$suite"; then
+            suite_failures=$((suite_failures+1))
+        fi
     done
-    summarize "$failures"
+    for suite in $OPERATOR_SUITES; do
+        if ! oneline_suite "$suite" "$LIB/operators.zero"; then
+            suite_failures=$((suite_failures+1))
+        fi
+    done
+    for suite in $PRELUDE_SUITES; do
+        if ! oneline_suite "$suite" "$LIB/operators.zero" "$LIB/prelude.zero"
+        then
+            suite_failures=$((suite_failures+1))
+        fi
+    done
+    summarize "$suite_failures"
 }
 
-time run
+run

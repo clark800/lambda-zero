@@ -1,37 +1,9 @@
-#!/bin/bash -e
+#!/bin/sh
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR=$(dirname "$0")
 LIB="$DIR/../libraries"
 PARSER="$DIR/../self-interpreter"
 OUT="$DIR/main"
-
-declare -a files=(
-    "$LIB/operators.zero"
-    "$LIB/prelude.zero"
-    "$LIB/ralist.zero"
-    "$LIB/array.zero"
-    "$LIB/aatree.zero"
-    "$LIB/table.zero"
-    "$PARSER/lex.zero"
-    "$PARSER/ast.zero"
-    "$PARSER/errors.zero"
-    "$PARSER/symbols.zero"
-    "$PARSER/term.zero"
-    "$PARSER/patterns.zero"
-    "$PARSER/define.zero"
-    "$PARSER/brackets.zero"
-    "$PARSER/syntax.zero"
-    "$PARSER/serialize.zero"
-    "$PARSER/builtins.zero"
-    "$PARSER/bind.zero"
-    "$PARSER/parse.zero"
-    "$PARSER/evaluate.zero"
-    "$DIR/flatten.zero"
-    "$DIR/substitute.zero"
-    "$DIR/show.zero"
-    "$DIR/unify.zero"
-    "$DIR/inference.zero"
-)
 
 # BSD chmod still prints an error when the file is not found even with
 # the -f flag, so we redirect stderr to /dev/null to hide that message
@@ -42,11 +14,37 @@ echo "#!../bootstrap-interpreter/main -t" > "$OUT"
 # note: can't remove blank lines because it would change line numbers in errors
 # note: can't safely remove inline comments because they could be inside quotes
 # note: also have to avoid erasing file markers
-cat ${files[@]} | sed -e 's/^[ ]*# .*$//' >> "$OUT"
+cat "$LIB/operators.zero" \
+    "$LIB/prelude.zero" \
+    "$LIB/ralist.zero" \
+    "$LIB/array.zero" \
+    "$LIB/aatree.zero" \
+    "$LIB/table.zero" \
+    "$PARSER/lex.zero" \
+    "$PARSER/ast.zero" \
+    "$PARSER/errors.zero" \
+    "$PARSER/symbols.zero" \
+    "$PARSER/term.zero" \
+    "$PARSER/patterns.zero" \
+    "$PARSER/define.zero" \
+    "$PARSER/brackets.zero" \
+    "$PARSER/syntax.zero" \
+    "$PARSER/serialize.zero" \
+    "$PARSER/builtins.zero" \
+    "$PARSER/bind.zero" \
+    "$PARSER/parse.zero" \
+    "$PARSER/evaluate.zero" \
+    "$DIR/flatten.zero" \
+    "$DIR/substitute.zero" \
+    "$DIR/show.zero" \
+    "$DIR/unify.zero" \
+    "$DIR/inference.zero" |
+sed -e 's/^[ ]*# .*$//' >> "$OUT"
+
 chmod -w "$OUT"
 chmod +x "$OUT"
 
 case "$1" in
-        loc) cat "$OUT" | sed -e '/^#/d' | sed -e '/^[ ]*$/d' | wc -l;;
-        test) time "$OUT" < "$OUT";;
+    loc) cat "$OUT" | sed -e '/^#/d' | sed -e '/^[ ]*$/d' | wc -l;;
+    test) time "$OUT" < "$OUT";;
 esac
