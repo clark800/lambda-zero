@@ -167,10 +167,10 @@ void initSymbols(void) {
     addCoreSyntax("$", 99, 99, PREFIX, L, reduceReserved);
     addCoreSyntax("syntax", 99, 99, PREFIX, L, reducePrefix);
     addCoreSyntax("alias", 99, 99, PREFIX, L, reducePrefix);
-    addCoreAlias("\u2254", ":=");
-    addCoreAlias("\u2A74", "::=");
-    addCoreAlias("\u21A6", "->");
-    addCoreAlias("\u21D2", "=>");
-    addCoreAlias("\u298A", "|>");
-    addCoreAlias("\u2989", "<|");
+    addCoreAlias("\xE2\x89\x94", ":="); // u2254
+    addCoreAlias("\xE2\xA9\xB4", "::="); // u2A74
+    addCoreAlias("\xE2\x86\xA6", "->"); // u21A6
+    addCoreAlias("\xE2\x87\x92", "=>"); // u21D2
+    addCoreAlias("\xE2\xA6\x8A", "|>"); // u298A
+    addCoreAlias("\xE2\xA6\x89", "<|"); // u2989
 }
