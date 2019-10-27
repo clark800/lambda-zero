@@ -1,18 +1,17 @@
 #!/bin/sh
 
-if [[ `uname` == "Linux" ]]; then
+if [ $(uname) = "Linux" ]; then
     FORMAT=elf64
-elif [[ `uname` == "Darwin" ]]; then
+elif [ $(uname) = "Darwin" ]; then
     FORMAT=macho64
 fi
 
 echoexec() {
-    echo "$@"
-    "$@"
+    echo "$@" && "$@"
 }
 
 assemble() {
-    if [[ ! -f "$1" || `find . -name "*.s" -newer "$1"` != "" ]]; then
+    if ! test -f "$1" || ! test -z $(find . -name "*.s" -newer "$1"); then
         cat x86-64.s | sed 's/;.*//' |
           gcc -E -ftrack-macro-expansion=0 \
             -imacros unistd.h -imacros sys/syscall.h - |

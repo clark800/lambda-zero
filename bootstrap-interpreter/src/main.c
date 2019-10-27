@@ -35,7 +35,7 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
         case ABSTRACTION:
             fputs("(", stream);
             printString(getLexeme(getParameter(node)), stream);
-            fputs(" \u21A6 ", stream);
+            fputs(" \xE2\x86\xA6 ", stream); // u21A6
             serializeNode(getBody(node), locals, globals, depth + 1, stream);
             fputs(")", stream);
             break;

@@ -100,7 +100,7 @@ static inline Node* Number(Tag tag, long long n) {
 
 static inline Node* Definition(Tag tag, DefinitionVariety variety,
         Node* left, Node* right) {
-    return newBranch(tag, DEFINITION, variety, left, right);
+    return newBranch(tag, DEFINITION, (char)variety, left, right);
 }
 
 static inline Node* SetBuilder(Tag tag, Node* commaList) {
