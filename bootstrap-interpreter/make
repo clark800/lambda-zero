@@ -88,7 +88,7 @@ build() {
 }
 
 config_fast() {
-    GCC_FLAGS="-DNDEBUG -O3 -flto $GCC_FLAGS"
+    GCC_FLAGS="-DNDEBUG -Os -flto $GCC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 
@@ -120,7 +120,7 @@ config_unused() {
 }
 
 get_loc() {
-    "$CC" -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
+    gcc -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
 }
 
 run_cloc() {
