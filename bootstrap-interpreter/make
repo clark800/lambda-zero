@@ -53,8 +53,8 @@ build_libc() {
 finish() {
     rm -f $OBJECTS
     echo
-    echo "BUILD SUCCESSFUL:"
-    ls -gG "$OUT"
+    echo "BUILD SUCCESSFUL"
+    echo "BINARY SIZE: $(du -b "$OUT" | cut -f1) bytes"
 }
 
 build_one_stage() {
@@ -87,6 +87,11 @@ build() {
     fi
 }
 
+compress() {
+    upx -q -9 "$OUT" > /dev/null
+    echo "COMPRESSED SIZE: $(du -b "$OUT" | cut -f1) bytes"
+}
+
 config_fast() {
     GCC_FLAGS="-DNDEBUG -Os -flto $GCC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
@@ -99,19 +104,13 @@ config_debug() {
 }
 
 config_custom() {
-    custom="-nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin"
-    GCC_FLAGS="$custom $GCC_FLAGS"
-    LINK_FLAGS="-nostdlib $LINK_FLAGS"
-    SOURCES=$(find -L . -name "*.c")
-    OBJECTS="*.o lib/libc/sys.o"
-}
-
-config_small() {
-    config_custom
     # would like to use -Os optimization level, but there is an issue with
     # -ftree-slp-vectorize and possibly other optimizations
-    GCC_FLAGS="-s -O0 -flto $GCC_FLAGS"
-    LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
+    custom="-O0 -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin"
+    GCC_FLAGS="$custom $GCC_FLAGS"
+    LINK_FLAGS="-nostdlib -Wl,--strip-all $LINK_FLAGS"
+    SOURCES=$(find -L . -name "*.c")
+    OBJECTS="*.o lib/libc/sys.o"
 }
 
 config_unused() {
@@ -150,9 +149,10 @@ build_graph() {
 case "$1" in
     "") config_fast && build;;
     fast) clean && config_fast && build;;
+    small) clean && config_fast && build && compress;;
     test) config_fast && build && time test/test.sh;;
     debug) clean && config_debug && build;;
-    small) clean && config_small && build_libc && build;;
+    custom) clean && config_custom && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
     clean) clean;;
     tree) tree --noreport -C -P '*.[hc]' -I lib src;;
