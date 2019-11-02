@@ -25,10 +25,6 @@ bool isOperator(Node* node) {
     return isLeaf(node) && getType(node) == 0;
 }
 
-bool isThisOperator(Node* node, const char* lexeme) {
-    return isOperator(node) && isThisString(getLexeme(node), lexeme);
-}
-
 static inline Rules* getRules(Node* op) {
     assert(isOperator(op));
     return (Rules*)getData(op);

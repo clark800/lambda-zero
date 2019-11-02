@@ -6,7 +6,6 @@ Fixity getFixity(Node* op);
 char getBracketType(Node* op);
 
 bool isOperator(Node* node);
-bool isThisOperator(Node* node, const char* lexeme);
 bool isLeftSectionOperator(Node* op);
 bool isRightSectionOperator(Node* op);
 bool isOpenOperator(Node* op);

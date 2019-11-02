@@ -19,6 +19,10 @@ Node* getTop(Stack* stack) {
     return isEmpty(stack) ? NULL : peek(stack, 0);
 }
 
+bool isThisOperator(Node* node, const char* lexeme) {
+    return isOperator(node) && isThisString(getLexeme(node), lexeme);
+}
+
 void erase(Stack* stack, const char* lexeme) {
     if (!isEmpty(stack) && isThisOperator(peek(stack, 0), lexeme))
         release(pop(stack));
