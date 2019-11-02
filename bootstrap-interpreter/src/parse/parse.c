@@ -5,6 +5,7 @@
 #include "lex/token.h"
 #include "lex/lex.h"
 #include "opp/errors.h"
+#include "opp/operator.h"
 #include "opp/opp.h"
 #include "ast.h"
 #include "syntax.h"
