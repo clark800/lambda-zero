@@ -95,12 +95,12 @@ static Node* reduceClose(Node* operator, Node* left, Node* right) {
     return right;
 }
 
-bool isParenthesizedAdfixOperator(Node* node) {
+static bool isParenthesizedAdfixOperator(Node* node) {
     return isJuxtaposition(node) && isName(getLeft(node)) &&
         (isThisName(getRight(node), "*.") || isThisName(getRight(node), ".*"));
 }
 
-bool isParenthesizedInfixOperator(Node* node) {
+static bool isParenthesizedInfixOperator(Node* node) {
     return isJuxtaposition(node) && isThisName(getRight(node), "*.") &&
         isJuxtaposition(getLeft(node)) && isThisName(getRight(getLeft(node)),
         ".*") && isName(getLeft(getLeft(node)));

@@ -55,17 +55,17 @@ static void print3(const char* a, const char* b, const char* c) {
     fputs(c, stderr);
 }
 
-void usageError(const char* name) {
+static void usageError(const char* name) {
     print3("Usage error: ", name, " [-d] [-D] [-t] [FILE]\n");
     exit(2);
 }
 
-void readError(const char* filename) {
+static void readError(const char* filename) {
     print3("Usage error: file '", filename, "' cannot be opened\n");
     exit(2);
 }
 
-void memoryError(const char* label, long long bytes) {
+static void memoryError(const char* label, long long bytes) {
     print3("MEMORY LEAK IN \"", label, "\": ");
     fputll(bytes, stderr);
     fputs(" bytes\n", stderr);
@@ -96,7 +96,7 @@ static void interpret(const char* sourceCode) {
 
 static char* readSourceCode(const char* filename) {
     FILE* stream = fopen(filename, "r");
-    if (stream == NULL || stream == (FILE*)(-1))
+    if (stream == NULL)
         readError(filename);
     char* sourceCode = readfile(stream);
     fclose(stream);

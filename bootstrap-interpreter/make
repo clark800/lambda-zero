@@ -29,7 +29,7 @@ XCC_FLAGS="-Ilib"  # for unknown C compiler
 # increases the executable size; we can set it back to the default with
 # --hash-style=sysv
 
-LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded,--print-gc-sections"
+LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded"
 SOURCES=$(find -L ./src ./lib -name "*.c" -not -path "./lib/libc/*")
 HEADERS=$(find -L ./src ./lib -name "*.h" -not -path "./lib/libc/*")
 OBJECTS="*.o"
@@ -116,6 +116,7 @@ config_custom() {
 config_unused() {
     config_custom
     GCC_FLAGS="-O0 -fdata-sections -ffunction-sections $GCC_FLAGS"
+    LINK_FLAGS="-Wl,--print-gc-sections $LINK_FLAGS"
 }
 
 get_loc() {
@@ -124,6 +125,13 @@ get_loc() {
 
 run_cloc() {
     cloc --quiet --exclude-list-file=.clocignore --by-file "$@"
+}
+
+lint() {
+    # this is not usable due to bugs in splint
+    splint +charint -redef -compdestroy -branchstate -mustfree \
+        -temptrans -varuse -fcnuse -retvalother +matchanyintegral -unrecog \
+        -Ilib $SOURCES
 }
 
 get_includes() {
@@ -154,6 +162,7 @@ case "$1" in
     debug) clean && config_debug && build;;
     custom) clean && config_custom && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
+    lint) lint;;
     clean) clean;;
     tree) tree --noreport -C -P '*.[hc]' -I lib src;;
     dot) build_graph;;

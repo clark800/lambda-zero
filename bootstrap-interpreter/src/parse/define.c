@@ -6,22 +6,24 @@
 
 bool isIO = false;
 
-Node* getHead(Node* node) {
+static Node* getHead(Node* node) {
     for (; isJuxtaposition(node); node = getLeft(node));
     return node;
 }
 
-Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope) {
+static Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope)
+{
     // simple case: ((name = value) scope) ==> ((\name scope) value)
     return Let(tag, newLazyArrow(left, scope), right);
 }
 
-Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope) {
+static Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope)
+{
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
             newLazyArrow(left, scope)), right);
 }
 
-Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
+static Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> onRight(b, (a -> c)) --> (((onRight) b) (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
             newLazyArrow(left, scope)), right);
@@ -139,12 +141,12 @@ static Node* newDeconstructorDefinition(Tag tag, Node* form, Node* scope,
     return applyPlainDefinition(tag, name, deconstructor, scope);
 }
 
-Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
+static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     // for each item in the forms tuple, define constructor functions
     Node* forms = getRight(adt);
     Node* node = forms;
     unsigned int n = getArgumentCount(forms);
-    unsigned int ms[256];  // store the number of arguments for each constructor
+    unsigned int ms[256]; // store the number of arguments for each constructor
 
     for (unsigned int i = 0; i < n; ++i, node = getLeft(node))
         ms[n - i - 1] = getArgumentCount(getRight(node));

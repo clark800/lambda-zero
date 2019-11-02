@@ -64,7 +64,7 @@ void printTag(Tag tag, const char* quote, FILE* stream) {
         fputs(" " , stream);
     }
     fputs("line ", stream);
-    fputll(tag.location.line, stream);
+    fputll((long long)tag.location.line, stream);
     fputs(" column ", stream);
-    fputll(tag.location.column, stream);
+    fputll((long long)tag.location.column, stream);
 }
