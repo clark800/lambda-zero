@@ -1,52 +1,30 @@
-#include <stdio.h>
 #include "tree.h"
-#include "util.h"
+#include "stack.h"
 #include "array.h"
 #include "lex/token.h"
 #include "lex/lex.h"
 #include "opp/errors.h"
 #include "opp/operator.h"
-#include "opp/opp.h"
+#include "opp/shift.h"
 #include "ast.h"
 #include "syntax.h"
 #include "tokens.h"
 #include "bind.h"
+#include "debug.h"
 #include "parse.h"
 
 int DEBUG = 0;
 
-static void serializeAST(Node* node, FILE* stream) {
-    if (!isLeaf(node)) {
-        fputs("(", stream);
-        serializeAST(getLeft(node), stream);
-        fputs(isArrow(node) ? " -> " : " ", stream);
-        serializeAST(getRight(node), stream);
-        fputs(")", stream);
-    } else if (isNumber(node)) {
-        // numbers can be generated, so not all numbers will exist in input
-        fputll(getValue(node), stream);
-    } else {
-        printString(getLexeme(node), stream);
-        fputs("#", stream);
-        fputll(getValue(node), stream);
-    }
+Node* getTop(Stack* stack) {
+    return isEmpty(stack) ? NULL : peek(stack, 0);
 }
 
-static void debugAST(Node* node) {
-    serializeAST(node, stderr);
+void erase(Stack* stack, const char* lexeme) {
+    if (!isEmpty(stack) && isThisOperator(peek(stack, 0), lexeme))
+        release(pop(stack));
 }
 
-static void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
-    if (trace) {
-        fputs("Token: '", stderr);
-        printString(tag.lexeme, stderr);
-        fputs("'  Stack: ", stderr);
-        debugNodeStack(nodeStack, debugAST);
-        fputs("\n", stderr);
-    }
-}
-
-static void shiftNode(NodeStack* stack, Node* node) {
+static void shiftNode(Stack* stack, Node* node) {
     debugParseState(getTag(node), stack, DEBUG >= 2);
     if (isCloseOperator(node)) {
         erase(stack, "\n");
@@ -86,7 +64,7 @@ static void shiftNode(NodeStack* stack, Node* node) {
 
 static Hold* synthesize(Token (*lexer)(Token), Token start) {
     initSymbols();
-    NodeStack* stack = newNodeStack();
+    Stack* stack = newStack();
     Node* startNode = parseToken(start);
     shiftNode(stack, startNode);
     for (Token token = lexer(start); token.type != END; token = lexer(token))
@@ -95,19 +73,8 @@ static Hold* synthesize(Token (*lexer)(Token), Token start) {
             shiftNode(stack, parseToken(token));
     Hold* ast = hold(getTop(stack));
     syntaxErrorIf(getNode(ast) == startNode, "no input", getNode(ast));
-    deleteNodeStack(stack);
+    deleteStack(stack);
     return ast;
-}
-
-static void debugParseStage(const char* label, Node* node, bool trace) {
-    if (trace) {
-        fputs("======================================", stderr);
-        fputs("======================================\n", stderr);
-        fputs(label, stderr);
-        fputs(": ", stderr);
-        debugAST(node);
-        fputs("\n", stderr);
-    }
 }
 
 Program parse(const char* input) {
