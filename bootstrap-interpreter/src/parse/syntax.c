@@ -1,6 +1,6 @@
 #include "tree.h"
 #include "opp/errors.h"
-#include "opp/opp.h"
+#include "opp/operator.h"
 #include "ast.h"
 #include "patterns.h"
 #include "define.h"

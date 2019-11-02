@@ -5,7 +5,7 @@
 #include "tree.h"
 #include "lex/token.h"
 #include "opp/errors.h"
-#include "opp/opp.h"
+#include "opp/operator.h"
 #include "ast.h"
 
 static bool isNumberLexeme(String lexeme) {
