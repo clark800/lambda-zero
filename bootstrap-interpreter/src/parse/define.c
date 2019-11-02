@@ -185,14 +185,6 @@ Node* applyDefinition(Node* definition, Node* scope) {
     return NULL;
 }
 
-static Node* validatePrior(Node* operator, Node* node) {
-    String prior = getPrior(operator);
-    if (prior.length > 0)
-        if (!isJuxtaposition(node) || !isSameString(getLexeme(node), prior))
-            syntaxError("operator syntax error", operator);
-    return operator;
-}
-
 Node* reduceApply(Node* operator, Node* left, Node* right) {
     return Juxtaposition(getTag(operator), left, right);
 }
@@ -203,28 +195,16 @@ static Node* reduceAdfix(Node* operator, Node* argument) {
 
 Node* reducePrefix(Node* operator, Node* left, Node* right) {
     (void)left;
-    return reduceAdfix(validatePrior(operator, right), right);
+    return reduceAdfix(operator, right);
 }
 
 static Node* reducePostfix(Node* operator, Node* left, Node* right) {
     (void)right;
-    return reduceAdfix(validatePrior(operator, left), left);
+    return reduceAdfix(operator, left);
 }
 
 Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceAdfix(operator, left), right);
-}
-
-static Node* reduceInfixL(Node* operator, Node* left, Node* right) {
-    return reduceInfix(validatePrior(operator, left), left, right);
-}
-
-static Node* reduceInfixR(Node* operator, Node* left, Node* right) {
-    return reduceInfix(validatePrior(operator, right), left, right);
-}
-
-static Node* reduceInterfix(Node* operator, Node* left, Node* right) {
-    return reduceApply(validatePrior(operator, left), left, right);
 }
 
 static Precedence parsePrecedence(Node* node) {
@@ -257,11 +237,11 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     if (isThisName(fixity, "infix"))
         addSyntax(tag, prior, p, p, INFIX, N, reduceInfix);
     else if (isThisName(fixity, "infixL"))
-        addSyntax(tag, prior, p, p, INFIX, L, reduceInfixL);
+        addSyntax(tag, prior, p, p, INFIX, L, reduceInfix);
     else if (isThisName(fixity, "infixR"))
-        addSyntax(tag, prior, p, p, INFIX, R, reduceInfixR);
+        addSyntax(tag, prior, p, p, INFIX, R, reduceInfix);
     else if (isThisName(fixity, "interfix"))
-        addSyntax(tag, prior, p, p, INFIX, L, reduceInterfix);
+        addSyntax(tag, prior, p, p, INFIX, L, reduceApply);
     else if (isThisName(fixity, "prefix"))
         addSyntax(tag, prior, p, p, PREFIX, L, reducePrefix);
     else if (isThisName(fixity, "postfix"))

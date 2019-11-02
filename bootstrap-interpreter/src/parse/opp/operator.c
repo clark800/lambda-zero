@@ -29,19 +29,39 @@ bool isThisOperator(Node* node, const char* lexeme) {
     return isOperator(node) && isThisString(getLexeme(node), lexeme);
 }
 
-static Rules* getRules(Node* op) {
+static inline Rules* getRules(Node* op) {
     assert(isOperator(op));
     return (Rules*)getData(op);
 }
 
-Node* reduce(Node* operator, Node* left, Node* right) {
-    return getRules(operator)->reduce(operator, left, right);
-}
-
 Fixity getFixity(Node* op) {return getRules(op)->fixity;}
 char getBracketType(Node* op) {return getRules(op)->bracketType;}
-Associativity getAssociativity(Node* op) {return getRules(op)->associativity;}
-String getPrior(Node* op) {return getRules(op)->prior;}
+
+static Node* getPriorNode(Node* operator, Node* left, Node* right) {
+    Rules* rules = getRules(operator);
+    switch(rules->fixity) {
+        case INFIX:
+            switch(rules->associativity) {
+                case L: return left;
+                case R: return right;
+                default: return NULL;
+            }
+        case PREFIX: return right;
+        case POSTFIX: return left;
+        default: return NULL;
+    }
+}
+
+Node* reduce(Node* operator, Node* left, Node* right) {
+    Rules* rules = getRules(operator);
+    if (rules->prior.length > 0) {
+        Node* node = getPriorNode(operator, left, right);
+        syntaxErrorIf(node == NULL, "invalid operator with prior", operator);
+        if (isLeaf(node) || !isSameString(getLexeme(node), rules->prior))
+            syntaxError("operator syntax error", operator);
+    }
+    return rules->reduce(operator, left, right);
+}
 
 bool isLeftSectionOperator(Node* op) {
     if (!isOperator(op)) return false;
