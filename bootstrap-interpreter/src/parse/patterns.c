@@ -16,7 +16,7 @@ unsigned int getArgumentCount(Node* application) {
     return i;
 }
 
-Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
+static Node* newProjector(Tag tag, unsigned int size, unsigned int index) {
     Node* projector = Underscore(tag, size - index);
     for (unsigned int i = 0; i < size; ++i)
         projector = UnderscoreArrow(tag, projector);

@@ -42,7 +42,7 @@ static unsigned char decodeCharacter(const char* start, Tag tag) {
         case '\'': return '\'';
         default: tokenErrorIf(true, "invalid escape sequence in", tag);
     }
-    return 0;
+    return '\0';
 }
 
 static Node* parseCharacterLiteral(Tag tag) {
@@ -56,7 +56,7 @@ static Node* parseCharacterLiteral(Tag tag) {
 
 static Node* buildStringLiteral(Tag tag, const char* start) {
     char c = start[0];
-    tokenErrorIf(c == '\n' || c == 0, "missing end quote for", tag);
+    tokenErrorIf(c == '\n' || c == '\0', "missing end quote for", tag);
     return c == tag.lexeme.start[0] ? Nil(tag) :
         prepend(tag, Number(tag, decodeCharacter(start, tag)),
         buildStringLiteral(tag, skipQuoteCharacter(start)));
@@ -76,10 +76,11 @@ Node* parseToken(Token token) {
         case NUMERIC: return parseNumber(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
-        case INVALID: tokenErrorIf(true, "invalid character", token.tag);
-            return NULL;
         case NEWLINE: return parseSymbol(renameTag(token.tag, "\n"),
-            token.tag.lexeme.length - 1);
+            (long long)(token.tag.lexeme.length - 1));
+        case INVALID:
+            tokenErrorIf(true, "invalid character", token.tag);
+            return NULL;
         default: return parseSymbol(token.tag, 0);
     }
 }

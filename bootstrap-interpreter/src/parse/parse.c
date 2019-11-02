@@ -31,11 +31,11 @@ static void serializeAST(Node* node, FILE* stream) {
     }
 }
 
-void debugAST(Node* node) {
+static void debugAST(Node* node) {
     serializeAST(node, stderr);
 }
 
-void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
+static void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
     if (trace) {
         fputs("Token: '", stderr);
         printString(tag.lexeme, stderr);
@@ -45,7 +45,7 @@ void debugParseState(Tag tag, NodeStack* nodeStack, bool trace) {
     }
 }
 
-void shiftNode(NodeStack* stack, Node* node) {
+static void shiftNode(NodeStack* stack, Node* node) {
     debugParseState(getTag(node), stack, DEBUG >= 2);
     if (isCloseOperator(node)) {
         erase(stack, "\n");
@@ -83,7 +83,7 @@ void shiftNode(NodeStack* stack, Node* node) {
     release(hold(node));
 }
 
-Hold* synthesize(Token (*lexer)(Token), Token start) {
+static Hold* synthesize(Token (*lexer)(Token), Token start) {
     initSymbols();
     NodeStack* stack = newNodeStack();
     Node* startNode = parseToken(start);
