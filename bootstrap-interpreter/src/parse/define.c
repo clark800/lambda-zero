@@ -207,13 +207,6 @@ Node* reduceInfix(Node* operator, Node* left, Node* right) {
     return reduceApply(operator, reduceAdfix(operator, left), right);
 }
 
-static Precedence parsePrecedence(Node* node) {
-    Precedence precedence = isNumber(node) ?
-        (Precedence)getValue(node) : findPrecedence(node);
-    syntaxErrorIf(precedence > 99, "invalid precedence", node);
-    return precedence;
-}
-
 static void defineSyntax(Node* definition, Node* left, Node* right) {
     syntaxErrorIf(!isJuxtaposition(left), "invalid left operand", left);
     Node* name = getRight(left);
@@ -231,7 +224,9 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         return;
     }
 
-    Precedence p = parsePrecedence(argument);
+    Precedence p = isNumber(argument) ? (Precedence)getValue(argument) : 0;
+    syntaxErrorIf(p > 99, "invalid precedence", argument);
+
     String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
 
     if (isThisName(fixity, "infix"))

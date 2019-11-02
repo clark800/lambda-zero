@@ -2,7 +2,6 @@ typedef enum {INFIX, PREFIX, POSTFIX, OPENFIX, CLOSEFIX} Fixity;
 typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
 
-Precedence findPrecedence(Node* op);
 Fixity getFixity(Node* op);
 char getBracketType(Node* op);
 

@@ -116,14 +116,6 @@ static Rules* findRules(String lexeme) {
     return NULL;
 }
 
-Precedence findPrecedence(Node* node) {
-    Rules* rules = findRules(getLexeme(node));
-    syntaxErrorIf(rules == NULL, "syntax not defined", node);
-    if (rules->leftPrecedence != rules->rightPrecedence)
-        syntaxError("operator not supported", node);
-    return rules->leftPrecedence;
-}
-
 Node* parseOperator(Tag tag, long long subprecedence) {
     Rules* rules = findRules(tag.lexeme);
     return rules == NULL ? NULL :
@@ -148,8 +140,15 @@ void addSyntax(Tag tag, String prior, Precedence leftPrecedence,
         Precedence rightPrecedence, Fixity fixity, Associativity associativity,
         Node* (*reducer)(Node*, Node*, Node*)) {
     bool special = prior.length != 0;
-    if (special && associativity == N)
-        tokenErrorIf(true, "expected numeric precedence", tag);
+    if (special) { // if special, override precedence with precedence of prior
+        tokenErrorIf(associativity == N, "expected numeric precedence", tag);
+        Rules* rules = findRules(prior);
+        tokenErrorIf(rules == NULL, "syntax not defined", tag);
+        leftPrecedence = rules->leftPrecedence;
+        rightPrecedence = rules->rightPrecedence;
+        tokenErrorIf(leftPrecedence != rightPrecedence,
+            "prior operator must have the same left and right precedence", tag);
+    }
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
     appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, '_', leftPrecedence,
         rightPrecedence, fixity, associativity, special, reducer});
