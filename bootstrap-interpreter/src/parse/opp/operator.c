@@ -31,6 +31,7 @@ static inline Rules* getRules(Node* op) {
 }
 
 Fixity getFixity(Node* op) {return getRules(op)->fixity;}
+bool isSpecialOperator(Node* op) {return getRules(op)->special;}
 char getBracketType(Node* op) {return getRules(op)->bracketType;}
 
 static Node* getPriorNode(Node* operator, Node* left, Node* right) {
@@ -59,26 +60,14 @@ Node* reduce(Node* operator, Node* left, Node* right) {
     return rules->reduce(operator, left, right);
 }
 
-bool isLeftSectionOperator(Node* op) {
-    if (!isOperator(op)) return false;
-    Rules* rules = getRules(op);
-    Fixity fixity = rules->fixity;
-    return !rules->special && (fixity == INFIX || fixity == PREFIX);
-}
+Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
+    if (getBracketType(open) != getBracketType(close)) {
+        if (getBracketType(close) == '\0')
+            syntaxError("missing close for", open);
+        else syntaxError("missing open for", close);
+    }
 
-bool isRightSectionOperator(Node* op) {
-    if (!isOperator(op)) return false;
-    Rules* rules = getRules(op);
-    Fixity fixity = rules->fixity;
-    return !rules->special && (fixity == INFIX || fixity == POSTFIX);
-}
-
-bool isOpenOperator(Node* node) {
-    return isOperator(node) && getFixity(node) == OPENFIX;
-}
-
-bool isCloseOperator(Node* node) {
-    return isOperator(node) && getFixity(node) == CLOSEFIX;
+    return reduce(close, before, reduce(open, before, contents));
 }
 
 bool isHigherPrecedence(Node* left, Node* right) {

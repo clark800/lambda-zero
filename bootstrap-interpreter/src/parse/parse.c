@@ -28,9 +28,23 @@ void erase(Stack* stack, const char* lexeme) {
         release(pop(stack));
 }
 
+bool isLeftSectionOperator(Node* op) {
+    if (!isOperator(op) || isSpecialOperator(op))
+        return false;
+    Fixity fixity = getFixity(op);
+    return fixity == INFIX || fixity == PREFIX;
+}
+
+bool isRightSectionOperator(Node* op) {
+    if (!isOperator(op) || isSpecialOperator(op))
+        return false;
+    Fixity fixity = getFixity(op);
+    return fixity == INFIX || fixity == POSTFIX;
+}
+
 static void shiftNode(Stack* stack, Node* node) {
     debugParseState(getTag(node), stack, DEBUG >= 2);
-    if (isCloseOperator(node)) {
+    if (isOperator(node) && getFixity(node) == CLOSEFIX) {
         erase(stack, "\n");
         if (isThisOperator(node, ")"))
             erase(stack, ";");
