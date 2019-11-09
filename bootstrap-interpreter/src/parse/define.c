@@ -230,17 +230,17 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
 
     if (isThisName(fixity, "infix"))
-        addSyntax(tag, prior, p, p, INFIX, N, reduceInfix);
+        addSyntax(tag, prior, p, INFIX, N, reduceInfix);
     else if (isThisName(fixity, "infixL"))
-        addSyntax(tag, prior, p, p, INFIX, L, reduceInfix);
+        addSyntax(tag, prior, p, INFIX, L, reduceInfix);
     else if (isThisName(fixity, "infixR"))
-        addSyntax(tag, prior, p, p, INFIX, R, reduceInfix);
+        addSyntax(tag, prior, p, INFIX, R, reduceInfix);
     else if (isThisName(fixity, "interfix"))
-        addSyntax(tag, prior, p, p, INFIX, L, reduceApply);
+        addSyntax(tag, prior, p, INFIX, L, reduceApply);
     else if (isThisName(fixity, "prefix"))
-        addSyntax(tag, prior, p, p, PREFIX, L, reducePrefix);
+        addSyntax(tag, prior, p, PREFIX, L, reducePrefix);
     else if (isThisName(fixity, "postfix"))
-        addSyntax(tag, prior, p, p, POSTFIX, L, reducePostfix);
+        addSyntax(tag, prior, p, POSTFIX, L, reducePostfix);
     else syntaxError("invalid fixity", fixity);
 }
 

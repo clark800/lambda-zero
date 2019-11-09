@@ -121,38 +121,35 @@ static void appendSyntax(Rules rules) {
     append(RULES, newRules);
 }
 
-void addSyntax(Tag tag, String prior, Precedence leftPrecedence,
-        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        Node* (*reducer)(Node*, Node*, Node*)) {
+void addSyntax(Tag tag, String prior, Precedence precedence, Fixity fixity,
+        Associativity associativity, Reducer reducer) {
     bool special = prior.length != 0;
     if (special) { // if special, override precedence with precedence of prior
         tokenErrorIf(associativity == N, "expected numeric precedence", tag);
         Rules* rules = findRules(prior);
         tokenErrorIf(rules == NULL, "syntax not defined", tag);
-        leftPrecedence = rules->leftPrecedence;
-        rightPrecedence = rules->rightPrecedence;
-        tokenErrorIf(leftPrecedence != rightPrecedence,
+        tokenErrorIf(rules->leftPrecedence != rules->rightPrecedence,
             "prior operator must have the same left and right precedence", tag);
+        precedence = rules->leftPrecedence;
     }
     tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
-    appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, '_', leftPrecedence,
-        rightPrecedence, fixity, associativity, special, reducer});
+    appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, '_', precedence,
+        precedence, fixity, associativity, special, reducer});
 }
 
 void popSyntax(void) { unappend(RULES); }
 
 void initSyntax(void) { RULES = newArray(1024); }
 
-void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
-        Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-        Node* (*reducer)(Node*, Node*, Node*)) {
+void addCoreSyntax(const char* symbol, Precedence precedence,
+        Fixity fixity, Associativity associativity, Reducer reducer) {
     String lexeme = newString(symbol, (unsigned int)strlen(symbol));
-    appendSyntax((Rules){lexeme, lexeme, newString("", 0), '_', leftPrecedence,
-        rightPrecedence, fixity, associativity, true, reducer});
+    appendSyntax((Rules){lexeme, lexeme, newString("", 0), '_', precedence,
+        precedence, fixity, associativity, true, reducer});
 }
 
 void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
-    Fixity fixity, Node* (*reducer)(Node*, Node*, Node*)) {
+    Fixity fixity, Reducer reducer) {
     size_t length = symbol[0] == 0 && fixity == CLOSEFIX ? 1 : strlen(symbol);
     String lexeme = newString(symbol, (unsigned int)length);
     Precedence leftPrecedence = fixity == OPENFIX ? outerPrecedence : 0;
