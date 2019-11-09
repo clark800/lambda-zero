@@ -18,39 +18,29 @@ void shiftInfix(Stack* stack, Node* operator) {
     push(stack, operator);
 }
 
-Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
-    return reduce(close, before, reduce(open, before, contents));
-}
-
 void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents) {
-    if (contents != NULL && isOperator(contents))
-        syntaxError("missing right operand for", contents);
-
-    if (getBracketType(open) != getBracketType(close)) {
-        if (getBracketType(close) == '\0')
-            syntaxError("missing close for", open);
-        else syntaxError("missing open for", close);
-    }
-
     if (isEmpty(stack) || isOperator(peek(stack, 0))) {
         push(stack, reduceBracket(open, close, NULL, contents));
     } else {
-        Hold* left = pop(stack);
-        push(stack, reduceBracket(open, close, getNode(left), contents));
-        release(left);
+        Hold* before = pop(stack);
+        push(stack, reduceBracket(open, close, getNode(before), contents));
+        release(before);
     }
 }
 
 void shiftClose(Stack* stack, Node* close) {
-    Hold* contents = pop(stack);
-    if (isOpenOperator(getNode(contents))) {
-        shiftBracket(stack, getNode(contents), close, NULL);
+    Hold* hold = pop(stack);
+    Node* contents = getNode(hold);
+    if (isOperator(contents)) {
+        if (getFixity(contents) == OPENFIX)
+            shiftBracket(stack, contents, close, NULL);
+        else syntaxError("missing right operand for", contents);
     } else {
         Hold* open = pop(stack);
-        shiftBracket(stack, getNode(open), close, getNode(contents));
+        shiftBracket(stack, getNode(open), close, contents);
         release(open);
     }
-    release(contents);
+    release(hold);
 }
 
 static void reduceTop(Stack* stack) {

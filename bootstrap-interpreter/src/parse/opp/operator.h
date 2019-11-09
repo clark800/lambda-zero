@@ -3,17 +3,12 @@ typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
 
 Fixity getFixity(Node* op);
-char getBracketType(Node* op);
-
 bool isOperator(Node* node);
-bool isLeftSectionOperator(Node* op);
-bool isRightSectionOperator(Node* op);
-bool isOpenOperator(Node* op);
-bool isCloseOperator(Node* op);
+bool isSpecialOperator(Node* op);
 bool isHigherPrecedence(Node* left, Node* right);
-
-Node* parseOperator(Tag tag, long long subprecedence);
 Node* reduce(Node* op, Node* left, Node* right);
+Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents);
+Node* parseOperator(Tag tag, long long subprecedence);
 
 
 void initSyntax(void);
