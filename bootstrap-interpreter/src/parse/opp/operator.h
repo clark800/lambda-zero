@@ -1,6 +1,7 @@
 typedef enum {INFIX, PREFIX, POSTFIX, OPENFIX, CLOSEFIX} Fixity;
 typedef enum {L, R, N} Associativity;
 typedef unsigned char Precedence;
+typedef Node* (*Reducer)(Node* op, Node* left, Node* right);
 
 Fixity getFixity(Node* op);
 bool isOperator(Node* node);
@@ -12,14 +13,9 @@ Node* parseOperator(Tag tag, long long subprecedence);
 
 
 void initSyntax(void);
-void addCoreSyntax(const char* symbol, Precedence leftPrecedence,
-    Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-    Node* (*reduce)(Node*, Node*, Node*));
-void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
-    Fixity fixity, Node* (*reducer)(Node*, Node*, Node*));
-void addSyntax(Tag tag, String prior, Precedence leftPrecedence,
-    Precedence rightPrecedence, Fixity fixity, Associativity associativity,
-    Node* (*reducer)(Node*, Node*, Node*));
+void addCoreSyntax(const char*, Precedence, Fixity, Associativity, Reducer);
+void addSyntax(Tag, String prior, Precedence, Fixity, Associativity, Reducer);
+void addBracketSyntax(const char*, char type, Precedence, Fixity, Reducer);
 void addSyntaxCopy(String lexeme, Node* name, bool alias);
 void addCoreAlias(const char* alias, const char* name);
 void popSyntax(void);
