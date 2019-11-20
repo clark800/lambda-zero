@@ -89,8 +89,42 @@ def parseToken(operators, token)
         Invalid -> parseError("invalid character", tag)
 
 
+def isLeftSectionOperator(op)
+    if not isOperator(op) or isSpecialOperator(op)
+        False
+    fixity := getFixity(getSyntax(op))
+    fixity = INFIX or fixity = PREFIX
+
+
+def isRightSectionOperator(op)
+    if not isOperator(op) or isSpecialOperator(op)
+        False
+    fixity := getFixity(getSyntax(op))
+    fixity = INFIX or fixity = POSTFIX
+
+
+def shiftNode(state, node)
+    if isOperator(node)
+        _ @ State(stack, operators) := state
+        with stack as top :: stack'
+            if isThisOperator(top, "(") and isRightSectionOperator(node)
+                openTag := renameTag(getTag(top), "( ", OPENFIX)
+                open := operators.parseSymbol(openTag, 0)
+                placeholder := FixedName(getTag(top), ".*")
+                state' := State(stack', operators)
+                shift(shift(shift(state', open), placeholder), node)
+            if isThisOperator(node, ")") and isLeftSectionOperator(top)
+                closeTag := renameTag(getTag(node), " )", CLOSEFIX)
+                close := operators.parseSymbol(closeTag, 0)
+                placeholder := FixedName(getTag(node), "*.")
+                shift(shift(state, placeholder), close)
+            shift(state, node)
+        shift(state, node)
+    shift(state, node)
+
+
 def shiftToken(state, token)
-    shift(state, parseToken(getOperators(state), token))
+    shiftNode(state, parseToken(getOperators(state), token))
 
 
 def parse(code)

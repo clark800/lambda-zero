@@ -89,7 +89,7 @@ def reduceWith(operator, asPattern, withBlock)
         caseArrow := newCaseArrow(pattern, withBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
         function := combineCases(tag, caseArrow, fallback)
-        LockedArrow(Name(renameTag(tag, "pass", NOFIX)),
+        LockedArrow(FixedName(tag, "pass"),
             Juxtaposition(tag, function, expression))
     syntaxError("expected as pattern to right of", operator)
 
@@ -134,15 +134,9 @@ def shiftPrefix(state, operator)
 
 
 def shiftPostfix(state, operator)
-    stack := getStack(state)
-    state' := reduceLeft(State(stack, getOperators(state)), operator)
+    state' := reduceLeft(state, operator)
     stack' := getStack(state')
     with stack' as operand :: stack''
-        if not isSpecial(operator) and isOpenOperator(operand)
-            placeholder := newLeftPlaceholder(getTag(operand))
-            null := Null(getTag(placeholder))
-            body := reduce(operator, placeholder, null)
-            State(body :: stack', getOperators(state))
         if isOperator(operand)
             syntaxError("missing left operand for", operator)
         reduced := reduce(operator, operand, Null(getTag(operator)))
@@ -151,23 +145,11 @@ def shiftPostfix(state, operator)
 
 
 def shiftInfix(state, operator)
-    stack := getStack(state)
-    state' := reduceLeft(State(stack, getOperators(state)), operator)
+    state' := reduceLeft(state, operator)
     stack' := getStack(state')
     with stack' as top :: _
-        tag := getTag(operator)
-        operators := getOperators(state')
         if not isOperator(top)
-            State(operator :: stack', operators)
-        if isThisOperator(operator, "+")
-            operator' := operators.parseSymbol(renameTag(tag, "(+)", PREFIX), 0)
-            State(operator' :: stack', operators)
-        if isThisOperator(operator, "-")
-            operator' := operators.parseSymbol(renameTag(tag, "(-)", PREFIX), 0)
-            State(operator' :: stack', operators)
-        if not isSpecial(operator) and isOpenOperator(top)
-            placeholder := newLeftPlaceholder(tag)
-            State(operator :: placeholder :: stack', operators)
+            State(operator :: stack', getOperators(state'))
         syntaxError("missing left operand for", operator)
     syntaxError("missing left operand for", operator)
 
@@ -256,19 +238,7 @@ def pushSyntax(lexeme, syntax', operators)
 def addSyntax(operators, operator)
     if not isVoid(operators.lookupSyntax(getLexeme(operator)))
         syntaxError("syntax already defined", operator)
-    with operator as Operator(_, _, syntax')
-        operators' := operators.pushSyntax(getLexeme(operator), syntax')
-        p := getLeftPrecedence(syntax')
-        if isThisOperator(operator, "+")
-            s := Syntax("(+)", p, p, PREFIX, LEFT, False, '_',
-                shiftPrefix, reducePrefix, "")
-            operators'.pushSyntax("(+)", s)
-        if isThisOperator(operator, "-")
-            s := Syntax("(-)", p, p, PREFIX, LEFT, False, '_',
-                shiftPrefix, reducePrefix, "")
-            operators'.pushSyntax("(-)", s)
-        operators'
-    syntaxError("internal error", operator)
+    operators.pushSyntax(getLexeme(operator), getSyntax(operator))
 
 
 def reduceLeftErase(State(stack, operators), operator)
@@ -325,6 +295,8 @@ OPERATORS := [newDictionary([
     bracketSyntax("\0", '\0', 0, CLOSEFIX, shiftClose, reduceEOF),
     bracketSyntax("(", '(', 95, OPENFIX, shiftOpen, reduceParentheses),
     bracketSyntax(")", '(', 95, CLOSEFIX, shiftClose, reduceClose),
+    bracketSyntax("( ", '(', 95, OPENFIX, shiftOpen, reduceOpenSection),
+    bracketSyntax(" )", '(', 95, CLOSEFIX, shiftClose, reduceCloseSection),
     bracketSyntax("[", '[', 95, OPENFIX, shiftOpen, reduceSquare),
     bracketSyntax("]", '[', 95, CLOSEFIX, shiftClose, reduceClose),
     bracketSyntax("{", '{', 95, OPENFIX, shiftOpen, reduceCurly),
@@ -355,7 +327,9 @@ OPERATORS := [newDictionary([
     coreSyntax("as", 12, 12, INFIX, NEITHER, shiftInfix, reduceAsPattern),
     coreSyntax("abort", 15, 15, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(".", 92, 92, INFIX, LEFT, shiftInfix, reducePipeline),
-    coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved)
+    coreSyntax("$", 99, 99, PREFIX, LEFT, shiftPrefix, reduceReserved),
+    coreSyntax("syntax", 99, 99, PREFIX, LEFT, shiftPrefix, reducePrefix),
+    coreSyntax("alias", 99, 99, PREFIX, LEFT, shiftPrefix, reducePrefix)
 ])]
 
 #*
