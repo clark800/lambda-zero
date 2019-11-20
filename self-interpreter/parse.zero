@@ -1,6 +1,6 @@
 #* parse.zero
 
-define parseEscapeCode(code, tag)
+def parseEscapeCode(code, tag)
     if code = '0' then '\0'
     if code = 'n' then '\n'
     if code = 't' then '\t'
@@ -11,7 +11,7 @@ define parseEscapeCode(code, tag)
     parseError("invalid escape sequence in", tag)
 
 
-define parseQuotedCharacter(tag, string)
+def parseQuotedCharacter(tag, string)
     with string as c :: cs
         if c =/= '\\'
             Number(tag, c)
@@ -21,35 +21,35 @@ define parseQuotedCharacter(tag, string)
     parseError("missing end quote for", tag)
 
 
-define splitStringLiteral(string)
+def splitStringLiteral(string)
     with string as c :: cs
         n := if c = '\\' and not isNil(cs) then 2 else 1
         string.take(n) :: splitStringLiteral(string.drop(n))
     []
 
 
-define buildStringLiteral(tag, characters)
+def buildStringLiteral(tag, characters)
     with characters as c :: cs
         prependList(tag, c, buildStringLiteral(tag, cs))
     newNil(tag)
 
 
-define getQuoteContents(tag)
+def getQuoteContents(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.length > 1 and lexeme.reverse.take(1) =*= lexeme.take(1)
         dropLast(lexeme.drop(1))
     parseError("missing end quote for", tag)
 
 
-define getQuotedCharacters(tag)
+def getQuotedCharacters(tag)
     splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
 
 
-define parseStringLiteral(tag)
+def parseStringLiteral(tag)
     buildStringLiteral(tag, getQuotedCharacters(tag))
 
 
-define parseCharacterLiteral(tag)
+def parseCharacterLiteral(tag)
     with getQuotedCharacters(tag) as c :: cs
         with cs as []
             c
@@ -57,7 +57,7 @@ define parseCharacterLiteral(tag)
     parseError("invalid character literal", tag)
 
 
-define parseNumericLiteral(tag)
+def parseNumericLiteral(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.any((not) <> isDigit)
         parseError("invalid token", tag)
@@ -74,7 +74,7 @@ define parseNumericLiteral(tag)
     Number(tag, parsed ?? 0)
 
 
-define parseToken(operators, token)
+def parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
         Space -> abort "internal error: Space reached parseToken"
@@ -89,11 +89,11 @@ define parseToken(operators, token)
         Invalid -> parseError("invalid character", tag)
 
 
-define shiftToken(state, token)
+def shiftToken(state, token)
     shift(state, parseToken(getOperators(state), token))
 
 
-define parse(code)
+def parse(code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))

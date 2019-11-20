@@ -1,47 +1,47 @@
 #* life.zero
 
-define newMatrix(nx, ny)
+def newMatrix(nx, ny)
     newArray(replicate(ny, newArray(replicate(nx, 0))))
 
 
-define getCell(ix, iy, matrix)
+def getCell(ix, iy, matrix)
     row := matrix.get(iy) ?? abort("internal error")
     row.get(ix) ?? abort("internal error")
 
 
-define getDimensions(matrix)
+def getDimensions(matrix)
     ny := getSize(matrix)
     nx := getSize(matrix.get(0) ?? newArray([]))
     (nx, ny)
 
 
-define crossProduct(xs, ys)
+def crossProduct(xs, ys)
     match xs
         case []; []
         case x :: xs'
             ys.map(y -> (x, y)) ++ crossProduct(xs', ys)
 
 
-define getCoordinates(matrix)
+def getCoordinates(matrix)
     (nx, ny) := getDimensions(matrix)
     xs := (0 ...)[0, nx]
     ys := (0 ...)[0, ny]
     crossProduct(xs, ys)
 
 
-define toggleCell(ix, iy, matrix)
+def toggleCell(ix, iy, matrix)
     row := matrix.get(iy) ?? abort("internal error")
     value := row.get(ix) ?? abort("internal error")
     matrix.set(iy, row.set(ix, 1 -- value))
 
 
-define clickCell(x, y, pixelsPerCell, matrix)
+def clickCell(x, y, pixelsPerCell, matrix)
     ix := x // pixelsPerCell
     iy := y // pixelsPerCell
     toggleCell(ix, iy, matrix)
 
 
-define createMask(x, y, nx, ny)
+def createMask(x, y, nx, ny)
     dx := (x + nx -- 1) % nx
     ux := (x + 1) % nx
     dy := (y + ny -- 1) % ny
@@ -52,39 +52,39 @@ define createMask(x, y, nx, ny)
      (ux, dy), (ux, y), (ux, uy)]
 
 
-define isAlive(matrix, (ix, iy))
+def isAlive(matrix, (ix, iy))
     getCell(ix, iy, matrix) =/= 0
 
 
-define countNeighbors(matrix, ix, iy)
+def countNeighbors(matrix, ix, iy)
     (nx, ny) := getDimensions(matrix)
     createMask(ix, iy, nx, ny).count(isAlive(matrix))
 
 
-define stepCell(matrix, matrix', (ix, iy))
+def stepCell(matrix, matrix', (ix, iy))
     alive := isAlive(matrix, (ix, iy))
     neighbors := countNeighbors(matrix, ix, iy)
     alive' := if alive then neighbors = 2 or neighbors = 3 else neighbors = 3
     if alive xor alive' then toggleCell(ix, iy, matrix') else matrix'
 
 
-define stepMatrix(matrix)
+def stepMatrix(matrix)
     getCoordinates(matrix).cascade(stepCell(matrix), matrix)
 
 
-define updateGridCell(contextID, windowID, pixelsPerCell, (ix, iy))
+def updateGridCell(contextID, windowID, pixelsPerCell, (ix, iy))
     x1 := ix * pixelsPerCell
     y1 := iy * pixelsPerCell
     fillRectangle(contextID, windowID, x1, y1, pixelsPerCell, pixelsPerCell)
 
 
-define flattenMatrix(matrix)
+def flattenMatrix(matrix)
     # matrix to [((ix, iy), value), ...]
     zip((0 ...), toList(matrix)).map((iy, row) ->
         zip(zip((0 ...), repeat(iy)), toList(row))).join
 
 
-define updateCells(updateCell, matrix, matrix')
+def updateCells(updateCell, matrix, matrix')
     cells := flattenMatrix(matrix)
     cells' := flattenMatrix(matrix')
     coordinates := (zip(cells, cells') |:
@@ -92,12 +92,12 @@ define updateCells(updateCell, matrix, matrix')
     coordinates.map(updateCell).join
 
 
-define runForever(updateCell, matrix)
+def runForever(updateCell, matrix)
     matrix' := stepMatrix(matrix)
     updateCells(updateCell, matrix, matrix') ++ runForever(updateCell, matrix')
 
 
-define handleEvent(event, state)
+def handleEvent(event, state)
     (contextID, pixelsPerCell, matrix) := state
     eventCode := event.lookup("code") ?? 0
     windowID := event.lookup("event") ?? abort("internal error")
@@ -132,7 +132,7 @@ define handleEvent(event, state)
     Just((NO_RESPONSE, state))
 
 
-define initialize(nx, ny, pixelsPerCell, serverData)
+def initialize(nx, ny, pixelsPerCell, serverData)
     width := nx * pixelsPerCell
     height := ny * pixelsPerCell
     (info, vendor, formats, screens) := serverData
@@ -157,7 +157,7 @@ define initialize(nx, ny, pixelsPerCell, serverData)
     abort("Error: no screens")
 
 
-define main(input)
+def main(input)
     XWindow(initialize(12, 12, 50), handleEvent, input)
 
 #*

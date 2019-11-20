@@ -179,29 +179,29 @@ fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
 primes ≔ p(2 …) where p ≔ [] ↦ []; n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 # string
-define xs ≛ ys
+def xs ≛ ys
     match xs
         [] ↦ isNil(ys)
         x ∷ xs′ ↦ (ys ⦊ [] ↦ False; y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
 
-define ns ⩿ ms
+def ns ⩿ ms
     match ns
         [] ↦ True
         n ∷ ns′ ↦ (ms ⦊ [] ↦ False; m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
 
 
-define startsWith(ks, ns)
+def startsWith(ks, ns)
     match ks
         [] ↦ True
         k ∷ ks′ ↦ (ns ⦊ [] ↦ False; n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))
 
-define split(p, xs)
+def split(p, xs)
     match xs
         [] ↦ ([], [])
         x ∷ xs′ ↦ (if p(xs) then ([], xs) else (x ∷ before, after) where
                   (before, after) ≔ xs′.split(p))
 
-define splitWhen(p, xs)
+def splitWhen(p, xs)
     match xs
         [] ↦ ([], [])
         x ∷ xs′ ↦ (if p(x) then ([], xs) else (x ∷ before, after) where
@@ -212,14 +212,14 @@ splitEvery(n, xs) ≔ if isNil(xs) then [] else
     ys ∷ splitEvery(n, xs′) where (ys, xs′) ≔ xs.splitAt(n)
 splitOn(delimiter, ns) ≔ ns.split(startsWith(delimiter))
 
-define splitWith(splitter, ns)
+def splitWith(splitter, ns)
     (before, after) ≔ splitter(ns)
     if before.isNil
         ([], ns)
     (before′, after′) ≔ after.splitWith(splitter)
     (before ⧺ before′, after′)
 
-define partition(splitter, ns)
+def partition(splitter, ns)
     if ns.isNil
         []
     (before, after) ≔ splitter(ns)
@@ -252,15 +252,15 @@ isPunctuation(n) ≔ isGraphical(n) and not isAlphanumeric(n)
 # serialization
 showBoolean(b) ≔ if b then "True" else "False"
 
-define showNatural(n)
-    define showReversedNatural(m)
+def showNatural(n)
+    def showReversedNatural(m)
         if m = 0 then [] else ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
     if n = 0 then "0" else reverse(showReversedNatural(n))
 
 showSign ≔ ⧾ _ ↦ "+"; ⧿ _ ↦ "-"
 showInteger(z) ≔ showSign(z) ⧺ showNatural(z ⦊ ⧾ n ↦ n; ⧿ n ↦ n)
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
-define showPair(showFirst, showSecond, xsxs)
+def showPair(showFirst, showSecond, xsxs)
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
 showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
@@ -280,7 +280,7 @@ BinaryTree(a) ⩴ {
     Fork(datum : a, left : BinaryTree(a), right : BinaryTree(a))
 }
 
-define search((≾), hash, key, tree)
+def search((≾), hash, key, tree)
     match tree
         case Tip; Void
         case Fork(datum, left, right)
@@ -291,7 +291,7 @@ define search((≾), hash, key, tree)
                 search((≾), hash, key, left)
             search((≾), hash, key, right)
 
-define flatten(tree)
+def flatten(tree)
     match tree
         Tip ↦ []
         Fork(value, left, right) ↦ flatten(left) ⧺ [value] ⧺ flatten(right)
@@ -303,11 +303,11 @@ FullBinaryTree(a) ⩴ {
 }
 
 
-define showFullBinaryTree(showElement, tree)
-    define showElementLine(indent, x)
+def showFullBinaryTree(showElement, tree)
+    def showElementLine(indent, x)
         replicate(2 ⋅ indent, ' ') ⧺ showElement(x) ⧺ "\n"
 
-    define showFullBinaryTreeNode(indent, node)
+    def showFullBinaryTreeNode(indent, node)
         match node
             case Leaf(x); showElementLine(indent, x)
             case Branch(x, left, right)

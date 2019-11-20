@@ -6,19 +6,19 @@ RIGHTVALUE := 2
 NEITHER := 3
 
 
-define isSpecial(node)
+def isSpecial(node)
     with node as Operator(_, _, syntax')
         getSpecial(syntax')
     False
 
 
-define propagateSection(operator, side, body)
+def propagateSection(operator, side, body)
     if isSpecial(operator) or not isJuxtaposition(body)
         syntaxError("operator does not support sections", operator)
     Section(getTag(operator), side, body)
 
 
-define reduceOperator(operator, left, right)
+def reduceOperator(operator, left, right)
     left' := with left as Section(_, _, body); body <| left
     right' := with right as Section(_, _, body); body <| right
     with operator as Operator(_, _, syntax')
@@ -32,13 +32,13 @@ define reduceOperator(operator, left, right)
     syntaxError("internal error", operator)
 
 
-define reduceBracket(open, close, left, right)
+def reduceBracket(open, close, left, right)
     with close as Operator(_, _, syntax')
         getReduce(syntax')(open, left, right)
     syntaxError("internal error", close)
 
 
-define shift(state @ State(stack, operators), node)
+def shift(state @ State(stack, operators), node)
     with node as Operator(_, _, syntax')
         getShift(syntax')(state, node)
     with stack as top :: _
@@ -48,11 +48,11 @@ define shift(state @ State(stack, operators), node)
     syntaxError("missing operator before", node)
 
 
-define erase(stack, lexeme)
+def erase(stack, lexeme)
     stack.dropIf(`isThisOperator(lexeme))
 
 
-define reduceTop'(operator, right, stack, operators)
+def reduceTop'(operator, right, stack, operators)
     with operator as Operator(tag, _, syntax')
         if getFixity(syntax') = PREFIX
             shift(State(stack, operators),
@@ -65,7 +65,7 @@ define reduceTop'(operator, right, stack, operators)
     syntaxError("internal error", operator)
 
 
-define reduceTop(state @ State(stack, operators))
+def reduceTop(state @ State(stack, operators))
     with stack as right :: stack'
         with stack' as operator :: stack''
             if isOperator(operator)
@@ -75,7 +75,7 @@ define reduceTop(state @ State(stack, operators))
     state
 
 
-define isHigherPrecedence(left, right)
+def isHigherPrecedence(left, right)
     if isEOF(left)
         False
 
@@ -101,7 +101,7 @@ define isHigherPrecedence(left, right)
     False
 
 
-define shouldReduceTop(operator, State(stack, _operators))
+def shouldReduceTop(operator, State(stack, _operators))
     with stack as x :: stack'
         if isOperator(x)
             False
@@ -111,22 +111,22 @@ define shouldReduceTop(operator, State(stack, _operators))
     False
 
 
-define reduceLeft(state, operator)
+def reduceLeft(state, operator)
     while(shouldReduceTop(operator), reduceTop, state)
 
 
-define parseOperator(tag, value, syntax')
+def parseOperator(tag, value, syntax')
     tag' := renameTag(tag, getAlias(syntax'), getFixity(syntax'))
     Operator(tag', value, syntax')
 
 
-define lookupSyntax(lexeme, operators)
+def lookupSyntax(lexeme, operators)
     with operators as top :: _
         top.lookup(lexeme)
     Void
 
 
-define parseSymbol(tag, value, operators)
+def parseSymbol(tag, value, operators)
     lexeme := getTagLexeme(tag)
     operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
         Name(tag)

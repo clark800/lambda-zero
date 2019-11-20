@@ -1,6 +1,6 @@
 #* ralist.zero
 
-define list.pushRAL(x)
+def list.pushRAL(x)
     match list
         case []; [(1, Leaf(x))]
         case (size, tree) :: rest
@@ -12,7 +12,7 @@ define list.pushRAL(x)
                     (1, Leaf(x)) :: list
 
 
-define list.popRAL
+def list.popRAL
     match list
         case []; []
         case (size, tree) :: rest
@@ -23,7 +23,7 @@ define list.popRAL
                     (size', left) :: (size', right) :: rest
 
 
-define list.peekRAL
+def list.peekRAL
     match list
         case []; Void
         case (size, tree) :: _
@@ -32,7 +32,7 @@ define list.peekRAL
                 Branch(x, _, _) -> Just(x)
 
 
-define seekTree(n, size, tree)
+def seekTree(n, size, tree)
     match tree
         case Leaf(x)
             if n = 0 then Just(x) else Void
@@ -45,14 +45,14 @@ define seekTree(n, size, tree)
             seekTree(n -- size' -- 1, size', right)
 
 
-define list.getRAL(n)
+def list.getRAL(n)
     match list
         case []; Void
         case (size, tree) :: rest
             if n < size then seekTree(n, size, tree) else rest.getRAL(n -- size)
 
 
-define updateTree(n, x, size, tree)
+def updateTree(n, x, size, tree)
     match tree
         case Leaf(_)
             if n = 0 then Leaf(x) else tree
@@ -65,7 +65,7 @@ define updateTree(n, x, size, tree)
             Branch(x', left, updateTree(n -- size' -- 1, x, size', right))
 
 
-define list.setRAL(n, x)
+def list.setRAL(n, x)
     match list
         case []; []
         case (size, tree) :: rest
@@ -74,25 +74,25 @@ define list.setRAL(n, x)
             (size, tree) :: rest.setRAL(n -- size, x)
 
 
-define flattenPreorderTree(tree)
+def flattenPreorderTree(tree)
     match tree
         case Leaf(x); [x]
         case Branch(x, left, right)
             x :: flattenPreorderTree(left) ++ flattenPreorderTree(right)
 
 
-define list.toListRAL
+def list.toListRAL
     match list
         case []; []
         case (_, tree) :: rest
             flattenPreorderTree(tree) ++ toListRAL(rest)
 
 
-define list.showRAL(showValue)
+def list.showRAL(showValue)
     list.map(second).map(showFullBinaryTree(showValue)).joinWith("\n")
 
 
-define newRandomAccessList(elements)
+def newRandomAccessList(elements)
     elements.fold(pushRAL, [])
 
 #*

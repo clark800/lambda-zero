@@ -1,12 +1,12 @@
 #* flatten.zero
 
-define isUnknown(term)
+def isUnknown(term)
     with term as Variable(_, n)
         n = 0
     False
 
 
-define pushUnknown(environment)
+def pushUnknown(environment)
     # use Variable 0 to indicate that we don't have a value for the variable
     environment.push(Closure(Variable(noTag, 0), newArray([])))
 
@@ -14,7 +14,7 @@ define pushUnknown(environment)
 # for any variable in term that has a value in the environment, substitute
 # the variable with the value from the environment recursively
 # todo: can remove this when we use closures instead of schemes for types
-define flattenClosure(Closure(term, environment))
+def flattenClosure(Closure(term, environment))
     match term
         case Top(_)
             term

@@ -4,13 +4,13 @@ AADatumT(a) ::= {AADatum(level : ℕ, value : a)}
 
 getValueAA(AADatum(_, value)) := value
 
-define getLevelAA(tree)
+def getLevelAA(tree)
     match tree
         Tip -> 0
         Fork(AADatum(n, _), _, _) -> n
 
 
-define skewAA(tree)
+def skewAA(tree)
     match tree
         case Tip; Tip
         case Fork(datum @ AADatum(n, _), left, right)
@@ -22,7 +22,7 @@ define skewAA(tree)
                     Fork(datum', left', Fork(datum, right', right))
 
 
-define splitAA(tree)
+def splitAA(tree)
     match tree
         case Tip; Tip
         case Fork(datum @ AADatum(n, _), left, right)
@@ -35,7 +35,7 @@ define splitAA(tree)
                     Fork(datum', Fork(datum, left, left'), right')
 
 
-define insertAA((~<), hash, value, tree)
+def insertAA((~<), hash, value, tree)
     ss := splitAA <> skewAA
     match tree
         case Tip; Fork(AADatum(1, value), Tip, Tip)
@@ -49,19 +49,19 @@ define insertAA((~<), hash, value, tree)
             ss(Fork(datum, left, insertAA((~<), hash, value, right)))
 
 
-define searchAA((~<), hash, key, tree)
+def searchAA((~<), hash, key, tree)
     search((~<), hash <> getValueAA, key, tree).mapJust(getValueAA)
 
 
-define flattenAA(tree)
+def flattenAA(tree)
     flatten(tree).map(getValueAA)
 
 
-define extendAA((~<), hash, values, tree)
+def extendAA((~<), hash, values, tree)
     values.fold(insertAA((~<), hash), tree)
 
 
-define mergeAA((~<), hash, tree', tree)
+def mergeAA((~<), hash, tree', tree)
     extendAA((~<), hash, flattenAA(tree'), tree)
 
 #*

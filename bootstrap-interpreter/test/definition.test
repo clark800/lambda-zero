@@ -113,11 +113,11 @@ Syntax error: reserved operator '$' at line 1 column 1
 `f(x, y) := f(y, x) \nmod(x, y) := x % y \n`mod(2, 5)
 1
 ==========================================================================
-define f(x)\n  x * x\nf(3)
+def f(x)\n  x * x\nf(3)
 9
 ==========================================================================
-(define) := 0\n(define)
-Syntax error: missing right operand for 'define' at line 1 column 2
+(def) := 0\n(def)
+Syntax error: missing right operand for 'def' at line 1 column 2
 ==========================================================================
 x := x + 1 \nx
 Syntax error: undefined symbol 'x' at line 1 column 6

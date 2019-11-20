@@ -1,31 +1,31 @@
 #* brackets.zero
 
-define applyToCommaList(tag, base, arguments)
+def applyToCommaList(tag, base, arguments)
     with arguments as CommaPair(_, left, right)
         Juxtaposition(tag, applyToCommaList(tag, base, left), right)
     Juxtaposition(tag, base, arguments)
 
-define getCommaListSize(commaList)
+def getCommaListSize(commaList)
     with commaList as CommaPair(_, left, _)
         getCommaListSize(left) + 1
     1
 
-define newTuple(tag, commaList)
+def newTuple(tag, commaList)
     n := getCommaListSize(commaList)
     lexeme := repeat(',').take(n -- 1)
     constructor := Name(renameTag(tag, lexeme, NOFIX))
     applyToCommaList(tag, constructor, commaList)
 
-define getCommaListElements(commaList)
+def getCommaListElements(commaList)
     if isNull(commaList) then []
     with commaList as CommaPair(_, left, right)
         getCommaListElements(left) ++ [right]
     [commaList]
 
-define reduceUnmatched(open, _left, _right)
+def reduceUnmatched(open, _left, _right)
     syntaxError("missing close for", open)
 
-define reduceParentheses(open, function, contents)
+def reduceParentheses(open, function, contents)
     if not isThisOperator(open, "(")
         syntaxError("missing close for", open)
     tag := getTag(open)
@@ -48,12 +48,12 @@ define reduceParentheses(open, function, contents)
         Juxtaposition(tag, left, right)
     contents'
 
-define createList(tag, commaList, list)
+def createList(tag, commaList, list)
     with commaList as CommaPair(_, left, right)
         createList(tag, left, prependList(tag, right, list))
     prependList(tag, commaList, list)
 
-define reduceSquare(open, left, contents)
+def reduceSquare(open, left, contents)
     if not isThisOperator(open, "[")
         syntaxError("missing close for", open)
     tag := getTag(open)
@@ -67,37 +67,37 @@ define reduceSquare(open, left, contents)
         applyToCommaList(tag, Juxtaposition(tag, constructor, left), contents)
     createList(tag, contents, newNil(tag))
 
-define reduceCurly(open, left, patterns)
+def reduceCurly(open, left, patterns)
     if not isNull(left)
         syntaxError("missing space before", open)
     if not isThisOperator(open, "{")
         syntaxError("missing close for", open)
     SetBuilder(getTag(open), getCommaListElements(patterns))
 
-define reduceEOF(open, left, contents)
+def reduceEOF(open, left, contents)
     if not isNull(left)
         syntaxError("invalid syntax", open)
     if not isEOF(open)
         syntaxError("missing close for", open)
     contents
 
-define shiftOpen(state, open)
+def shiftOpen(state, open)
     state' := reduceLeft(state, open)
     State(open :: getStack(state'), getOperators(state'))
 
-define isOpenOperator(operator)
+def isOpenOperator(operator)
     with operator as Operator(_, _, syntax')
         getFixity(syntax') = OPENFIX
     False
 
-define pushBracket(stack, open, close, contents)
+def pushBracket(stack, open, close, contents)
     with stack as left :: stack'
         if not isOperator(left)
             reduceBracket(open, close, left, contents) :: stack'
         reduceBracket(open, close, Null(getTag(open)), contents) :: stack
     [reduceBracket(open, close, Null(getTag(open)), contents)]
 
-define shiftClose'(state, close)
+def shiftClose'(state, close)
     stack := getStack(state)
     with stack as contents :: stack'
         if isEOF(contents)
@@ -117,7 +117,7 @@ define shiftClose'(state, close)
     syntaxError("missing open for", close)
 
 
-define preReduceOperator(operator, stack)
+def preReduceOperator(operator, stack)
     with operator as Operator(tag, _, syntax')
         with stack as left :: stack'
             if isLeftPlaceholder(left)
@@ -138,7 +138,7 @@ define preReduceOperator(operator, stack)
     operator :: stack
 
 
-define preReduce(stack)
+def preReduce(stack)
     with stack as top :: stack'
         if isOperator(top) and not isSpecial(top)
             preReduceOperator(top, stack')
@@ -146,7 +146,7 @@ define preReduce(stack)
     stack
 
 
-define shiftClose(state, close)
+def shiftClose(state, close)
     stack := erase(erase(getStack(state), "\n"), ";")
     stack' := if isEOF(close) then stack else preReduce(stack)
     state' := reduceLeft(State(stack', getOperators(state)), close)

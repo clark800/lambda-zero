@@ -15,7 +15,7 @@ Table(_, data).getKeys := flattenAA(data).map(first)
 Table(_, data).getValues := flattenAA(data).map(second)
 table.hasKey(key) := not isVoid(table.lookup(key))
 
-define showTable(showKey, showValue, table)
+def showTable(showKey, showValue, table)
     showItem := showPair(showKey, showValue)
     "[\n    " ++ getEntries(table).map(showItem).joinWith(",\n    ") ++ "\n]"
 

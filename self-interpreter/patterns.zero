@@ -1,22 +1,22 @@
 #* patterns.zero
 
-define getHead(node)
+def getHead(node)
     with node as Juxtaposition(_, left, _)
         getHead(left)
     node
 
 
-define getArguments(pattern)
+def getArguments(pattern)
     with pattern as Juxtaposition(_, left, right)
         getArguments(left) ++ [right]
     []
 
 
-define newProjector(tag, size, index)
+def newProjector(tag, size, index)
     (UnderscoreArrow(tag)^<>(size))(Underscore(tag, size -- index))
 
 
-define newPatternArrow(pattern, body)
+def newPatternArrow(pattern, body)
     with pattern as ColonPair(tag, left, right)
         newPatternArrow(left, body).setAnnotation(right)
     if isName(pattern)
@@ -38,7 +38,7 @@ define newPatternArrow(pattern, body)
     syntaxError("invalid parameter", pattern)
 
 
-define getNameAndValue(f, left, right)
+def getNameAndValue(f, left, right)
     if isNull(right)
         abort("NULL")                    # force syntax errors
     with left as Juxtaposition(_, left', right')
@@ -46,7 +46,7 @@ define getNameAndValue(f, left, right)
     (left, right)
 
 
-define newCaseArrow(left, right)
+def newCaseArrow(left, right)
     pattern := with left as AsPattern(_, _, pattern'); pattern' <| left
     (name, reconstructor) :=
         getNameAndValue(newPatternArrow, pattern, right)
@@ -62,13 +62,13 @@ define newCaseArrow(left, right)
         Juxtaposition(tag, underscore, reconstructor))
 
 
-define addCases(tag, base, extension)
+def addCases(tag, base, extension)
     with extension as Juxtaposition(_, left, right)
         Juxtaposition(tag, addCases(tag, base, left), right)
     base
 
 
-define newCaseBody(tag, left, right)
+def newCaseBody(tag, left, right)
     with left as Arrow(_, type, _, _, _, body)
         base := with type as Simple;
             Juxtaposition(tag, Underscore(tag, 1), body) <| body
@@ -80,7 +80,7 @@ define newCaseBody(tag, left, right)
     syntaxError("internal error", left)
 
 
-define getCaseConstructors(arrow)
+def getCaseConstructors(arrow)
     with arrow as Arrow(_, type, constructors, parameter, _, _)
         with type as Simple
             [parameter]
@@ -88,7 +88,7 @@ define getCaseConstructors(arrow)
     []
 
 
-define isDefaultCase(arrow)
+def isDefaultCase(arrow)
     with arrow as Arrow(_, type, _, parameter, _, _)
         with type as Simple
             isUnderscore(getTag(parameter))
@@ -96,7 +96,7 @@ define isDefaultCase(arrow)
     False
 
 
-define getReconstructor(arrow)
+def getReconstructor(arrow)
     with arrow as Arrow(_, type, _, _, _, body)
         with type as Simple
             body
@@ -106,7 +106,7 @@ define getReconstructor(arrow)
     syntaxError("internal error", arrow)
 
 
-define chainCases(tag, arrow, fallback)
+def chainCases(tag, arrow, fallback)
     deconstructor := Name(addPrefix(getTag(arrow), '@'))
     reconstructor := getReconstructor(arrow)
     body := Juxtaposition(tag, Juxtaposition(tag, Juxtaposition(tag,
@@ -114,7 +114,7 @@ define chainCases(tag, arrow, fallback)
     SimpleArrow(Name(veil(tag)), body)
 
 
-define combineCases(tag, left, right)
+def combineCases(tag, left, right)
     if isDefaultCase(right)
         chainCases(tag, left, right)
     constructors := getCaseConstructors(left) ++ getCaseConstructors(right)

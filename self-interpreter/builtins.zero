@@ -1,28 +1,28 @@
 #* builtins.zero
 
-define getBuiltin(tag)
+def getBuiltin(tag)
     tag' := veil(tag)
     typeN := Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
     maxInteger := 9223372036854775807
 
-    define checkNatural(term)
+    def checkNatural(term)
         maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
 
-    define newBoolean(b)
+    def newBoolean(b)
         FreeFunction(tag', FreeFunction(tag',
             Variable(tag', if b then 1 else 2)))
 
-    define compute(f, left, right)
+    def compute(f, left, right)
         f(checkNatural(getTerm(left)), checkNatural(getTerm(right)))
 
-    define makeUnaryBuiltin(f, evaluate, arguments)
+    def makeUnaryBuiltin(f, evaluate, arguments)
         with arguments as argument :: arguments'
             argument' := evaluate(argument)
             Closure(Numeral(tag', typeN,
                 f(checkNatural(getTerm(argument')))), newArray([]))
         runtimeError("missing argument to", tag)
 
-    define makeBinaryBuiltin(constructor, f, evaluate, arguments)
+    def makeBinaryBuiltin(constructor, f, evaluate, arguments)
         with arguments as left :: arguments'
             with arguments' as right :: _
                 left' := evaluate(left)
@@ -31,37 +31,37 @@ define getBuiltin(tag)
             runtimeError("missing argument to", tag)
         runtimeError("missing argument to", tag)
 
-    define makeNaturalBuiltin(f, evaluate, arguments)
+    def makeNaturalBuiltin(f, evaluate, arguments)
         makeBinaryBuiltin(Numeral(tag', typeN), f, evaluate, arguments)
 
-    define makeComparisonBuiltin(f, evaluate, arguments)
+    def makeComparisonBuiltin(f, evaluate, arguments)
         makeBinaryBuiltin(newBoolean, f, evaluate, arguments)
 
-    define addBuiltin(left, right)
+    def addBuiltin(left, right)
         if left > maxInteger -- right
             runtimeError("overflow in", tag)
         left + right
 
-    define monusBuiltin(left, right)
+    def monusBuiltin(left, right)
         left -- right
 
-    define multiplyBuiltin(left, right)
+    def multiplyBuiltin(left, right)
         if right =/= 0 and left > maxInteger // right
             runtimeError("overflow in", tag)
         left * right
 
-    define divideBuiltin(left, right)
+    def divideBuiltin(left, right)
         left // right
 
-    define moduloBuiltin(left, right)
+    def moduloBuiltin(left, right)
         left % right
 
-    define incrementBuiltin(argument)
+    def incrementBuiltin(argument)
         if argument >= maxInteger
             runtimeError("overflow in", tag)
         argument + 1
 
-    define abortBuiltin(evaluate, arguments)
+    def abortBuiltin(evaluate, arguments)
         with arguments as argument :: _
             message := serializeString(evaluate, argument) ??
                 runtimeError("expected string argument to", tag)

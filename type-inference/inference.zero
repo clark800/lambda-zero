@@ -1,22 +1,22 @@
 #* inference.zero
 
-define pushContext(term, scheme, context @ (terms, schemes))
+def pushContext(term, scheme, context @ (terms, schemes))
     # TODO: replace schemes with an array of closures of types
     (terms.push(Closure(term, terms)), schemes.push(scheme))
 
 
-define pushParameter(scheme, context)
+def pushParameter(scheme, context)
     # TODO: term should be an atom
     pushContext(Top(noTag), scheme, context)
 
 
-define getAllFreeVariables(metacontext, metacontext')
+def getAllFreeVariables(metacontext, metacontext')
     indices := (0 ...)[0, metacontext.getSize]
     join(indices.map(MetaVariable(noTag)).map(
         getFreeVariables(metacontext'))).deduplicateBy(sameHead)
 
 
-define generalize(metacontext, oldMetacontext, type)
+def generalize(metacontext, oldMetacontext, type)
     syntax(\\) := syntax(\)
     vs \\ vs' := vs |: (v -> not vs'.any(sameHead(v)))
     type' := type.substitute(metacontext)
@@ -25,7 +25,7 @@ define generalize(metacontext, oldMetacontext, type)
     Scheme(universals, type')
 
 
-define newInstantiationMapping(universals, metacontext)
+def newInstantiationMapping(universals, metacontext)
     tags := universals.map(getTermTag)
     (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
     addresses := universals.map(maybeAddress).prune
@@ -33,19 +33,19 @@ define newInstantiationMapping(universals, metacontext)
     (mapping, metacontext')
 
 
-define instantiate(tag, metacontext, Scheme(universals, type))
+def instantiate(tag, metacontext, Scheme(universals, type))
     (mapping, metacontext') := newInstantiationMapping(universals, metacontext)
     (type.applyMapping(mapping).setLocation(tag), metacontext')
 
 
-define peelImplicits(type)
+def peelImplicits(type)
     with type as Implicit(tag, _, body)
         (tags, type') := peelImplicits(body)
         (tag :: tags, type')
     ([], type)
 
 
-define convertToScheme(metacontext, type)
+def convertToScheme(metacontext, type)
     # type may be wrapped in some implicits; we create a new metavariable
     # for each implicit, then substitute them in the type
     (tags, type') := peelImplicits(type)
@@ -55,11 +55,11 @@ define convertToScheme(metacontext, type)
     (Scheme(metaVariables, type''), metacontext')
 
 
-define instantiateType(metacontext, type)
+def instantiateType(metacontext, type)
     convertToScheme(metacontext, type).mapFirst(getType)
 
 
-define getInnerType(tag, outerType, environment)
+def getInnerType(tag, outerType, environment)
     _ @ Closure(construction, environment') :=
         evaluateClosure(Closure(outerType, environment))
     with construction as Construction(_, _, type)
@@ -67,13 +67,13 @@ define getInnerType(tag, outerType, environment)
     throwError("expected construction in case annotation", tag)
 
 
-define instantiateDomain(domain, metacontext)
+def instantiateDomain(domain, metacontext)
     if isMetaVariable(domain)
         metacontext.newMetaVariable(getTermTag(domain))
     instantiateType(metacontext, domain)
 
 
-define unifyCodomain(codomain, bodyType, context, metacontext)
+def unifyCodomain(codomain, bodyType, context, metacontext)
     if isMetaVariable(codomain)
         (bodyType, metacontext)
     metacontext' := unify(context, metacontext, (codomain, bodyType))
@@ -82,7 +82,7 @@ define unifyCodomain(codomain, bodyType, context, metacontext)
     (codomain, metacontext')
 
 
-define infer(context @ (environment, types), metacontext)
+def infer(context @ (environment, types), metacontext)
     case Top(tag)
         (Top(tag), metacontext)
     case Constant(tag, index)
@@ -144,14 +144,14 @@ define infer(context @ (environment, types), metacontext)
         instantiateType(metacontext, type)
 
 
-define getFixScheme(tag)
+def getFixScheme(tag)
     syntax(>->) := syntax(++)
     (>->) := Implication(tag)
     a := MetaVariable(veil(tag), 0)
     Scheme([a], (a >-> a) >-> a)
 
 
-define inferType(context, (tag, term))
+def inferType(context, (tag, term))
     if getTagLexeme(tag) =*= "fix"
         context.pushContext(term, getFixScheme(getTermTag(term)))
     metacontext := newArray([])
@@ -160,7 +160,7 @@ define inferType(context, (tag, term))
     context.pushContext(term, scheme)
 
 
-define main(input)
+def main(input)
     (tags, _, environment) := parse(input)
     terms := environment.toList.map(getTerm)
     context := (newArray([]), newArray([]))

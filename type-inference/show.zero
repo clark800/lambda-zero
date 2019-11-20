@@ -6,12 +6,12 @@ getUniversals(Scheme(universals, _)) := universals
 getType(Scheme(_, type)) := type
 
 
-define showScheme(Scheme(universals, term))
+def showScheme(Scheme(universals, term))
     universals.map(universal -> "∀" ++ showTerm(universal) ++ " ").join ++
         showTerm(term)
 
 
-define addRenaming((renaming, metacontext), type)
+def addRenaming((renaming, metacontext), type)
     with type as MetaVariable(source, address)
         if renaming.hasKey(address)
             (renaming, metacontext)
@@ -20,32 +20,32 @@ define addRenaming((renaming, metacontext), type)
     getComponents(type).cascade(addRenaming, (renaming, metacontext))
 
 
-define makeRenaming(type)
+def makeRenaming(type)
     renaming := newMapping([])
     metacontext := newArray([])
     first(addRenaming((renaming, metacontext), type))
 
 
-define showTypeWithRenaming(type, renaming)
+def showTypeWithRenaming(type, renaming)
     showTerm(type.applyMapping(renaming))
 
 
-define showUniversalsWithRenaming(universals, renaming)
+def showUniversalsWithRenaming(universals, renaming)
     universals.map(universal ->
         "∀" ++ showTypeWithRenaming(universal, renaming) ++ " ").join
 
 
-define showPrettyScheme(Scheme(universals, type))
+def showPrettyScheme(Scheme(universals, type))
     renaming := makeRenaming(type)
     showUniversalsWithRenaming(universals, renaming) ++
         showTypeWithRenaming(type, renaming)
 
 
-define showTyping((tag, scheme))
+def showTyping((tag, scheme))
     showTag(tag) ++ " : " ++ showPrettyScheme(scheme)
 
 
-define showTypings(typings)
+def showTypings(typings)
     typings.map(showTyping).joinWith("\n") ++ "\n"
 
 #*

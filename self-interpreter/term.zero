@@ -26,7 +26,7 @@ Term ::= {
             List(ClosureT(Term)) => ClosureT(Term)))
 }
 
-define getTermTag
+def getTermTag
     Top(tag) -> tag
     Constant(tag, _) -> tag
     Variable(tag, _) -> tag
@@ -55,27 +55,27 @@ isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _) -> True; _ -> False
 
 
-define CaseFunction(tag, domain, codomain, body)
+def CaseFunction(tag, domain, codomain, body)
     Function(tag, True, domain, codomain, body)
 
 
-define FreeFunction(tag, body)
+def FreeFunction(tag, body)
     meta := MetaVariable(veil(tag), 0)
     Function(tag, False, meta, meta, body)
 
 
-define splitSpine(term)
+def splitSpine(term)
     with term as Application(_, left, right)
         (applicand, arguments) := splitSpine(left)
         (applicand, arguments ++ [right])
     (term, [])
 
 
-define getTermHead(term)
+def getTermHead(term)
     first(splitSpine(term))
 
 
-define maybeAscription(node)
+def maybeAscription(node)
     with node as Element(_, type, _)
         Just(type)
     with node as Numeral(_, type, _)
@@ -85,78 +85,78 @@ define maybeAscription(node)
     Void
 
 
-define maybeDebruijnIndex(term)
+def maybeDebruijnIndex(term)
     with term as Variable(_, debruijn)
         Just(debruijn)
     Void
 
 
-define maybeBody(term)
+def maybeBody(term)
     with term as Function(_, _, _, _, body)
         Just(body)
     Void
 
 
-define maybeApplicand(term)
+def maybeApplicand(term)
     with term as Application(_, applicand, _)
         Just(applicand)
     Void
 
 
-define maybeArgument(term)
+def maybeArgument(term)
     with term as Application(_, _, argument)
         Just(argument)
     Void
 
 
-define maybeNatural(term)
+def maybeNatural(term)
     with term as Numeral(_, _, value)
         Just(value)
     Void
 
 
-define maybeAddress(type)
+def maybeAddress(type)
     with type as MetaVariable(_, address)
         Just(address)
     Void
 
 
-define maybeCount(node)
+def maybeCount(node)
     with node as Constructor(_, _, _, _, count, _)
         Just(count)
     Void
 
 
-define maybeConstructorIndex(node)
+def maybeConstructorIndex(node)
     with node as Constructor(_, _, _, _, _, index)
         Just(index)
     Void
 
 
-define maybeHead(term)
+def maybeHead(term)
     maybe body := maybeBody(term)
     maybe body' := maybeBody(body)
     maybe applicand := maybeApplicand(body')
     maybeArgument(applicand)
 
 
-define maybeTail(term)
+def maybeTail(term)
     maybe body := maybeBody(term)
     maybe body' := maybeBody(body)
     maybeArgument(body')
 
 
-define maybeIsNil(term)
+def maybeIsNil(term)
     # returns True for [], False for non-nil list, Void for non-list
     # term should be (n -> p -> n) or (n -> p -> ((p c) cs))
 
-    define ifNil(result)
+    def ifNil(result)
         maybe body := maybeBody(term)
         maybe body' := maybeBody(body)
         maybe debruijn := maybeDebruijnIndex(body')
         if debruijn = 2 then Just(result) else Void
 
-    define ifPush(result)
+    def ifPush(result)
         maybe body := maybeBody(term)
         maybe body' := maybeBody(body)
         maybe applicand := maybeApplicand(body')
@@ -167,7 +167,7 @@ define maybeIsNil(term)
     ifNil(Just(True)) ?? ifPush(Just(False)) ?? Void
 
 
-define setTag(tag)
+def setTag(tag)
     Top(_) -> Top(tag)
     Constant(_, index) -> Constant(tag, index)
     Variable(_, debruijn) -> Variable(tag, debruijn)
@@ -183,11 +183,11 @@ define setTag(tag)
     Operation(_, type, arity, operator) -> Operation(tag, type, arity, operator)
 
 
-define setLocation(Tag(_, _, location), term)
+def setLocation(Tag(_, _, location), term)
     term.setTag(getTermTag(term).setTagLocation(location))
 
 
-define sameConstant(a, b)
+def sameConstant(a, b)
     with a as Constant(_, indexA)
         with b as Constant(_, indexB)
             indexA = indexB
@@ -195,7 +195,7 @@ define sameConstant(a, b)
     False
 
 
-define isSameTerm(a, b)
+def isSameTerm(a, b)
     match a
         case Top(_)
             isTop(b)
@@ -247,7 +247,7 @@ define isSameTerm(a, b)
                 getTagLexeme(tag) =*= getTagLexeme(tag')
             False
 
-define sameHead(term)
+def sameHead(term)
     case Top(_)
         isTop(term)
     case Constant(_, index)
@@ -283,7 +283,7 @@ define sameHead(term)
         False
 
 
-define getComponents
+def getComponents
     Top(_) -> []
     Constant(_, _) -> []
     Variable(_, _) -> []
@@ -298,7 +298,7 @@ define getComponents
     Operation(_, _, _, _) -> []
 
 
-define mapComponents(f, term)
+def mapComponents(f, term)
     match term
         Top(_) -> term
         Constant(_, _) -> term
@@ -317,13 +317,13 @@ define mapComponents(f, term)
         Operation(_, _, _, _) -> term
 
 
-define getSuffix(count, index)
+def getSuffix(count, index)
     if count <= 1 or index = 0 then ""
     subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
     showNatural(index).map(x -> subscripts.at(x -- '0') ?? "").join
 
 
-define showConstruction(showTerm, headTag, arguments)
+def showConstruction(showTerm, headTag, arguments)
     argumentStrings := arguments.map(showTerm)
     with argumentStrings as argumentString :: argumentStrings'
         fixity := getTagFixity(headTag)
@@ -339,21 +339,21 @@ define showConstruction(showTerm, headTag, arguments)
     showTag(headTag)
 
 
-define showApplication(showTerm, applicand, argument)
+def showApplication(showTerm, applicand, argument)
     (headTerm, applicandArguments) := splitSpine(applicand)
     headTag := getTermTag(headTerm)
     arguments := applicandArguments ++ [argument]
     showConstruction(showTerm, headTag, arguments)
 
 
-define showMetaVariable(n)
+def showMetaVariable(n)
     characters := ['a', 'b', 'c', 'd']
     if n < 4
         [characters.at(n) ?? '#']
     showMetaVariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
 
 
-define showTerm
+def showTerm
     Top(_) -> "⊤"
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
@@ -375,11 +375,11 @@ define showTerm
     Operation(tag, _, _, _) -> showTag(tag)
 
 
-define showTermLocation(term)
+def showTermLocation(term)
     showLocation(getTagLocation(getTermTag(term)))
 
 
-define showTermAndLocation(term)
+def showTermAndLocation(term)
     showTerm(term) ++ " at " ++ showTermLocation(term)
 
 #*
