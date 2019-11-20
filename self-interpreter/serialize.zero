@@ -1,7 +1,7 @@
 #* serialize.zero
 
-define serialize(closure)
-    define serialize'(Closure(term, environment), depth)
+def serialize(closure)
+    def serialize'(Closure(term, environment), depth)
         match term
             case Top(tag)
                 "⊤"
@@ -44,7 +44,7 @@ define serialize(closure)
     if result.length = 0 then "" else result
 
 
-define serializeString(evaluateClosure, closure)
+def serializeString(evaluateClosure, closure)
     closure' := evaluateClosure(closure)
     term := getTerm(closure')
     maybe nil := maybeIsNil(term)

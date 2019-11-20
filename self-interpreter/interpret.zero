@@ -1,25 +1,25 @@
 #* interpret.zero
 
-define splitCodeAndInput(input)
+def splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
     afterCode |> [] -> (code, []); _ :: input' -> (code, input')
 
 
-define isMain(term)
+def isMain(term)
     # todo: detect the name "main" rather than parameter name "input"
     isFunction(term) and getTagLexeme(getTermTag(term)) =*= "input"
 
 
-define newNilTerm(tag)
+def newNilTerm(tag)
     FreeFunction(tag, FreeFunction(tag, Variable(tag, 2)))
 
 
-define constructString(tag, string)
+def constructString(tag, string)
     # todo: implement this
     newNilTerm(veil(tag))
 
 
-define evaluateMain(Closure(main, environment), input)
+def evaluateMain(Closure(main, environment), input)
     # todo: use tag for "input" parameter to main
     tag := getTermTag(main)
     term := Application(tag, main, constructString(tag, input))
@@ -27,16 +27,16 @@ define evaluateMain(Closure(main, environment), input)
         runtimeError("expected string from", tag)
 
 
-define showDefinition((tag, term))
+def showDefinition((tag, term))
     showTag(tag) ++ " := " ++ showTerm(term)
 
 
-define showDefinitions(tags, environment)
+def showDefinitions(tags, environment)
     terms := environment.toList.map(getTerm)
     zip(tags, terms).map(showDefinition).joinWith("\n")
 
 
-define main(input)
+def main(input)
     (code, input') := splitCodeAndInput(input)
     (tags, context, environment) := parse(code)
     term := environment.peek(0).mapJust(getTerm) ?? abort("No input")

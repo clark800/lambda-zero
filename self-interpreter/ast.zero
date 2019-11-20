@@ -58,7 +58,7 @@ AST ::= {
     Null(tag : TagT)
 }
 
-define lockArrow(node)
+def lockArrow(node)
     with node as Arrow(tag, arrowType, constructors, left, annotation, right)
         with arrowType as Simple
             Arrow(tag, Locked, constructors, left, annotation, right)
@@ -67,7 +67,7 @@ define lockArrow(node)
         node
     node
 
-define getTag
+def getTag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
@@ -85,7 +85,7 @@ define getTag
     TypedNode(tag, _, _) -> tag
     Null(tag) -> tag
 
-define containsName(name)
+def containsName(name)
     Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
@@ -106,7 +106,7 @@ define containsName(name)
     Null(_) -> False
 
 
-define showArrow
+def showArrow
     Simple -> " -> "
     Strict -> " -> "
     Locked -> " -> "
@@ -114,7 +114,7 @@ define showArrow
     Squiggle -> " ~> "
 
 
-define showAST
+def showAST
     Reference(tag, _) -> showTag(tag)
     Arrow(tag, arrowType, _, parameter, annotation, body) ->
         "(" ++ showAST(parameter) ++
@@ -175,7 +175,7 @@ DoubleArrow(left, right) :=
 ImplicitArrow(parameter, body) :=
     Arrow(getTag(parameter), Squiggle, [], parameter, Null(noTag), body)
 
-define setAnnotation(annotation, node)
+def setAnnotation(annotation, node)
     with node as Arrow(tag, arrowType, constructors, parameter, _, body)
         Arrow(tag, arrowType, constructors, parameter, annotation, body)
     abort("can only set annotation on arrow nodes")
@@ -206,7 +206,7 @@ wrapLeftSection(tag, body) :=
 wrapRightSection(tag, body) :=
     LockedArrow(Name(renameTag(tag, ".*", NOFIX)), body)
 
-define wrapSection(tag, section)
+def wrapSection(tag, section)
     with section as Section(_, side, body)
         match side
             case LeftSection

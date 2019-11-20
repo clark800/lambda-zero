@@ -1,40 +1,40 @@
 #* bind.zero
 
-define findParameter(level, stack, lexeme)
+def findParameter(level, stack, lexeme)
     with stack as table :: _
         table.lookup(lexeme).mapJust(mapFirst((level --)))
     Void
 
 
-define findDefiniens(stack, lexeme)
+def findDefiniens(stack, lexeme)
     with stack as table :: _
         table.lookup(lexeme).mapJust(second) ?? Void
     Void
 
 
-define pushParameter(parameter, level, maybeNode, stack)
+def pushParameter(parameter, level, maybeNode, stack)
     lexeme := getLexeme(parameter)
     with stack as top :: stack'
         top.insert(lexeme, (level, maybeNode)) :: stack'
     [newDictionary([(lexeme, (level, maybeNode))])]
 
 
-define findType(lexeme, context)
+def findType(lexeme, context)
     with context.lookup(lexeme) as Just(((_, term), _))
         maybeAscription(term)
     Void
 
 
-define getNaturalType(context)
+def getNaturalType(context)
     context.findType("0") ?? Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
 
 
-define getBooleanType(context)
+def getBooleanType(context)
     context.findType("False") ??
         Variable(renameTag(noTag, "#BOOLEAN#", NOFIX), 0)
 
 
-define getStringType(context, tag)
+def getStringType(context, tag)
     natural := getNaturalType(context)
     listType := context.findType("[]") ??
         parseError("List not defined", tag)
@@ -45,7 +45,7 @@ define getStringType(context, tag)
     parseError("List type invalid", tag)
 
 
-define getOperationType(context, tag)
+def getOperationType(context, tag)
     tag' := veil(tag)
     lexeme := getTagLexeme(tag)
     syntax(>->) := syntax(++)
@@ -68,23 +68,23 @@ define getOperationType(context, tag)
     Void
 
 
-define bindOperation(context, tag)
+def bindOperation(context, tag)
     maybe (arity, optimize) := getBuiltin(tag)
     maybe type := getOperationType(context, tag)
     Just(Operation(tag, type, arity, optimize))
 
 
-define bindVariable(level, stack, tag)
+def bindVariable(level, stack, tag)
     lexeme := getTagLexeme(tag)
     maybe (debruijn, maybeValue) := findParameter(level, stack, lexeme)
     Just(Variable(tag, debruijn))
 
 
-define bindContextTerm(context, tag)
+def bindContextTerm(context, tag)
     context.lookup(getTagLexeme(tag)).mapJust(second)
 
 
-define bindName(level, stack, context, tag)
+def bindName(level, stack, context, tag)
     if isUnused(tag)
         parseError("cannot reference a symbol starting with underscore", tag)
     bindVariable(level, stack, tag) ??
@@ -93,19 +93,19 @@ define bindName(level, stack, context, tag)
         parseError("undefined symbol", tag)
 
 
-define getADTName(constructor)
+def getADTName(constructor)
     with constructor as Constructor(_, _, adtType, _, _, _)
         getLexeme(getHead(adtType))
     syntaxError("invalid constructor", constructor)
 
 
-define getConstructionTypeAST(constructor)
+def getConstructionTypeAST(constructor)
     with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
         getArguments(adtType).fold(ImplicitArrow, adtType)
     syntaxError("invalid constructor", constructor)
 
 
-define constructCaseAnnotation(tag, constructors)
+def constructCaseAnnotation(tag, constructors)
     if isNil(constructors)
         throwError("Type error: no cases:", tag)
     if not constructors.all(isConstructor)
@@ -128,7 +128,7 @@ define constructCaseAnnotation(tag, constructors)
     getConstructionTypeAST(constructor)
 
 
-define buildCaseAnnotation(tag, constructorNames, context)
+def buildCaseAnnotation(tag, constructorNames, context)
     with constructorNames.map(getLexeme).map(`lookup(context)).sequence as
             Just(constructorPairs)
         constructors := constructorPairs.map(first).map(first)
@@ -136,7 +136,7 @@ define buildCaseAnnotation(tag, constructorNames, context)
     Void
 
 
-define bind(level, stack, context, node)
+def bind(level, stack, context, node)
     match node
         case Reference(tag, debruijn)
             if debruijn = 0
@@ -219,12 +219,12 @@ define bind(level, stack, context, node)
             abort "internal error: Null reached bind"
 
 
-define bindGlobal(context, node)
+def bindGlobal(context, node)
     stack := [newDictionary([])]
     bind(0, stack, context, node)
 
 
-define bindDefinition(state, (tag, node))
+def bindDefinition(state, (tag, node))
     (tags, context, environment) := state
     term := bindGlobal(context, node)
     (index, environment') := environment.append(Closure(term, environment))
@@ -233,13 +233,13 @@ define bindDefinition(state, (tag, node))
     (tag :: tags, context', environment')
 
 
-define getDefinitions(node)
+def getDefinitions(node)
     with node as Let(tag, isTypeConstructor, name, value, scope)
         (getTag(name), value) :: getDefinitions(scope)
     [(veil(getTag(node)), node)]
 
 
-define bindAST(node)
+def bindAST(node)
     # TODO: make state a parameter so we can bind with an existing state
     state := ([], newDictionary([]), newArray([]))
     state' := getDefinitions(node).cascade(bindDefinition, state)

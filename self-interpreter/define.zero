@@ -1,45 +1,45 @@
 #* define.zero
 
-define isTupleConstructor(node)
+def isTupleConstructor(node)
     isName(node) and getLexeme(node).startsWith(",")
 
 
-define isTuple(node)
+def isTuple(node)
     with node as Juxtaposition(_, left, _)
         isTuple(left)
     isTupleConstructor(node)
 
 
-define applyPlainDefinition(tag, name, value, scope)
+def applyPlainDefinition(tag, name, value, scope)
     if isName(name)
         Let(tag, False, name, value, scope)
     Juxtaposition(tag, newPatternArrow(name, scope), value)
 
 
-define applyMaybeDefinition(tag, name, value, scope)
+def applyMaybeDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, Name(renameTag(tag, "onJust", NOFIX)),
         newPatternArrow(name, scope)), value)
 
 
-define applyTryDefinition(tag, name, value, scope)
+def applyTryDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag,
         Name(renameTag(tag, "onRight", NOFIX)),
         newPatternArrow(name, scope)), value)
 
 
-define applyFix(name, value)
+def applyFix(name, value)
     tag := getTag(name)
     fix' := Name(renameTag(tag, "fix", NOFIX))
     Juxtaposition(tag, fix', LockedArrow(name, value))
 
 
-define transformRecursion(name, value)
+def transformRecursion(name, value)
     if not isName(name) or not isArrow(value) or not containsName(name, value)
         value
     applyFix(name, value)
 
 
-define isValidPattern(node)
+def isValidPattern(node)
     if isName(node)
         True
     with node as ColonPair(_, left, _)
@@ -53,13 +53,13 @@ define isValidPattern(node)
     False
 
 
-define isValidConstructorParameter(parameter)
+def isValidConstructorParameter(parameter)
     with parameter as ColonPair(_, left, right)
         isName(left) and isValidPattern(right)
     False
 
 
-define readParameterTypes(form)
+def readParameterTypes(form)
     with form as Juxtaposition(_, left, right)
         with right as ColonPair(_, _, type)
             readParameterTypes(left) ++ [type]
@@ -67,20 +67,20 @@ define readParameterTypes(form)
     []
 
 
-define newReconstructorAST'(parameterTypeASTs, returnTypeAST)
+def newReconstructorAST'(parameterTypeASTs, returnTypeAST)
     with parameterTypeASTs as parameterTypeAST :: parameterTypeASTs'
         bodyTypeAST := newReconstructorAST'(parameterTypeASTs', returnTypeAST)
         DoubleArrow(parameterTypeAST, bodyTypeAST)
     returnTypeAST
 
 
-define newReconstructorAST(parameterTypeASTs, returnTypeAST)
+def newReconstructorAST(parameterTypeASTs, returnTypeAST)
     typeAST := newReconstructorAST'(parameterTypeASTs, returnTypeAST)
     parameters := getArguments(returnTypeAST)
     parameters.fold(ImplicitArrow, typeAST)
 
 
-define getConstructorBody(name, n, m, j)
+def getConstructorBody(name, n, m, j)
     tag := getTag(name)
     with name as Number(tag, value)
         if value =/= 0
@@ -97,7 +97,7 @@ define getConstructorBody(name, n, m, j)
     (UnderscoreArrow(tag)^<>(n + m))(base)
 
 
-define newConstructorDefinition(tag, dataType, n, (form, j), scope)
+def newConstructorDefinition(tag, dataType, n, (form, j), scope)
     parameters := getArguments(form)
     m := length(parameters)
     name := getHead(form)
@@ -113,14 +113,14 @@ define newConstructorDefinition(tag, dataType, n, (form, j), scope)
     applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
 
 
-define newFallbackCase(tag, m)
+def newFallbackCase(tag, m)
     fallback := Underscore(tag, m + 2)
     instance := Underscore(tag, m + 1)
     body := Juxtaposition(tag, fallback, instance)
     (1 .. m).cascade(b -> _ -> UnderscoreArrow(tag, b), body)
 
 
-define newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
+def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
     # todo: change name from "r" so it can't clash with user's names
     returnType := Name(renameTag(tag, "r", NOFIX))
     reconstructorType := newReconstructorAST'(parameterTypeASTs, returnType)
@@ -132,7 +132,7 @@ define newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
     ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
 
 
-define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
+def newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
     reconstructor := Underscore(tag, 3)
     arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
         newFallbackCase(tag, ms.at(k -- 1) ?? 0))
@@ -146,20 +146,20 @@ define newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
     applyPlainDefinition(tag, name, deconstructor, scope)
 
 
-define newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
+def newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
     # define deconstructor first in case the constructor name is the same
     # as the ADT name: this ensures that we always bind the ADT name
     scope' := newConstructorDefinition(tag, dataType, n, formj, scope)
     newDeconstructorDefinition(tag, dataType, n, ms, formj, scope')
 
 
-define getAnnotation(node)
+def getAnnotation(node)
     with node as ColonPair(_, _, right)
         right
     syntaxError("missing annotation", node)
 
 
-define newADT(tag, parameters, forms)
+def newADT(tag, parameters, forms)
     # todo: change name from "r" so it can't clash with user's names
     returnType := Name(renameTag(tag, "r", NOFIX))
     annotations := forms.map(getArguments).map(map(getAnnotation))
@@ -169,7 +169,7 @@ define newADT(tag, parameters, forms)
     ADT(tag, parameters, objectType)
 
 
-define applyADTDefinition(tag, left, right, scope)
+def applyADTDefinition(tag, left, right, scope)
     with right as SetBuilder(_, forms)
         n := length(forms)
         ms := forms.map(length <> getArguments)
@@ -190,7 +190,7 @@ define applyADTDefinition(tag, left, right, scope)
     syntaxError("internal error", left)
 
 
-define applyDefinition(definition, scope)
+def applyDefinition(definition, scope)
     with definition as Definition(tag, type, name, value)
         match type
             PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
@@ -201,7 +201,7 @@ define applyDefinition(definition, scope)
     syntaxError("internal error", definition)
 
 
-define reduceDefine'(tag, definitionType, left, right)
+def reduceDefine'(tag, definitionType, left, right)
     with left as ColonPair(tag', left', codomain)
         reduceDefine'(tag, definitionType, left',
             ColonPair(tag', right, codomain))
@@ -215,7 +215,7 @@ define reduceDefine'(tag, definitionType, left, right)
     Definition(tag, definitionType, name, transformRecursion(name, value))
 
 
-define reduceDefine(operator, left, right)
+def reduceDefine(operator, left, right)
     tag := getTag(operator)
     if isDefinition(right)   # todo: remove after converting exceptions
         syntaxError("missing scope for definition", right)
@@ -230,7 +230,7 @@ define reduceDefine(operator, left, right)
     reduceDefine'(tag, PlainDefinition, left, right)
 
 
-define reduceADTDefine(operator, left, right)
+def reduceADTDefine(operator, left, right)
     if not isValidPattern(left)
         syntaxError("invalid left hand side", operator)
     if not isSetBuilder(right)

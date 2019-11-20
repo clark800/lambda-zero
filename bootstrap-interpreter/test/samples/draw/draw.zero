@@ -1,6 +1,6 @@
 #* draw.zero
 
-define handleEvent(event, state)
+def handleEvent(event, state)
     eventCode := event.lookup("code") ?? 0
     if eventCode = ERROR
         abort(showEvent(event))
@@ -13,7 +13,7 @@ define handleEvent(event, state)
     Just((NO_RESPONSE, state))
 
 
-define main(input)
+def main(input)
     XWindow(defaultWindow(600, 500), handleEvent, input)
 
 #*

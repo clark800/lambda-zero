@@ -1,18 +1,18 @@
 #* errors.zero
 
-define throwError(message, tag)
+def throwError(message, tag)
     abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
 
 
-define parseError(message, tag)
+def parseError(message, tag)
     throwError("Syntax error: " ++ message, tag)
 
 
-define syntaxError(message, node)
+def syntaxError(message, node)
     parseError(message, getTag(node))
 
 
-define runtimeError(message, tag)
+def runtimeError(message, tag)
     throwError("\nRuntime error: " ++ message, tag)
 
 #*

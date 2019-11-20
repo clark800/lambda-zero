@@ -1,12 +1,12 @@
 #* evaluate.zero
 
-define expandNumeral(tag, type, n)
+def expandNumeral(tag, type, n)
     FreeFunction(tag, FreeFunction(tag,
             n |> 0 -> Variable(tag, 2); up n' ->
                 Application(tag, Variable(tag, 1), Numeral(tag, type, n'))))
 
 
-define evaluate(stack, closure @ Closure(term, environment))
+def evaluate(stack, closure @ Closure(term, environment))
     match term
         case Top(tag)
             closure
@@ -45,11 +45,11 @@ define evaluate(stack, closure @ Closure(term, environment))
             evaluate(stack.drop(arity), result)
 
 
-define evaluateClosure(closure)
+def evaluateClosure(closure)
     evaluate([], closure)
 
 
-define evaluateTerm(environment, term)
+def evaluateTerm(environment, term)
     evaluateClosure(Closure(term, environment))
 
 #*

@@ -65,7 +65,7 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
 
     if (isDefinition(left))
         return applyDefinition(left, right);
-    if (isKeyphrase(left, "define"))
+    if (isKeyphrase(left, "def"))
         return reduceDefine(getLeft(left), getRight(left), right);
     if (isCase(left) && isCase(right))
         return combineCases(getTag(operator), left, right);
@@ -148,7 +148,7 @@ void initSymbols(void) {
     addCoreSyntax(",", 2, INFIX, L, reduceCommaPair);
     addCoreSyntax("\n", 3, INFIX, R, reduceNewline);
     addCoreSyntax(";;", 4, INFIX, R, reduceNewline);
-    addCoreSyntax("define", 5, PREFIX, L, reducePrefix);
+    addCoreSyntax("def", 5, PREFIX, L, reducePrefix);
     addCoreSyntax(":=", 5, INFIX, R, reduceDefine);
     addCoreSyntax("::=", 5, INFIX, R, reduceADTDefinition);
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);

@@ -32,17 +32,17 @@ isInvalid(c) := c =/= 0 and isControl(c) and not isLineFeed(c)
 isDelimiter(c) := " `.,;@#$()[]{}\"\n\0".any((= c)) or isInvalid(c)
 isRepeatable(c) := " `.,;".any((= c))
 
-define startsWithDigit(lexeme)
+def startsWithDigit(lexeme)
     with lexeme as n :: _
         isDigit(n)
     False
 
-define isNumeric(lexeme)
+def isNumeric(lexeme)
     with lexeme as n :: ns
         isDigit(n) or ((n = '+' or n = '-') and startsWithDigit(ns))
     False
 
-define splitQuoteCharacter(quote, ns)
+def splitQuoteCharacter(quote, ns)
     with ns as n :: ns'
         if n = quote or isLineFeed(n)
             ([], ns)
@@ -50,10 +50,10 @@ define splitQuoteCharacter(quote, ns)
         ns.splitAt(n')
     ([], ns)
 
-define shiftSplit((a, b))
+def shiftSplit((a, b))
     b |> [] -> (a, b); n :: ns -> (a ++ [n], ns)
 
-define splitQuote(ns)
+def splitQuote(ns)
     with ns as quote :: ns'
         (a, b) := ns'.splitWith(splitQuoteCharacter(quote))
         with b as quote' :: _
@@ -63,7 +63,7 @@ define splitQuote(ns)
         (quote :: a, b)
     ([], [])
 
-define splitNumeric(ns)
+def splitNumeric(ns)
     (before, after) := ns.splitWhen(isDelimiter)
     with after as n :: ns'
         if n =/= '.' or not startsWithDigit(ns')
@@ -72,13 +72,13 @@ define splitNumeric(ns)
         (before ++ [n] ++ before', after')
     (before, after)
 
-define splitNewline(ns)
+def splitNewline(ns)
     with ns as n :: ns'
         (before, after) := ns'.splitWhen((=/= ' '))
         (n :: before, after)
     ([], [])
 
-define splitLexeme(ns)
+def splitLexeme(ns)
     with ns as c :: ns'
         if c.isLineFeed then splitNewline(ns)
         if c.isQuote then splitQuote(ns)
@@ -89,7 +89,7 @@ define splitLexeme(ns)
         ns.splitWhen(isDelimiter)
     ([], [])
 
-define advanceLocation(Location(file, line, column), lexeme)
+def advanceLocation(Location(file, line, column), lexeme)
     if lexeme.startsWith("#*")
         (_, after) := lexeme.drop(2).splitWhen((=/= ' '))
         (file', _) := after.splitWhen(isLineFeed)
@@ -98,7 +98,7 @@ define advanceLocation(Location(file, line, column), lexeme)
         Location(file, line + 1, length(lexeme))
     Location(file, line, column + length(lexeme))
 
-define splitLexemes(splitter, location, string)
+def splitLexemes(splitter, location, string)
     if string.isNil
         []
     (lexeme, remaining) := splitter(string)
@@ -106,14 +106,14 @@ define splitLexemes(splitter, location, string)
     Tag(lexeme, NOFIX, location) ::
         remaining.splitLexemes(splitter, nextLocation)
 
-define scan(string)
+def scan(string)
     string.splitLexemes(splitLexeme, Location("", 1, 1))
 
-define showLocation(Location(file, line, column))
+def showLocation(Location(file, line, column))
     (if isNil(file) then "" else file ++ " ") ++
         "line " ++ showNatural(line) ++ " column " ++ showNatural(column)
 
-define showTag(Tag(lexeme, fixity, _))
+def showTag(Tag(lexeme, fixity, _))
     with lexeme as c :: _
         if c = 0 then "\\0"
         if c = '\n' then "\\n"
@@ -121,12 +121,12 @@ define showTag(Tag(lexeme, fixity, _))
         "(" ++ lexeme ++ ")"
     "\\0"
 
-define showQuotedLexeme(lexeme)
+def showQuotedLexeme(lexeme)
     with lexeme as c :: _
         if c = '\n' then "(end of line)" else pass
     "'" ++ lexeme ++ "'"
 
-define showTagWithLocation(Tag(lexeme, _, location))
+def showTagWithLocation(Tag(lexeme, _, location))
     showQuotedLexeme(lexeme) ++ " at " ++ showLocation(location)
 
 TokenCode ::= {
@@ -139,14 +139,14 @@ TokenT ::= {Token(tag : TagT, code : TokenCode)}
 getTokenTag(Token(tag, _)) := tag
 getTokenCode(Token(_, code)) := code
 
-define createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
+def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
     with nextLexeme as c :: _
         if isLineFeed(c) or isComment(c)
             Token(tag, VSpace)
         Token(tag, Newline)
     Token(tag, VSpace)
 
-define createToken(tag @ Tag(lexeme, _, _), nextTag)
+def createToken(tag @ Tag(lexeme, _, _), nextTag)
     with lexeme as c :: _
         if c = ' ' then Token(tag, Space)
         if c = '\n' then createLineFeedToken(tag, nextTag)
@@ -158,23 +158,23 @@ define createToken(tag @ Tag(lexeme, _, _), nextTag)
         Token(tag, Symbolic)
     Token(tag, Symbolic)
 
-define isElided(token)
+def isElided(token)
     match getTokenCode(token)
         Comment -> True
         Space -> True
         VSpace -> True
         _ -> False
 
-define showToken(token)
+def showToken(token)
     showTag(getTokenTag(token))
 
-define noTag
+def noTag
     Tag("", NOFIX, Location("", 0, 0))
 
-define START
+def START
     Token(Tag("\0", NOFIX, Location("", 0, 0)), Symbolic)
 
-define lex(string)
+def lex(string)
     pairs(scan(string) ++ [noTag]).map(uncurry(createToken))
 
 #main(input) := scan(input).map(showTag).joinWith("\n")

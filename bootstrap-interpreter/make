@@ -93,7 +93,7 @@ compress() {
 }
 
 config_fast() {
-    GCC_FLAGS="-DNDEBUG -Os -flto $GCC_FLAGS"
+    GCC_FLAGS="-DNDEBUG -O3 -flto $GCC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 

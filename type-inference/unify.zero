@@ -1,6 +1,6 @@
 #* unify.zero
 
-define unificationError(originals, left, right)
+def unificationError(originals, left, right)
     abort("Type error: Can't unify\n" ++
         showTerm(left) ++ "\nwith\n" ++ showTerm(right) ++
         "\nwhile trying to unify\n" ++
@@ -9,18 +9,18 @@ define unificationError(originals, left, right)
         showTermAndLocation(second(originals)))
 
 
-define unifyFailure(originals, metacontext, (left, right))
+def unifyFailure(originals, metacontext, (left, right))
     unificationError(originals.mapPair(substitute(metacontext)),
         left.substitute(metacontext), right.substitute(metacontext))
 
 
-define isFree(variable, metacontext)
+def isFree(variable, metacontext)
     with variable as MetaVariable(_, address)
         isVoid(metacontext.get(address) ?? Void)
     False
 
 
-define getValue(type, metacontext)
+def getValue(type, metacontext)
     with type as MetaVariable(_, address)
         with metacontext.get(address) ?? Void as Just(closure)
             closure
@@ -28,7 +28,7 @@ define getValue(type, metacontext)
     throwError("internal error", getTermTag(type))
 
 
-define getComponentClosures(Closure(term, environment))
+def getComponentClosures(Closure(term, environment))
     # TODO: right side of binders need an extra item in the environment
     getComponents(term).map(`Closure(environment))
 
@@ -36,7 +36,7 @@ define getComponentClosures(Closure(term, environment))
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
-define unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
+def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
     leftClosure := evaluateClosure(leftClosureRaw)
     rightClosure := evaluateClosure(rightClosureRaw)
     _ @ Closure(left, leftEnvironment) := leftClosure
@@ -67,7 +67,7 @@ define unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
     fail(metacontext, (left, right))
 
 
-define unify(context, metacontext, types @ (left, right))
+def unify(context, metacontext, types @ (left, right))
     (environment, _) := context
     closures := (Closure(left, environment), Closure(right, environment))
     fail := unifyFailure(types)

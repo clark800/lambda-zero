@@ -118,45 +118,45 @@ POLY_FILL_RECTANGLE := 70
 GET_KEYBOARD_MAPPING := 101
 
 
-define byte(n)
+def byte(n)
     [n % 256]
 
 
-define word(n)
+def word(n)
     [n % 256, (n // 256) % 256]
 
 
-define quad(n)
+def quad(n)
     n1 := n // 256
     n2 := n1 // 256
     n3 := n2 // 256
     [n % 256, n1 % 256, n2 % 256, n3 % 256]
 
 
-define pad(n)
+def pad(n)
     (4 -- n % 4) % 4
 
 
-define align(n)
+def align(n)
     n + pad(n)
 
 
-define zeros(n)
+def zeros(n)
     replicate(n, 0)
 
 
-define stream.read(n)
+def stream.read(n)
     result := stream.splitAt(n)
     if length(first(result)) =/= n
         abort("connection dropped")
     result
 
 
-define parseBytes(data)
+def parseBytes(data)
     data.fold(n -> N -> 256 * N + n, 0)
 
 
-define connectRequest
+def connectRequest
     byteOrder := byte(108)   # least significant byte first
     protocolMajorVersion := word(11)
     protocolMinorVersion := word(0)
@@ -172,7 +172,7 @@ define connectRequest
     word(UNUSED)
 
 
-define parseHeader(header)
+def parseHeader(header)
     newDictionary([
         ("status", parseBytes(header[0, 1])),
         ("unused", parseBytes(header[1, 2])),
@@ -182,7 +182,7 @@ define parseHeader(header)
     ])
 
 
-define parseFormat(data)
+def parseFormat(data)
     newDictionary([
         ("depth", parseBytes(data[0, 1])),
         ("bits-per-pixel", parseBytes(data[1, 2])),
@@ -190,12 +190,12 @@ define parseFormat(data)
     ])
 
 
-define parseFormats(data)
+def parseFormats(data)
     # TODO: parse multiple formats
     [parseFormat(data)]
 
 
-define parseScreen(data)
+def parseScreen(data)
     newDictionary([
         ("root", parseBytes(data[0, 4])),
         ("default-colormap", parseBytes(data[4, 8])),
@@ -217,12 +217,12 @@ define parseScreen(data)
     ])
 
 
-define parseScreens(data)
+def parseScreens(data)
     # TODO: parse multiple screens
     [parseScreen(data)]
 
 
-define parseServerData(header, data)
+def parseServerData(header, data)
     info := newDictionary([
         ("status", parseBytes(header[0, 1])),
         ("unused1", parseBytes(header[1, 2])),
@@ -256,14 +256,14 @@ define parseServerData(header, data)
     (info, vendor, formats, screens)
 
 
-define getConnectionSuccessResponse(stream)
+def getConnectionSuccessResponse(stream)
     (header, stream') := stream.read(8)
     length := 4 * parseBytes(header[6, 8])
     (data, stream'') := stream'.read(length)
     (parseServerData(header, data), stream'')
 
 
-define getConnectionResponse(stream)
+def getConnectionResponse(stream)
     with stream as status :: stream'
         if status = 0
             abort("Failed to connect to X Server")
@@ -276,11 +276,11 @@ define getConnectionResponse(stream)
 
 
 # note: request length includes the header and is expressed in units of 4 bytes
-define makeHeader(opcode, data, length)
+def makeHeader(opcode, data, length)
     byte(opcode) ++ byte(data) ++ word(length)
 
 
-define createWindow(windowID, parentID, x, y, width, height)
+def createWindow(windowID, parentID, x, y, width, height)
     borderWidth := 1
     windowClass := word(INPUT_OUTPUT)
     visualID := quad(INHERIT)
@@ -301,11 +301,11 @@ define createWindow(windowID, parentID, x, y, width, height)
     eventMask
 
 
-define mapWindow(windowID)
+def mapWindow(windowID)
     makeHeader(MAP_WINDOW, UNUSED, 2) ++ quad(windowID)
 
 
-define wmHint(windowID)
+def wmHint(windowID)
     # WM_NORMAL_HINTS is stored with a type of WM_SIZE_HINTS and a format of 32
     # # https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html
     propertyID := WM_NORMAL_HINTS
@@ -327,7 +327,7 @@ define wmHint(windowID)
     zeros(4 * (dataLength -- 1))
 
 
-define createGC(contextID, windowID, function, foreground, background)
+def createGC(contextID, windowID, function, foreground, background)
     makeHeader(CREATE_GC, UNUSED, 7) ++
     quad(contextID) ++
     quad(windowID) ++
@@ -337,7 +337,7 @@ define createGC(contextID, windowID, function, foreground, background)
     quad(background)
 
 
-define fillRectangle(contextID, windowID, x, y, width, height)
+def fillRectangle(contextID, windowID, x, y, width, height)
     makeHeader(POLY_FILL_RECTANGLE, UNUSED, 5) ++
     quad(windowID) ++
     quad(contextID) ++
@@ -347,14 +347,14 @@ define fillRectangle(contextID, windowID, x, y, width, height)
     word(height)
 
 
-define getKeyboardMapping(firstKeycode, count)
+def getKeyboardMapping(firstKeycode, count)
     makeHeader(GET_KEYBOARD_MAPPING, UNUSED, 2) ++
     byte(firstKeycode) ++
     byte(count) ++
     word(UNUSED)
 
 
-define parseError(error)
+def parseError(error)
     newDictionary([
         ("code", parseBytes(error[0, 1])),
         ("error-code", parseBytes(error[1, 2])),
@@ -365,7 +365,7 @@ define parseError(error)
     ])
 
 
-define parseExpose(event)
+def parseExpose(event)
     newDictionary([
         ("code", parseBytes(event[0, 1])),
         ("unused", parseBytes(event[1, 2])),
@@ -379,7 +379,7 @@ define parseExpose(event)
     ])
 
 
-define parseMapNotify(event)
+def parseMapNotify(event)
     newDictionary([
         ("code", parseBytes(event[0, 1])),
         ("unused", parseBytes(event[1, 2])),
@@ -390,7 +390,7 @@ define parseMapNotify(event)
     ])
 
 
-define parseClick(event)
+def parseClick(event)
     newDictionary([
         ("code", parseBytes(event[0, 1])),
         ("detail", parseBytes(event[1, 2])),
@@ -409,7 +409,7 @@ define parseClick(event)
     ])
 
 
-define parseEvent(keymap, eventBytes)
+def parseEvent(keymap, eventBytes)
     eventCode := parseBytes(eventBytes[0, 1])
     if eventCode = ERROR
         parseError(eventBytes)
@@ -430,11 +430,11 @@ define parseEvent(keymap, eventBytes)
     newDictionary([("code", eventCode)])
 
 
-define showEvent(event)
+def showEvent(event)
     event.showDictionary(showNatural)
 
 
-define handleEvents(eventHandler, stream, keymap, state)
+def handleEvents(eventHandler, stream, keymap, state)
     if isNil(stream)
         []
     (eventBytes, stream') := stream.read(32)
@@ -444,7 +444,7 @@ define handleEvents(eventHandler, stream, keymap, state)
     []
 
 
-define defaultWindow(width, height, serverData)
+def defaultWindow(width, height, serverData)
     (info, vendor, formats, screens) := serverData
     windowID := info.lookup("resource-id-base") ?? 0
     with screens as screen :: _
@@ -466,20 +466,20 @@ define defaultWindow(width, height, serverData)
     abort("Error: no screens")
 
 
-define parseKeycodeKeysyms(keysyms)
+def parseKeycodeKeysyms(keysyms)
     if isNil(keysyms) then []
     (keysym, keysyms') := keysyms.splitAt(4)
     parseBytes(keysym) :: parseKeycodeKeysyms(keysyms')
 
 
-define parseKeysyms(firstKeycode, keysymsPerKeycode, keysyms)
+def parseKeysyms(firstKeycode, keysymsPerKeycode, keysyms)
     keysymChunks := keysyms.splitEvery(4 * keysymsPerKeycode)
     keycodeKeysyms := keysymChunks.map(parseKeycodeKeysyms)
     filler := replicate(firstKeycode, []).fold(push, newArray([]))
     keycodeKeysyms.cascade(`push, filler)
 
 
-define receiveKeyboardMapping(firstKeycode, stream)
+def receiveKeyboardMapping(firstKeycode, stream)
     (response, stream') := stream.read(32)
     code := parseBytes(response[0, 1])
     if code =/= 1
@@ -491,13 +491,13 @@ define receiveKeyboardMapping(firstKeycode, stream)
     (parseKeysyms(firstKeycode, keysymsPerKeycode, keysyms), stream'')
 
 
-define runX'(serverData, minKeycode, initializer, eventHandler, stream)
+def runX'(serverData, minKeycode, initializer, eventHandler, stream)
     (keymap, stream') := receiveKeyboardMapping(minKeycode, stream)
     (response, state) := initializer(serverData)
     response ++ handleEvents(eventHandler, stream', keymap, state)
 
 
-define runX(initializer, eventHandler, stream)
+def runX(initializer, eventHandler, stream)
     (serverData, stream') := getConnectionResponse(stream)
     (info, _, _, _) := serverData
     minKeycode := info.lookup("min-keycode") ?? abort("invalid serverData")
@@ -507,7 +507,7 @@ define runX(initializer, eventHandler, stream)
         runX'(serverData, minKeycode, initializer, eventHandler, stream')
 
 
-define XWindow(initializer, eventHandler, stream)
+def XWindow(initializer, eventHandler, stream)
     connectRequest ++ runX(initializer, eventHandler, stream)
 
 #*
