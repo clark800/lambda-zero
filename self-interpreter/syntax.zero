@@ -124,6 +124,10 @@ def reduceReserved(operator, _left, _right)
     syntaxError("reserved operator", operator)
 
 
+def reduceClose(_operator, _left, right)
+    right
+
+
 def shiftPrefix(state, operator)
     state' := reduceLeft(state, operator)
     State(operator :: getStack(state'), getOperators(state'))
@@ -137,11 +141,11 @@ def shiftPostfix(state, operator)
         if not isSpecial(operator) and isOpenOperator(operand)
             placeholder := newLeftPlaceholder(getTag(operand))
             null := Null(getTag(placeholder))
-            body := reduceOperator(operator, placeholder, null)
+            body := reduce(operator, placeholder, null)
             State(body :: stack', getOperators(state))
         if isOperator(operand)
             syntaxError("missing left operand for", operator)
-        reduced := reduceOperator(operator, operand, Null(getTag(operator)))
+        reduced := reduce(operator, operand, Null(getTag(operator)))
         State(reduced :: stack'', getOperators(state))
     syntaxError("missing left operand for", operator)
 
@@ -174,7 +178,7 @@ def newOperator'(tag, prior, precedence, fixity, associativity,
     if special and associativity = NEITHER
         parseError("expected numeric precedence", tag)
     Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, fixity,
-        associativity, special, shifter, reducer, prior))
+        associativity, special, '_', shifter, reducer, prior))
 
 
 def newSyntaxOperator(tag, precedence, fixity, prior)
@@ -208,8 +212,8 @@ def newAlias(operators, tag, name)
 def copySyntax(operators, tag, name)
     lexeme := getTagLexeme(tag)
     match getAliasSyntax(operators, name)
-        Syntax(_, l, r, f, a, s, sh, rd, p) ->
-            Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, sh, rd, p))
+        Syntax(_, l, r, f, a, s, b, sh, rd, p) ->
+            Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, b, sh, rd, p))
 
 
 def findPrecedence(operators, node)
@@ -256,11 +260,11 @@ def addSyntax(operators, operator)
         operators' := operators.pushSyntax(getLexeme(operator), syntax')
         p := getLeftPrecedence(syntax')
         if isThisOperator(operator, "+")
-            s := Syntax("(+)", p, p, PREFIX, LEFT, False,
+            s := Syntax("(+)", p, p, PREFIX, LEFT, False, '_',
                 shiftPrefix, reducePrefix, "")
             operators'.pushSyntax("(+)", s)
         if isThisOperator(operator, "-")
-            s := Syntax("(-)", p, p, PREFIX, LEFT, False,
+            s := Syntax("(-)", p, p, PREFIX, LEFT, False, '_',
                 shiftPrefix, reducePrefix, "")
             operators'.pushSyntax("(-)", s)
         operators'
@@ -300,7 +304,7 @@ def shiftNewline(state @ State(stack, operators), operator)
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence, fixity,
         associativity, shifter, reducer)
     (lexeme, Syntax(aliasName, leftPrecedence, rightPrecedence, fixity,
-        associativity, True, shifter, reducer, ""))
+        associativity, True, '_', shifter, reducer, ""))
 
 
 def coreSyntax(lexeme, leftPrecedence, rightPrecedence, fixity,
@@ -309,14 +313,22 @@ def coreSyntax(lexeme, leftPrecedence, rightPrecedence, fixity,
         associativity, shifter, reducer)
 
 
+def bracketSyntax(lexeme, bracketType, outerPrecedence, fixity, shifter,
+        reducer)
+    leftPrecedence := if fixity = OPENFIX then outerPrecedence else 0
+    rightPrecedence := if fixity = OPENFIX then 0 else outerPrecedence
+    (lexeme, Syntax(lexeme, leftPrecedence, rightPrecedence, fixity,
+        RIGHT, True, bracketType, shifter, reducer, ""))
+
+
 OPERATORS := [newDictionary([
-    coreSyntax("\0", 0, 0, CLOSEFIX, RIGHT, shiftClose, reduceEOF),
-    coreSyntax("(", 95, 0, OPENFIX, RIGHT, shiftOpen, reduceUnmatched),
-    coreSyntax(")", 0, 95, CLOSEFIX, RIGHT, shiftClose, reduceParentheses),
-    coreSyntax("[", 95, 0, OPENFIX, RIGHT, shiftOpen, reduceUnmatched),
-    coreSyntax("]", 0, 95, CLOSEFIX, RIGHT, shiftClose, reduceSquare),
-    coreSyntax("{", 95, 0, OPENFIX, RIGHT, shiftOpen, reduceUnmatched),
-    coreSyntax("}", 0, 95, CLOSEFIX, RIGHT, shiftClose, reduceCurly),
+    bracketSyntax("\0", '\0', 0, CLOSEFIX, shiftClose, reduceEOF),
+    bracketSyntax("(", '(', 95, OPENFIX, shiftOpen, reduceParentheses),
+    bracketSyntax(")", '(', 95, CLOSEFIX, shiftClose, reduceClose),
+    bracketSyntax("[", '[', 95, OPENFIX, shiftOpen, reduceSquare),
+    bracketSyntax("]", '[', 95, CLOSEFIX, shiftClose, reduceClose),
+    bracketSyntax("{", '{', 95, OPENFIX, shiftOpen, reduceCurly),
+    bracketSyntax("}", '{', 95, CLOSEFIX, shiftClose, reduceClose),
     coreSyntax("|", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
     coreSyntax("\n", 3, 3, INFIX, RIGHTVALUE, shiftNewline, reduceNewline),
