@@ -18,7 +18,7 @@ def propagateSection(operator, side, body)
     Section(getTag(operator), side, body)
 
 
-def reduceOperator(operator, left, right)
+def reduce(operator, left, right)
     left' := with left as Section(_, _, body); body <| left
     right' := with right as Section(_, _, body); body <| right
     with operator as Operator(_, _, syntax')
@@ -29,13 +29,27 @@ def reduceOperator(operator, left, right)
         if isSection(right)
             propagateSection(operator, LeftSection, result)
         result
-    syntaxError("internal error", operator)
+    syntaxError("internal error: reduce non-operator", operator)
+
+# TODO: delete this after changing section handling
+def reduce'(operator, left, right)
+    with operator as Operator(_, _, syntax')
+        getReduce(syntax')(operator, left, right)
+    syntaxError("internal error: reduce non-operator", operator)
 
 
-def reduceBracket(open, close, left, right)
-    with close as Operator(_, _, syntax')
-        getReduce(syntax')(open, left, right)
-    syntaxError("internal error", close)
+def getOpBracketType(operator)
+    with operator as Operator(_, _, syntax')
+        getBracketType(syntax')
+    syntaxError("internal error: getOpBracketType non-operator", operator)
+
+
+def reduceBracket(open, close, before, contents)
+    if getOpBracketType(open) =/= getOpBracketType(close)
+        if getOpBracketType(close) = '\0'
+            syntaxError("missing close for", open)
+        syntaxError("missing open for", close)
+    reduce'(close, before, reduce'(open, before, contents))
 
 
 def shift(state @ State(stack, operators), node)
@@ -56,11 +70,11 @@ def reduceTop'(operator, right, stack, operators)
     with operator as Operator(tag, _, syntax')
         if getFixity(syntax') = PREFIX
             shift(State(stack, operators),
-                reduceOperator(operator, Null(tag), right))
+                reduce(operator, Null(tag), right))
         with stack as left :: stack'
             state' := State(stack', if isSyntaxDefinition(left) then
                 operators.drop(1) else operators)
-            shift(state', reduceOperator(operator, left, right))
+            shift(state', reduce(operator, left, right))
         State(stack, operators)
     syntaxError("internal error", operator)
 
