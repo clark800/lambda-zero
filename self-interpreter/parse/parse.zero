@@ -74,6 +74,12 @@ def parseNumericLiteral(tag)
     Number(tag, parsed ?? 0)
 
 
+def parseSymbol(tag, value, operators)
+    lexeme := getTagLexeme(tag)
+    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
+        Name(tag)
+
+
 def parseToken(operators, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
