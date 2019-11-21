@@ -103,7 +103,7 @@ def isRightSectionOperator(op)
     fixity = INFIX or fixity = POSTFIX
 
 
-def shiftNode(state, node)
+def shiftNode'(state, node)
     if isOperator(node)
         _ @ State(stack, operators) := state
         with stack as top :: stack'
@@ -121,6 +121,27 @@ def shiftNode(state, node)
             shift(state, node)
         shift(state, node)
     shift(state, node)
+
+
+def erase(state @ State(stack, operators), lexeme)
+    State(stack.dropIf(`isThisOperator(lexeme)), operators)
+
+
+def shiftNode(state, node)
+    if isOperator(node) and getFixity(getSyntax(node)) = CLOSEFIX
+        state' := erase(state, "\n")
+        state'' := if isThisOperator(node, ")") then
+            erase(state', ";") else state'
+        shiftNode'(state'', node)
+
+    if isThisOperator(node, "\n")
+        with getStack(state) as top :: _
+            if not isOperator(top) and getRank(node) % 2 =/= 0
+                syntaxError("odd-width indent after", node)
+            pass
+        shiftNode'(state, node)
+
+    shiftNode'(state, node)
 
 
 def shiftToken(state, token)

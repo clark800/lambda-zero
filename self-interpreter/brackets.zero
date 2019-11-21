@@ -130,7 +130,8 @@ def pushBracket(stack, open, close, contents)
         reduceBracket(open, close, Null(getTag(open)), contents) :: stack
     [reduceBracket(open, close, Null(getTag(open)), contents)]
 
-def shiftClose'(state, close)
+def shiftClose(state, close)
+    state := reduceLeft(state, close)
     stack := getStack(state)
     with stack as contents :: stack'
         if isEOF(contents)
@@ -148,11 +149,5 @@ def shiftClose'(state, close)
             State(stack', getOperators(state))
         syntaxError("missing open for", close)
     syntaxError("missing open for", close)
-
-
-def shiftClose(state, close)
-    stack := erase(erase(getStack(state), "\n"), ";")
-    state' := reduceLeft(State(stack, getOperators(state)), close)
-    shiftClose'(state', close)
 
 #*
