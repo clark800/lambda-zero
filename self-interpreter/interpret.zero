@@ -38,7 +38,7 @@ def showDefinitions(tags, environment)
 
 def main(input)
     (code, input') := splitCodeAndInput(input)
-    (tags, context, environment) := parse(code)
+    (tags, context, environment) := parse(getBuiltin, code)
     term := environment.peek(0).mapJust(getTerm) ?? abort("No input")
     if code.startsWith("#% dump")
         showDefinitions(tags, environment)
@@ -49,6 +49,6 @@ def main(input)
 
 
 #main(input) := lex(input).map(showToken).joinWith("\n")
-#main(input) := showAST(parse(input))
+#main(input) := showAST(parse(getBuiltin, input))
 
 #*
