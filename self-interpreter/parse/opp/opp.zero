@@ -2,8 +2,7 @@
 
 LEFT := 0
 RIGHT := 1
-RIGHTVALUE := 2
-NEITHER := 3
+NEITHER := 2
 
 
 def reduce(operator, left, right)
@@ -70,10 +69,9 @@ def isHigherPrecedence(left, right)
                 if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
                     syntaxError("incompatible associativity", right)
 
-                if leftSyntax.getAssociativity = RIGHTVALUE
+                if leftSyntax.getAssociativity = RIGHT
                     leftRank > rightRank
-
-                leftSyntax.getAssociativity = LEFT
+                leftRank >= rightRank
 
             leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
         False
@@ -103,11 +101,5 @@ def lookupSyntax(lexeme, operators)
     with operators as top :: _
         top.lookup(lexeme)
     Void
-
-
-def parseSymbol(tag, value, operators)
-    lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
-        Name(tag)
 
 #*

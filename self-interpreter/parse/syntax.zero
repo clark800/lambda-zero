@@ -303,7 +303,7 @@ OPERATORS := [newDictionary([
     bracketSyntax("}", '{', 95, CLOSEFIX, shiftClose, reduceClose),
     coreSyntax("|", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
-    coreSyntax("\n", 3, 3, INFIX, RIGHTVALUE, shiftNewline, reduceNewline),
+    coreSyntax("\n", 3, 3, INFIX, RIGHT, shiftNewline, reduceNewline),
     coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftSemicolon, reduceNewline),
     coreSyntax("def", 5, 5, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
