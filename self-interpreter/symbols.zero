@@ -31,10 +31,6 @@ def shift(state @ State(stack, operators), node)
     syntaxError("missing operator before", node)
 
 
-def erase(stack, lexeme)
-    stack.dropIf(`isThisOperator(lexeme))
-
-
 def reduceTop'(operator, right, stack, operators)
     with operator as Operator(tag, _, syntax')
         if getFixity(syntax') = PREFIX
