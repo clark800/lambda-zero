@@ -172,7 +172,7 @@ def noTag
     Tag("", NOFIX, Location("", 0, 0))
 
 def START
-    Token(Tag("\0", NOFIX, Location("", 0, 0)), Symbolic)
+    Token(Tag("", NOFIX, Location("", 0, 0)), Symbolic)
 
 def lex(string)
     pairs(scan(string) ++ [noTag]).map(uncurry(createToken))

@@ -292,7 +292,8 @@ def bracketSyntax(lexeme, bracketType, outerPrecedence, fixity, shifter,
 
 
 OPERATORS := [newDictionary([
-    bracketSyntax("\0", '\0', 0, CLOSEFIX, shiftClose, reduceEOF),
+    bracketSyntax("", '\0', 0, OPENFIX, shiftOpen, reduceOpenFile),
+    bracketSyntax("\0", '\0', 0, CLOSEFIX, shiftClose, reduceClose),
     bracketSyntax("(", '(', 95, OPENFIX, shiftOpen, reduceParentheses),
     bracketSyntax(")", '(', 95, CLOSEFIX, shiftClose, reduceClose),
     bracketSyntax("( ", '(', 95, OPENFIX, shiftOpen, reduceOpenSection),

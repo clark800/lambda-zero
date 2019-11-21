@@ -107,11 +107,9 @@ def reduceCurly(open, left, patterns)
         syntaxError("missing close for", open)
     SetBuilder(getTag(open), getCommaListElements(patterns))
 
-def reduceEOF(open, left, contents)
+def reduceOpenFile(open, left, contents)
     if not isNull(left)
-        syntaxError("invalid syntax", open)
-    if not isEOF(open)
-        syntaxError("missing close for", open)
+        syntaxError("invalid operand before", open)
     contents
 
 def shiftOpen(state, open)
@@ -134,15 +132,11 @@ def shiftClose(state, close)
     state := reduceLeft(state, close)
     stack := getStack(state)
     with stack as contents :: stack'
-        if isEOF(contents)
-            syntaxError("missing open for", close)
         if isOpenOperator(contents)
             open := contents
             stack'' := pushBracket(stack', open, close, Null(getTag(open)))
             State(stack'', getOperators(state))
         with stack' as open :: stack''
-            if isEOF(open) and not isEOF(close)
-                syntaxError("missing open for", close)
             if isOperator(contents)
                 syntaxError("missing right operand for", contents)
             stack' := pushBracket(stack'', open, close, contents)

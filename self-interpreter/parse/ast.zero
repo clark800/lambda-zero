@@ -192,7 +192,6 @@ getRank := Operator(_, rank, _) -> rank; _ -> 0
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
 isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme
-isEOF(node) := isThisOperator(node, "\0")
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)

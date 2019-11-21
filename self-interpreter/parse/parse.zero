@@ -159,7 +159,7 @@ def parse(getBuiltin, code)
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
     # use "count" to force any syntaxErrors in the stack
-    if stack.count((not) <> isEOF) = 0
+    if stack.count((not) <> isNull) = 0
         abort "parser error"
     with stack as result :: remaining
         if not isNil(remaining)

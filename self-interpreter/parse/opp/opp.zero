@@ -54,9 +54,6 @@ def reduceTop(state @ State(stack, operators))
 
 
 def isHigherPrecedence(left, right)
-    if isEOF(left)
-        False
-
     with left as Operator(_, leftRank, leftSyntax)
         with right as Operator(_, rightRank, rightSyntax)
             if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
