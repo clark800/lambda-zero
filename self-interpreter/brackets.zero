@@ -13,7 +13,7 @@ def getCommaListSize(commaList)
 def newTuple(tag, commaList)
     n := getCommaListSize(commaList)
     lexeme := repeat(',').take(n -- 1)
-    constructor := Name(renameTag(tag, lexeme, NOFIX))
+    constructor := FixedName(tag, lexeme)
     applyToCommaList(tag, constructor, commaList)
 
 def getCommaListElements(commaList)
@@ -30,23 +30,56 @@ def reduceParentheses(open, function, contents)
         syntaxError("missing close for", open)
     tag := getTag(open)
     if isNull(contents)
-        unit := Name(renameTag(tag, "()", NOFIX))
+        unit := FixedName(tag, "()")
         if isNull(function)
             unit
         Juxtaposition(tag, function, unit)
     if isDefinition(contents)
         syntaxError("missing scope for definition", contents)
-    contents' := if isSection(contents) then
-        wrapSection(tag, contents) else contents
     if not isNull(function)
-        applyToCommaList(tag, function, contents')
-    if isCommaPair(contents')
-        newTuple(tag, contents')
-    if isArrow(contents')
-        lockArrow(contents')
-    with contents' as Juxtaposition(_, left, right)
+        applyToCommaList(tag, function, contents)
+    if isCommaPair(contents)
+        newTuple(tag, contents)
+    if isArrow(contents)
+        lockArrow(contents)
+    with contents as Juxtaposition(_, left, right)
         Juxtaposition(tag, left, right)
-    contents'
+    contents
+
+def reduceOpenSection(open, before, contents)
+    if not isNull(before)
+        syntaxError("invalid operand before section", open)
+    if isCommaPair(contents)
+        syntaxError("comma invalid in section", open)
+    if not isJuxtaposition(contents)
+        syntaxError("invalid section", open)
+    with contents as Juxtaposition(_, left, right)
+        # check for parenthesized adfix operator
+        if isName(left) and (isThisName(right, "*.") or isThisName(right, ".*"))
+            left
+        # check for parenthesized infix operator
+        with left as Juxtaposition(_, left', right')
+            if isThisName(right, "*.") and isThisName(right', ".*") and
+                isName(left') then left' else pass
+        pass
+    LockedArrow(FixedName(getTag(open), ".*"), contents)
+
+def reduceCloseSection(close, before, contents)
+    if not isNull(before)
+        syntaxError("invalid operand before section", close)
+    if isTuple(contents)
+        syntaxError("comma invalid in section", close)
+    if not isJuxtaposition(contents) and not isName(contents)
+        syntaxError("invalid section", close)
+    # check for parenthesized adfix operator
+    with contents as Juxtaposition(_, left, right)
+        if isName(left) and (isThisName(right, "*.") or isThisName(right, ".*"))
+            left
+        pass
+    # check for parenthesized operator
+    if isName(contents)
+        contents
+    LockedArrow(FixedName(getTag(close), "*."), contents)
 
 def createList(tag, commaList, list)
     with commaList as CommaPair(_, left, right)
@@ -63,7 +96,7 @@ def reduceSquare(open, left, contents)
         syntaxError("missing argument to", open)
     if not isNull(left)
         n := getCommaListSize(contents)
-        constructor := Name(renameTag(tag, repeat('[').take(n), NOFIX))
+        constructor := FixedName(tag, repeat('[').take(n))
         applyToCommaList(tag, Juxtaposition(tag, constructor, left), contents)
     createList(tag, contents, newNil(tag))
 
@@ -117,39 +150,9 @@ def shiftClose'(state, close)
     syntaxError("missing open for", close)
 
 
-def preReduceOperator(operator, stack)
-    with operator as Operator(tag, _, syntax')
-        with stack as left :: stack'
-            if isLeftPlaceholder(left)
-                # bracketed infix operator
-                Name(tag) :: stack'
-            if isOpenOperator(left)
-                # bracketed prefix operators
-                if isThisOperator(operator, "(+)")
-                    Name(renameTag(tag, "+", INFIX)) :: stack
-                if isThisOperator(operator, "(-)")
-                    Name(renameTag(tag, "-", INFIX)) :: stack
-                Name(tag) :: stack
-            fixity := getFixity(syntax')
-            if fixity = INFIX or fixity = PREFIX
-                newRightPlaceholder(tag) :: operator :: stack   # LeftSection
-            operator :: stack
-        operator :: stack
-    operator :: stack
-
-
-def preReduce(stack)
-    with stack as top :: stack'
-        if isOperator(top) and not isSpecial(top)
-            preReduceOperator(top, stack')
-        stack
-    stack
-
-
 def shiftClose(state, close)
     stack := erase(erase(getStack(state), "\n"), ";")
-    stack' := if isEOF(close) then stack else preReduce(stack)
-    state' := reduceLeft(State(stack', getOperators(state)), close)
+    state' := reduceLeft(State(stack, getOperators(state)), close)
     shiftClose'(state', close)
 
 #*

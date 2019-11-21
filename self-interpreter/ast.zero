@@ -3,7 +3,6 @@
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
 ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
-SectionSide ::= {LeftSection, RightSection, LeftRightSection}
 
 StateT(astT, syntaxT) ::= {State(
     stack : List(astT),
@@ -31,7 +30,7 @@ getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _, _)) := leftP
 getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _, _)) := rightP
 getFixity(Syntax(_, _, _, fixity, _, _, _, _, _, _)) := fixity
 getAssociativity(Syntax(_, _, _, _, assoc, _, _, _, _, _)) := assoc
-getSpecial(Syntax(_, _, _, _, _, special, _, _, _, _)) := special
+isSpecial(Syntax(_, _, _, _, _, special, _, _, _, _)) := special
 getBracketType(Syntax(_, _, _, _, _, _, bracketType, _, _, _)) := bracketType
 getShift(Syntax(_, _, _, _, _, _, _, shift, _, _)) := shift
 getReduce(Syntax(_, _, _, _, _, _, _, _, reduce, _)) := reduce
@@ -51,7 +50,6 @@ AST ::= {
     AsPattern(tag : TagT, left : AST, pattern : AST),
     CommaPair(tag : TagT, left : AST, right : AST),
     ColonPair(tag : TagT, left : AST, right : AST),
-    Section(tag : TagT, side : SectionSide, body : AST),
     SetBuilder(tag : TagT, forms : List(AST)),
     ADT(tag : TagT, parameters : List(AST), objectType : AST),
     Constructor(tag : TagT, parameterTypes : List(AST), dataType : AST,
@@ -59,6 +57,13 @@ AST ::= {
     TypedNode(tag : TagT, type : AST, node : AST),
     Null(tag : TagT)
 }
+
+
+def getSyntax(operator)
+    with operator as Operator(_, _, syntax')
+        syntax'
+    abort("internal error: getSyntax of non-operator")
+
 
 def lockArrow(node)
     with node as Arrow(tag, arrowType, constructors, left, annotation, right)
@@ -80,7 +85,6 @@ def getTag
     AsPattern(tag, _, _) -> tag
     CommaPair(tag, _, _) -> tag
     ColonPair(tag, _, _) -> tag
-    Section(tag, _, _) -> tag
     SetBuilder(tag, _) -> tag
     ADT(tag, _, _) -> tag
     Constructor(tag, _, _, _, _, _) -> tag
@@ -100,7 +104,6 @@ def containsName(name)
     AsPattern(_, _, _) -> False
     CommaPair(_, _, _) -> False
     ColonPair(_, _, right) -> containsName(name, right)
-    Section(_, _, _) -> False
     SetBuilder(_, _) -> False
     ADT(_, _, objectType) -> containsName(name, objectType)
     Constructor(_, _, _, _, _, _) -> False
@@ -136,7 +139,6 @@ def showAST
         "(" ++ showAST(left) ++ ", " ++ showAST(right) ++ ")"
     ColonPair(tag, left, right) ->
         "(" ++ showAST(left) ++ " : " ++ showAST(right) ++ ")"
-    Section(_, _, body) -> showAST(body)
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
     ADT(tag, parameters, objectType) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
@@ -154,17 +156,18 @@ isDefinition := Definition(_, _, _, _) -> True; _ -> False
 isAsPattern := AsPattern(_, _, _) -> True; _ -> False
 isCommaPair := CommaPair(_, _, _) -> True; _ -> False
 isColonPair := ColonPair(_, _, _) -> True; _ -> False
-isSection := Section(_, _, _) -> True; _ -> False
 isSetBuilder := SetBuilder(_, _) -> True; _ -> False
 isADT := ADT(_, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 isNull := Null(_) -> True; _ -> False
+isSpecialOperator(op) := isOperator(op) and isSpecial(getSyntax(op))
 
 isCase(node) := with node as Arrow(_, type, _, _, _, _);
     (type |> Locked -> False; _ -> True) <| False
 
 Name(tag) := Reference(tag, 0)
+FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
 isName(node) := with node as Reference(_, debruijn); debruijn = 0 <| False
 SimpleArrow(parameter, body) :=
     Arrow(getTag(parameter), Simple, [], parameter, Null(noTag), body)
@@ -194,33 +197,8 @@ isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
 Underscore(tag, debruijn) := Reference(veil(tag), debruijn)
-newNil(tag) := Name(renameTag(tag, "[]", NOFIX))
+newNil(tag) := FixedName(tag, "[]")
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)
-newLeftPlaceholder(tag) :=
-    Section(tag, RightSection, Name(renameTag(tag, ".*", NOFIX)))
-newRightPlaceholder(tag) :=
-    Section(tag, LeftSection, Name(renameTag(tag, "*.", NOFIX)))
-isLeftPlaceholder(node) := with node as Section(_, _, body);
-    isThisName(body, ".*") <| False
-wrapLeftSection(tag, body) :=
-    LockedArrow(Name(renameTag(tag, "*.", NOFIX)), body)
-wrapRightSection(tag, body) :=
-    LockedArrow(Name(renameTag(tag, ".*", NOFIX)), body)
-
-def wrapSection(tag, section)
-    with section as Section(_, side, body)
-        match side
-            case LeftSection
-                wrapLeftSection(tag, body)
-            case RightSection
-                with body as Juxtaposition(_, left, _)
-                    if isName(left)
-                        left       # parenthesized postfix operator
-                    wrapRightSection(tag, body)
-                wrapRightSection(tag, body)
-            case LeftRightSection
-                wrapLeftSection(tag, wrapRightSection(tag, body))
-    section
 
 #*

@@ -6,50 +6,19 @@ RIGHTVALUE := 2
 NEITHER := 3
 
 
-def isSpecial(node)
-    with node as Operator(_, _, syntax')
-        getSpecial(syntax')
-    False
-
-
-def propagateSection(operator, side, body)
-    if isSpecial(operator) or not isJuxtaposition(body)
-        syntaxError("operator does not support sections", operator)
-    Section(getTag(operator), side, body)
-
-
 def reduce(operator, left, right)
-    left' := with left as Section(_, _, body); body <| left
-    right' := with right as Section(_, _, body); body <| right
-    with operator as Operator(_, _, syntax')
-        result := getReduce(syntax')(operator, left', right')
-        if isSection(left)
-            side := if isSection(right) then LeftRightSection else RightSection
-            propagateSection(operator, side, result)
-        if isSection(right)
-            propagateSection(operator, LeftSection, result)
-        result
-    syntaxError("internal error: reduce non-operator", operator)
-
-# TODO: delete this after changing section handling
-def reduce'(operator, left, right)
-    with operator as Operator(_, _, syntax')
-        getReduce(syntax')(operator, left, right)
-    syntaxError("internal error: reduce non-operator", operator)
-
-
-def getOpBracketType(operator)
-    with operator as Operator(_, _, syntax')
-        getBracketType(syntax')
-    syntaxError("internal error: getOpBracketType non-operator", operator)
+    getReduce(getSyntax(operator))(operator, left, right)
 
 
 def reduceBracket(open, close, before, contents)
-    if getOpBracketType(open) =/= getOpBracketType(close)
-        if getOpBracketType(close) = '\0'
+    if getBracketType(getSyntax(open)) =/= getBracketType(getSyntax(close))
+        if getBracketType(getSyntax(close)) = '\0'
             syntaxError("missing close for", open)
         syntaxError("missing open for", close)
-    reduce'(close, before, reduce'(open, before, contents))
+    reduced := reduce(open, before, contents)
+    if isNull(reduced)
+        abort("internal error: null")  # force evaluation of reduced
+    reduce(close, before, reduced)
 
 
 def shift(state @ State(stack, operators), node)
