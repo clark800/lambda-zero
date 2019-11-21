@@ -1,9 +1,15 @@
-#* symbols.zero
+#* opp.zero
 
 LEFT := 0
 RIGHT := 1
 NEITHER := 2
 
+def getSyntax(operator)
+    with operator as Operator(_, _, syntax')
+        syntax'
+    abort("internal error: getSyntax of non-operator")
+
+isSpecialOperator(op) := isOperator(op) and isSpecial(getSyntax(op))
 
 def reduce(operator, left, right)
     getReduce(getSyntax(operator))(operator, left, right)

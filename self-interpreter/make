@@ -20,6 +20,7 @@ cat "$LIB/operators.zero" \
     "$LIB/aatree.zero" \
     "$LIB/table.zero" \
     "$DIR/parse/lex/lex.zero" \
+    "$DIR/parse/opp/operator.zero" \
     "$DIR/parse/ast.zero" \
     "$DIR/parse/opp/errors.zero" \
     "$DIR/parse/opp/opp.zero" \
@@ -28,6 +29,7 @@ cat "$LIB/operators.zero" \
     "$DIR/parse/define.zero" \
     "$DIR/parse/brackets.zero" \
     "$DIR/parse/syntax.zero" \
+    "$DIR/parse/tokens.zero" \
     "$DIR/parse/bind.zero" \
     "$DIR/parse/parse.zero" \
     "$DIR/serialize.zero" \

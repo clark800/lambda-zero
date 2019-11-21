@@ -1,0 +1,35 @@
+#* operator.zero
+
+StateT(astT, syntaxT) ::= {State(
+    stack : List(astT),
+    operators : List(TableT(List(ℕ), syntaxT))
+)}
+
+getStack(State(stack, _)) := stack
+getOperators(State(_, operators)) := operators
+
+SyntaxT(ast) ::= {Syntax(
+    aliasName : List(ℕ),
+    leftPrecedence : ℕ,
+    rightPrecedence : ℕ,
+    fixity : ℕ,
+    associativity : ℕ,
+    special : 𝔹,
+    bracketType : ℕ,
+    shift : (StateT(ast, SyntaxT(ast)) => ast => StateT(ast, SyntaxT(ast))),
+    reduce : (ast => ast => ast => ast),
+    prior : List(ℕ)
+)}
+
+getAlias(Syntax(aliasName, _, _, _, _, _, _, _, _, _)) := aliasName
+getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _, _)) := leftP
+getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _, _)) := rightP
+getFixity(Syntax(_, _, _, fixity, _, _, _, _, _, _)) := fixity
+getAssociativity(Syntax(_, _, _, _, assoc, _, _, _, _, _)) := assoc
+isSpecial(Syntax(_, _, _, _, _, special, _, _, _, _)) := special
+getBracketType(Syntax(_, _, _, _, _, _, bracketType, _, _, _)) := bracketType
+getShift(Syntax(_, _, _, _, _, _, _, shift, _, _)) := shift
+getReduce(Syntax(_, _, _, _, _, _, _, _, reduce, _)) := reduce
+getPrior(Syntax(_, _, _, _, _, _, _, _, _, prior)) := prior
+
+#*
