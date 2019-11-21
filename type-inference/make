@@ -29,10 +29,10 @@ cat "$LIB/operators.zero" \
     "$PARSER/parse/define.zero" \
     "$PARSER/parse/brackets.zero" \
     "$PARSER/parse/syntax.zero" \
-    "$PARSER/serialize.zero" \
-    "$PARSER/builtins.zero" \
     "$PARSER/parse/bind.zero" \
     "$PARSER/parse/parse.zero" \
+    "$PARSER/serialize.zero" \
+    "$PARSER/builtins.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/flatten.zero" \
     "$DIR/substitute.zero" \

@@ -154,7 +154,7 @@ def shiftToken(state, token)
     shiftNode(state, parseToken(getOperators(state), token))
 
 
-def parse(code)
+def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
     state := State([parseToken(OPERATORS, START)], OPERATORS)
     stack := getStack(tokens.cascade(shiftToken, state))
@@ -164,7 +164,7 @@ def parse(code)
     with stack as result :: remaining
         if not isNil(remaining)
             syntaxError("parser error", result)
-        bindAST(result)
+        bindAST(getBuiltin, result)
     abort "parser error"
 
 #*

@@ -161,7 +161,7 @@ def inferType(context, (tag, term))
 
 
 def main(input)
-    (tags, _, environment) := parse(input)
+    (tags, _, environment) := parse(getBuiltin, input)
     terms := environment.toList.map(getTerm)
     context := (newArray([]), newArray([]))
     context' := zip(tags, terms).cascade(inferType, context)

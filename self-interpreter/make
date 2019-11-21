@@ -28,10 +28,10 @@ cat "$LIB/operators.zero" \
     "$DIR/parse/define.zero" \
     "$DIR/parse/brackets.zero" \
     "$DIR/parse/syntax.zero" \
-    "$DIR/serialize.zero" \
-    "$DIR/builtins.zero" \
     "$DIR/parse/bind.zero" \
     "$DIR/parse/parse.zero" \
+    "$DIR/serialize.zero" \
+    "$DIR/builtins.zero" \
     "$DIR/evaluate.zero" \
     "$DIR/interpret.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"
