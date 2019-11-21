@@ -20,19 +20,19 @@ cat "$LIB/operators.zero" \
     "$LIB/array.zero" \
     "$LIB/aatree.zero" \
     "$LIB/table.zero" \
-    "$PARSER/lex.zero" \
-    "$PARSER/ast.zero" \
-    "$PARSER/errors.zero" \
-    "$PARSER/symbols.zero" \
-    "$PARSER/term.zero" \
-    "$PARSER/patterns.zero" \
-    "$PARSER/define.zero" \
-    "$PARSER/brackets.zero" \
-    "$PARSER/syntax.zero" \
+    "$PARSER/parse/lex/lex.zero" \
+    "$PARSER/parse/ast.zero" \
+    "$PARSER/parse/opp/errors.zero" \
+    "$PARSER/parse/opp/opp.zero" \
+    "$PARSER/parse/term.zero" \
+    "$PARSER/parse/patterns.zero" \
+    "$PARSER/parse/define.zero" \
+    "$PARSER/parse/brackets.zero" \
+    "$PARSER/parse/syntax.zero" \
     "$PARSER/serialize.zero" \
     "$PARSER/builtins.zero" \
-    "$PARSER/bind.zero" \
-    "$PARSER/parse.zero" \
+    "$PARSER/parse/bind.zero" \
+    "$PARSER/parse/parse.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/flatten.zero" \
     "$DIR/substitute.zero" \

@@ -19,19 +19,19 @@ cat "$LIB/operators.zero" \
     "$LIB/array.zero" \
     "$LIB/aatree.zero" \
     "$LIB/table.zero" \
-    "$DIR/lex.zero" \
-    "$DIR/ast.zero" \
-    "$DIR/errors.zero" \
-    "$DIR/symbols.zero" \
-    "$DIR/term.zero" \
-    "$DIR/patterns.zero" \
-    "$DIR/define.zero" \
-    "$DIR/brackets.zero" \
-    "$DIR/syntax.zero" \
+    "$DIR/parse/lex/lex.zero" \
+    "$DIR/parse/ast.zero" \
+    "$DIR/parse/opp/errors.zero" \
+    "$DIR/parse/opp/opp.zero" \
+    "$DIR/parse/term.zero" \
+    "$DIR/parse/patterns.zero" \
+    "$DIR/parse/define.zero" \
+    "$DIR/parse/brackets.zero" \
+    "$DIR/parse/syntax.zero" \
     "$DIR/serialize.zero" \
     "$DIR/builtins.zero" \
-    "$DIR/bind.zero" \
-    "$DIR/parse.zero" \
+    "$DIR/parse/bind.zero" \
+    "$DIR/parse/parse.zero" \
     "$DIR/evaluate.zero" \
     "$DIR/interpret.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"
