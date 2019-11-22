@@ -4,38 +4,6 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition}
 ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
 
-StateT(astT, syntaxT) ::= {State(
-    stack : List(astT),
-    operators : List(TableT(List(ℕ), syntaxT))
-)}
-
-getStack(State(stack, _)) := stack
-getOperators(State(_, operators)) := operators
-
-SyntaxT(ast) ::= {Syntax(
-    aliasName : List(ℕ),
-    leftPrecedence : ℕ,
-    rightPrecedence : ℕ,
-    fixity : ℕ,
-    associativity : ℕ,
-    special : 𝔹,
-    bracketType : ℕ,
-    shift : (StateT(ast, SyntaxT(ast)) => ast => StateT(ast, SyntaxT(ast))),
-    reduce : (ast => ast => ast => ast),
-    prior : List(ℕ)
-)}
-
-getAlias(Syntax(aliasName, _, _, _, _, _, _, _, _, _)) := aliasName
-getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _, _)) := leftP
-getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _, _)) := rightP
-getFixity(Syntax(_, _, _, fixity, _, _, _, _, _, _)) := fixity
-getAssociativity(Syntax(_, _, _, _, assoc, _, _, _, _, _)) := assoc
-isSpecial(Syntax(_, _, _, _, _, special, _, _, _, _)) := special
-getBracketType(Syntax(_, _, _, _, _, _, bracketType, _, _, _)) := bracketType
-getShift(Syntax(_, _, _, _, _, _, _, shift, _, _)) := shift
-getReduce(Syntax(_, _, _, _, _, _, _, _, reduce, _)) := reduce
-getPrior(Syntax(_, _, _, _, _, _, _, _, _, prior)) := prior
-
 AST ::= {
     Reference(tag : TagT, debruijn : ℕ),
     Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
@@ -57,12 +25,6 @@ AST ::= {
     TypedNode(tag : TagT, type : AST, node : AST),
     Null(tag : TagT)
 }
-
-
-def getSyntax(operator)
-    with operator as Operator(_, _, syntax')
-        syntax'
-    abort("internal error: getSyntax of non-operator")
 
 
 def lockArrow(node)
@@ -161,7 +123,6 @@ isADT := ADT(_, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 isNull := Null(_) -> True; _ -> False
-isSpecialOperator(op) := isOperator(op) and isSpecial(getSyntax(op))
 
 isCase(node) := with node as Arrow(_, type, _, _, _, _);
     (type |> Locked -> False; _ -> True) <| False

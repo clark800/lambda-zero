@@ -1,0 +1,97 @@
+#* tokens.zero
+
+def parseEscapeCode(code, tag)
+    if code = '0' then '\0'
+    if code = 'n' then '\n'
+    if code = 't' then '\t'
+    if code = 'r' then '\r'
+    if code = '\\' then '\\'
+    if code = '\"' then '\"'
+    if code = '\'' then '\''
+    parseError("invalid escape sequence in", tag)
+
+
+def parseQuotedCharacter(tag, string)
+    with string as c :: cs
+        if c =/= '\\'
+            Number(tag, c)
+        with cs as c' :: _
+            Number(tag, parseEscapeCode(c', tag))
+        parseError("missing end quote for", tag)
+    parseError("missing end quote for", tag)
+
+
+def splitStringLiteral(string)
+    with string as c :: cs
+        n := if c = '\\' and not isNil(cs) then 2 else 1
+        string.take(n) :: splitStringLiteral(string.drop(n))
+    []
+
+
+def buildStringLiteral(tag, characters)
+    with characters as c :: cs
+        prependList(tag, c, buildStringLiteral(tag, cs))
+    newNil(tag)
+
+
+def getQuoteContents(tag)
+    lexeme := getTagLexeme(tag)
+    if lexeme.length > 1 and lexeme.reverse.take(1) =*= lexeme.take(1)
+        dropLast(lexeme.drop(1))
+    parseError("missing end quote for", tag)
+
+
+def getQuotedCharacters(tag)
+    splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
+
+
+def parseStringLiteral(tag)
+    buildStringLiteral(tag, getQuotedCharacters(tag))
+
+
+def parseCharacterLiteral(tag)
+    with getQuotedCharacters(tag) as c :: cs
+        with cs as []
+            c
+        parseError("invalid character literal", tag)
+    parseError("invalid character literal", tag)
+
+
+def parseNumericLiteral(tag)
+    lexeme := getTagLexeme(tag)
+    if lexeme.any((not) <> isDigit)
+        parseError("invalid token", tag)
+    maxNatural := "9223372036854775807"
+    natural := lexeme.dropWhile((= '0'))
+    if natural.length > maxNatural.length
+        parseError("magnitude of numeral is too large", tag)
+    if natural.length = maxNatural.length and
+            zipWith((>), natural, maxNatural).any(id)
+        parseError("magnitude of numeral is too large", tag)
+    parsed := parseNatural(lexeme)
+    if isVoid(parsed)
+        parseError("invalid numeral", tag)
+    Number(tag, parsed ?? 0)
+
+
+def parseSymbol(tag, value, operators)
+    lexeme := getTagLexeme(tag)
+    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
+        Name(tag)
+
+
+def parseToken(operators, token)
+    tag := getTokenTag(token)
+    match getTokenCode(token)
+        Space -> abort "internal error: Space reached parseToken"
+        VSpace -> abort "internal error: VSpace reached parseToken"
+        Newline -> operators.parseSymbol(renameTag(tag, "\n", INFIX),
+            length(getTagLexeme(tag)) -- 1)
+        Symbolic -> operators.parseSymbol(tag, 0)
+        Numeric -> parseNumericLiteral(tag)
+        Character -> parseCharacterLiteral(tag)
+        String -> parseStringLiteral(tag)
+        Comment -> abort "internal error: Comment reached parseToken"
+        Invalid -> parseError("invalid character", tag)
+
+#*
