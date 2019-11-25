@@ -2,11 +2,12 @@
 
 StateT(astT, syntaxT) ::= {State(
     stack : List(astT),
-    operators : List(TableT(List(ℕ), syntaxT))
+    operators : List(TableT(List(ℕ), syntaxT)),
+    onReduce : StateT(astT, syntaxT) => StateT(astT, syntaxT)
 )}
 
-getStack(State(stack, _)) := stack
-getOperators(State(_, operators)) := operators
+getStack(State(stack, _, _)) := stack
+getOperators(State(_, operators, _)) := operators
 
 SyntaxT(ast) ::= {Syntax(
     aliasName : List(ℕ),

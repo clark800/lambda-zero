@@ -16,13 +16,13 @@ def isRightSectionOperator(op)
 
 def shiftNode'(state, node)
     if isOperator(node)
-        _ @ State(stack, operators) := state
+        _ @ State(stack, operators, onReduce) := state
         with stack as top :: stack'
             if isThisOperator(top, "(") and isRightSectionOperator(node)
                 openTag := renameTag(getTag(top), "( ", OPENFIX)
                 open := operators.parseSymbol(openTag, 0)
                 placeholder := FixedName(getTag(top), ".*")
-                state' := State(stack', operators)
+                state' := State(stack', operators, onReduce)
                 shift(shift(shift(state', open), placeholder), node)
             if isThisOperator(node, ")") and isLeftSectionOperator(top)
                 closeTag := renameTag(getTag(node), " )", CLOSEFIX)
@@ -34,8 +34,8 @@ def shiftNode'(state, node)
     shift(state, node)
 
 
-def erase(state @ State(stack, operators), lexeme)
-    State(stack.dropIf(`isThisOperator(lexeme)), operators)
+def erase(state @ State(stack, operators, onReduce), lexeme)
+    State(stack.dropIf(`isThisOperator(lexeme)), operators, onReduce)
 
 
 def shiftNode(state, node)
@@ -61,7 +61,7 @@ def shiftToken(state, token)
 
 def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
-    state := State([parseToken(OPERATORS, START)], OPERATORS)
+    state := State([parseToken(OPERATORS, START)], OPERATORS, id)
     stack := getStack(tokens.cascade(shiftToken, state))
     # use "count" to force any syntaxErrors in the stack
     if stack.count((not) <> isNull) = 0
