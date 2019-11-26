@@ -3,7 +3,8 @@
 StateT(astT, syntaxT) ::= {State(
     stack : List(astT),
     operators : List(TableT(List(ℕ), syntaxT)),
-    onReduce : StateT(astT, syntaxT) => StateT(astT, syntaxT)
+    onReduce : StateT(astT, syntaxT) => astT => astT => astT => astT =>
+        StateT(astT, syntaxT)
 )}
 
 getStack(State(stack, _, _)) := stack

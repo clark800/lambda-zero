@@ -121,25 +121,33 @@ def isOpenOperator(operator)
         getFixity(syntax') = OPENFIX
     False
 
-def pushBracket(stack, open, close, contents)
+
+def shiftBracket'(State(stack, operators, onReduce), open, close, left, right)
+    reduction := reduceBracket(open, close, left, right)
+    state' := State(reduction :: stack, operators, onReduce)
+    onReduce(state', open, left, right, reduction)
+
+
+def shiftBracket(state @ State(stack, operators, onReduce), open, close, right)
     with stack as left :: stack'
-        if not isOperator(left)
-            reduceBracket(open, close, left, contents) :: stack'
-        reduceBracket(open, close, Null(getTag(open)), contents) :: stack
-    [reduceBracket(open, close, Null(getTag(open)), contents)]
+        if isOperator(left)
+            pass
+        state' := State(stack', operators, onReduce)
+        shiftBracket'(state', open, close, left, right)
+    shiftBracket'(state, open, close, Null(getTag(open)), right)
+
 
 def shiftClose(state, close)
     _ @ State(stack, operators, onReduce) := reduceLeft(state, close)
-    with stack as contents :: stack'
-        if isOpenOperator(contents)
-            open := contents
-            stack'' := pushBracket(stack', open, close, Null(getTag(open)))
-            onReduce(State(stack'', operators, onReduce))
+    with stack as top :: stack'
+        if isOpenOperator(top)
+            state' := State(stack', operators, onReduce)
+            shiftBracket(state', top, close, Null(getTag(top)))
+        if isOperator(top)
+            syntaxError("missing right operand for", top)
         with stack' as open :: stack''
-            if isOperator(contents)
-                syntaxError("missing right operand for", contents)
-            stack''' := pushBracket(stack'', open, close, contents)
-            onReduce(State(stack''', operators, onReduce))
+            state' := State(stack'', operators, onReduce)
+            shiftBracket(state', open, close, top)
         syntaxError("missing open for", close)
     syntaxError("missing open for", close)
 

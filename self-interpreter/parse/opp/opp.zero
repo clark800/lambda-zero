@@ -39,12 +39,15 @@ def shift(state @ State(stack, operators, onReduce), node)
 def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
     with operator as Operator(tag, _, syntax')
         if getFixity(syntax') = PREFIX
-            onReduce(shift(state, reduce(operator, Null(tag), right)))
+            reduction := reduce(operator, Null(tag), right)
+            state' := State(reduction :: stack, operators, onReduce)
+            onReduce(state', operator, Null(tag), right, reduction)
         with stack as left :: stack'
             operators' := if isSyntaxDefinition(left) then
                 operators.drop(1) else operators
-            state' := State(stack', operators', onReduce)
-            onReduce(shift(state', reduce(operator, left, right)))
+            reduction := reduce(operator, left, right)
+            state' := State(reduction :: stack', operators', onReduce)
+            onReduce(state', operator, left, right, reduction)
         state
     syntaxError("internal error", operator)
 
