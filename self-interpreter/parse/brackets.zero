@@ -134,12 +134,12 @@ def shiftClose(state, close)
         if isOpenOperator(contents)
             open := contents
             stack'' := pushBracket(stack', open, close, Null(getTag(open)))
-            State(stack'', operators, onReduce)
+            onReduce(State(stack'', operators, onReduce))
         with stack' as open :: stack''
             if isOperator(contents)
                 syntaxError("missing right operand for", contents)
             stack''' := pushBracket(stack'', open, close, contents)
-            State(stack''', operators, onReduce)
+            onReduce(State(stack''', operators, onReduce))
         syntaxError("missing open for", close)
     syntaxError("missing open for", close)
 

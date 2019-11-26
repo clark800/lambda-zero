@@ -139,7 +139,7 @@ def shiftPostfix(state, operator)
         if isOperator(operand)
             syntaxError("missing left operand for", operator)
         reduced := reduce(operator, operand, Null(getTag(operator)))
-        State(reduced :: stack', operators, onReduce)
+        onReduce(State(reduced :: stack', operators, onReduce))
     syntaxError("missing left operand for", operator)
 
 
