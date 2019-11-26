@@ -129,27 +129,25 @@ def reduceClose(_operator, _left, right)
 
 
 def shiftPrefix(state, operator)
-    state' := reduceLeft(state, operator)
-    State(operator :: getStack(state'), getOperators(state'))
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    State(operator :: stack, operators, onReduce)
 
 
 def shiftPostfix(state, operator)
-    state' := reduceLeft(state, operator)
-    stack' := getStack(state')
-    with stack' as operand :: stack''
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    with stack as operand :: stack'
         if isOperator(operand)
             syntaxError("missing left operand for", operator)
         reduced := reduce(operator, operand, Null(getTag(operator)))
-        State(reduced :: stack'', getOperators(state))
+        onReduce(State(reduced :: stack', operators, onReduce))
     syntaxError("missing left operand for", operator)
 
 
 def shiftInfix(state, operator)
-    state' := reduceLeft(state, operator)
-    stack' := getStack(state')
-    with stack' as top :: _
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    with stack as top :: _
         if not isOperator(top)
-            State(operator :: stack', getOperators(state'))
+            State(operator :: stack, operators, onReduce)
         syntaxError("missing left operand for", operator)
     syntaxError("missing left operand for", operator)
 
@@ -241,31 +239,27 @@ def addSyntax(operators, operator)
     operators.pushSyntax(getLexeme(operator), getSyntax(operator))
 
 
-def reduceLeftErase(State(stack, operators), operator)
-    reduceLeft(State(stack, operators), operator)
-
-
 def shiftSemicolon(state, operator)
-    _ @ State(stack', operators') := reduceLeftErase(state, operator)
-    with stack' as top :: stack''
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    with stack as top :: stack'
         with top as Operator(_, _, _)
             syntaxError("missing left operand for", operator)
         with top as Definition(tag, type, definiendum, definiens)
             with type as SyntaxDefinition
-                operator' := defineSyntax(operators', top,
+                operator' := defineSyntax(operators, top,
                     definiendum, definiens)
-                operators'' := addSyntax(operators', operator')
+                operators' := addSyntax(operators, operator')
                 definition := Definition(tag, type, definiendum, operator')
-                State(operator :: definition :: stack'', operators'')
-            State(operator :: stack', operators')
-        State(operator :: stack', operators')
+                State(operator :: definition :: stack', operators', onReduce)
+            State(operator :: stack, operators, onReduce)
+        State(operator :: stack, operators, onReduce)
     syntaxError("missing left operand for", operator)
 
 
-def shiftNewline(state @ State(stack, operators), operator)
+def shiftNewline(state, operator)
     # ignore newlines after operators for line continuations
-    if isOperatorTop(stack)
-        State(stack, operators)
+    if isOperatorTop(getStack(state))
+        state
     if getRank(operator) % 2 =/= 0
         syntaxError("odd-width indent after", operator)
     shiftSemicolon(state, operator)

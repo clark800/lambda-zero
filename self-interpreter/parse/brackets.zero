@@ -113,8 +113,8 @@ def reduceOpenFile(open, left, contents)
     contents
 
 def shiftOpen(state, open)
-    state' := reduceLeft(state, open)
-    State(open :: getStack(state'), getOperators(state'))
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, open)
+    State(open :: stack, operators, onReduce)
 
 def isOpenOperator(operator)
     with operator as Operator(_, _, syntax')
@@ -129,18 +129,17 @@ def pushBracket(stack, open, close, contents)
     [reduceBracket(open, close, Null(getTag(open)), contents)]
 
 def shiftClose(state, close)
-    state := reduceLeft(state, close)
-    stack := getStack(state)
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, close)
     with stack as contents :: stack'
         if isOpenOperator(contents)
             open := contents
             stack'' := pushBracket(stack', open, close, Null(getTag(open)))
-            State(stack'', getOperators(state))
+            onReduce(State(stack'', operators, onReduce))
         with stack' as open :: stack''
             if isOperator(contents)
                 syntaxError("missing right operand for", contents)
-            stack' := pushBracket(stack'', open, close, contents)
-            State(stack', getOperators(state))
+            stack''' := pushBracket(stack'', open, close, contents)
+            onReduce(State(stack''', operators, onReduce))
         syntaxError("missing open for", close)
     syntaxError("missing open for", close)
 

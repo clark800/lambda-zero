@@ -26,34 +26,34 @@ def reduceBracket(open, close, before, contents)
     reduce(close, before, reduced)
 
 
-def shift(state @ State(stack, operators), node)
+def shift(state @ State(stack, operators, onReduce), node)
     with node as Operator(_, _, syntax')
         getShift(syntax')(state, node)
     with stack as top :: _
         if not isOperator(top)
             syntaxError("missing operator before", node)
-        State(node :: stack, operators)
+        State(node :: stack, operators, onReduce)
     syntaxError("missing operator before", node)
 
 
-def reduceTop'(operator, right, stack, operators)
+def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
     with operator as Operator(tag, _, syntax')
         if getFixity(syntax') = PREFIX
-            shift(State(stack, operators),
-                reduce(operator, Null(tag), right))
+            onReduce(shift(state, reduce(operator, Null(tag), right)))
         with stack as left :: stack'
-            state' := State(stack', if isSyntaxDefinition(left) then
-                operators.drop(1) else operators)
-            shift(state', reduce(operator, left, right))
-        State(stack, operators)
+            operators' := if isSyntaxDefinition(left) then
+                operators.drop(1) else operators
+            state' := State(stack', operators', onReduce)
+            onReduce(shift(state', reduce(operator, left, right)))
+        state
     syntaxError("internal error", operator)
 
 
-def reduceTop(state @ State(stack, operators))
+def reduceTop(state @ State(stack, operators, onReduce))
     with stack as right :: stack'
         with stack' as operator :: stack''
             if isOperator(operator)
-                reduceTop'(operator, right, stack'', operators)
+                reduceTop'(State(stack'', operators, onReduce), operator, right)
             state
         state
     state
@@ -81,8 +81,8 @@ def isHigherPrecedence(left, right)
     False
 
 
-def shouldReduceTop(operator, State(stack, _operators))
-    with stack as x :: stack'
+def shouldReduceTop(operator, state)
+    with getStack(state) as x :: stack'
         if isOperator(x)
             False
         with stack' as x' :: _
