@@ -239,30 +239,13 @@ def addSyntax(operators, operator)
     operators.pushSyntax(getLexeme(operator), getSyntax(operator))
 
 
-def shiftSemicolon(state, operator)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
-    with stack as top :: stack'
-        with top as Operator(_, _, _)
-            syntaxError("missing left operand for", operator)
-        with top as Definition(tag, type, definiendum, definiens)
-            with type as SyntaxDefinition
-                operator' := defineSyntax(operators, top,
-                    definiendum, definiens)
-                operators' := addSyntax(operators, operator')
-                definition := Definition(tag, type, definiendum, operator')
-                State(operator :: definition :: stack', operators', onReduce)
-            State(operator :: stack, operators, onReduce)
-        State(operator :: stack, operators, onReduce)
-    syntaxError("missing left operand for", operator)
-
-
 def shiftNewline(state, operator)
     # ignore newlines after operators for line continuations
     if isOperatorTop(getStack(state))
         state
     if getRank(operator) % 2 =/= 0
         syntaxError("odd-width indent after", operator)
-    shiftSemicolon(state, operator)
+    shiftInfix(state, operator)
 
 
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence, fixity,
@@ -299,7 +282,7 @@ OPERATORS := [newDictionary([
     coreSyntax("|", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
     coreSyntax("\n", 3, 3, INFIX, RIGHT, shiftNewline, reduceNewline),
-    coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftSemicolon, reduceNewline),
+    coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftInfix, reduceNewline),
     coreSyntax("def", 5, 5, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
     coreAlias("≔", ":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
@@ -310,7 +293,7 @@ OPERATORS := [newDictionary([
     coreAlias("⦊", "|>", 6, 6, INFIX, LEFT, shiftInfix, reducePipeline),
     coreSyntax("<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
     coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, shiftInfix, reduceApply),
-    coreSyntax(";", 8, 8, INFIX, RIGHT, shiftSemicolon, reduceNewline),
+    coreSyntax(";", 8, 8, INFIX, RIGHT, shiftInfix, reduceNewline),
     coreSyntax(":", 9, 9, INFIX, NEITHER, shiftInfix, reduceColonPair),
     coreSyntax("->", 10, 10, INFIX, RIGHT, shiftInfix, reduceArrow),
     coreAlias("↦", "->", 10, 10, INFIX, RIGHT, shiftInfix, reduceArrow),
