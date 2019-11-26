@@ -59,7 +59,8 @@ def shiftToken(state, token)
     shiftNode(state, parseToken(getOperators(state), token))
 
 
-def onReduceHandler(state @ State(stack, operators, onReduce))
+def onReduceHandler(state, operator, left, right, reduction)
+    _ @ State(stack, operators, onReduce) := state
     with stack as top :: _
         with top as Definition(tag, type, definiendum, definiens)
             with type as SyntaxDefinition
