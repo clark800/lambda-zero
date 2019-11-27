@@ -5,10 +5,12 @@ def applyToCommaList(tag, base, arguments)
         Juxtaposition(tag, applyToCommaList(tag, base, left), right)
     Juxtaposition(tag, base, arguments)
 
+
 def getCommaListSize(commaList)
     with commaList as CommaPair(_, left, _)
         getCommaListSize(left) + 1
     1
+
 
 def newTuple(tag, commaList)
     n := getCommaListSize(commaList)
@@ -16,14 +18,17 @@ def newTuple(tag, commaList)
     constructor := FixedName(tag, lexeme)
     applyToCommaList(tag, constructor, commaList)
 
+
 def getCommaListElements(commaList)
     if isNull(commaList) then []
     with commaList as CommaPair(_, left, right)
         getCommaListElements(left) ++ [right]
     [commaList]
 
+
 def reduceUnmatched(open, _left, _right)
     syntaxError("missing close for", open)
+
 
 def reduceParentheses(open, function, contents)
     if not isThisOperator(open, "(")
@@ -46,6 +51,7 @@ def reduceParentheses(open, function, contents)
         Juxtaposition(tag, left, right)
     contents
 
+
 def reduceOpenSection(open, before, contents)
     if not isNull(before)
         syntaxError("invalid operand before section", open)
@@ -64,6 +70,7 @@ def reduceOpenSection(open, before, contents)
         pass
     LockedArrow(FixedName(getTag(open), ".*"), contents)
 
+
 def reduceCloseSection(close, before, contents)
     if not isNull(before)
         syntaxError("invalid operand before section", close)
@@ -81,10 +88,12 @@ def reduceCloseSection(close, before, contents)
         contents
     LockedArrow(FixedName(getTag(close), "*."), contents)
 
+
 def createList(tag, commaList, list)
     with commaList as CommaPair(_, left, right)
         createList(tag, left, prependList(tag, right, list))
     prependList(tag, commaList, list)
+
 
 def reduceSquare(open, left, contents)
     if not isThisOperator(open, "[")
@@ -100,6 +109,7 @@ def reduceSquare(open, left, contents)
         applyToCommaList(tag, Juxtaposition(tag, constructor, left), contents)
     createList(tag, contents, newNil(tag))
 
+
 def reduceCurly(open, left, patterns)
     if not isNull(left)
         syntaxError("missing space before", open)
@@ -107,48 +117,10 @@ def reduceCurly(open, left, patterns)
         syntaxError("missing close for", open)
     SetBuilder(getTag(open), getCommaListElements(patterns))
 
+
 def reduceOpenFile(open, left, contents)
     if not isNull(left)
         syntaxError("invalid operand before", open)
     contents
-
-def shiftOpen(state, open)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, open)
-    State(open :: stack, operators, onReduce)
-
-def isOpenOperator(operator)
-    with operator as Operator(_, _, syntax')
-        getFixity(syntax') = OPENFIX
-    False
-
-
-def shiftBracket'(State(stack, operators, onReduce), open, close, left, right)
-    reduction := reduceBracket(open, close, left, right)
-    state' := State(reduction :: stack, operators, onReduce)
-    onReduce(state', open, left, right, reduction)
-
-
-def shiftBracket(state @ State(stack, operators, onReduce), open, close, right)
-    with stack as left :: stack'
-        if isOperator(left)
-            pass
-        state' := State(stack', operators, onReduce)
-        shiftBracket'(state', open, close, left, right)
-    shiftBracket'(state, open, close, Null(getTag(open)), right)
-
-
-def shiftClose(state, close)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, close)
-    with stack as top :: stack'
-        if isOpenOperator(top)
-            state' := State(stack', operators, onReduce)
-            shiftBracket(state', top, close, Null(getTag(top)))
-        if isOperator(top)
-            syntaxError("missing right operand for", top)
-        with stack' as open :: stack''
-            state' := State(stack'', operators, onReduce)
-            shiftBracket(state', open, close, top)
-        syntaxError("missing open for", close)
-    syntaxError("missing open for", close)
 
 #*
