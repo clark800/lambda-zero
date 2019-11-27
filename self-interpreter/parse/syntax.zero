@@ -241,15 +241,6 @@ def addSyntax(operators, operator)
     operators.pushSyntax(getLexeme(operator), getSyntax(operator))
 
 
-def shiftNewline(state, operator)
-    # ignore newlines after operators for line continuations
-    if isOperatorTop(getStack(state))
-        state
-    if getRank(operator) % 2 =/= 0
-        syntaxError("odd-width indent after", operator)
-    shiftInfix(state, operator)
-
-
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence, fixity,
         associativity, shifter, reducer)
     (lexeme, Syntax(aliasName, leftPrecedence, rightPrecedence, fixity,
@@ -283,7 +274,7 @@ OPERATORS := [newDictionary([
     bracketSyntax("}", '{', 95, CLOSEFIX, shiftClose, reduceClose),
     coreSyntax("|", 1, 1, INFIX, NEITHER, shiftInfix, reduceReserved),
     coreSyntax(",", 2, 2, INFIX, LEFT, shiftInfix, reduceCommaPair),
-    coreSyntax("\n", 3, 3, INFIX, RIGHT, shiftNewline, reduceNewline),
+    coreSyntax("\n", 3, 3, INFIX, RIGHT, shiftInfix, reduceNewline),
     coreSyntax(";;", 4, 4, INFIX, RIGHT, shiftInfix, reduceNewline),
     coreSyntax("def", 5, 5, PREFIX, LEFT, shiftPrefix, reducePrefix),
     coreSyntax(":=", 5, 5, INFIX, RIGHT, shiftInfix, reduceDefine),
