@@ -94,19 +94,23 @@ def parseOperator(tag, value, syntax')
     Operator(tag', value, syntax')
 
 
+def pushSyntax(lexeme, syntax', operators)
+    with operators as top :: _
+        top.insert(lexeme, syntax') :: operators
+    [newDictionary([(lexeme, syntax')])]
+
+
 def lookupSyntax(lexeme, operators)
     with operators as top :: _
         top.lookup(lexeme)
     Void
 
 
-def shiftPrefix(state, operator)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+def shiftPrefix(State(stack, operators, onReduce), operator)
     State(operator :: stack, operators, onReduce)
 
 
-def shiftPostfix(state, operator)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+def shiftPostfix(State(stack, operators, onReduce), operator)
     with stack as operand :: stack'
         if isOperator(operand)
             syntaxError("missing left operand for", operator)
@@ -117,8 +121,7 @@ def shiftPostfix(state, operator)
     syntaxError("missing left operand for", operator)
 
 
-def shiftInfix(state, operator)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+def shiftInfix(State(stack, operators, onReduce), operator)
     with stack as top :: _
         if not isOperator(top)
             State(operator :: stack, operators, onReduce)
@@ -126,8 +129,7 @@ def shiftInfix(state, operator)
     syntaxError("missing left operand for", operator)
 
 
-def shiftOpen(state, open)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, open)
+def shiftOpen(State(stack, operators, onReduce), open)
     State(open :: stack, operators, onReduce)
 
 
@@ -152,8 +154,7 @@ def shiftBracket(state @ State(stack, operators, onReduce), open, close, right)
     shiftBracket'(state, open, close, Null(getTag(open)), right)
 
 
-def shiftClose(state, close)
-    _ @ State(stack, operators, onReduce) := reduceLeft(state, close)
+def shiftClose(State(stack, operators, onReduce), close)
     with stack as top :: stack'
         if isOpenOperator(top)
             state' := State(stack', operators, onReduce)
@@ -176,9 +177,10 @@ def getShifter(fixity)
     abort("internal error: getShifter - invalid fixity")
 
 
-def shift(state @ State(stack, operators, onReduce), node)
+def shift(state, node)
+    state' @ State(stack, operators, onReduce) := reduceLeft(state, node)
     with node as Operator(_, _, syntax')
-        getShifter(getFixity(syntax'))(state, node)
+        getShifter(getFixity(syntax'))(state', node)
     with stack as top :: _
         if not isOperator(top)
             syntaxError("missing operator before", node)
