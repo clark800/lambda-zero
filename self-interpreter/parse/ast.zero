@@ -36,6 +36,7 @@ def lockArrow(node)
         node
     node
 
+
 def getTag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _, _) -> tag
@@ -52,6 +53,7 @@ def getTag
     Constructor(tag, _, _, _, _, _) -> tag
     TypedNode(tag, _, _) -> tag
     Null(tag) -> tag
+
 
 def containsName(name)
     Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
@@ -108,6 +110,7 @@ def showAST
     TypedNode(_, _, node) -> showAST(node)
     Null(_) -> "#NULL#"
 
+
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
@@ -141,10 +144,12 @@ DoubleArrow(left, right) :=
 ImplicitArrow(parameter, body) :=
     Arrow(getTag(parameter), Squiggle, [], parameter, Null(noTag), body)
 
+
 def setAnnotation(annotation, node)
     with node as Arrow(tag, arrowType, constructors, parameter, _, body)
         Arrow(tag, arrowType, constructors, parameter, annotation, body)
     abort("can only set annotation on arrow nodes")
+
 
 isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
     (with type as SyntaxDefinition; True <| False) <| False

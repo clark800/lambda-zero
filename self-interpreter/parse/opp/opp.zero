@@ -4,12 +4,15 @@ LEFT := 0
 RIGHT := 1
 NEITHER := 2
 
+
 def getSyntax(operator)
     with operator as Operator(_, _, syntax')
         syntax'
     abort("internal error: getSyntax of non-operator")
 
+
 isSpecialOperator(op) := isOperator(op) and isSpecial(getSyntax(op))
+
 
 def reduce(operator, left, right)
     getReduce(getSyntax(operator))(operator, left, right)
@@ -24,16 +27,6 @@ def reduceBracket(open, close, before, contents)
     if isNull(reduced)
         abort("internal error: null")  # force evaluation of reduced
     reduce(close, before, reduced)
-
-
-def shift(state @ State(stack, operators, onReduce), node)
-    with node as Operator(_, _, syntax')
-        getShift(syntax')(state, node)
-    with stack as top :: _
-        if not isOperator(top)
-            syntaxError("missing operator before", node)
-        State(node :: stack, operators, onReduce)
-    syntaxError("missing operator before", node)
 
 
 def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
@@ -105,5 +98,91 @@ def lookupSyntax(lexeme, operators)
     with operators as top :: _
         top.lookup(lexeme)
     Void
+
+
+def shiftPrefix(state, operator)
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    State(operator :: stack, operators, onReduce)
+
+
+def shiftPostfix(state, operator)
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    with stack as operand :: stack'
+        if isOperator(operand)
+            syntaxError("missing left operand for", operator)
+        right := Null(getTag(operator))
+        reduction := reduce(operator, operand, right)
+        state' := State(reduction :: stack', operators, onReduce)
+        onReduce(state', operator, operand, right, reduction)
+    syntaxError("missing left operand for", operator)
+
+
+def shiftInfix(state, operator)
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, operator)
+    with stack as top :: _
+        if not isOperator(top)
+            State(operator :: stack, operators, onReduce)
+        syntaxError("missing left operand for", operator)
+    syntaxError("missing left operand for", operator)
+
+
+def shiftOpen(state, open)
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, open)
+    State(open :: stack, operators, onReduce)
+
+
+def isOpenOperator(operator)
+    with operator as Operator(_, _, syntax')
+        getFixity(syntax') = OPENFIX
+    False
+
+
+def shiftBracket'(State(stack, operators, onReduce), open, close, left, right)
+    reduction := reduceBracket(open, close, left, right)
+    state' := State(reduction :: stack, operators, onReduce)
+    onReduce(state', open, left, right, reduction)
+
+
+def shiftBracket(state @ State(stack, operators, onReduce), open, close, right)
+    with stack as left :: stack'
+        if isOperator(left)
+            pass
+        state' := State(stack', operators, onReduce)
+        shiftBracket'(state', open, close, left, right)
+    shiftBracket'(state, open, close, Null(getTag(open)), right)
+
+
+def shiftClose(state, close)
+    _ @ State(stack, operators, onReduce) := reduceLeft(state, close)
+    with stack as top :: stack'
+        if isOpenOperator(top)
+            state' := State(stack', operators, onReduce)
+            shiftBracket(state', top, close, Null(getTag(top)))
+        if isOperator(top)
+            syntaxError("missing right operand for", top)
+        with stack' as open :: stack''
+            state' := State(stack'', operators, onReduce)
+            shiftBracket(state', open, close, top)
+        syntaxError("missing open for", close)
+    syntaxError("missing open for", close)
+
+
+def getShifter(fixity)
+    if fixity = PREFIX then shiftPrefix
+    if fixity = INFIX then shiftInfix
+    if fixity = POSTFIX then shiftPostfix
+    if fixity = OPENFIX then shiftOpen
+    if fixity = CLOSEFIX then shiftClose
+    abort("internal error: getShifter - invalid fixity")
+
+
+def shift(state @ State(stack, operators, onReduce), node)
+    with node as Operator(_, _, syntax')
+        getShifter(getFixity(syntax'))(state, node)
+    with stack as top :: _
+        if not isOperator(top)
+            syntaxError("missing operator before", node)
+        State(node :: stack, operators, onReduce)
+    syntaxError("missing operator before", node)
 
 #*

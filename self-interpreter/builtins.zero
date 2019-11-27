@@ -5,15 +5,19 @@ def getBuiltin(tag)
     typeN := Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
     maxInteger := 9223372036854775807
 
+
     def checkNatural(term)
         maybeNatural(term) ?? runtimeError("expected numeric argument to", tag)
+
 
     def newBoolean(b)
         FreeFunction(tag', FreeFunction(tag',
             Variable(tag', if b then 1 else 2)))
 
+
     def compute(f, left, right)
         f(checkNatural(getTerm(left)), checkNatural(getTerm(right)))
+
 
     def makeUnaryBuiltin(f, evaluate, arguments)
         with arguments as argument :: arguments'
@@ -21,6 +25,7 @@ def getBuiltin(tag)
             Closure(Numeral(tag', typeN,
                 f(checkNatural(getTerm(argument')))), newArray([]))
         runtimeError("missing argument to", tag)
+
 
     def makeBinaryBuiltin(constructor, f, evaluate, arguments)
         with arguments as left :: arguments'
@@ -31,35 +36,44 @@ def getBuiltin(tag)
             runtimeError("missing argument to", tag)
         runtimeError("missing argument to", tag)
 
+
     def makeNaturalBuiltin(f, evaluate, arguments)
         makeBinaryBuiltin(Numeral(tag', typeN), f, evaluate, arguments)
 
+
     def makeComparisonBuiltin(f, evaluate, arguments)
         makeBinaryBuiltin(newBoolean, f, evaluate, arguments)
+
 
     def addBuiltin(left, right)
         if left > maxInteger -- right
             runtimeError("overflow in", tag)
         left + right
 
+
     def monusBuiltin(left, right)
         left -- right
+
 
     def multiplyBuiltin(left, right)
         if right =/= 0 and left > maxInteger // right
             runtimeError("overflow in", tag)
         left * right
 
+
     def divideBuiltin(left, right)
         left // right
 
+
     def moduloBuiltin(left, right)
         left % right
+
 
     def incrementBuiltin(argument)
         if argument >= maxInteger
             runtimeError("overflow in", tag)
         argument + 1
+
 
     def abortBuiltin(evaluate, arguments)
         with arguments as argument :: _
@@ -67,6 +81,7 @@ def getBuiltin(tag)
                 runtimeError("expected string argument to", tag)
             abort message
         runtimeError("missing argument to", tag)
+
 
     builtins := newDictionary([
         ("+", (2, makeNaturalBuiltin(addBuiltin))),

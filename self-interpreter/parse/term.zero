@@ -26,6 +26,7 @@ Term ::= {
             List(ClosureT(Term)) => ClosureT(Term)))
 }
 
+
 def getTermTag
     Top(tag) -> tag
     Constant(tag, _) -> tag
@@ -246,6 +247,7 @@ def isSameTerm(a, b)
             with b as Operation(tag', _, _, _)
                 getTagLexeme(tag) =*= getTagLexeme(tag')
             False
+
 
 def sameHead(term)
     case Top(_)
