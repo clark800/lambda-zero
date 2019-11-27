@@ -47,10 +47,14 @@ def shiftNode(state, node)
 
     if isThisOperator(node, "\n")
         with getStack(state) as top :: _
-            if not isOperator(top) and getRank(node) % 2 =/= 0
+            if isOperator(top)
+                state  # ignore newlines after operators
+            if getRank(node) % 2 =/= 0
                 syntaxError("odd-width indent after", node)
-            pass
-        shiftNode'(state, node)
+            shiftNode'(state, node)
+        if getRank(node) =/= 0
+            syntaxError("indent on first line", node)
+        state  # ignore newlines at beginning of input
 
     shiftNode'(state, node)
 
