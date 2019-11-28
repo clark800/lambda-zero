@@ -1,31 +1,47 @@
 #* operator.zero
 
+Fixity(ast) ::= {
+    Prefix(reduce : ast => ast => ast => ast),
+    Infix(reduce : ast => ast => ast => ast),
+    Postfix(reduce : ast => ast => ast => ast),
+    Openfix(reduce : ast => ast => ast => ast),
+    Closefix(reduce : ast => ast => ast => ast)
+}
+
 SyntaxT(ast) ::= {Syntax(
     aliasName : List(ℕ),
     leftPrecedence : ℕ,
     rightPrecedence : ℕ,
-    fixity : ℕ,
     associativity : ℕ,
     special : 𝔹,
     bracketType : ℕ,
-    reduce : (ast => ast => ast => ast),
-    prior : List(ℕ)
+    prior : List(ℕ),
+    fixity : Fixity(ast)
 )}
 
-getAlias(Syntax(aliasName, _, _, _, _, _, _, _, _)) := aliasName
-getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _)) := leftP
-getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _)) := rightP
-getFixity(Syntax(_, _, _, fixity, _, _, _, _, _)) := fixity
-getAssociativity(Syntax(_, _, _, _, assoc, _, _, _, _)) := assoc
-isSpecial(Syntax(_, _, _, _, _, special, _, _, _)) := special
-getBracketType(Syntax(_, _, _, _, _, _, bracketType, _, _)) := bracketType
-getReduce(Syntax(_, _, _, _, _, _, _, reduce, _)) := reduce
-getPrior(Syntax(_, _, _, _, _, _, _, _, prior)) := prior
+getAlias(Syntax(aliasName, _, _, _, _, _, _, _)) := aliasName
+getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _)) := leftP
+getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _)) := rightP
+getAssociativity(Syntax(_, _, _, assoc, _, _, _, _)) := assoc
+isSpecial(Syntax(_, _, _, _, special, _, _, _)) := special
+getBracketType(Syntax(_, _, _, _, _, bracketType, _, _)) := bracketType
+getPrior(Syntax(_, _, _, _, _, _, prior, _)) := prior
+getFixity(Syntax(_, _, _, _, _, _, _, fixity)) := fixity
 
-StateT(astT) ::= {State(
-    stack : List(astT),
-    operators : List(TableT(List(ℕ), SyntaxT(astT))),
-    onReduce : StateT(astT) => astT => astT => astT => astT => StateT(astT)
+
+def getFixityCode(fixity)
+    match fixity
+        Prefix(_) -> PREFIX
+        Infix(_) -> INFIX
+        Postfix(_) -> POSTFIX
+        Openfix(_) -> OPENFIX
+        Closefix(_) -> CLOSEFIX
+
+
+StateT(ast) ::= {State(
+    stack : List(ast),
+    operators : List(TableT(List(ℕ), SyntaxT(ast))),
+    onReduce : StateT(ast) => ast => ast => ast => ast => StateT(ast)
 )}
 
 getStack(State(stack, _, _)) := stack

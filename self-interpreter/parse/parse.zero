@@ -3,14 +3,14 @@
 def isLeftSectionOperator(op)
     if not isOperator(op) or isSpecialOperator(op)
         False
-    fixity := getFixity(getSyntax(op))
+    fixity := getFixityCode(getFixity(getSyntax(op)))
     fixity = INFIX or fixity = PREFIX
 
 
 def isRightSectionOperator(op)
     if not isOperator(op) or isSpecialOperator(op)
         False
-    fixity := getFixity(getSyntax(op))
+    fixity := getFixityCode(getFixity(getSyntax(op)))
     fixity = INFIX or fixity = POSTFIX
 
 
@@ -39,7 +39,7 @@ def erase(state @ State(stack, operators, onReduce), lexeme)
 
 
 def shiftNode(state, node)
-    if isOperator(node) and getFixity(getSyntax(node)) = CLOSEFIX
+    if isOperator(node) and getFixityCode(getFixity(getSyntax(node))) = CLOSEFIX
         state' := erase(state, "\n")
         state'' := if isThisOperator(node, ")") then
             erase(state', ";") else state'
