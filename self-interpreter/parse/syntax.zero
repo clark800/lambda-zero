@@ -128,28 +128,28 @@ def reduceClose(_operator, _left, right)
     right
 
 
-def newOperator'(tag, prior, precedence, fixity, associativity, reducer)
+def newOperator'(tag, prior, precedence, associativity, fixity)
     special := not isNil(prior)
     if special and associativity = NEITHER
         parseError("expected numeric precedence", tag)
-    Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence, fixity,
-        associativity, special, '_', reducer, prior))
+    Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence,
+        associativity, special, '_', prior, fixity))
 
 
 def newSyntaxOperator(tag, precedence, fixity, prior)
     p := precedence
     if getLexeme(fixity) =*= "infix"
-        newOperator'(tag, prior, p, INFIX, NEITHER, reduceInfix)
+        newOperator'(tag, prior, p, NEITHER, Infix(reduceInfix))
     if getLexeme(fixity) =*= "infixL"
-        newOperator'(tag, prior, p, INFIX, LEFT, reduceInfixL)
+        newOperator'(tag, prior, p, LEFT, Infix(reduceInfixL))
     if getLexeme(fixity) =*= "infixR"
-        newOperator'(tag, prior, p, INFIX, RIGHT, reduceInfixR)
+        newOperator'(tag, prior, p, RIGHT, Infix(reduceInfixR))
     if getLexeme(fixity) =*= "interfix"
-        newOperator'(tag, prior, p, INFIX, LEFT, reduceInterfix)
+        newOperator'(tag, prior, p, LEFT, Infix(reduceInterfix))
     if getLexeme(fixity) =*= "prefix"
-        newOperator'(tag, prior, p, PREFIX, LEFT, reducePrefix)
+        newOperator'(tag, prior, p, LEFT, Prefix(reducePrefix))
     if getLexeme(fixity) =*= "postfix"
-        newOperator'(tag, prior, p, POSTFIX, LEFT, reducePostfix)
+        newOperator'(tag, prior, p, LEFT, Postfix(reducePostfix))
     syntaxError("invalid fixity", fixity)
 
 
@@ -167,8 +167,8 @@ def newAlias(operators, tag, name)
 def copySyntax(operators, tag, name)
     lexeme := getTagLexeme(tag)
     match getAliasSyntax(operators, name)
-        Syntax(_, l, r, f, a, s, b, rd, p) ->
-            Operator(tag, 0, Syntax(lexeme, l, r, f, a, s, b, rd, p))
+        Syntax(_, l, r, a, s, b, p, f) ->
+            Operator(tag, 0, Syntax(lexeme, l, r, a, s, b, p, f))
 
 
 def findPrecedence(operators, node)
@@ -208,65 +208,65 @@ def addSyntax(operators, operator)
     operators.pushSyntax(getLexeme(operator), getSyntax(operator))
 
 
-def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence, fixity,
-        associativity, reducer)
-    (lexeme, Syntax(aliasName, leftPrecedence, rightPrecedence, fixity,
-        associativity, True, '_', reducer, ""))
+def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence,
+        associativity, fixity)
+    (lexeme, Syntax(aliasName, leftPrecedence, rightPrecedence,
+        associativity, True, '_', "", fixity))
 
 
-def coreSyntax(lexeme, leftPrecedence, rightPrecedence, fixity,
-        associativity, reducer)
-    coreAlias(lexeme, lexeme, leftPrecedence, rightPrecedence, fixity,
-        associativity, reducer)
+def coreSyntax(lexeme, leftPrecedence, rightPrecedence, associativity, fixity)
+    coreAlias(lexeme, lexeme, leftPrecedence, rightPrecedence,
+        associativity, fixity)
 
 
-def bracketSyntax(lexeme, bracketType, outerPrecedence, fixity, reducer)
-    leftPrecedence := if fixity = OPENFIX then outerPrecedence else 0
-    rightPrecedence := if fixity = OPENFIX then 0 else outerPrecedence
-    (lexeme, Syntax(lexeme, leftPrecedence, rightPrecedence, fixity,
-        RIGHT, True, bracketType, reducer, ""))
+def bracketSyntax(lexeme, bracketType, outerPrecedence, fixity)
+    fixityCode := getFixityCode(fixity)
+    leftPrecedence := if fixityCode = OPENFIX then outerPrecedence else 0
+    rightPrecedence := if fixityCode = OPENFIX then 0 else outerPrecedence
+    (lexeme, Syntax(lexeme, leftPrecedence, rightPrecedence,
+        RIGHT, True, bracketType, "", fixity))
 
 
 OPERATORS := [newDictionary([
-    bracketSyntax("", '\0', 0, OPENFIX, reduceOpenFile),
-    bracketSyntax("\0", '\0', 0, CLOSEFIX, reduceClose),
-    bracketSyntax("(", '(', 95, OPENFIX, reduceParentheses),
-    bracketSyntax(")", '(', 95, CLOSEFIX, reduceClose),
-    bracketSyntax("( ", '(', 95, OPENFIX, reduceOpenSection),
-    bracketSyntax(" )", '(', 95, CLOSEFIX, reduceCloseSection),
-    bracketSyntax("[", '[', 95, OPENFIX, reduceSquare),
-    bracketSyntax("]", '[', 95, CLOSEFIX, reduceClose),
-    bracketSyntax("{", '{', 95, OPENFIX, reduceCurly),
-    bracketSyntax("}", '{', 95, CLOSEFIX, reduceClose),
-    coreSyntax("|", 1, 1, INFIX, NEITHER, reduceReserved),
-    coreSyntax(",", 2, 2, INFIX, LEFT, reduceCommaPair),
-    coreSyntax("\n", 3, 3, INFIX, RIGHT, reduceNewline),
-    coreSyntax(";;", 4, 4, INFIX, RIGHT, reduceNewline),
-    coreSyntax("def", 5, 5, PREFIX, LEFT, reducePrefix),
-    coreSyntax(":=", 5, 5, INFIX, RIGHT, reduceDefine),
-    coreAlias("≔", ":=", 5, 5, INFIX, RIGHT, reduceDefine),
-    coreSyntax("::=", 5, 5, INFIX, RIGHT, reduceADTDefine),
-    coreAlias("⩴", "::=", 5, 5, INFIX, RIGHT, reduceADTDefine),
-    coreSyntax("where", 5, 5, INFIX, RIGHT, reduceWhere),
-    coreSyntax("|>", 6, 6, INFIX, LEFT, reducePipeline),
-    coreAlias("⦊", "|>", 6, 6, INFIX, LEFT, reducePipeline),
-    coreSyntax("<|", 6, 6, INFIX, RIGHT, reduceApply),
-    coreAlias("⦉","<|", 6, 6, INFIX, RIGHT, reduceApply),
-    coreSyntax(";", 8, 8, INFIX, RIGHT, reduceNewline),
-    coreSyntax(":", 9, 9, INFIX, NEITHER, reduceColonPair),
-    coreSyntax("->", 10, 10, INFIX, RIGHT, reduceArrow),
-    coreAlias("↦", "->", 10, 10, INFIX, RIGHT, reduceArrow),
-    coreSyntax("=>", 10, 10, INFIX, RIGHT, reduceDoubleArrow),
-    coreAlias("⇒", "=>", 10, 10, INFIX, RIGHT, reduceDoubleArrow),
-    coreSyntax("case", 11, 11, PREFIX, NEITHER, reducePrefix),
-    coreSyntax("with", 11, 11, PREFIX, NEITHER, reducePrefix),
-    coreSyntax("@", 12, 12, INFIX, NEITHER, reduceAsPattern),
-    coreSyntax("as", 12, 12, INFIX, NEITHER, reduceAsPattern),
-    coreSyntax("abort", 15, 15, PREFIX, LEFT, reducePrefix),
-    coreSyntax(".", 92, 92, INFIX, LEFT, reducePipeline),
-    coreSyntax("$", 99, 99, PREFIX, LEFT, reduceReserved),
-    coreSyntax("syntax", 99, 99, PREFIX, LEFT, reducePrefix),
-    coreSyntax("alias", 99, 99, PREFIX, LEFT, reducePrefix)
+    bracketSyntax("", '\0', 0, Openfix(reduceOpenFile)),
+    bracketSyntax("\0", '\0', 0, Closefix(reduceClose)),
+    bracketSyntax("(", '(', 95, Openfix(reduceParentheses)),
+    bracketSyntax(")", '(', 95, Closefix(reduceClose)),
+    bracketSyntax("( ", '(', 95, Openfix(reduceOpenSection)),
+    bracketSyntax(" )", '(', 95, Closefix(reduceCloseSection)),
+    bracketSyntax("[", '[', 95, Openfix(reduceSquare)),
+    bracketSyntax("]", '[', 95, Closefix(reduceClose)),
+    bracketSyntax("{", '{', 95, Openfix(reduceCurly)),
+    bracketSyntax("}", '{', 95, Closefix(reduceClose)),
+    coreSyntax("|", 1, 1, NEITHER, Infix(reduceReserved)),
+    coreSyntax(",", 2, 2, LEFT, Infix(reduceCommaPair)),
+    coreSyntax("\n", 3, 3, RIGHT, Infix(reduceNewline)),
+    coreSyntax(";;", 4, 4, RIGHT, Infix(reduceNewline)),
+    coreSyntax("def", 5, 5, LEFT, Prefix(reducePrefix)),
+    coreSyntax(":=", 5, 5, RIGHT, Infix(reduceDefine)),
+    coreAlias("≔", ":=", 5, 5, RIGHT, Infix(reduceDefine)),
+    coreSyntax("::=", 5, 5, RIGHT, Infix(reduceADTDefine)),
+    coreAlias("⩴", "::=", 5, 5, RIGHT, Infix(reduceADTDefine)),
+    coreSyntax("where", 5, 5, RIGHT, Infix(reduceWhere)),
+    coreSyntax("|>", 6, 6, LEFT, Infix(reducePipeline)),
+    coreAlias("⦊", "|>", 6, 6, LEFT, Infix(reducePipeline)),
+    coreSyntax("<|", 6, 6, RIGHT, Infix(reduceApply)),
+    coreAlias("⦉","<|", 6, 6, RIGHT, Infix(reduceApply)),
+    coreSyntax(";", 8, 8, RIGHT, Infix(reduceNewline)),
+    coreSyntax(":", 9, 9, NEITHER, Infix(reduceColonPair)),
+    coreSyntax("->", 10, 10, RIGHT, Infix(reduceArrow)),
+    coreAlias("↦", "->", 10, 10, RIGHT, Infix(reduceArrow)),
+    coreSyntax("=>", 10, 10, RIGHT, Infix(reduceDoubleArrow)),
+    coreAlias("⇒", "=>", 10, 10, RIGHT, Infix(reduceDoubleArrow)),
+    coreSyntax("case", 11, 11, NEITHER, Prefix(reducePrefix)),
+    coreSyntax("with", 11, 11, NEITHER, Prefix(reducePrefix)),
+    coreSyntax("@", 12, 12, NEITHER, Infix(reduceAsPattern)),
+    coreSyntax("as", 12, 12, NEITHER, Infix(reduceAsPattern)),
+    coreSyntax("abort", 15, 15, LEFT, Prefix(reducePrefix)),
+    coreSyntax(".", 92, 92, LEFT, Infix(reducePipeline)),
+    coreSyntax("$", 99, 99, LEFT, Prefix(reduceReserved)),
+    coreSyntax("syntax", 99, 99, LEFT, Prefix(reducePrefix)),
+    coreSyntax("alias", 99, 99, LEFT, Prefix(reducePrefix))
 ])]
 
 #*
