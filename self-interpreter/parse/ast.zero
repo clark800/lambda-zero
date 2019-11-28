@@ -12,7 +12,6 @@ AST ::= {
     Let(tag : TagT, isTypeConstructor : 𝔹,
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
-    Operator(tag : TagT, rank : ℕ, syntax' : SyntaxT(AST)),
     Definition(tag : TagT, type : DefinitionType,
         definiendum : AST, definiens : AST),
     AsPattern(tag : TagT, left : AST, pattern : AST),
@@ -43,7 +42,6 @@ def getTag
     Juxtaposition(tag, _, _) -> tag
     Let(tag, _, _, _, _) -> tag
     Number(tag, _) -> tag
-    Operator(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
     AsPattern(tag, _, _) -> tag
     CommaPair(tag, _, _) -> tag
@@ -55,6 +53,10 @@ def getTag
     Null(tag) -> tag
 
 
+def syntaxError(message, node)
+    parseError(message, getTag(node))
+
+
 def containsName(name)
     Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, _, body) -> containsName(name, body)
@@ -63,7 +65,6 @@ def containsName(name)
     Let(_, _, _, value, scope) ->
         containsName(name, value) or containsName(name, scope)
     Number(_, _) -> False
-    Operator(_, _, _) -> False
     Definition(_, _, _, _) -> False
     AsPattern(_, _, _) -> False
     CommaPair(_, _, _) -> False
@@ -94,7 +95,6 @@ def showAST
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
             ";;" ++ showAST(scope) ++ ")"
     Number(tag, value) -> showNatural(value)
-    Operator(tag, rank, rules) -> showTag(tag)
     Definition(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
     AsPattern(tag, name, pattern) ->
@@ -116,7 +116,6 @@ isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
 isLet := Let(_, _, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
-isOperator := Operator(_, _, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
 isAsPattern := AsPattern(_, _, _) -> True; _ -> False
 isCommaPair := CommaPair(_, _, _) -> True; _ -> False
@@ -154,10 +153,8 @@ def setAnnotation(annotation, node)
 isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
     (with type as SyntaxDefinition; True <| False) <| False
 getLexeme(node) := getTagLexeme(getTag(node))
-getRank := Operator(_, rank, _) -> rank; _ -> 0
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
-isThisOperator(node, lexeme) := isOperator(node) and getLexeme(node) =*= lexeme
 isUnderscore(tag) := getTagLexeme(tag) =*= "_"
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)

@@ -26,7 +26,7 @@ def getCommaListElements(commaList)
 
 
 def reduceParentheses(open, left, right)
-    tag := getTag(open)
+    tag := getOperatorTag(open)
     with right as Just(contents)
         if isDefinition(contents)
             syntaxError("missing scope for definition", contents)
@@ -51,7 +51,7 @@ def isPlaceholder(node)
 
 def reduceOpenSection(open, left, right)
     if not isVoid(left)
-        syntaxError("invalid operand before section", open)
+        oppSyntaxError("invalid operand before section", open)
     with right as Just(contents)
         with contents as Juxtaposition(_, left', right')
             # check for parenthesized adfix operator
@@ -61,19 +61,19 @@ def reduceOpenSection(open, left, right)
             with left' as Juxtaposition(_, left'', right'')
                 if isThisName(right', "*.") and isThisName(right'', ".*") and
                     isName(left'') then left'' else pass
-            LockedArrow(FixedName(getTag(open), ".*"), contents)
+            LockedArrow(FixedName(getOperatorTag(open), ".*"), contents)
         if isCommaPair(contents)
-            syntaxError("comma invalid in section", open)
+            oppSyntaxError("comma invalid in section", open)
         pass
-    syntaxError("invalid section", open)
+    oppSyntaxError("invalid section", open)
 
 
 def reduceCloseSection(close, left, contents)
     # force evaluation of contents first in case it has an error
     if isTuple(contents)
-        syntaxError("comma invalid in section", close)
+        oppSyntaxError("comma invalid in section", close)
     if not isVoid(left)
-        syntaxError("invalid operand before section", close)
+        oppSyntaxError("invalid operand before section", close)
     # check for parenthesized operator
     if isName(contents)
         contents
@@ -81,8 +81,8 @@ def reduceCloseSection(close, left, contents)
         # check for parenthesized adfix operator
         if isName(left') and isPlaceholder(right')
             left'
-        LockedArrow(FixedName(getTag(close), "*."), contents)
-    syntaxError("invalid section", close)
+        LockedArrow(FixedName(getOperatorTag(close), "*."), contents)
+    oppSyntaxError("invalid section", close)
 
 
 def createList(tag, commaList, list)
@@ -92,7 +92,7 @@ def createList(tag, commaList, list)
 
 
 def reduceSquare(open, left, right)
-    tag := getTag(open)
+    tag := getOperatorTag(open)
     with right as Just(contents)
         with left as Just(before)
             n := getCommaListSize(contents)
@@ -102,22 +102,22 @@ def reduceSquare(open, left, right)
         createList(tag, contents, newNil(tag))
     if isVoid(left)
         newNil(tag)
-    syntaxError("missing argument to", open)
+    oppSyntaxError("missing argument to", open)
 
 
 def reduceCurly(open, left, right)
     if not isVoid(left)
-        syntaxError("invalid operand before", open)
+        oppSyntaxError("invalid operand before", open)
     with right as Just(patterns)
-        SetBuilder(getTag(open), getCommaListElements(patterns))
-    SetBuilder(getTag(open), [])
+        SetBuilder(getOperatorTag(open), getCommaListElements(patterns))
+    SetBuilder(getOperatorTag(open), [])
 
 
 def reduceOpenFile(open, left, right)
     if not isVoid(left)
-        syntaxError("invalid operand before", open)
+        oppSyntaxError("invalid operand before", open)
     with right as Just(contents)
         contents
-    syntaxError("no input", open)
+    oppSyntaxError("no input", open)
 
 #*

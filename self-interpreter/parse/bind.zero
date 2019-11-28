@@ -190,8 +190,6 @@ def bind(getBuiltin, level, stack, context, node)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNaturalType(context), value)
-        case Operator(_, _, _)
-            abort "internal error: Operator reached bind"
         case Definition(_, _, _, _)
             syntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)

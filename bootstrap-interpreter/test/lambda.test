@@ -69,5 +69,5 @@ x -> (x : x)
 (x ↦ x)
 ===============================================================================
 ((x : y) : z) -> 0
-Syntax error: invalid left side of colon ':' at line 1 column 5
+Syntax error: invalid left side of colon ':' at line 1 column 10
 ===============================================================================

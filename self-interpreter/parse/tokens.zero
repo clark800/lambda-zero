@@ -76,8 +76,15 @@ def parseNumericLiteral(tag)
 
 def parseSymbol(tag, value, operators)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapJust(parseOperator(tag, value)) ??
-        Name(tag)
+    operators.lookupSyntax(lexeme).mapJust(
+        OperatorItem <> parseOperator(tag, value)) ??
+        OperandItem(Name(tag))
+
+
+def newOperand(operand)
+    if isNull(operand)
+        abort "internal error: newOperand" # force syntax errors
+    OperandItem(operand)
 
 
 def parseToken(operators, token)
@@ -88,9 +95,9 @@ def parseToken(operators, token)
         Newline -> operators.parseSymbol(renameTag(tag, "\n", INFIX),
             length(getTagLexeme(tag)) -- 1)
         Symbolic -> operators.parseSymbol(tag, 0)
-        Numeric -> parseNumericLiteral(tag)
-        Character -> parseCharacterLiteral(tag)
-        String -> parseStringLiteral(tag)
+        Numeric -> newOperand(parseNumericLiteral(tag))
+        Character -> newOperand(parseCharacterLiteral(tag))
+        String -> newOperand(parseStringLiteral(tag))
         Comment -> abort "internal error: Comment reached parseToken"
         Invalid -> parseError("invalid character", tag)
 

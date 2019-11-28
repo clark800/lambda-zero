@@ -1,5 +1,9 @@
 #* builtins.zero
 
+def runtimeError(message, tag)
+    throwError("\nRuntime error: " ++ message, tag)
+
+
 def getBuiltin(tag)
     tag' := veil(tag)
     typeN := Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
