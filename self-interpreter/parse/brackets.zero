@@ -20,73 +20,69 @@ def newTuple(tag, commaList)
 
 
 def getCommaListElements(commaList)
-    if isNull(commaList) then []
     with commaList as CommaPair(_, left, right)
         getCommaListElements(left) ++ [right]
     [commaList]
 
 
-def reduceUnmatched(open, _left, _right)
-    syntaxError("missing close for", open)
-
-
-def reduceParentheses(open, function, contents)
-    if not isThisOperator(open, "(")
-        syntaxError("missing close for", open)
+def reduceParentheses(open, left, right)
     tag := getTag(open)
-    if isNull(contents)
-        unit := FixedName(tag, "()")
-        if isNull(function)
-            unit
+    with right as Just(contents)
+        if isDefinition(contents)
+            syntaxError("missing scope for definition", contents)
+        with left as Just(function)
+            applyToCommaList(tag, function, contents)
+        if isCommaPair(contents)
+            newTuple(tag, contents)
+        if isArrow(contents)
+            lockArrow(contents)
+        with contents as Juxtaposition(_, left, right)
+            Juxtaposition(tag, left, right)
+        contents
+    unit := FixedName(tag, "()")
+    with left as Just(function)
         Juxtaposition(tag, function, unit)
-    if isDefinition(contents)
-        syntaxError("missing scope for definition", contents)
-    if not isNull(function)
-        applyToCommaList(tag, function, contents)
-    if isCommaPair(contents)
-        newTuple(tag, contents)
-    if isArrow(contents)
-        lockArrow(contents)
-    with contents as Juxtaposition(_, left, right)
-        Juxtaposition(tag, left, right)
-    contents
+    unit
 
 
-def reduceOpenSection(open, before, contents)
-    if not isNull(before)
+def isPlaceholder(node)
+    isThisName(node, "*.") or isThisName(node, ".*")
+
+
+def reduceOpenSection(open, left, right)
+    if not isVoid(left)
         syntaxError("invalid operand before section", open)
-    if isCommaPair(contents)
-        syntaxError("comma invalid in section", open)
-    if not isJuxtaposition(contents)
-        syntaxError("invalid section", open)
-    with contents as Juxtaposition(_, left, right)
-        # check for parenthesized adfix operator
-        if isName(left) and (isThisName(right, "*.") or isThisName(right, ".*"))
-            left
-        # check for parenthesized infix operator
-        with left as Juxtaposition(_, left', right')
-            if isThisName(right, "*.") and isThisName(right', ".*") and
-                isName(left') then left' else pass
+    with right as Just(contents)
+        with contents as Juxtaposition(_, left', right')
+            # check for parenthesized adfix operator
+            if isName(left') and isPlaceholder(right')
+                left'
+            # check for parenthesized infix operator
+            with left' as Juxtaposition(_, left'', right'')
+                if isThisName(right', "*.") and isThisName(right'', ".*") and
+                    isName(left'') then left'' else pass
+            LockedArrow(FixedName(getTag(open), ".*"), contents)
+        if isCommaPair(contents)
+            syntaxError("comma invalid in section", open)
         pass
-    LockedArrow(FixedName(getTag(open), ".*"), contents)
+    syntaxError("invalid section", open)
 
 
-def reduceCloseSection(close, before, contents)
-    if not isNull(before)
-        syntaxError("invalid operand before section", close)
+def reduceCloseSection(close, left, contents)
+    # force evaluation of contents first in case it has an error
     if isTuple(contents)
         syntaxError("comma invalid in section", close)
-    if not isJuxtaposition(contents) and not isName(contents)
-        syntaxError("invalid section", close)
-    # check for parenthesized adfix operator
-    with contents as Juxtaposition(_, left, right)
-        if isName(left) and (isThisName(right, "*.") or isThisName(right, ".*"))
-            left
-        pass
+    if not isVoid(left)
+        syntaxError("invalid operand before section", close)
     # check for parenthesized operator
     if isName(contents)
         contents
-    LockedArrow(FixedName(getTag(close), "*."), contents)
+    with contents as Juxtaposition(_, left', right')
+        # check for parenthesized adfix operator
+        if isName(left') and isPlaceholder(right')
+            left'
+        LockedArrow(FixedName(getTag(close), "*."), contents)
+    syntaxError("invalid section", close)
 
 
 def createList(tag, commaList, list)
@@ -95,32 +91,33 @@ def createList(tag, commaList, list)
     prependList(tag, commaList, list)
 
 
-def reduceSquare(open, left, contents)
-    if not isThisOperator(open, "[")
-        syntaxError("missing close for", open)
+def reduceSquare(open, left, right)
     tag := getTag(open)
-    if isNull(contents)
-        if isNull(left)
-            newNil(tag)
-        syntaxError("missing argument to", open)
-    if not isNull(left)
-        n := getCommaListSize(contents)
-        constructor := FixedName(tag, repeat('[').take(n))
-        applyToCommaList(tag, Juxtaposition(tag, constructor, left), contents)
-    createList(tag, contents, newNil(tag))
+    with right as Just(contents)
+        with left as Just(before)
+            n := getCommaListSize(contents)
+            constructor := FixedName(tag, repeat('[').take(n))
+            base := Juxtaposition(tag, constructor, before)
+            applyToCommaList(tag, base, contents)
+        createList(tag, contents, newNil(tag))
+    if isVoid(left)
+        newNil(tag)
+    syntaxError("missing argument to", open)
 
 
-def reduceCurly(open, left, patterns)
-    if not isNull(left)
-        syntaxError("missing space before", open)
-    if not isThisOperator(open, "{")
-        syntaxError("missing close for", open)
-    SetBuilder(getTag(open), getCommaListElements(patterns))
-
-
-def reduceOpenFile(open, left, contents)
-    if not isNull(left)
+def reduceCurly(open, left, right)
+    if not isVoid(left)
         syntaxError("invalid operand before", open)
-    contents
+    with right as Just(patterns)
+        SetBuilder(getTag(open), getCommaListElements(patterns))
+    SetBuilder(getTag(open), [])
+
+
+def reduceOpenFile(open, left, right)
+    if not isVoid(left)
+        syntaxError("invalid operand before", open)
+    with right as Just(contents)
+        contents
+    syntaxError("no input", open)
 
 #*

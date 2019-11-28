@@ -65,9 +65,11 @@ def shiftToken(state, token)
 
 def onReduceHandler(state, operator, left, right, reduction)
     _ @ State(stack, operators, onReduce) := state
-    with left as Definition(_, type, _, _)
-        with type as SyntaxDefinition
-            State(stack, operators.drop(1), onReduce)
+    with left as Just(left')
+        with left' as Definition(_, type, _, _)
+            with type as SyntaxDefinition
+                State(stack, operators.drop(1), onReduce)
+            pass
         pass
     with reduction as Definition(_, type, definiendum, definiens)
         with type as SyntaxDefinition

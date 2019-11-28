@@ -18,14 +18,15 @@ def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
     with operator as Operator(tag, _, syntax')
         match getFixity(syntax')
             case Prefix(reduce)
-                reduction := reduce(operator, Null(tag), right)
+                reduction := reduce(operator, right)
                 state' := State(reduction :: stack, operators, onReduce)
-                onReduce(state', operator, Null(tag), right, reduction)
+                onReduce(state', operator, Void, Just(right), reduction)
             case Infix(reduce)
                 with stack as left :: stack'
                     reduction := reduce(operator, left, right)
                     state' := State(reduction :: stack', operators, onReduce)
-                    onReduce(state', operator, left, right, reduction)
+                    onReduce(state', operator, Just(left), Just(right),
+                        reduction)
                 syntaxError("missing left operand", operator)
             case Postfix(reduce)
                 syntaxError("internal error: reduceTop'", operator)
@@ -107,10 +108,9 @@ def shiftPostfix(reduce, State(stack, operators, onReduce), operator)
     with stack as operand :: stack'
         if isOperator(operand)
             syntaxError("missing left operand for", operator)
-        right := Null(getTag(operator))
-        reduction := reduce(operator, operand, right)
+        reduction := reduce(operator, operand)
         state' := State(reduction :: stack', operators, onReduce)
-        onReduce(state', operator, operand, right, reduction)
+        onReduce(state', operator, Just(operand), Void, reduction)
     syntaxError("missing left operand for", operator)
 
 
@@ -131,10 +131,7 @@ def reduceBracket(reduceOpen, reduceClose, open, close, before, contents)
         if getBracketType(getSyntax(close)) = '\0'
             syntaxError("missing close for", open)
         syntaxError("missing open for", close)
-    reduction := reduceOpen(open, before, contents)
-    if isNull(reduction)
-        abort("internal error: null")  # force evaluation of reduced
-    reduceClose(close, before, reduction)
+    reduceClose(close, before, reduceOpen(open, before, contents))
 
 
 def shiftBracket'(reduceOpen, reduceClose, state, open, close, left, right)
@@ -151,9 +148,9 @@ def shiftBracket(reduceOpen, reduceClose, state, open, close, right)
         if isOperator(left)
             pass
         state' := State(stack', operators, onReduce)
-        shiftBracket'(reduceOpen, reduceClose, state', open, close, left, right)
-    left := Null(getTag(open))
-    shiftBracket'(reduceOpen, reduceClose, state, open, close, left, right)
+        shiftBracket'(reduceOpen, reduceClose, state', open, close,
+            Just(left), right)
+    shiftBracket'(reduceOpen, reduceClose, state, open, close, Void, right)
 
 
 def shiftClosefix(reduceClose, State(stack, operators, onReduce), close)
@@ -161,15 +158,14 @@ def shiftClosefix(reduceClose, State(stack, operators, onReduce), close)
         with top as Operator(_, _, syntax')
             with getFixity(syntax') as Openfix(reduceOpen)
                 state' := State(stack', operators, onReduce)
-                shiftBracket(reduceOpen, reduceClose,
-                    state', top, close, Null(getTag(top)))
+                shiftBracket(reduceOpen, reduceClose, state', top, close, Void)
             syntaxError("missing right operand for", top)
         with stack' as open :: stack''
             with open as Operator(_, _, syntax')
                 with getFixity(syntax') as Openfix(reduceOpen)
                     state' := State(stack'', operators, onReduce)
                     shiftBracket(reduceOpen, reduceClose,
-                        state', open, close, top)
+                        state', open, close, Just(top))
                 pass
             pass
         pass
