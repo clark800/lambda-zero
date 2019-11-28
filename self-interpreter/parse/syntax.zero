@@ -15,16 +15,10 @@ def reduceApply(operator, left, right)
     Juxtaposition(getTag(operator), left, right)
 
 
-def reducePrefix(operator, _left, right)
-    if not isValidPrior(operator, right)
+def reduceAdfix(operator, operand)
+    if not isValidPrior(operator, operand)
         syntaxError("operator syntax error", operator)
-    reduceApply(operator, Name(getTag(operator)), right)
-
-
-def reducePostfix(operator, left, _right)
-    if not isValidPrior(operator, left)
-        syntaxError("operator syntax error", operator)
-    reduceApply(operator, Name(getTag(operator)), left)
+    reduceApply(operator, Name(getTag(operator)), operand)
 
 
 def reduceInfix(operator, left, right)
@@ -124,6 +118,10 @@ def reduceReserved(operator, _left, _right)
     syntaxError("reserved operator", operator)
 
 
+def reduceReservedAdfix(operator, _operand)
+    syntaxError("reserved operator", operator)
+
+
 def reduceClose(_operator, _left, right)
     right
 
@@ -147,9 +145,9 @@ def newSyntaxOperator(tag, precedence, fixity, prior)
     if getLexeme(fixity) =*= "interfix"
         newOperator'(tag, prior, p, LEFT, Infix(reduceInterfix))
     if getLexeme(fixity) =*= "prefix"
-        newOperator'(tag, prior, p, LEFT, Prefix(reducePrefix))
+        newOperator'(tag, prior, p, LEFT, Prefix(reduceAdfix))
     if getLexeme(fixity) =*= "postfix"
-        newOperator'(tag, prior, p, LEFT, Postfix(reducePostfix))
+        newOperator'(tag, prior, p, LEFT, Postfix(reduceAdfix))
     syntaxError("invalid fixity", fixity)
 
 
@@ -242,7 +240,7 @@ OPERATORS := [newDictionary([
     coreSyntax(",", 2, 2, LEFT, Infix(reduceCommaPair)),
     coreSyntax("\n", 3, 3, RIGHT, Infix(reduceNewline)),
     coreSyntax(";;", 4, 4, RIGHT, Infix(reduceNewline)),
-    coreSyntax("def", 5, 5, LEFT, Prefix(reducePrefix)),
+    coreSyntax("def", 5, 5, LEFT, Prefix(reduceAdfix)),
     coreSyntax(":=", 5, 5, RIGHT, Infix(reduceDefine)),
     coreAlias("≔", ":=", 5, 5, RIGHT, Infix(reduceDefine)),
     coreSyntax("::=", 5, 5, RIGHT, Infix(reduceADTDefine)),
@@ -258,15 +256,15 @@ OPERATORS := [newDictionary([
     coreAlias("↦", "->", 10, 10, RIGHT, Infix(reduceArrow)),
     coreSyntax("=>", 10, 10, RIGHT, Infix(reduceDoubleArrow)),
     coreAlias("⇒", "=>", 10, 10, RIGHT, Infix(reduceDoubleArrow)),
-    coreSyntax("case", 11, 11, NEITHER, Prefix(reducePrefix)),
-    coreSyntax("with", 11, 11, NEITHER, Prefix(reducePrefix)),
+    coreSyntax("case", 11, 11, NEITHER, Prefix(reduceAdfix)),
+    coreSyntax("with", 11, 11, NEITHER, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NEITHER, Infix(reduceAsPattern)),
     coreSyntax("as", 12, 12, NEITHER, Infix(reduceAsPattern)),
-    coreSyntax("abort", 15, 15, LEFT, Prefix(reducePrefix)),
+    coreSyntax("abort", 15, 15, LEFT, Prefix(reduceAdfix)),
     coreSyntax(".", 92, 92, LEFT, Infix(reducePipeline)),
-    coreSyntax("$", 99, 99, LEFT, Prefix(reduceReserved)),
-    coreSyntax("syntax", 99, 99, LEFT, Prefix(reducePrefix)),
-    coreSyntax("alias", 99, 99, LEFT, Prefix(reducePrefix))
+    coreSyntax("$", 99, 99, LEFT, Prefix(reduceReservedAdfix)),
+    coreSyntax("syntax", 99, 99, LEFT, Prefix(reduceAdfix)),
+    coreSyntax("alias", 99, 99, LEFT, Prefix(reduceAdfix))
 ])]
 
 #*

@@ -1,11 +1,11 @@
 #* operator.zero
 
 Fixity(ast) ::= {
-    Prefix(reduce : ast => ast => ast => ast),
+    Prefix(reduce : ast => ast => ast),
     Infix(reduce : ast => ast => ast => ast),
-    Postfix(reduce : ast => ast => ast => ast),
-    Openfix(reduce : ast => ast => ast => ast),
-    Closefix(reduce : ast => ast => ast => ast)
+    Postfix(reduce : ast => ast => ast),
+    Openfix(reduce : ast => (ast)? => (ast)? => ast),
+    Closefix(reduce : ast => (ast)? => ast => ast)
 }
 
 SyntaxT(ast) ::= {Syntax(
@@ -41,7 +41,7 @@ def getFixityCode(fixity)
 StateT(ast) ::= {State(
     stack : List(ast),
     operators : List(TableT(List(ℕ), SyntaxT(ast))),
-    onReduce : StateT(ast) => ast => ast => ast => ast => StateT(ast)
+    onReduce : StateT(ast) => ast => (ast)? => (ast)? => ast => StateT(ast)
 )}
 
 getStack(State(stack, _, _)) := stack
