@@ -17,25 +17,33 @@ def isRightSectionOperator(op)
 def shiftNode'(state, node)
     if isOperator(node)
         _ @ State(stack, operators, onReduce) := state
-        with stack as top :: stack'
-            if isThisOperator(top, "(") and isRightSectionOperator(node)
-                openTag := renameTag(getTag(top), "( ", OPENFIX)
-                open := operators.parseSymbol(openTag, 0)
-                placeholder := FixedName(getTag(top), ".*")
-                state' := State(stack', operators, onReduce)
-                shift(shift(shift(state', open), placeholder), node)
-            if isThisOperator(node, ")") and isLeftSectionOperator(top)
-                closeTag := renameTag(getTag(node), " )", CLOSEFIX)
-                close := operators.parseSymbol(closeTag, 0)
-                placeholder := FixedName(getTag(node), "*.")
-                shift(shift(state, placeholder), close)
+        with stack as topItem :: stack'
+            with topItem as OperatorItem(top)
+                if isThisOperator(top, "(") and isRightSectionOperator(node)
+                    openTag := renameTag(getTag(top), "( ", OPENFIX)
+                    open := operators.parseSymbol(openTag, 0)
+                    placeholder := FixedName(getTag(top), ".*")
+                    state' := State(stack', operators, onReduce)
+                    shift(shift(shift(state', open), placeholder), node)
+                if isThisOperator(node, ")") and isLeftSectionOperator(top)
+                    closeTag := renameTag(getTag(node), " )", CLOSEFIX)
+                    close := operators.parseSymbol(closeTag, 0)
+                    placeholder := FixedName(getTag(node), "*.")
+                    shift(shift(state, placeholder), close)
+                shift(state, node)
             shift(state, node)
         shift(state, node)
     shift(state, node)
 
 
+def isThisOperatorItem(item, lexeme)
+    with item as OperatorItem(operator)
+        getLexeme(operator) =*= lexeme
+    False
+
+
 def erase(state @ State(stack, operators, onReduce), lexeme)
-    State(stack.dropIf(`isThisOperator(lexeme)), operators, onReduce)
+    State(stack.dropIf(`isThisOperatorItem(lexeme)), operators, onReduce)
 
 
 def shiftNode(state, node)
@@ -46,8 +54,8 @@ def shiftNode(state, node)
         shiftNode'(state'', node)
 
     if isThisOperator(node, "\n")
-        with getStack(state) as top :: _
-            if isOperator(top)
+        with getStack(state) as item :: _
+            if isOperatorItem(item)
                 state  # ignore newlines after operators
             if getRank(node) % 2 =/= 0
                 syntaxError("odd-width indent after", node)
@@ -82,15 +90,15 @@ def onReduceHandler(state, operator, left, right, reduction)
 
 def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
-    state := State([parseToken(OPERATORS, START)], OPERATORS, onReduceHandler)
-    stack := getStack(tokens.cascade(shiftToken, state))
-    # use "count" to force any syntaxErrors in the stack
-    if stack.count((not) <> isNull) = 0
-        abort "parser error"
-    with stack as result :: remaining
-        if not isNil(remaining)
-            syntaxError("parser error", result)
-        bindAST(getBuiltin, result)
+    stack := [OperatorItem(parseToken(OPERATORS, START))]
+    state := State(stack, OPERATORS, onReduceHandler)
+    stack' := getStack(tokens.cascade(shiftToken, state))
+    with stack' as item :: remaining
+        with item as OperandItem(result)
+            if not isNil(remaining)
+                syntaxError("parser error", result)
+            bindAST(getBuiltin, result)
+        pass
     abort "parser error"
 
 #*

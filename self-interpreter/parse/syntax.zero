@@ -1,9 +1,5 @@
 #* syntax.zero
 
-def isOperatorTop(stack)
-    stack |> [] -> True; top :: _ -> isOperator(top)
-
-
 def isValidPrior(operator, node)
     with operator as Operator(_, _, syntax')
         prior := getPrior(syntax')
