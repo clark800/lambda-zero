@@ -38,8 +38,20 @@ def getFixityCode(fixity)
         Closefix(_) -> CLOSEFIX
 
 
+StackItem(ast) ::= {
+    OperatorItem(operator : ast),  # todo: change to OperatorT type
+    OperandItem(operand : ast)
+}
+
+
+def isOperatorItem(item)
+    match item
+        OperatorItem(_) -> True
+        OperandItem(_) -> False
+
+
 StateT(ast) ::= {State(
-    stack : List(ast),
+    stack : List(StackItem(ast)),
     operators : List(TableT(List(ℕ), SyntaxT(ast))),
     onReduce : StateT(ast) => ast => (ast)? => (ast)? => ast => StateT(ast)
 )}
