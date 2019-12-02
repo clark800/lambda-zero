@@ -81,7 +81,7 @@ Syntax error: missing left operand for '%' at line 1 column 4
 4
 ===============================================================================
 1 <= 2 <= 3
-Syntax error: operator is non-associative '<=' at line 1 column 3
+Syntax error: operator is non-associative '<=' at line 1 column 8
 ===============================================================================
 1 \n* 2
 Syntax error: missing left operand for '*' at line 2 column 1

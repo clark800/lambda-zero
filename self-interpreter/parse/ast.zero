@@ -163,4 +163,13 @@ newNil(tag) := FixedName(tag, "[]")
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)
 
+
+def getFixityCode(fixity)
+    match fixity
+        Prefix(_) -> PREFIX
+        Infix(_) -> INFIX
+        Postfix(_) -> POSTFIX
+        Openfix(_) -> OPENFIX
+        Closefix(_) -> CLOSEFIX
+
 #*
