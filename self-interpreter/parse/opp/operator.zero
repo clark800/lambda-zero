@@ -1,14 +1,14 @@
 #* operator.zero
 
-Fixity(ast) ::= {
-    Prefix(reduce : ast => ast => ast),
-    Infix(reduce : ast => ast => ast => ast),
-    Postfix(reduce : ast => ast => ast),
-    Openfix(reduce : ast => (ast)? => (ast)? => ast),
-    Closefix(reduce : ast => (ast)? => ast => ast)
+Fixity(operator, operand) ::= {
+    Prefix(reduce : operator => operand => operand),
+    Infix(reduce : operator => operand => operand => operand),
+    Postfix(reduce : operator => operand => operand),
+    Openfix(reduce : operator => (operand)? => (operand)? => operand),
+    Closefix(reduce : operator => (operand)? => operand => operand)
 }
 
-SyntaxT(ast) ::= {Syntax(
+SyntaxT(operator, operand) ::= {Syntax(
     aliasName : List(ℕ),
     leftPrecedence : ℕ,
     rightPrecedence : ℕ,
@@ -16,7 +16,7 @@ SyntaxT(ast) ::= {Syntax(
     special : 𝔹,
     bracketType : ℕ,
     prior : List(ℕ),
-    fixity : Fixity(ast)
+    fixity : Fixity(operator, operand)
 )}
 
 getAlias(Syntax(aliasName, _, _, _, _, _, _, _)) := aliasName
@@ -28,6 +28,32 @@ getBracketType(Syntax(_, _, _, _, _, bracketType, _, _)) := bracketType
 getPrior(Syntax(_, _, _, _, _, _, prior, _)) := prior
 getFixity(Syntax(_, _, _, _, _, _, _, fixity)) := fixity
 
+OperatorT(operand) ::= {Operator(
+    tag : TagT,
+    subprecedence : ℕ,
+    syntax' : SyntaxT(OperatorT(operand), operand)
+)}
+
+getOperatorTag(Operator(tag, _, _)) := tag
+getSubprecedence(Operator(_, subprecedence, _)) := subprecedence
+getSyntax(Operator(_, _, syntax')) := syntax'
+
+
+def isThisOperator(Operator(tag, _, _), lexeme)
+    getTagLexeme(tag) =*= lexeme
+
+
+def throwError(message, tag)
+    abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
+
+
+def parseError(message, tag)
+    throwError("Syntax error: " ++ message, tag)
+
+
+def oppSyntaxError(message, Operator(tag, _, _))
+    parseError(message, tag)
+
 
 def getFixityCode(fixity)
     match fixity
@@ -38,22 +64,23 @@ def getFixityCode(fixity)
         Closefix(_) -> CLOSEFIX
 
 
-StackItem(ast) ::= {
-    OperatorItem(operator : ast),  # todo: change to OperatorT type
-    OperandItem(operand : ast)
+StackItem(operandT) ::= {
+    OperatorItem(operator : OperatorT(operandT)),
+    OperandItem(operand : operandT)
 }
 
 
-def isOperatorItem(item)
+def isOperator(item)
     match item
         OperatorItem(_) -> True
         OperandItem(_) -> False
 
 
-StateT(ast) ::= {State(
-    stack : List(StackItem(ast)),
-    operators : List(TableT(List(ℕ), SyntaxT(ast))),
-    onReduce : StateT(ast) => ast => (ast)? => (ast)? => ast => StateT(ast)
+StateT(operand) ::= {State(
+    stack : List(StackItem(operand)),
+    operators : List(TableT(List(ℕ), SyntaxT(OperatorT(operand), operand))),
+    onReduce : StateT(operand) => OperatorT(operand) =>
+        (operand)? => (operand)? => operand => StateT(operand)
 )}
 
 getStack(State(stack, _, _)) := stack

@@ -21,9 +21,8 @@ cat "$LIB/operators.zero" \
     "$LIB/table.zero" \
     "$DIR/parse/lex/lex.zero" \
     "$DIR/parse/opp/operator.zero" \
-    "$DIR/parse/ast.zero" \
-    "$DIR/parse/opp/errors.zero" \
     "$DIR/parse/opp/opp.zero" \
+    "$DIR/parse/ast.zero" \
     "$DIR/parse/term.zero" \
     "$DIR/parse/patterns.zero" \
     "$DIR/parse/define.zero" \

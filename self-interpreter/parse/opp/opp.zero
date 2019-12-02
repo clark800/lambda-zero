@@ -5,40 +5,29 @@ RIGHT := 1
 NEITHER := 2
 
 
-def getSyntax(operator)
-    with operator as Operator(_, _, syntax')
-        syntax'
-    abort("internal error: getSyntax of non-operator")
-
-
-isSpecialOperator(op) := isOperator(op) and isSpecial(getSyntax(op))
-
-
 def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
-    with operator as Operator(tag, _, syntax')
-        match getFixity(syntax')
-            case Prefix(reduce)
-                reduction := reduce(operator, right)
-                stack' := OperandItem(reduction) :: stack
-                state' := State(stack', operators, onReduce)
-                onReduce(state', operator, Void, Just(right), reduction)
-            case Infix(reduce)
-                with stack as leftItem :: stack'
-                    with leftItem as OperandItem(left)
-                        reduction := reduce(operator, left, right)
-                        stack'' := OperandItem(reduction) :: stack'
-                        state' := State(stack'', operators, onReduce)
-                        onReduce(state', operator,
-                            Just(left), Just(right), reduction)
-                    pass
-                syntaxError("missing left operand", operator)
-            case Postfix(reduce)
-                syntaxError("internal error: reduceTop'", operator)
-            case Openfix(reduce)
-                syntaxError("internal error: reduceTop'", operator)
-            case Closefix(reduce)
-                syntaxError("internal error: reduceTop'", operator)
-    syntaxError("internal error: reduceTop'", operator)
+    match getFixity(getSyntax(operator))
+        case Prefix(reduce)
+            reduction := reduce(operator, right)
+            stack' := OperandItem(reduction) :: stack
+            state' := State(stack', operators, onReduce)
+            onReduce(state', operator, Void, Just(right), reduction)
+        case Infix(reduce)
+            with stack as leftItem :: stack'
+                with leftItem as OperandItem(left)
+                    reduction := reduce(operator, left, right)
+                    stack'' := OperandItem(reduction) :: stack'
+                    state' := State(stack'', operators, onReduce)
+                    onReduce(state', operator,
+                        Just(left), Just(right), reduction)
+                pass
+            oppSyntaxError("missing left operand", operator)
+        case Postfix(reduce)
+            oppSyntaxError("internal error: reduceTop'", operator)
+        case Openfix(reduce)
+            oppSyntaxError("internal error: reduceTop'", operator)
+        case Closefix(reduce)
+            oppSyntaxError("internal error: reduceTop'", operator)
 
 
 def reduceTop(state @ State(stack, operators, onReduce))
@@ -55,30 +44,29 @@ def reduceTop(state @ State(stack, operators, onReduce))
 
 
 def isHigherPrecedence(left, right)
-    with left as Operator(_, leftRank, leftSyntax)
-        with right as Operator(_, rightRank, rightSyntax)
-            if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
-                if leftSyntax.getAssociativity = NEITHER
-                    syntaxError("operator is non-associative", left)
+    leftSyntax := getSyntax(left)
+    rightSyntax := getSyntax(right)
 
-                if rightSyntax.getAssociativity = NEITHER
-                    syntaxError("operator is non-associative", right)
+    if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
+        if leftSyntax.getAssociativity = NEITHER
+            oppSyntaxError("operator is non-associative", left)
 
-                if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
-                    syntaxError("incompatible associativity", right)
+        if rightSyntax.getAssociativity = NEITHER
+            oppSyntaxError("operator is non-associative", right)
 
-                if leftSyntax.getAssociativity = RIGHT
-                    leftRank > rightRank
-                leftRank >= rightRank
+        if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
+            oppSyntaxError("incompatible associativity", right)
 
-            leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
-        False
-    False
+        if leftSyntax.getAssociativity = RIGHT
+            getSubprecedence(left) > getSubprecedence(right)
+        getSubprecedence(left) >= getSubprecedence(right)
+
+    leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 
 
 def shouldReduceTop(operator, state)
     with getStack(state) as item :: stack'
-        if isOperatorItem(item)
+        if isOperator(item)
             False
         with stack' as item' :: _
             with item' as OperatorItem(operator')
@@ -121,15 +109,15 @@ def shiftPostfix(reduce, State(stack, operators, onReduce), operator)
             state' := State(stack'', operators, onReduce)
             onReduce(state', operator, Just(operand), Void, reduction)
         pass
-    syntaxError("missing left operand for", operator)
+    oppSyntaxError("missing left operand for", operator)
 
 
 def shiftInfix(State(stack, operators, onReduce), operator)
     with stack as top :: _
-        if not isOperatorItem(top)
+        if not isOperator(top)
             State(OperatorItem(operator) :: stack, operators, onReduce)
-        syntaxError("missing left operand for", operator)
-    syntaxError("missing left operand for", operator)
+        oppSyntaxError("missing left operand for", operator)
+    oppSyntaxError("missing left operand for", operator)
 
 
 def shiftOpenfix(State(stack, operators, onReduce), open)
@@ -139,8 +127,8 @@ def shiftOpenfix(State(stack, operators, onReduce), open)
 def reduceBracket(reduceOpen, reduceClose, open, close, before, contents)
     if getBracketType(getSyntax(open)) =/= getBracketType(getSyntax(close))
         if getBracketType(getSyntax(close)) = '\0'
-            syntaxError("missing close for", open)
-        syntaxError("missing open for", close)
+            oppSyntaxError("missing close for", open)
+        oppSyntaxError("missing open for", close)
     reduceClose(close, before, reduceOpen(open, before, contents))
 
 
@@ -171,7 +159,7 @@ def shiftClosefix(reduceClose, State(stack, operators, onReduce), close)
                     state' := State(stack', operators, onReduce)
                     shiftBracket(reduceOpen, reduceClose, state',
                         operator, close, Void)
-                syntaxError("missing right operand for", operator)
+                oppSyntaxError("missing right operand for", operator)
             case OperandItem(operand)
                 with stack' as item' :: stack''
                     with item' as OperatorItem(operator)
@@ -182,8 +170,8 @@ def shiftClosefix(reduceClose, State(stack, operators, onReduce), close)
                                 state', operator, close, Just(operand))
                         pass
                     pass
-                syntaxError("missing open for", close)
-    syntaxError("missing open for", close)
+                oppSyntaxError("missing open for", close)
+    oppSyntaxError("missing open for", close)
 
 
 def getShifter(fixity)
@@ -195,14 +183,23 @@ def getShifter(fixity)
         Closefix(reduce) -> shiftClosefix(reduce)
 
 
-def shift(state, node)
-    state' @ State(stack, operators, onReduce) := reduceLeft(state, node)
-    with node as Operator(_, _, syntax')
-        getShifter(getFixity(syntax'))(state', node)
+def shiftOperator(state, operator)
+    state' := reduceLeft(state, operator)
+    getShifter(getFixity(getSyntax(operator)))(state', operator)
+
+
+def shiftOperand(state, tag, operand)
+    _ @ State(stack, operators, onReduce) := state
     with stack as top :: _
-        if not isOperatorItem(top)
-            syntaxError("missing operator before", node)
-        State(OperandItem(node) :: stack, operators, onReduce)
-    syntaxError("missing operator before", node)
+        if not isOperator(top)
+            parseError("missing operator before", tag)
+        State(OperandItem(operand) :: stack, operators, onReduce)
+    parseError("missing operator before", tag)
+
+
+def shift(state, tag, item)
+    match item
+        OperatorItem(operator) -> shiftOperator(state, operator)
+        OperandItem(operand) -> shiftOperand(state, tag, operand)
 
 #*

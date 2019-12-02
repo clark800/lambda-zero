@@ -26,9 +26,9 @@ static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
 
 static Node* reduceColonPair(Node* operator, Node* left, Node* right) {
     if (isColonPair(left) || !isValidPattern(left))
-        syntaxError("invalid left side of colon", left);
+        syntaxError("invalid left side of colon", operator);
     if (isColonPair(right) || !isValidPattern(right))
-        syntaxError("invalid right side of colon", right);
+        syntaxError("invalid right side of colon", operator);
     return ColonPair(getTag(operator), left, right);
 }
 
@@ -66,13 +66,13 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
     if (isDefinition(left))
         return applyDefinition(left, right);
     if (isKeyphrase(left, "def"))
-        return reduceDefine(getLeft(left), getRight(left), right);
+        return reduceDefine(operator, getRight(left), right);
     if (isCase(left) && isCase(right))
         return combineCases(getTag(operator), left, right);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
     if (isKeyphrase(left, "with"))
-        return reduceWith(getLeft(left), getRight(left), right);
+        return reduceWith(operator, getRight(left), right);
     return reduceApply(operator, left, right);
 }
 

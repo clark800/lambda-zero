@@ -214,7 +214,7 @@ def reduceDefine'(tag, definitionType, left, right)
 
 
 def reduceDefine(operator, left, right)
-    tag := getTag(operator)
+    tag := getOperatorTag(operator)
     if isDefinition(right)   # todo: remove after converting exceptions
         syntaxError("missing scope for definition", right)
     with left as Juxtaposition(_, left', right')
@@ -230,9 +230,9 @@ def reduceDefine(operator, left, right)
 
 def reduceADTDefine(operator, left, right)
     if not isValidPattern(left)
-        syntaxError("invalid left hand side", operator)
+        oppSyntaxError("invalid left hand side", operator)
     if not isSetBuilder(right)
-        syntaxError("ADT required to right of", operator)
-    Definition(getTag(operator), ADTDefinition, left, right)
+        oppSyntaxError("ADT required to right of", operator)
+    Definition(getOperatorTag(operator), ADTDefinition, left, right)
 
 #*

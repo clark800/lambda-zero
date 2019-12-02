@@ -8,29 +8,29 @@ def isValidPrior(operator, node)
 
 
 def reduceApply(operator, left, right)
-    Juxtaposition(getTag(operator), left, right)
+    Juxtaposition(getOperatorTag(operator), left, right)
 
 
 def reduceAdfix(operator, operand)
     if not isValidPrior(operator, operand)
-        syntaxError("operator syntax error", operator)
-    reduceApply(operator, Name(getTag(operator)), operand)
+        oppSyntaxError("operator syntax error", operator)
+    reduceApply(operator, Name(getOperatorTag(operator)), operand)
 
 
 def reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
-        Name(getTag(operator)), left), right)
+        Name(getOperatorTag(operator)), left), right)
 
 
 def reduceInfixL(operator, left, right)
     if not isValidPrior(operator, left)
-        syntaxError("operator syntax error", operator)
+        oppSyntaxError("operator syntax error", operator)
     reduceInfix(operator, left, right)
 
 
 def reduceInfixR(operator, left, right)
     if not isValidPrior(operator, right)
-        syntaxError("operator syntax error", operator)
+        oppSyntaxError("operator syntax error", operator)
     reduceInfix(operator, left, right)
 
 
@@ -43,7 +43,7 @@ def reduceArrow(operator, left, right)
 
 
 def reduceDoubleArrow(operator, left, right)
-    Arrow(getTag(operator), Double, [], left, Null(noTag), right)
+    Arrow(getOperatorTag(operator), Double, [], left, Null(noTag), right)
 
 
 def reducePipeline(operator, left, right)
@@ -51,71 +51,67 @@ def reducePipeline(operator, left, right)
 
 
 def reduceCommaPair(operator, left, right)
-    CommaPair(getTag(operator), left, right)
+    CommaPair(getOperatorTag(operator), left, right)
 
 
 def reduceColonPair(operator, left, right)
     if isColonPair(left) or not isValidPattern(left)
-        syntaxError("invalid left side of colon", left)
+        oppSyntaxError("invalid left side of colon", operator)
     if isColonPair(right) or not isValidPattern(right)
-        syntaxError("invalid right side of colon", right)
-    ColonPair(getTag(operator), left, right)
+        oppSyntaxError("invalid right side of colon", operator)
+    ColonPair(getOperatorTag(operator), left, right)
 
 
 def reduceAsPattern(operator, left, right)
-    AsPattern(getTag(operator), left, right)
+    AsPattern(getOperatorTag(operator), left, right)
 
 
 def reduceWhere(operator, left, right)
     if not isDefinition(right)
-        syntaxError("expected definition to right of", operator)
+        oppSyntaxError("expected definition to right of", operator)
     applyDefinition(right, left)
 
 
 def reduceWith(operator, asPattern, withBlock)
     with asPattern as AsPattern(_, expression, pattern)
-        tag := getTag(operator)
+        tag := getOperatorTag(operator)
         elseBlock := Underscore(tag, 3)
         caseArrow := newCaseArrow(pattern, withBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
         function := combineCases(tag, caseArrow, fallback)
         LockedArrow(FixedName(tag, "pass"),
             Juxtaposition(tag, function, expression))
-    syntaxError("expected as pattern to right of", operator)
+    oppSyntaxError("expected as pattern to right of", operator)
 
 
 def reduceNewline(operator, left, right)
     with left as Juxtaposition(_, left', right')
         if isThisName(left', "def")
-            reduceDefine(left', right', right)
+            reduceDefine(operator, right', right)
         if isThisName(left', "case")
             newCaseArrow(right', right)
         if isThisName(left', "with")
-            reduceWith(left', right', right)
+            reduceWith(operator, right', right)
         reduceApply(operator, left, right)
     if isDefinition(left)
         applyDefinition(left, right)
     if isCase(left) and isCase(right)
-        combineCases(getTag(operator), left, right)
+        combineCases(getOperatorTag(operator), left, right)
     reduceApply(operator, left, right)
 
 
 def reduceInterfix(operator, left, right)
     if not isValidPrior(operator, left)
-        syntaxError("operator syntax error", operator)
+        oppSyntaxError("operator syntax error", operator)
     reduceNewline(operator, left, right)
 
 
-def reduceInvalid(operator, _left, _right)
-    syntaxError("missing operator", operator)
-
-
 def reduceReserved(operator, _left, _right)
-    syntaxError("reserved operator", operator)
+    oppSyntaxError("reserved operator", operator)
 
 
 def reduceReservedAdfix(operator, _operand)
-    syntaxError("reserved operator", operator)
+    oppSyntaxError("reserved operator", operator)
 
 
 def reduceClose(_operator, _left, right)
@@ -197,9 +193,10 @@ def defineSyntax(operators, definition, name, right)
 
 
 def addSyntax(operators, operator)
-    if not isVoid(operators.lookupSyntax(getLexeme(operator)))
-        syntaxError("syntax already defined", operator)
-    operators.pushSyntax(getLexeme(operator), getSyntax(operator))
+    lexeme := getTagLexeme(getOperatorTag(operator))
+    if not isVoid(operators.lookupSyntax(lexeme))
+        oppSyntaxError("syntax already defined", operator)
+    operators.pushSyntax(lexeme, getSyntax(operator))
 
 
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence,
