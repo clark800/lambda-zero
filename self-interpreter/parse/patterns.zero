@@ -39,8 +39,8 @@ def newPatternArrow(pattern, body)
 
 
 def getNameAndValue(f, left, right)
-    if isNull(right)
-        abort("NULL")                    # force syntax errors
+    if not isPreterm(right)
+        syntaxError("invalid parameter", right)  # force syntax errors
     with left as Juxtaposition(_, left', right')
         getNameAndValue(f, left', f(right', right))
     (left, right)

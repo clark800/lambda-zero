@@ -166,11 +166,10 @@ def bind(getBuiltin, level, stack, context, node)
                     MetaVariable(veil(tag), 0))
             )
             if isNil(constructorNames)
-                domain := if isNull(annotation) then
-                    MetaVariable(veil(tag), 0) else
-                    annotation.bind'(level, stack, context)
+                domain := annotation.mapJust(bind'(level, stack, context)) ??
+                    MetaVariable(veil(tag), 0)
                 Function(getTag(parameter), False, domain, codomain, bodyTerm)
-            if not isNull(annotation)
+            if not isVoid(annotation)
                 syntaxError("parameter annotation not permitted on case", node)
             with buildCaseAnnotation(tag, constructorNames, context) as
                     Just(typeAST)
@@ -212,8 +211,6 @@ def bind(getBuiltin, level, stack, context, node)
         case TypedNode(tag, typeAST, node)
             type := typeAST.bind'(level, stack, context)
             Element(tag, type, node.bind'(level, stack, context))
-        case Null(_)
-            abort "internal error: Null reached bind"
 
 
 def bindGlobal(getBuiltin, context, node)

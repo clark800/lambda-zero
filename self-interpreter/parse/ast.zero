@@ -7,7 +7,7 @@ ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
 AST ::= {
     Reference(tag : TagT, debruijn : ℕ),
     Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
-        parameter : AST, annotation : AST, body : AST),
+        parameter : AST, annotation : (AST)?, body : AST),
     Juxtaposition(tag : TagT, left : AST, right : AST),
     Let(tag : TagT, isTypeConstructor : 𝔹,
         name : AST, value : AST, scope : AST),
@@ -21,8 +21,7 @@ AST ::= {
     ADT(tag : TagT, parameters : List(AST), objectType : AST),
     Constructor(tag : TagT, parameterTypes : List(AST), dataType : AST,
         function : AST, count : ℕ, index : ℕ),
-    TypedNode(tag : TagT, type : AST, node : AST),
-    Null(tag : TagT)
+    TypedNode(tag : TagT, type : AST, node : AST)
 }
 
 
@@ -50,7 +49,22 @@ def getTag
     ADT(tag, _, _) -> tag
     Constructor(tag, _, _, _, _, _) -> tag
     TypedNode(tag, _, _) -> tag
-    Null(tag) -> tag
+
+
+def isPreterm
+    Reference(_, _) -> True
+    Arrow(_, _, _, _, _, _) -> True
+    Juxtaposition(_, _, _) -> True
+    Let(_, _, _, _, _) -> True
+    Number(_, _) -> True
+    Definition(_, _, _, _) -> False
+    AsPattern(_, _, _) -> False
+    CommaPair(_, _, _) -> False
+    ColonPair(_, _, _) -> False
+    SetBuilder(_, _) -> False
+    ADT(_, _, _) -> True
+    Constructor(_, _, _, _, _, _) -> True
+    TypedNode(_, _, _) -> True
 
 
 def syntaxError(message, node)
@@ -73,7 +87,6 @@ def containsName(name)
     ADT(_, _, objectType) -> containsName(name, objectType)
     Constructor(_, _, _, _, _, _) -> False
     TypedNode(_, _, _) -> False
-    Null(_) -> False
 
 
 def showArrow
@@ -108,7 +121,6 @@ def showAST
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
     Constructor(_, _, _, body, _, _) -> showAST(body)
     TypedNode(_, _, node) -> showAST(node)
-    Null(_) -> "#NULL#"
 
 
 isReference := Reference(_, _) -> True; _ -> False
@@ -124,7 +136,6 @@ isSetBuilder := SetBuilder(_, _) -> True; _ -> False
 isADT := ADT(_, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
-isNull := Null(_) -> True; _ -> False
 
 isCase(node) := with node as Arrow(_, type, _, _, _, _);
     (type |> Locked -> False; _ -> True) <| False
@@ -133,20 +144,20 @@ Name(tag) := Reference(tag, 0)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
 isName(node) := with node as Reference(_, debruijn); debruijn = 0 <| False
 SimpleArrow(parameter, body) :=
-    Arrow(getTag(parameter), Simple, [], parameter, Null(noTag), body)
+    Arrow(getTag(parameter), Simple, [], parameter, Void, body)
 StrictArrow(tag, constructors, body) :=
-    Arrow(tag, Strict, constructors, Name(veil(tag)), Null(noTag), body)
+    Arrow(tag, Strict, constructors, Name(veil(tag)), Void, body)
 LockedArrow(parameter, body) :=
-    Arrow(getTag(parameter), Locked, [], parameter, Null(noTag), body)
+    Arrow(getTag(parameter), Locked, [], parameter, Void, body)
 DoubleArrow(left, right) :=
-    Arrow(getTag(left), Double, [], left, Null(noTag), right)
+    Arrow(getTag(left), Double, [], left, Void, right)
 ImplicitArrow(parameter, body) :=
-    Arrow(getTag(parameter), Squiggle, [], parameter, Null(noTag), body)
+    Arrow(getTag(parameter), Squiggle, [], parameter, Void, body)
 
 
 def setAnnotation(annotation, node)
     with node as Arrow(tag, arrowType, constructors, parameter, _, body)
-        Arrow(tag, arrowType, constructors, parameter, annotation, body)
+        Arrow(tag, arrowType, constructors, parameter, Just(annotation), body)
     abort("can only set annotation on arrow nodes")
 
 
