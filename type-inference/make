@@ -22,7 +22,7 @@ cat "$LIB/operators.zero" \
     "$LIB/table.zero" \
     "$PARSER/parse/lex/lex.zero" \
     "$PARSER/parse/opp/operator.zero" \
-    "$PARSER/parse/opp/opp.zero" \
+    "$PARSER/parse/opp/shift.zero" \
     "$PARSER/parse/ast.zero" \
     "$PARSER/parse/term.zero" \
     "$PARSER/parse/patterns.zero" \

@@ -77,12 +77,10 @@ bool isHigherPrecedence(Node* left, Node* right) {
     Rules* rightRules = getRules(right);
 
     if (leftRules->rightPrecedence == rightRules->leftPrecedence) {
-        if (leftRules->associativity == N)
-            syntaxError("operator is non-associative", left);
-        if (rightRules->associativity == N)
-            syntaxError("operator is non-associative", right);
         if (leftRules->associativity != rightRules->associativity)
             syntaxError("incompatible associativity", right);
+        if (rightRules->associativity == N)
+            syntaxError("operator is non-associative", right);
 
         if (leftRules->associativity == R)
             return getValue(left) > getValue(right);

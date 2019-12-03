@@ -1,5 +1,13 @@
 #* operator.zero
 
+Associativity ::= {LA, RA, NA}
+
+
+def isSameAssociativity(left, right)
+    getAssociativityCode := LA -> 0; RA -> 1; NA -> 2
+    getAssociativityCode(left) = getAssociativityCode(right)
+
+
 Fixity(operator, operand) ::= {
     Prefix(reduce : operator => operand => operand),
     Infix(reduce : operator => operand => operand => operand),
@@ -12,7 +20,7 @@ SyntaxT(operator, operand) ::= {Syntax(
     aliasName : List(ℕ),
     leftPrecedence : ℕ,
     rightPrecedence : ℕ,
-    associativity : ℕ,
+    associativity : Associativity,
     special : 𝔹,
     bracketType : ℕ,
     prior : List(ℕ),
@@ -55,35 +63,32 @@ def oppSyntaxError(message, Operator(tag, _, _))
     parseError(message, tag)
 
 
-def getFixityCode(fixity)
-    match fixity
-        Prefix(_) -> PREFIX
-        Infix(_) -> INFIX
-        Postfix(_) -> POSTFIX
-        Openfix(_) -> OPENFIX
-        Closefix(_) -> CLOSEFIX
+def isHigherPrecedence(left, right)
+    leftSyntax := getSyntax(left)
+    rightSyntax := getSyntax(right)
+
+    if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
+        associativity := rightSyntax.getAssociativity
+        if not isSameAssociativity(associativity, leftSyntax.getAssociativity)
+            oppSyntaxError("incompatible associativity", right)
+
+        match associativity
+            LA -> getSubprecedence(left) >= getSubprecedence(right)
+            RA -> getSubprecedence(left) > getSubprecedence(right)
+            NA -> oppSyntaxError("operator is non-associative", right)
+
+    leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 
 
-StackItem(operandT) ::= {
-    OperatorItem(operator : OperatorT(operandT)),
-    OperandItem(operand : operandT)
-}
+def pushSyntax(lexeme, syntax', operators)
+    with operators as top :: _
+        top.insert(lexeme, syntax') :: operators
+    [newDictionary([(lexeme, syntax')])]
 
 
-def isOperator(item)
-    match item
-        OperatorItem(_) -> True
-        OperandItem(_) -> False
-
-
-StateT(operand) ::= {State(
-    stack : List(StackItem(operand)),
-    operators : List(TableT(List(ℕ), SyntaxT(OperatorT(operand), operand))),
-    onReduce : StateT(operand) => OperatorT(operand) =>
-        (operand)? => (operand)? => operand => StateT(operand)
-)}
-
-getStack(State(stack, _, _)) := stack
-getOperators(State(_, operators, _)) := operators
+def lookupSyntax(lexeme, operators)
+    with operators as top :: _
+        top.lookup(lexeme)
+    Void
 
 #*

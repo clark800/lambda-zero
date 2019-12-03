@@ -1,8 +1,26 @@
-#* opp.zero
+#* shift.zero
 
-LEFT := 0
-RIGHT := 1
-NEITHER := 2
+StackItem(operandT) ::= {
+    OperatorItem(operator : OperatorT(operandT)),
+    OperandItem(operand : operandT)
+}
+
+
+def isOperator(item)
+    match item
+        OperatorItem(_) -> True
+        OperandItem(_) -> False
+
+
+StateT(operand) ::= {State(
+    stack : List(StackItem(operand)),
+    operators : List(TableT(List(ℕ), SyntaxT(OperatorT(operand), operand))),
+    onReduce : StateT(operand) => OperatorT(operand) =>
+        (operand)? => (operand)? => operand => StateT(operand)
+)}
+
+getStack(State(stack, _, _)) := stack
+getOperators(State(_, operators, _)) := operators
 
 
 def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
@@ -43,27 +61,6 @@ def reduceTop(state @ State(stack, operators, onReduce))
     state
 
 
-def isHigherPrecedence(left, right)
-    leftSyntax := getSyntax(left)
-    rightSyntax := getSyntax(right)
-
-    if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
-        if leftSyntax.getAssociativity = NEITHER
-            oppSyntaxError("operator is non-associative", left)
-
-        if rightSyntax.getAssociativity = NEITHER
-            oppSyntaxError("operator is non-associative", right)
-
-        if leftSyntax.getAssociativity =/= rightSyntax.getAssociativity
-            oppSyntaxError("incompatible associativity", right)
-
-        if leftSyntax.getAssociativity = RIGHT
-            getSubprecedence(left) > getSubprecedence(right)
-        getSubprecedence(left) >= getSubprecedence(right)
-
-    leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
-
-
 def shouldReduceTop(operator, state)
     with getStack(state) as item :: stack'
         if isOperator(item)
@@ -78,23 +75,6 @@ def shouldReduceTop(operator, state)
 
 def reduceLeft(state, operator)
     while(shouldReduceTop(operator), reduceTop, state)
-
-
-def parseOperator(tag, value, syntax')
-    tag' := renameTag(tag, getAlias(syntax'), getFixityCode(getFixity(syntax')))
-    Operator(tag', value, syntax')
-
-
-def pushSyntax(lexeme, syntax', operators)
-    with operators as top :: _
-        top.insert(lexeme, syntax') :: operators
-    [newDictionary([(lexeme, syntax')])]
-
-
-def lookupSyntax(lexeme, operators)
-    with operators as top :: _
-        top.lookup(lexeme)
-    Void
 
 
 def shiftPrefix(State(stack, operators, onReduce), operator)
