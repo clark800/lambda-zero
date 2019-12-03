@@ -100,7 +100,7 @@ def newConstructorDefinition(tag, dataType, n, (form, j), scope)
     m := length(parameters)
     name := getHead(form)
     body := getConstructorBody(name, n, m, j)
-    if isNull(body)
+    if not isPreterm(body)
         syntaxError("invalid constructor", name)   # force errors
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(getTag(name), parameterTypes,

@@ -87,8 +87,8 @@ def parseSymbol(tag, value, operators)
 
 
 def newOperand(operand)
-    if isNull(operand)
-        abort "internal error: newOperand" # force syntax errors
+    if not isPreterm(operand)
+        syntaxError("invalid operand", operand)  # force syntax errors
     OperandItem(operand)
 
 

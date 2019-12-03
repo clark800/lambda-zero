@@ -43,7 +43,7 @@ def reduceArrow(operator, left, right)
 
 
 def reduceDoubleArrow(operator, left, right)
-    Arrow(getOperatorTag(operator), Double, [], left, Null(noTag), right)
+    Arrow(getOperatorTag(operator), Double, [], left, Void, right)
 
 
 def reducePipeline(operator, left, right)

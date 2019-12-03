@@ -10,6 +10,10 @@ def shift'(state, item)
     shift(state, getItemTag(item), item)
 
 
+def isThisOperator(operator, lexeme)
+    getTagLexeme(getOperatorTag(operator)) =*= lexeme
+
+
 def isLeftSectionOperator(operator)
     syntax' := getSyntax(operator)
     if isSpecial(syntax')
@@ -116,7 +120,10 @@ def parse(getBuiltin, code)
     stack' := getStack(tokens.cascade(shiftToken, state))
     with stack' as item :: remaining
         with item as OperandItem(result)
-            if isNull(result) or not isNil(remaining)
+            if not isPreterm(result) and False
+                # currently bind has special case errors for non-preterms
+                syntaxError("parser error", result)  # force syntax errors
+            if not isNil(remaining)
                 syntaxError("parser error", result)
             bindAST(getBuiltin, result)
         pass

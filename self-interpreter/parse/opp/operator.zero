@@ -47,10 +47,6 @@ getSubprecedence(Operator(_, subprecedence, _)) := subprecedence
 getSyntax(Operator(_, _, syntax')) := syntax'
 
 
-def isThisOperator(Operator(tag, _, _), lexeme)
-    getTagLexeme(tag) =*= lexeme
-
-
 def throwError(message, tag)
     abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
 

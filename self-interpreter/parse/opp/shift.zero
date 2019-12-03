@@ -40,12 +40,7 @@ def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
                         Just(left), Just(right), reduction)
                 pass
             oppSyntaxError("missing left operand", operator)
-        case Postfix(reduce)
-            oppSyntaxError("internal error: reduceTop'", operator)
-        case Openfix(reduce)
-            oppSyntaxError("internal error: reduceTop'", operator)
-        case Closefix(reduce)
-            oppSyntaxError("internal error: reduceTop'", operator)
+        _ -> oppSyntaxError("internal error: reduceTop'", operator)
 
 
 def reduceTop(state @ State(stack, operators, onReduce))
@@ -171,9 +166,9 @@ def shiftOperator(state, operator)
 def shiftOperand(state, tag, operand)
     _ @ State(stack, operators, onReduce) := state
     with stack as top :: _
-        if not isOperator(top)
-            parseError("missing operator before", tag)
-        State(OperandItem(operand) :: stack, operators, onReduce)
+        if isOperator(top)
+            State(OperandItem(operand) :: stack, operators, onReduce)
+        pass
     parseError("missing operator before", tag)
 
 
