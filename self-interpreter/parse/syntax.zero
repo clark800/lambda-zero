@@ -143,60 +143,60 @@ def newSyntaxOperator(tag, precedence, fixity, prior)
     syntaxError("invalid fixity", fixity)
 
 
-def getAliasSyntax(operators, name)
+def getAliasSyntax(state, name)
     if not isName(name)
         syntaxError("expected operator name", name)
-    operators.lookupSyntax(getLexeme(name)) ??
+    state.lookupSyntax(getLexeme(name)) ??
         syntaxError("syntax not defined", name)
 
 
-def newAlias(operators, tag, name)
-    Operator(tag, 0, getAliasSyntax(operators, name))
+def newAlias(state, tag, name)
+    Operator(tag, 0, getAliasSyntax(state, name))
 
 
-def copySyntax(operators, tag, name)
+def copySyntax(state, tag, name)
     lexeme := getTagLexeme(tag)
-    match getAliasSyntax(operators, name)
+    match getAliasSyntax(state, name)
         Syntax(_, l, r, a, s, b, p, f) ->
             Operator(tag, 0, Syntax(lexeme, l, r, a, s, b, p, f))
 
 
-def findPrecedence(operators, node)
-    syntax' := operators.lookupSyntax(getLexeme(node)) ??
+def findPrecedence(state, node)
+    syntax' := state.lookupSyntax(getLexeme(node)) ??
         syntaxError("syntax not defined", node)
     if getLeftPrecedence(syntax') =/= getRightPrecedence(syntax')
         syntaxError("operator not supported", node)
     getLeftPrecedence(syntax')
 
 
-def parsePrecedence(operators, node)
+def parsePrecedence(state, node)
     with node as Number(_, precedence)
         if precedence > 99
             syntaxError("invalid precedence", node)
         precedence
-    findPrecedence(operators, node)
+    findPrecedence(state, node)
 
 
-def defineSyntax(operators, definition, name, right)
+def defineSyntax(state, definition, name, right)
     tag := getTag(definition)
     if not isName(name)
         syntaxError("expected name operand to", definition)
     with right as Juxtaposition(_, fixity, argument)
         if isThisName(fixity, "alias")
-            newAlias(operators, getTag(name), argument)
+            newAlias(state, getTag(name), argument)
         if isThisName(fixity, "syntax")
-            copySyntax(operators, getTag(name), argument)
-        precedence := parsePrecedence(operators, argument)
+            copySyntax(state, getTag(name), argument)
+        precedence := parsePrecedence(state, argument)
         prior := if isNumber(argument) then "" else getLexeme(argument)
         newSyntaxOperator(getTag(name), precedence, fixity, prior)
     syntaxError("invalid syntax definition", definition)
 
 
-def addSyntax(operators, operator)
+def addSyntax(state, operator)
     lexeme := getTagLexeme(getOperatorTag(operator))
-    if not isVoid(operators.lookupSyntax(lexeme))
+    if not isVoid(state.lookupSyntax(lexeme))
         oppSyntaxError("syntax already defined", operator)
-    operators.pushSyntax(lexeme, getSyntax(operator))
+    state.pushSyntax(lexeme, getSyntax(operator))
 
 
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence,

@@ -10,10 +10,6 @@ def shift'(state, item)
     shift(state, getItemTag(item), item)
 
 
-def isThisOperator(operator, lexeme)
-    getTagLexeme(getOperatorTag(operator)) =*= lexeme
-
-
 def isLeftSectionOperator(operator)
     syntax' := getSyntax(operator)
     if isSpecial(syntax')
@@ -32,19 +28,18 @@ def isRightSectionOperator(operator)
 
 def shiftOperator''(state, operator)
     # handle section syntax
-    _ @ State(stack, operators, onReduce) := state
-    with stack as topItem :: stack'
+    (maybeTopItem, state') := unshift(state)
+    with maybeTopItem as Just(topItem)
         with topItem as OperatorItem(top)
             if isThisOperator(top, "(") and isRightSectionOperator(operator)
                 openTag := renameTag(getOperatorTag(top), "( ", OPENFIX)
-                open := operators.parseSymbol(openTag, 0)
+                open := state'.parseSymbol(openTag, 0)
                 placeholder := OperandItem(FixedName(getOperatorTag(top), ".*"))
-                state' := State(stack', operators, onReduce)
                 shift'(shift'(shift'(state', open), placeholder),
                     OperatorItem(operator))
             if isThisOperator(operator, ")") and isLeftSectionOperator(top)
                 closeTag := renameTag(getOperatorTag(operator), " )", CLOSEFIX)
-                close := operators.parseSymbol(closeTag, 0)
+                close := state.parseSymbol(closeTag, 0)
                 placeholder := OperandItem(
                     FixedName(getOperatorTag(operator), "*."))
                 shift'(shift'(state, placeholder), close)
@@ -53,23 +48,13 @@ def shiftOperator''(state, operator)
     shift'(state, OperatorItem(operator))
 
 
-def isThisOperatorItem(item, lexeme)
-    with item as OperatorItem(operator)
-        isThisOperator(operator, lexeme)
-    False
-
-
-def erase(state @ State(stack, operators, onReduce), lexeme)
-    State(stack.dropIf(`isThisOperatorItem(lexeme)), operators, onReduce)
-
-
 def shiftOperator'(state, operator)
     # handle erasure of newlines and semicolons
 
     if getFixityCode(getFixity(getSyntax(operator))) = CLOSEFIX
-        state' := erase(state, "\n")
+        state' := state.erase("\n")
         state'' := if isThisOperator(operator, ")") then
-            erase(state', ";") else state'
+            state'.erase(";") else state'
         shiftOperator''(state'', operator)
 
     if isThisOperator(operator, "\n")
@@ -93,32 +78,29 @@ def shiftItem(state, item)
 
 
 def shiftToken(state, token)
-    shiftItem(state, parseToken(getOperators(state), token))
+    shiftItem(state, parseToken(state, token))
 
 
 def onReduceHandler(state, operator, left, right, reduction)
-    _ @ State(stack, operators, onReduce) := state
     with left as Just(left')
         with left' as Definition(_, type, _, _)
             with type as SyntaxDefinition
-                State(stack, operators.drop(1), onReduce)
+                popSyntax(state)
             pass
         pass
     with reduction as Definition(_, type, definiendum, definiens)
         with type as SyntaxDefinition
-            operators' := addSyntax(operators,
-                defineSyntax(operators, reduction, definiendum, definiens))
-            State(stack, operators', onReduce)
+            addSyntax(state,
+                defineSyntax(state, reduction, definiendum, definiens))
         pass
     state
 
 
 def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
-    stack := [parseToken(OPERATORS, START)]
-    state := State(stack, OPERATORS, onReduceHandler)
-    stack' := getStack(tokens.cascade(shiftToken, state))
-    with stack' as item :: remaining
+    state := shiftToken(State([], OPERATORS, onReduceHandler), START)
+    stack := getStack(tokens.cascade(shiftToken, state))
+    with stack as item :: remaining
         with item as OperandItem(result)
             if not isPreterm(result) and False
                 # currently bind has special case errors for non-preterms

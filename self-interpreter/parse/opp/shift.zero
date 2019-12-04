@@ -20,7 +20,6 @@ StateT(operand) ::= {State(
 )}
 
 getStack(State(stack, _, _)) := stack
-getOperators(State(_, operators, _)) := operators
 
 
 def reduceTop'(state @ State(stack, operators, onReduce), operator, right)
@@ -176,5 +175,45 @@ def shift(state, tag, item)
     match item
         OperatorItem(operator) -> shiftOperator(state, operator)
         OperandItem(operand) -> shiftOperand(state, tag, operand)
+
+
+def unshift(state @ State(stack, operators, onReduce))
+    with stack as item :: stack'
+        (Just(item), State(stack', operators, onReduce))
+    (Void, state)
+
+
+def isThisOperator(operator, lexeme)
+    getTagLexeme(getOperatorTag(operator)) =*= lexeme
+
+
+def isThisOperatorItem(item, lexeme)
+    with item as OperatorItem(operator)
+        isThisOperator(operator, lexeme)
+    False
+
+
+def erase(lexeme, state @ State(stack, operators, onReduce))
+    State(stack.dropIf(`isThisOperatorItem(lexeme)), operators, onReduce)
+
+
+def pushOperator(lexeme, syntax', operators)
+    with operators as top :: _
+        top.insert(lexeme, syntax') :: operators
+    [newDictionary([(lexeme, syntax')])]
+
+
+def pushSyntax(lexeme, syntax', state @ State(stack, operators, onReduce))
+    State(stack, pushOperator(lexeme, syntax', operators), onReduce)
+
+
+def popSyntax(state @ State(stack, operators, onReduce))
+    State(stack, operators.drop(1), onReduce)
+
+
+def lookupSyntax(lexeme, State(_, operators, _))
+    with operators as top :: _
+        top.lookup(lexeme)
+    Void
 
 #*

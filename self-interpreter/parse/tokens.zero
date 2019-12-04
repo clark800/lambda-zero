@@ -79,9 +79,9 @@ def parseOperator(tag, value, syntax')
     Operator(tag', value, syntax')
 
 
-def parseSymbol(tag, value, operators)
+def parseSymbol(tag, value, state)
     lexeme := getTagLexeme(tag)
-    operators.lookupSyntax(lexeme).mapJust(
+    state.lookupSyntax(lexeme).mapJust(
         OperatorItem <> parseOperator(tag, value)) ??
         OperandItem(Name(tag))
 
@@ -92,14 +92,14 @@ def newOperand(operand)
     OperandItem(operand)
 
 
-def parseToken(operators, token)
+def parseToken(state, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
         Space -> abort "internal error: Space reached parseToken"
         VSpace -> abort "internal error: VSpace reached parseToken"
-        Newline -> operators.parseSymbol(renameTag(tag, "\n", INFIX),
+        Newline -> state.parseSymbol(renameTag(tag, "\n", INFIX),
             length(getTagLexeme(tag)) -- 1)
-        Symbolic -> operators.parseSymbol(tag, 0)
+        Symbolic -> state.parseSymbol(tag, 0)
         Numeric -> newOperand(parseNumericLiteral(tag))
         Character -> newOperand(parseCharacterLiteral(tag))
         String -> newOperand(parseStringLiteral(tag))
