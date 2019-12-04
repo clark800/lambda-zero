@@ -75,16 +75,4 @@ def isHigherPrecedence(left, right)
 
     leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 
-
-def pushSyntax(lexeme, syntax', operators)
-    with operators as top :: _
-        top.insert(lexeme, syntax') :: operators
-    [newDictionary([(lexeme, syntax')])]
-
-
-def lookupSyntax(lexeme, operators)
-    with operators as top :: _
-        top.lookup(lexeme)
-    Void
-
 #*
