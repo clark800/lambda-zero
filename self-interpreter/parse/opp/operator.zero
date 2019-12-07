@@ -8,15 +8,15 @@ def isSameAssociativity(left, right)
     getAssociativityCode(left) = getAssociativityCode(right)
 
 
-Fixity(operator, operand) ::= {
-    Prefix(reduce : operator => operand => operand),
-    Infix(reduce : operator => operand => operand => operand),
-    Postfix(reduce : operator => operand => operand),
-    Openfix(reduce : operator => (operand)? => (operand)? => operand),
-    Closefix(reduce : operator => (operand)? => operand => operand)
+Fixity(operand) ::= {
+    Prefix(reduce : TagT => operand => operand),
+    Infix(reduce : TagT => operand => operand => operand),
+    Postfix(reduce : TagT => operand => operand),
+    Openfix(reduce : TagT => (operand)? => (operand)? => operand),
+    Closefix(reduce : TagT => (operand)? => operand => operand)
 }
 
-SyntaxT(operator, operand) ::= {Syntax(
+SyntaxT(operand) ::= {Syntax(
     aliasName : List(ℕ),
     leftPrecedence : ℕ,
     rightPrecedence : ℕ,
@@ -24,7 +24,7 @@ SyntaxT(operator, operand) ::= {Syntax(
     special : 𝔹,
     bracketType : ℕ,
     prior : List(ℕ),
-    fixity : Fixity(operator, operand)
+    fixity : Fixity(operand)
 )}
 
 getAlias(Syntax(aliasName, _, _, _, _, _, _, _)) := aliasName
@@ -39,7 +39,7 @@ getFixity(Syntax(_, _, _, _, _, _, _, fixity)) := fixity
 OperatorT(operand) ::= {Operator(
     tag : TagT,
     subprecedence : ℕ,
-    syntax' : SyntaxT(OperatorT(operand), operand)
+    syntax' : SyntaxT(operand)
 )}
 
 getOperatorTag(Operator(tag, _, _)) := tag

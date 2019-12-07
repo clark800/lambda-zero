@@ -14,7 +14,7 @@ def isOperator(item)
 
 StateT(operand) ::= {State(
     stack : List(StackItem(operand)),
-    operators : List(TableT(List(ℕ), SyntaxT(OperatorT(operand), operand)))
+    operators : List(TableT(List(ℕ), SyntaxT(operand)))
 )}
 
 getStack(State(stack, _)) := stack
@@ -41,7 +41,7 @@ def reduceTop'(onReduce, getTag, state, operator, right)
         case Prefix(reduce)
             if not isValidAdfixPrior(getTag, operator, right)
                 oppSyntaxError("invalid prior for", operator)
-            reduction := reduce(operator, right)
+            reduction := reduce(getOperatorTag(operator), right)
             stack' := OperandItem(reduction) :: stack
             state' := State(stack', operators)
             onReduce(state', operator, Void, Just(right), reduction)
@@ -50,7 +50,7 @@ def reduceTop'(onReduce, getTag, state, operator, right)
                 with leftItem as OperandItem(left)
                     if not isValidInfixPrior(getTag, operator, left, right)
                         oppSyntaxError("invalid prior for", operator)
-                    reduction := reduce(operator, left, right)
+                    reduction := reduce(getOperatorTag(operator), left, right)
                     stack'' := OperandItem(reduction) :: stack'
                     state' := State(stack'', operators)
                     onReduce(state', operator,
@@ -98,7 +98,7 @@ def shiftPostfix(onReduce, getTag, reduce, State(stack, operators), operator)
         with item as OperandItem(operand)
             if not isValidAdfixPrior(getTag, operator, operand)
                 oppSyntaxError("invalid prior for", operator)
-            reduction := reduce(operator, operand)
+            reduction := reduce(getOperatorTag(operator), operand)
             stack'' := OperandItem(reduction) :: stack'
             state' := State(stack'', operators)
             onReduce(state', operator, Just(operand), Void, reduction)
@@ -123,7 +123,9 @@ def reduceBracket(reduceOpen, reduceClose, open, close, before, contents)
         if getBracketType(getSyntax(close)) = '\0'
             oppSyntaxError("missing close for", open)
         oppSyntaxError("missing open for", close)
-    reduceClose(close, before, reduceOpen(open, before, contents))
+    openTag := getOperatorTag(open)
+    closeTag := getOperatorTag(close)
+    reduceClose(closeTag, before, reduceOpen(openTag, before, contents))
 
 
 def shiftBracket'(onReduce, reduceOpen, reduceClose, state,

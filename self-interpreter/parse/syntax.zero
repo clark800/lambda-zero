@@ -1,19 +1,18 @@
 #* syntax.zero
 
-def reduceApply(operator, left, right)
-    Juxtaposition(getOperatorTag(operator), left, right)
+def reduceApply(tag, left, right)
+    Juxtaposition(tag, left, right)
 
 
-def reduceAdfix(operator, operand)
-    reduceApply(operator, Name(getOperatorTag(operator)), operand)
+def reduceAdfix(tag, operand)
+    reduceApply(tag, Name(tag), operand)
 
 
-def reduceInfix(operator, left, right)
-    reduceApply(operator, reduceApply(operator,
-        Name(getOperatorTag(operator)), left), right)
+def reduceInfix(tag, left, right)
+    reduceApply(tag, reduceApply(tag, Name(tag), left), right)
 
 
-def reduceArrow(operator, left, right)
+def reduceArrow(_tag, left, right)
     if isName(left)
         SimpleArrow(left, right)  # might be a case or might not be a case
     if isColonPair(left)
@@ -21,73 +20,72 @@ def reduceArrow(operator, left, right)
     newCaseArrow(left, right)
 
 
-def reduceDoubleArrow(operator, left, right)
-    Arrow(getOperatorTag(operator), Double, [], left, Void, right)
+def reduceDoubleArrow(tag, left, right)
+    Arrow(tag, Double, [], left, Void, right)
 
 
-def reducePipeline(operator, left, right)
-    reduceApply(operator, right, left)
+def reducePipeline(tag, left, right)
+    reduceApply(tag, right, left)
 
 
-def reduceCommaPair(operator, left, right)
-    CommaPair(getOperatorTag(operator), left, right)
+def reduceCommaPair(tag, left, right)
+    CommaPair(tag, left, right)
 
 
-def reduceColonPair(operator, left, right)
+def reduceColonPair(tag, left, right)
     if isColonPair(left) or not isValidPattern(left)
-        oppSyntaxError("invalid left side of colon", operator)
+        parseError("invalid left side of colon", tag)
     if isColonPair(right) or not isValidPattern(right)
-        oppSyntaxError("invalid right side of colon", operator)
-    ColonPair(getOperatorTag(operator), left, right)
+        parseError("invalid right side of colon", tag)
+    ColonPair(tag, left, right)
 
 
-def reduceAsPattern(operator, left, right)
-    AsPattern(getOperatorTag(operator), left, right)
+def reduceAsPattern(tag, left, right)
+    AsPattern(tag, left, right)
 
 
-def reduceWhere(operator, left, right)
+def reduceWhere(tag, left, right)
     if not isDefinition(right)
-        oppSyntaxError("expected definition to right of", operator)
+        parseError("expected definition to right of", tag)
     applyDefinition(right, left)
 
 
-def reduceWith(operator, asPattern, withBlock)
+def reduceWith(tag, asPattern, withBlock)
     with asPattern as AsPattern(_, expression, pattern)
-        tag := getOperatorTag(operator)
         elseBlock := Underscore(tag, 3)
         caseArrow := newCaseArrow(pattern, withBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
         function := combineCases(tag, caseArrow, fallback)
         LockedArrow(FixedName(tag, "pass"),
             Juxtaposition(tag, function, expression))
-    oppSyntaxError("expected as pattern to right of", operator)
+    parseError("expected as pattern to right of", tag)
 
 
-def reduceNewline(operator, left, right)
+def reduceNewline(tag, left, right)
     with left as Juxtaposition(_, left', right')
         if isThisName(left', "def")
-            reduceDefine(operator, right', right)
+            reduceDefine(tag, right', right)
         if isThisName(left', "case")
             newCaseArrow(right', right)
         if isThisName(left', "with")
-            reduceWith(operator, right', right)
-        reduceApply(operator, left, right)
+            reduceWith(tag, right', right)
+        reduceApply(tag, left, right)
     if isDefinition(left)
         applyDefinition(left, right)
     if isCase(left) and isCase(right)
-        combineCases(getOperatorTag(operator), left, right)
-    reduceApply(operator, left, right)
+        combineCases(tag, left, right)
+    reduceApply(tag, left, right)
 
 
-def reduceReserved(operator, _left, _right)
-    oppSyntaxError("reserved operator", operator)
+def reduceReserved(tag, _left, _right)
+    parseError("reserved operator", tag)
 
 
-def reduceReservedAdfix(operator, _operand)
-    oppSyntaxError("reserved operator", operator)
+def reduceReservedAdfix(tag, _operand)
+    parseError("reserved operator", tag)
 
 
-def reduceClose(_operator, _left, right)
+def reduceClose(_tag, _left, right)
     right
 
 

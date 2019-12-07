@@ -213,8 +213,7 @@ def reduceDefine'(tag, definitionType, left, right)
     Definition(tag, definitionType, name, transformRecursion(name, value))
 
 
-def reduceDefine(operator, left, right)
-    tag := getOperatorTag(operator)
+def reduceDefine(tag, left, right)
     if isDefinition(right)   # todo: remove after converting exceptions
         syntaxError("missing scope for definition", right)
     with left as Juxtaposition(_, left', right')
@@ -228,11 +227,11 @@ def reduceDefine(operator, left, right)
     reduceDefine'(tag, PlainDefinition, left, right)
 
 
-def reduceADTDefine(operator, left, right)
+def reduceADTDefine(tag, left, right)
     if not isValidPattern(left)
-        oppSyntaxError("invalid left hand side", operator)
+        parseError("invalid left hand side", tag)
     if not isSetBuilder(right)
-        oppSyntaxError("ADT required to right of", operator)
-    Definition(getOperatorTag(operator), ADTDefinition, left, right)
+        parseError("ADT required to right of", tag)
+    Definition(tag, ADTDefinition, left, right)
 
 #*
