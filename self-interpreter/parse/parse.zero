@@ -6,8 +6,23 @@ def getItemTag(item)
         OperandItem(operand) -> getTag(operand)
 
 
+def onReduceHandler(state, operator, left, right, reduction)
+    with left as Just(left')
+        with left' as Definition(_, type, _, _)
+            with type as SyntaxDefinition
+                popSyntax(state)
+            pass
+        pass
+    with reduction as Definition(_, type, definiendum, definiens)
+        with type as SyntaxDefinition
+            addSyntax(state,
+                defineSyntax(state, reduction, definiendum, definiens))
+        pass
+    state
+
+
 def shift'(state, item)
-    shift(state, getItemTag(item), item)
+    shift(onReduceHandler, state, getItemTag(item), item)
 
 
 def isLeftSectionOperator(operator)
@@ -81,24 +96,9 @@ def shiftToken(state, token)
     shiftItem(state, parseToken(state, token))
 
 
-def onReduceHandler(state, operator, left, right, reduction)
-    with left as Just(left')
-        with left' as Definition(_, type, _, _)
-            with type as SyntaxDefinition
-                popSyntax(state)
-            pass
-        pass
-    with reduction as Definition(_, type, definiendum, definiens)
-        with type as SyntaxDefinition
-            addSyntax(state,
-                defineSyntax(state, reduction, definiendum, definiens))
-        pass
-    state
-
-
 def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
-    state := shiftToken(State([], OPERATORS, onReduceHandler), START)
+    state := shiftToken(State([], OPERATORS), START)
     stack := getStack(tokens.cascade(shiftToken, state))
     with stack as item :: remaining
         with item as OperandItem(result)
