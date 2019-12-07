@@ -22,7 +22,7 @@ def onReduceHandler(state, operator, left, right, reduction)
 
 
 def shift'(state, item)
-    shift(onReduceHandler, state, getItemTag(item), item)
+    shift(onReduceHandler, getTag, state, item)
 
 
 def isLeftSectionOperator(operator)

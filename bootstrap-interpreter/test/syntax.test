@@ -15,7 +15,7 @@ syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n5 ++ 5
 10
 ===============================================================================
 syntax(if) := prefix(10)\nsyntax(then) := infixL(if _)\n1 then 0
-Syntax error: operator syntax error 'then' at line 3 column 3
+Syntax error: invalid prior for 'then' at line 3 column 3
 ===============================================================================
 syntax(=) := infix(20)\nsyntax(==) := infix(_ = _)\n0
 Syntax error: expected numeric precedence '==' at line 2 column 8
