@@ -55,7 +55,7 @@ Node* reduce(Node* operator, Node* left, Node* right) {
         Node* node = getPriorNode(operator, left, right);
         syntaxErrorIf(node == NULL, "invalid operator with prior", operator);
         if (isLeaf(node) || !isSameString(getLexeme(node), rules->prior))
-            syntaxError("operator syntax error", operator);
+            syntaxError("invalid prior for", operator);
     }
     return rules->reduce(operator, left, right);
 }

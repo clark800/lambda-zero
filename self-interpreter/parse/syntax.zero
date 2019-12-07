@@ -1,37 +1,16 @@
 #* syntax.zero
 
-def isValidPrior(operator, node)
-    with operator as Operator(_, _, syntax')
-        prior := getPrior(syntax')
-        isNil(prior) or (isJuxtaposition(node) and getLexeme(node) =*= prior)
-    False
-
-
 def reduceApply(operator, left, right)
     Juxtaposition(getOperatorTag(operator), left, right)
 
 
 def reduceAdfix(operator, operand)
-    if not isValidPrior(operator, operand)
-        oppSyntaxError("operator syntax error", operator)
     reduceApply(operator, Name(getOperatorTag(operator)), operand)
 
 
 def reduceInfix(operator, left, right)
     reduceApply(operator, reduceApply(operator,
         Name(getOperatorTag(operator)), left), right)
-
-
-def reduceInfixL(operator, left, right)
-    if not isValidPrior(operator, left)
-        oppSyntaxError("operator syntax error", operator)
-    reduceInfix(operator, left, right)
-
-
-def reduceInfixR(operator, left, right)
-    if not isValidPrior(operator, right)
-        oppSyntaxError("operator syntax error", operator)
-    reduceInfix(operator, left, right)
 
 
 def reduceArrow(operator, left, right)
@@ -100,12 +79,6 @@ def reduceNewline(operator, left, right)
     reduceApply(operator, left, right)
 
 
-def reduceInterfix(operator, left, right)
-    if not isValidPrior(operator, left)
-        oppSyntaxError("operator syntax error", operator)
-    reduceNewline(operator, left, right)
-
-
 def reduceReserved(operator, _left, _right)
     oppSyntaxError("reserved operator", operator)
 
@@ -131,11 +104,11 @@ def newSyntaxOperator(tag, precedence, fixity, prior)
     if getLexeme(fixity) =*= "infix"
         newOperator'(tag, prior, p, NA, Infix(reduceInfix))
     if getLexeme(fixity) =*= "infixL"
-        newOperator'(tag, prior, p, LA, Infix(reduceInfixL))
+        newOperator'(tag, prior, p, LA, Infix(reduceInfix))
     if getLexeme(fixity) =*= "infixR"
-        newOperator'(tag, prior, p, RA, Infix(reduceInfixR))
+        newOperator'(tag, prior, p, RA, Infix(reduceInfix))
     if getLexeme(fixity) =*= "interfix"
-        newOperator'(tag, prior, p, LA, Infix(reduceInterfix))
+        newOperator'(tag, prior, p, LA, Infix(reduceApply))
     if getLexeme(fixity) =*= "prefix"
         newOperator'(tag, prior, p, LA, Prefix(reduceAdfix))
     if getLexeme(fixity) =*= "postfix"
