@@ -8,7 +8,7 @@ def parseEscapeCode(code, tag)
     if code = '\\' then '\\'
     if code = '\"' then '\"'
     if code = '\'' then '\''
-    parseError("invalid escape sequence in", tag)
+    syntaxError("invalid escape sequence in", tag)
 
 
 def parseQuotedCharacter(tag, string)
@@ -17,8 +17,8 @@ def parseQuotedCharacter(tag, string)
             Number(tag, c)
         with cs as c' :: _
             Number(tag, parseEscapeCode(c', tag))
-        parseError("missing end quote for", tag)
-    parseError("missing end quote for", tag)
+        syntaxError("missing end quote for", tag)
+    syntaxError("missing end quote for", tag)
 
 
 def splitStringLiteral(string)
@@ -38,7 +38,7 @@ def getQuoteContents(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.length > 1 and lexeme.reverse.take(1) =*= lexeme.take(1)
         dropLast(lexeme.drop(1))
-    parseError("missing end quote for", tag)
+    syntaxError("missing end quote for", tag)
 
 
 def getQuotedCharacters(tag)
@@ -53,24 +53,24 @@ def parseCharacterLiteral(tag)
     with getQuotedCharacters(tag) as c :: cs
         with cs as []
             c
-        parseError("invalid character literal", tag)
-    parseError("invalid character literal", tag)
+        syntaxError("invalid character literal", tag)
+    syntaxError("invalid character literal", tag)
 
 
 def parseNumericLiteral(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.any((not) <> isDigit)
-        parseError("invalid token", tag)
+        syntaxError("invalid token", tag)
     maxNatural := "9223372036854775807"
     natural := lexeme.dropWhile((= '0'))
     if natural.length > maxNatural.length
-        parseError("magnitude of numeral is too large", tag)
+        syntaxError("magnitude of numeral is too large", tag)
     if natural.length = maxNatural.length and
             zipWith((>), natural, maxNatural).any(id)
-        parseError("magnitude of numeral is too large", tag)
+        syntaxError("magnitude of numeral is too large", tag)
     parsed := parseNatural(lexeme)
     if isVoid(parsed)
-        parseError("invalid numeral", tag)
+        syntaxError("invalid numeral", tag)
     Number(tag, parsed ?? 0)
 
 
@@ -88,7 +88,7 @@ def parseSymbol(tag, value, state)
 
 def newOperand(operand)
     if not isPreterm(operand)
-        syntaxError("invalid operand", operand)  # force syntax errors
+        astSyntaxError("invalid operand", operand)  # force syntax errors
     OperandItem(operand)
 
 
@@ -104,6 +104,6 @@ def parseToken(state, token)
         Character -> newOperand(parseCharacterLiteral(tag))
         String -> newOperand(parseStringLiteral(tag))
         Comment -> abort "internal error: Comment reached parseToken"
-        Invalid -> parseError("invalid character", tag)
+        Invalid -> syntaxError("invalid character", tag)
 
 #*

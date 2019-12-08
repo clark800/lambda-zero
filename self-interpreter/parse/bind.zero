@@ -37,12 +37,12 @@ def getBooleanType(context)
 def getStringType(context, tag)
     natural := getNaturalType(context)
     listType := context.findType("[]") ??
-        parseError("List not defined", tag)
+        syntaxError("List not defined", tag)
     with listType as Implicit(_, _, type)
         with type as Application(_, left, _)
             Application(noTag, left, natural)
-        parseError("List type invalid", tag)
-    parseError("List type invalid", tag)
+        syntaxError("List type invalid", tag)
+    syntaxError("List type invalid", tag)
 
 
 def getOperationType(context, tag)
@@ -86,23 +86,23 @@ def bindContextTerm(context, tag)
 
 def bindName(getBuiltin, level, stack, context, tag)
     if isUnused(tag)
-        parseError("cannot reference a symbol starting with underscore", tag)
+        syntaxError("cannot reference a symbol starting with underscore", tag)
     bindVariable(level, stack, tag) ??
         bindContextTerm(context, tag) ??
         bindOperation(getBuiltin, context, tag) ??
-        parseError("undefined symbol", tag)
+        syntaxError("undefined symbol", tag)
 
 
 def getADTName(constructor)
     with constructor as Constructor(_, _, adtType, _, _, _)
         getLexeme(getHead(adtType))
-    syntaxError("invalid constructor", constructor)
+    astSyntaxError("invalid constructor", constructor)
 
 
 def getConstructionTypeAST(constructor)
     with constructor as Constructor(_, parameterTypes, adtType, _, _, _)
         getArguments(adtType).fold(ImplicitArrow, adtType)
-    syntaxError("invalid constructor", constructor)
+    astSyntaxError("invalid constructor", constructor)
 
 
 def constructCaseAnnotation(tag, constructors)
@@ -170,18 +170,18 @@ def bind(getBuiltin, level, stack, context, node)
                     MetaVariable(veil(tag), 0)
                 Function(getTag(parameter), False, domain, codomain, bodyTerm)
             if not isVoid(annotation)
-                syntaxError("parameter annotation not permitted on case", node)
+                astSyntaxError("parameter annotation not permitted on case", node)
             with buildCaseAnnotation(tag, constructorNames, context) as
                     Just(typeAST)
                 domain := typeAST.bind'(level, stack, context)
                 CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
-            syntaxError("invalid constructors", node)
+            astSyntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind'(level, stack, context),
                 right.bind'(level, stack, context))
         case Let(tag, isTypeConstructor, name, value, scope)
             if isTypeConstructor
-                syntaxError("type constructors must be at the top level", node)
+                astSyntaxError("type constructors must be at the top level", node)
             valueTerm := value.bind'(level, stack, context)
             stack' := stack.pushParameter(name, level, Just((value, valueTerm)))
             scopeTerm := scope.bind'(up level, stack', context)
@@ -190,15 +190,15 @@ def bind(getBuiltin, level, stack, context, node)
         case Number(tag, value)
             Numeral(tag, getNaturalType(context), value)
         case Definition(_, _, _, _)
-            syntaxError("missing scope for definition", node)
+            astSyntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)
-            syntaxError("as pattern not in parameter position", node)
+            astSyntaxError("as pattern not in parameter position", node)
         case CommaPair(_, _, _)
-            syntaxError("comma not inside brackets", node)
+            astSyntaxError("comma not inside brackets", node)
         case ColonPair(_, _, _)
-            syntaxError("colon not in valid location", node)
+            astSyntaxError("colon not in valid location", node)
         case SetBuilder(_, _)
-            syntaxError("must appear on the right side of '::='", node)
+            astSyntaxError("must appear on the right side of '::='", node)
         case ADT(tag, parameters, objectType)
             Construction(tag, parameters.map(bind'(level, stack, context)),
                 objectType.bind'(level, stack, context))

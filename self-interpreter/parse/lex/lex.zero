@@ -145,6 +145,14 @@ def showTagWithLocation(Tag(lexeme, _, location))
     showQuotedLexeme(lexeme) ++ " at " ++ showLocation(location)
 
 
+def throwError(message, tag)
+    abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
+
+
+def syntaxError(message, tag)
+    throwError("Syntax error: " ++ message, tag)
+
+
 TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
     Comment, Invalid

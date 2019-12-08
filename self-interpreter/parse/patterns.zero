@@ -35,12 +35,12 @@ def newPatternArrow(pattern, body)
         projections := projectors.map(Juxtaposition(tag, underscore))
         lockArrow(StrictArrow(tag, [constructor],
             projections.cascade(Juxtaposition(tag), function)))
-    syntaxError("invalid parameter", pattern)
+    astSyntaxError("invalid parameter", pattern)
 
 
 def getNameAndValue(f, left, right)
     if not isPreterm(right)
-        syntaxError("invalid parameter", right)  # force syntax errors
+        astSyntaxError("invalid parameter", right)  # force syntax errors
     with left as Juxtaposition(_, left', right')
         getNameAndValue(f, left', f(right', right))
     (left, right)
@@ -76,8 +76,8 @@ def newCaseBody(tag, left, right)
             with type' as Simple
                 Juxtaposition(tag, base, body')
             addCases(tag, base, body')
-        syntaxError("internal error", left)
-    syntaxError("internal error", left)
+        astSyntaxError("internal error", left)
+    astSyntaxError("internal error", left)
 
 
 def getCaseConstructors(arrow)
@@ -102,8 +102,8 @@ def getReconstructor(arrow)
             body
         with body as Juxtaposition(_, _, right)
             right
-        syntaxError("internal error", arrow)
-    syntaxError("internal error", arrow)
+        astSyntaxError("internal error", arrow)
+    astSyntaxError("internal error", arrow)
 
 
 def chainCases(tag, arrow, fallback)

@@ -28,7 +28,7 @@ def getCommaListElements(commaList)
 def reduceParentheses(tag, left, right)
     with right as Just(contents)
         if isDefinition(contents)
-            syntaxError("missing scope for definition", contents)
+            astSyntaxError("missing scope for definition", contents)
         with left as Just(function)
             applyToCommaList(tag, function, contents)
         if isCommaPair(contents)
@@ -50,7 +50,7 @@ def isPlaceholder(node)
 
 def reduceOpenSection(tag, left, right)
     if not isVoid(left)
-        parseError("invalid operand before section", tag)
+        syntaxError("invalid operand before section", tag)
     with right as Just(contents)
         with contents as Juxtaposition(_, left', right')
             # check for parenthesized adfix operator
@@ -62,17 +62,17 @@ def reduceOpenSection(tag, left, right)
                     isName(left'') then left'' else pass
             LockedArrow(FixedName(tag, ".*"), contents)
         if isCommaPair(contents)
-            parseError("comma invalid in section", tag)
+            syntaxError("comma invalid in section", tag)
         pass
-    parseError("invalid section", tag)
+    syntaxError("invalid section", tag)
 
 
 def reduceCloseSection(tag, left, contents)
     # force evaluation of contents first in case it has an error
     if isTuple(contents)
-        parseError("comma invalid in section", tag)
+        syntaxError("comma invalid in section", tag)
     if not isVoid(left)
-        parseError("invalid operand before section", tag)
+        syntaxError("invalid operand before section", tag)
     # check for parenthesized operator
     if isName(contents)
         contents
@@ -81,7 +81,7 @@ def reduceCloseSection(tag, left, contents)
         if isName(left') and isPlaceholder(right')
             left'
         LockedArrow(FixedName(tag, "*."), contents)
-    parseError("invalid section", tag)
+    syntaxError("invalid section", tag)
 
 
 def createList(tag, commaList, list)
@@ -100,12 +100,12 @@ def reduceSquare(tag, left, right)
         createList(tag, contents, newNil(tag))
     if isVoid(left)
         newNil(tag)
-    parseError("missing argument to", tag)
+    syntaxError("missing argument to", tag)
 
 
 def reduceCurly(tag, left, right)
     if not isVoid(left)
-        parseError("invalid operand before", tag)
+        syntaxError("invalid operand before", tag)
     with right as Just(patterns)
         SetBuilder(tag, getCommaListElements(patterns))
     SetBuilder(tag, [])
@@ -113,9 +113,9 @@ def reduceCurly(tag, left, right)
 
 def reduceOpenFile(tag, left, right)
     if not isVoid(left)
-        parseError("invalid operand before", tag)
+        syntaxError("invalid operand before", tag)
     with right as Just(contents)
         contents
-    parseError("no input", tag)
+    syntaxError("no input", tag)
 
 #*

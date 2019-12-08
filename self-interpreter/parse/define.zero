@@ -61,7 +61,7 @@ def readParameterTypes(form)
     with form as Juxtaposition(_, left, right)
         with right as ColonPair(_, _, type)
             readParameterTypes(left) ++ [type]
-        syntaxError("invalid form", form)
+        astSyntaxError("invalid form", form)
     []
 
 
@@ -82,13 +82,13 @@ def getConstructorBody(name, n, m, j)
     tag := getTag(name)
     with name as Number(tag, value)
         if value =/= 0
-            syntaxError("invalid constructor name", name)
+            astSyntaxError("invalid constructor name", name)
         Number(tag, 0)
     if not isName(name)
-        syntaxError("invalid constructor name", name)
+        astSyntaxError("invalid constructor name", name)
     if isThisName(name, "up")
         if m =/= 1
-            syntaxError("expected one parameter to", name)
+            astSyntaxError("expected one parameter to", name)
         FixedName(tag, "(increment)")
     arguments := reverse(n + 1 .. n + m).map(Underscore(tag))
     base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n -- j))
@@ -101,13 +101,13 @@ def newConstructorDefinition(tag, dataType, n, (form, j), scope)
     name := getHead(form)
     body := getConstructorBody(name, n, m, j)
     if not isPreterm(body)
-        syntaxError("invalid constructor", name)   # force errors
+        astSyntaxError("invalid constructor", name)   # force errors
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(getTag(name), parameterTypes,
         dataType, body, n, j + 1)
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     with invalidParameters as parameter :: _
-        syntaxError("invalid constructor parameter", parameter)
+        astSyntaxError("invalid constructor parameter", parameter)
     applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
 
 
@@ -154,7 +154,7 @@ def newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
 def getAnnotation(node)
     with node as ColonPair(_, _, right)
         right
-    syntaxError("missing annotation", node)
+    astSyntaxError("missing annotation", node)
 
 
 def newADT(tag, parameters, forms)
@@ -175,17 +175,17 @@ def applyADTDefinition(tag, left, right, scope)
             newConstructorDefinitions(tag, left, n, ms), scope)
         name := getHead(left)
         if not isName(name)
-            syntaxError("expected name", name)
+            astSyntaxError("expected name", name)
         parameters := getArguments(left)
         # todo: use the same method for parameters as with normal functions
         if not parameters.all(isName)
-            syntaxError("parameters to type constructor must be names", name)
+            astSyntaxError("parameters to type constructor must be names", name)
         adt := newADT(getTag(name), parameters, forms)
         value := parameters.fold(LockedArrow, adt)
         value' := if forms.any(containsName(name)) then
             applyFix(name, value) else value
         Let(tag, True, name, value', scope')
-    syntaxError("internal error", left)
+    astSyntaxError("internal error", left)
 
 
 def applyDefinition(definition, scope)
@@ -196,7 +196,7 @@ def applyDefinition(definition, scope)
             TryDefinition -> applyTryDefinition(tag, name, value, scope)
             SyntaxDefinition -> scope
             ADTDefinition -> applyADTDefinition(tag, name, value, scope)
-    syntaxError("internal error", definition)
+    astSyntaxError("internal error", definition)
 
 
 def reduceDefine'(tag, definitionType, left, right)
@@ -207,7 +207,7 @@ def reduceDefine'(tag, definitionType, left, right)
         Definition(tag, definitionType, left, right)
     (name, value) := getNameAndValue(newPatternArrow, left, right)
     if not isName(name)
-        parseError("invalid left hand side", tag)
+        syntaxError("invalid left hand side", tag)
     if isThisName(name, "main")
         applyPlainDefinition(tag, name, value, name)
     Definition(tag, definitionType, name, transformRecursion(name, value))
@@ -215,7 +215,7 @@ def reduceDefine'(tag, definitionType, left, right)
 
 def reduceDefine(tag, left, right)
     if isDefinition(right)   # todo: remove after converting exceptions
-        syntaxError("missing scope for definition", right)
+        astSyntaxError("missing scope for definition", right)
     with left as Juxtaposition(_, left', right')
         if isThisName(left', "maybe")
             reduceDefine'(tag, MaybeDefinition, right', right)
@@ -229,9 +229,9 @@ def reduceDefine(tag, left, right)
 
 def reduceADTDefine(tag, left, right)
     if not isValidPattern(left)
-        parseError("invalid left hand side", tag)
+        syntaxError("invalid left hand side", tag)
     if not isSetBuilder(right)
-        parseError("ADT required to right of", tag)
+        syntaxError("ADT required to right of", tag)
     Definition(tag, ADTDefinition, left, right)
 
 #*

@@ -1,11 +1,5 @@
 #* parse.zero
 
-def getItemTag(item)
-    match item
-        OperatorItem(Operator(tag, _, _)) -> tag
-        OperandItem(operand) -> getTag(operand)
-
-
 def onReduceHandler(state, operator, left, right, reduction)
     with left as Just(left')
         with left' as Definition(_, type, _, _)
@@ -77,10 +71,10 @@ def shiftOperator'(state, operator)
             if isOperator(topItem)
                 state  # ignore newlines after operators
             if getSubprecedence(operator) % 2 =/= 0
-                oppSyntaxError("odd-width indent after", operator)
+                opSyntaxError("odd-width indent after", operator)
             shiftOperator''(state, operator)
         if getSubprecedence(operator) =/= 0
-            oppSyntaxError("indent on first line", operator)
+            opSyntaxError("indent on first line", operator)
         state  # ignore newlines at beginning of input
 
     shiftOperator''(state, operator)
@@ -104,9 +98,9 @@ def parse(getBuiltin, code)
         with item as OperandItem(result)
             if not isPreterm(result) and False
                 # currently bind has special case errors for non-preterms
-                syntaxError("parser error", result)  # force syntax errors
+                astSyntaxError("parser error", result)  # force syntax errors
             if not isNil(remaining)
-                syntaxError("parser error", result)
+                astSyntaxError("parser error", result)
             bindAST(getBuiltin, result)
         pass
     abort "parser error"

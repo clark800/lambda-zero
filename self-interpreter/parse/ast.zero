@@ -67,8 +67,8 @@ def isPreterm
     TypedNode(_, _, _) -> True
 
 
-def syntaxError(message, node)
-    parseError(message, getTag(node))
+def astSyntaxError(message, node)
+    syntaxError(message, getTag(node))
 
 
 def containsName(name)

@@ -34,9 +34,9 @@ def reduceCommaPair(tag, left, right)
 
 def reduceColonPair(tag, left, right)
     if isColonPair(left) or not isValidPattern(left)
-        parseError("invalid left side of colon", tag)
+        syntaxError("invalid left side of colon", tag)
     if isColonPair(right) or not isValidPattern(right)
-        parseError("invalid right side of colon", tag)
+        syntaxError("invalid right side of colon", tag)
     ColonPair(tag, left, right)
 
 
@@ -46,7 +46,7 @@ def reduceAsPattern(tag, left, right)
 
 def reduceWhere(tag, left, right)
     if not isDefinition(right)
-        parseError("expected definition to right of", tag)
+        syntaxError("expected definition to right of", tag)
     applyDefinition(right, left)
 
 
@@ -58,7 +58,7 @@ def reduceWith(tag, asPattern, withBlock)
         function := combineCases(tag, caseArrow, fallback)
         LockedArrow(FixedName(tag, "pass"),
             Juxtaposition(tag, function, expression))
-    parseError("expected as pattern to right of", tag)
+    syntaxError("expected as pattern to right of", tag)
 
 
 def reduceNewline(tag, left, right)
@@ -78,11 +78,11 @@ def reduceNewline(tag, left, right)
 
 
 def reduceReserved(tag, _left, _right)
-    parseError("reserved operator", tag)
+    syntaxError("reserved operator", tag)
 
 
 def reduceReservedAdfix(tag, _operand)
-    parseError("reserved operator", tag)
+    syntaxError("reserved operator", tag)
 
 
 def reduceClose(_tag, _left, right)
@@ -92,7 +92,7 @@ def reduceClose(_tag, _left, right)
 def newOperator'(tag, prior, precedence, associativity, fixity)
     special := not isNil(prior)
     if special and isSameAssociativity(associativity, NA)
-        parseError("expected numeric precedence", tag)
+        syntaxError("expected numeric precedence", tag)
     Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence,
         associativity, special, '_', prior, fixity))
 
@@ -111,14 +111,14 @@ def newSyntaxOperator(tag, precedence, fixity, prior)
         newOperator'(tag, prior, p, LA, Prefix(reduceAdfix))
     if getLexeme(fixity) =*= "postfix"
         newOperator'(tag, prior, p, LA, Postfix(reduceAdfix))
-    syntaxError("invalid fixity", fixity)
+    astSyntaxError("invalid fixity", fixity)
 
 
 def getAliasSyntax(state, name)
     if not isName(name)
-        syntaxError("expected operator name", name)
+        astSyntaxError("expected operator name", name)
     state.lookupSyntax(getLexeme(name)) ??
-        syntaxError("syntax not defined", name)
+        astSyntaxError("syntax not defined", name)
 
 
 def newAlias(state, tag, name)
@@ -134,16 +134,16 @@ def copySyntax(state, tag, name)
 
 def findPrecedence(state, node)
     syntax' := state.lookupSyntax(getLexeme(node)) ??
-        syntaxError("syntax not defined", node)
+        astSyntaxError("syntax not defined", node)
     if getLeftPrecedence(syntax') =/= getRightPrecedence(syntax')
-        syntaxError("operator not supported", node)
+        astSyntaxError("operator not supported", node)
     getLeftPrecedence(syntax')
 
 
 def parsePrecedence(state, node)
     with node as Number(_, precedence)
         if precedence > 99
-            syntaxError("invalid precedence", node)
+            astSyntaxError("invalid precedence", node)
         precedence
     findPrecedence(state, node)
 
@@ -151,7 +151,7 @@ def parsePrecedence(state, node)
 def defineSyntax(state, definition, name, right)
     tag := getTag(definition)
     if not isName(name)
-        syntaxError("expected name operand to", definition)
+        astSyntaxError("expected name operand to", definition)
     with right as Juxtaposition(_, fixity, argument)
         if isThisName(fixity, "alias")
             newAlias(state, getTag(name), argument)
@@ -160,13 +160,13 @@ def defineSyntax(state, definition, name, right)
         precedence := parsePrecedence(state, argument)
         prior := if isNumber(argument) then "" else getLexeme(argument)
         newSyntaxOperator(getTag(name), precedence, fixity, prior)
-    syntaxError("invalid syntax definition", definition)
+    astSyntaxError("invalid syntax definition", definition)
 
 
 def addSyntax(state, operator)
     lexeme := getTagLexeme(getOperatorTag(operator))
     if not isVoid(state.lookupSyntax(lexeme))
-        oppSyntaxError("syntax already defined", operator)
+        opSyntaxError("syntax already defined", operator)
     state.pushSyntax(lexeme, getSyntax(operator))
 
 
