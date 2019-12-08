@@ -47,16 +47,8 @@ getSubprecedence(Operator(_, subprecedence, _)) := subprecedence
 getSyntax(Operator(_, _, syntax')) := syntax'
 
 
-def throwError(message, tag)
-    abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
-
-
-def parseError(message, tag)
-    throwError("Syntax error: " ++ message, tag)
-
-
-def oppSyntaxError(message, Operator(tag, _, _))
-    parseError(message, tag)
+def opSyntaxError(message, Operator(tag, _, _))
+    syntaxError(message, tag)
 
 
 def isHigherPrecedence(left, right)
@@ -66,12 +58,12 @@ def isHigherPrecedence(left, right)
     if leftSyntax.getRightPrecedence = rightSyntax.getLeftPrecedence
         associativity := rightSyntax.getAssociativity
         if not isSameAssociativity(associativity, leftSyntax.getAssociativity)
-            oppSyntaxError("incompatible associativity", right)
+            opSyntaxError("incompatible associativity", right)
 
         match associativity
             LA -> getSubprecedence(left) >= getSubprecedence(right)
             RA -> getSubprecedence(left) > getSubprecedence(right)
-            NA -> oppSyntaxError("operator is non-associative", right)
+            NA -> opSyntaxError("operator is non-associative", right)
 
     leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 

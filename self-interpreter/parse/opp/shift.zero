@@ -32,7 +32,7 @@ def isValidInfixPrior(getTag, operator, left, right)
     match getAssociativity(getSyntax(operator))
         LA -> getTagLexeme(getTag(left)) =*= prior
         RA -> getTagLexeme(getTag(right)) =*= prior
-        NA -> oppSyntaxError("invalid operator with prior", operator)
+        NA -> opSyntaxError("invalid operator with prior", operator)
 
 
 def reduceTop'(onReduce, getTag, state, operator, right)
@@ -40,7 +40,7 @@ def reduceTop'(onReduce, getTag, state, operator, right)
     match getFixity(getSyntax(operator))
         case Prefix(reduce)
             if not isValidAdfixPrior(getTag, operator, right)
-                oppSyntaxError("invalid prior for", operator)
+                opSyntaxError("invalid prior for", operator)
             reduction := reduce(getOperatorTag(operator), right)
             stack' := OperandItem(reduction) :: stack
             state' := State(stack', operators)
@@ -49,15 +49,15 @@ def reduceTop'(onReduce, getTag, state, operator, right)
             with stack as leftItem :: stack'
                 with leftItem as OperandItem(left)
                     if not isValidInfixPrior(getTag, operator, left, right)
-                        oppSyntaxError("invalid prior for", operator)
+                        opSyntaxError("invalid prior for", operator)
                     reduction := reduce(getOperatorTag(operator), left, right)
                     stack'' := OperandItem(reduction) :: stack'
                     state' := State(stack'', operators)
                     onReduce(state', operator,
                         Just(left), Just(right), reduction)
                 pass
-            oppSyntaxError("missing left operand", operator)
-        _ -> oppSyntaxError("internal error: reduceTop'", operator)
+            opSyntaxError("missing left operand", operator)
+        _ -> opSyntaxError("internal error: reduceTop'", operator)
 
 
 def reduceTop(onReduce, getTag, state @ State(stack, operators))
@@ -97,21 +97,21 @@ def shiftPostfix(onReduce, getTag, reduce, State(stack, operators), operator)
     with stack as item :: stack'
         with item as OperandItem(operand)
             if not isValidAdfixPrior(getTag, operator, operand)
-                oppSyntaxError("invalid prior for", operator)
+                opSyntaxError("invalid prior for", operator)
             reduction := reduce(getOperatorTag(operator), operand)
             stack'' := OperandItem(reduction) :: stack'
             state' := State(stack'', operators)
             onReduce(state', operator, Just(operand), Void, reduction)
         pass
-    oppSyntaxError("missing left operand for", operator)
+    opSyntaxError("missing left operand for", operator)
 
 
 def shiftInfix(State(stack, operators), operator)
     with stack as top :: _
         if not isOperator(top)
             State(OperatorItem(operator) :: stack, operators)
-        oppSyntaxError("missing left operand for", operator)
-    oppSyntaxError("missing left operand for", operator)
+        opSyntaxError("missing left operand for", operator)
+    opSyntaxError("missing left operand for", operator)
 
 
 def shiftOpenfix(State(stack, operators), open)
@@ -121,8 +121,8 @@ def shiftOpenfix(State(stack, operators), open)
 def reduceBracket(reduceOpen, reduceClose, open, close, before, contents)
     if getBracketType(getSyntax(open)) =/= getBracketType(getSyntax(close))
         if getBracketType(getSyntax(close)) = '\0'
-            oppSyntaxError("missing close for", open)
-        oppSyntaxError("missing open for", close)
+            opSyntaxError("missing close for", open)
+        opSyntaxError("missing open for", close)
     openTag := getOperatorTag(open)
     closeTag := getOperatorTag(close)
     reduceClose(closeTag, before, reduceOpen(openTag, before, contents))
@@ -157,7 +157,7 @@ def shiftClosefix(onReduce, reduceClose, State(stack, operators), close)
                     state' := State(stack', operators)
                     shiftBracket(onReduce, reduceOpen, reduceClose,
                         state', operator, close, Void)
-                oppSyntaxError("missing right operand for", operator)
+                opSyntaxError("missing right operand for", operator)
             case OperandItem(operand)
                 with stack' as item' :: stack''
                     with item' as OperatorItem(operator)
@@ -168,8 +168,8 @@ def shiftClosefix(onReduce, reduceClose, State(stack, operators), close)
                                 state', operator, close, Just(operand))
                         pass
                     pass
-                oppSyntaxError("missing open for", close)
-    oppSyntaxError("missing open for", close)
+                opSyntaxError("missing open for", close)
+    opSyntaxError("missing open for", close)
 
 
 def getShifter(onReduce, getTag, fixity)
@@ -193,7 +193,7 @@ def shiftOperand(state, tag, operand)
         if isOperator(top)
             State(OperandItem(operand) :: stack, operators)
         pass
-    parseError("missing operator before", tag)
+    syntaxError("missing operator before", tag)
 
 
 def shift(onReduce, getTag, state, item)
