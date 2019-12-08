@@ -9,7 +9,7 @@ def onReduceHandler(state, operator, left, right, reduction)
         pass
     with reduction as Definition(_, type, definiendum, definiens)
         with type as SyntaxDefinition
-            addSyntax(state,
+            state.pushSyntax(getTagLexeme(getTag(definiendum)),
                 defineSyntax(state, reduction, definiendum, definiens))
         pass
     state

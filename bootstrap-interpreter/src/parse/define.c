@@ -224,23 +224,24 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
         return;
     }
 
-    Precedence p = isNumber(argument) ? (Precedence)getValue(argument) : 0;
-    syntaxErrorIf(p > 99, "invalid precedence", argument);
+    Precedence precedence = isNumber(argument) ?
+        (Precedence)getValue(argument) : 0;
+    syntaxErrorIf(precedence > 99, "invalid precedence", argument);
 
-    String prior = isNumber(argument) ? newString("", 0) : getLexeme(argument);
+    Node* prior = isNumber(argument) ? NULL : argument;
 
     if (isThisName(fixity, "infix"))
-        addSyntax(tag, prior, p, INFIX, N, reduceInfix);
+        addSyntax(tag, prior, precedence, INFIX, N, reduceInfix);
     else if (isThisName(fixity, "infixL"))
-        addSyntax(tag, prior, p, INFIX, L, reduceInfix);
+        addSyntax(tag, prior, precedence, INFIX, L, reduceInfix);
     else if (isThisName(fixity, "infixR"))
-        addSyntax(tag, prior, p, INFIX, R, reduceInfix);
+        addSyntax(tag, prior, precedence, INFIX, R, reduceInfix);
     else if (isThisName(fixity, "interfix"))
-        addSyntax(tag, prior, p, INFIX, L, reduceApply);
+        addSyntax(tag, prior, precedence, INFIX, L, reduceApply);
     else if (isThisName(fixity, "prefix"))
-        addSyntax(tag, prior, p, PREFIX, L, reducePrefix);
+        addSyntax(tag, prior, precedence, PREFIX, L, reducePrefix);
     else if (isThisName(fixity, "postfix"))
-        addSyntax(tag, prior, p, POSTFIX, L, reducePostfix);
+        addSyntax(tag, prior, precedence, POSTFIX, L, reducePostfix);
     else syntaxError("invalid fixity", fixity);
 }
 
