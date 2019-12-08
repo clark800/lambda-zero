@@ -91,8 +91,9 @@ bool isHigherPrecedence(Node* left, Node* right) {
 }
 
 static Rules* findRules(String lexeme) {
-    for (unsigned int i = 0; i < length(RULES); ++i) {
-        Rules* rules = elementAt(RULES, i);
+    size_t n = length(RULES);
+    for (unsigned int i = 1; i <= n; ++i) {
+        Rules* rules = elementAt(RULES, n - i);
         if (isSameString(lexeme, rules->lexeme))
             return rules;
     }
@@ -119,19 +120,20 @@ static void appendSyntax(Rules rules) {
     append(RULES, newRules);
 }
 
-void addSyntax(Tag tag, String prior, Precedence precedence, Fixity fixity,
+void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
         Associativity associativity, Reducer reducer) {
-    bool special = prior.length != 0;
-    if (special) { // if special, override precedence with precedence of prior
-        tokenErrorIf(associativity == N, "expected numeric precedence", tag);
-        Rules* rules = findRules(prior);
-        tokenErrorIf(rules == NULL, "syntax not defined", tag);
-        tokenErrorIf(rules->leftPrecedence != rules->rightPrecedence,
-            "prior operator must have the same left and right precedence", tag);
-        precedence = rules->leftPrecedence;
+    if (prior != NULL) {
+        // if special, override precedence with precedence of prior
+        Rules* rules = findRules(getLexeme(prior));
+        syntaxErrorIf(rules == NULL, "syntax not defined", prior);
+        if (rules->associativity != associativity || associativity == N)
+            syntaxError("invalid associativity for prior", prior);
+        precedence = rules->associativity == L ?
+            rules->rightPrecedence : rules->leftPrecedence;
     }
-    tokenErrorIf(findRules(tag.lexeme) != NULL, "syntax already defined", tag);
-    appendSyntax((Rules){tag.lexeme, tag.lexeme, prior, '_', precedence,
+    bool special = prior != NULL;
+    String priorLexeme = prior ? getLexeme(prior) : newString("", 0);
+    appendSyntax((Rules){tag.lexeme, tag.lexeme, priorLexeme, '_', precedence,
         precedence, fixity, associativity, special, reducer});
 }
 

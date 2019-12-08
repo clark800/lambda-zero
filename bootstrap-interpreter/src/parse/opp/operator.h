@@ -14,7 +14,7 @@ Node* parseOperator(Tag tag, long long subprecedence);
 
 void initSyntax(void);
 void addCoreSyntax(const char*, Precedence, Fixity, Associativity, Reducer);
-void addSyntax(Tag, String prior, Precedence, Fixity, Associativity, Reducer);
+void addSyntax(Tag, Node* prior, Precedence, Fixity, Associativity, Reducer);
 void addBracketSyntax(const char*, char type, Precedence, Fixity, Reducer);
 void addSyntaxCopy(String lexeme, Node* name, bool alias);
 void addCoreAlias(const char* alias, const char* name);

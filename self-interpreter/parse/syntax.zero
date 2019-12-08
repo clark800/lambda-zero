@@ -89,28 +89,25 @@ def reduceClose(_tag, _left, right)
     right
 
 
-def newOperator'(tag, prior, precedence, associativity, fixity)
+def newSyntax'(tag, prior, precedence, associativity, fixity)
     special := not isNil(prior)
-    if special and isSameAssociativity(associativity, NA)
-        syntaxError("expected numeric precedence", tag)
-    Operator(tag, 0, Syntax(getTagLexeme(tag), precedence, precedence,
-        associativity, special, '_', prior, fixity))
+    Syntax(getTagLexeme(tag), precedence, precedence,
+        associativity, special, '_', prior, fixity)
 
 
-def newSyntaxOperator(tag, precedence, fixity, prior)
-    p := precedence
+def newSyntax(tag, precedence, fixity, prior)
     if getLexeme(fixity) =*= "infix"
-        newOperator'(tag, prior, p, NA, Infix(reduceInfix))
+        newSyntax'(tag, prior, precedence, NA, Infix(reduceInfix))
     if getLexeme(fixity) =*= "infixL"
-        newOperator'(tag, prior, p, LA, Infix(reduceInfix))
+        newSyntax'(tag, prior, precedence, LA, Infix(reduceInfix))
     if getLexeme(fixity) =*= "infixR"
-        newOperator'(tag, prior, p, RA, Infix(reduceInfix))
+        newSyntax'(tag, prior, precedence, RA, Infix(reduceInfix))
     if getLexeme(fixity) =*= "interfix"
-        newOperator'(tag, prior, p, LA, Infix(reduceApply))
+        newSyntax'(tag, prior, precedence, LA, Infix(reduceApply))
     if getLexeme(fixity) =*= "prefix"
-        newOperator'(tag, prior, p, LA, Prefix(reduceAdfix))
+        newSyntax'(tag, prior, precedence, LA, Prefix(reduceAdfix))
     if getLexeme(fixity) =*= "postfix"
-        newOperator'(tag, prior, p, LA, Postfix(reduceAdfix))
+        newSyntax'(tag, prior, precedence, LA, Postfix(reduceAdfix))
     astSyntaxError("invalid fixity", fixity)
 
 
@@ -121,23 +118,19 @@ def getAliasSyntax(state, name)
         astSyntaxError("syntax not defined", name)
 
 
-def newAlias(state, tag, name)
-    Operator(tag, 0, getAliasSyntax(state, name))
-
-
 def copySyntax(state, tag, name)
     lexeme := getTagLexeme(tag)
     match getAliasSyntax(state, name)
-        Syntax(_, l, r, a, s, b, p, f) ->
-            Operator(tag, 0, Syntax(lexeme, l, r, a, s, b, p, f))
+        Syntax(_, l, r, a, s, b, p, f) -> Syntax(lexeme, l, r, a, s, b, p, f)
 
 
 def findPrecedence(state, node)
     syntax' := state.lookupSyntax(getLexeme(node)) ??
         astSyntaxError("syntax not defined", node)
-    if getLeftPrecedence(syntax') =/= getRightPrecedence(syntax')
-        astSyntaxError("operator not supported", node)
-    getLeftPrecedence(syntax')
+    match getAssociativity(syntax')
+        LA -> getRightPrecedence(syntax')
+        RA -> getLeftPrecedence(syntax')
+        NA -> astSyntaxError("invalid associativity for prior", node)
 
 
 def parsePrecedence(state, node)
@@ -154,20 +147,13 @@ def defineSyntax(state, definition, name, right)
         astSyntaxError("expected name operand to", definition)
     with right as Juxtaposition(_, fixity, argument)
         if isThisName(fixity, "alias")
-            newAlias(state, getTag(name), argument)
+            getAliasSyntax(state, argument)
         if isThisName(fixity, "syntax")
             copySyntax(state, getTag(name), argument)
         precedence := parsePrecedence(state, argument)
         prior := if isNumber(argument) then "" else getLexeme(argument)
-        newSyntaxOperator(getTag(name), precedence, fixity, prior)
+        newSyntax(getTag(name), precedence, fixity, prior)
     astSyntaxError("invalid syntax definition", definition)
-
-
-def addSyntax(state, operator)
-    lexeme := getTagLexeme(getOperatorTag(operator))
-    if not isVoid(state.lookupSyntax(lexeme))
-        opSyntaxError("syntax already defined", operator)
-    state.pushSyntax(lexeme, getSyntax(operator))
 
 
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence,
