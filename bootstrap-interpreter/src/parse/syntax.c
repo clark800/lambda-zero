@@ -39,6 +39,8 @@ static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
 static Node* reduceWhere(Node* operator, Node* left, Node* right) {
     if (!isDefinition(right))
         syntaxError("expected definition to right of", operator);
+    if (isSyntaxDefinition(right))
+        syntaxError("invalid definition to right of", operator);
     return applyDefinition(right, left);
 }
 

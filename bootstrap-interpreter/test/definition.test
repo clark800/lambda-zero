@@ -128,3 +128,6 @@ x.f(y) := x + y\nf(5, 6)
 f(x) := x where (y ↦ y + 1)
 Syntax error: expected definition to right of 'where' at line 1 column 11
 ==========================================================================
+f(x) := x where syntax(%%) := infix(20)\nf(0)
+Syntax error: invalid definition to right of 'where' at line 1 column 11
+==========================================================================

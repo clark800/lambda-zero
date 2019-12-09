@@ -47,6 +47,8 @@ def reduceAsPattern(tag, left, right)
 def reduceWhere(tag, left, right)
     if not isDefinition(right)
         syntaxError("expected definition to right of", tag)
+    if isSyntaxDefinition(right)
+        syntaxError("invalid definition to right of", tag)
     applyDefinition(right, left)
 
 
