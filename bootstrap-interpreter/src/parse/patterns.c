@@ -48,6 +48,8 @@ Node* newLazyArrow(Node* left, Node* right) {
 }
 
 Node* newCaseArrow(Node* left, Node* right) {
+    if (isUnderscore(left))
+        return SimpleArrow(left, right);
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
     Node* body = right;
     Node* items = isAsPattern(left) ? getRight(left) : left;
