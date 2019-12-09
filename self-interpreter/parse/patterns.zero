@@ -47,6 +47,8 @@ def getNameAndValue(f, left, right)
 
 
 def newCaseArrow(left, right)
+    if isUnderscore(left)
+        SimpleArrow(left, right)
     pattern := with left as AsPattern(_, _, pattern'); pattern' <| left
     (name, reconstructor) :=
         getNameAndValue(newPatternArrow, pattern, right)
@@ -91,7 +93,7 @@ def getCaseConstructors(arrow)
 def isDefaultCase(arrow)
     with arrow as Arrow(_, type, _, parameter, _, _)
         with type as Simple
-            isUnderscore(getTag(parameter))
+            isUnderscore(parameter)
         False
     False
 

@@ -166,7 +166,7 @@ isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
-isUnderscore(tag) := getTagLexeme(tag) =*= "_"
+isUnderscore(node) := isThisName(node, "_")
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
 Underscore(tag, debruijn) := Reference(veil(tag), debruijn)
