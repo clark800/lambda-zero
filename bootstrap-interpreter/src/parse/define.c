@@ -155,7 +155,8 @@ static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     // define deconstructor first in case the constructor name is the same
     // as the ADT name: this ensures that we always bind the ADT name
     for (unsigned int i = 0; i < n; ++i, node = getLeft(node)) {
-        Node* form = getRight(node);
+        Node* form = isColonPair(getRight(node)) ?
+            getLeft(getRight(node)) : getRight(node);
         scope = newConstructorDefinition(tag, form, scope, n - i - 1, n);
         scope = newDeconstructorDefinition(tag, form, scope, ms, n - i - 1, n);
     }

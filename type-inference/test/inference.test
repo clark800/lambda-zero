@@ -8,8 +8,6 @@ f''(x, y) := x(y)
 
 fix := x -> x  # dummy definition
 
-syntax(:) := infix(13)
-
 𝔹 ::= {False, True}
 
 ℕ ::= {0, up(down : ℕ)}

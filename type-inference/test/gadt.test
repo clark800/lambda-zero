@@ -1,0 +1,27 @@
+
+syntax(:::) := infixR(40)
+syntax(up) := prefix(90)
+syntax(<>) := infixR(70)
+syntax(match) := prefix(7)
+
+f <> g ≔ x ↦ f(g(x))
+fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
+(match x)(f) := f(x)
+
+Nat ::= {0, up(n : Nat)}
+
+Vector(n, a) ::= {
+    Nil : Vector(0, a),
+    (_ : a) ::: (_ : Vector(n, a)) : Vector(up n, a)
+}
+
+vector := 1 ::: Nil
+
+vector' := 2 ::: vector
+
+def concatenate(xs, ys)
+    match xs
+        Nil -> ys
+        x ::: xs' -> x ::: concatenate(xs', ys)
+
+0

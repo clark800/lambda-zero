@@ -123,13 +123,13 @@ def maybeAddress(type)
 
 
 def maybeCount(node)
-    with node as Constructor(_, _, _, _, count, _)
+    with node as Constructor(_, _, _, _, _, count, _)
         Just(count)
     Void
 
 
 def maybeConstructorIndex(node)
-    with node as Constructor(_, _, _, _, _, index)
+    with node as Constructor(_, _, _, _, _, _, index)
         Just(index)
     Void
 
