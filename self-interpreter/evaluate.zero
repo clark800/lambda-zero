@@ -1,5 +1,9 @@
 #* evaluate.zero
 
+def runtimeError(message, tag)
+    throwError("\nRuntime error: " ++ message, tag)
+
+
 def expandNumeral(tag, type, n)
     FreeFunction(tag, FreeFunction(tag,
             n |> 0 -> Variable(tag, 2); up n' ->
@@ -33,16 +37,20 @@ def evaluate(stack, closure @ Closure(term, environment))
                 Closure(applicand, environment))
         case Construction(tag, _, _)
             if isNil(stack) then closure else runtimeError("construction", tag)
-        case Element(_, _, term)
-            evaluate(stack, Closure(term, environment))
+        case Element(_, _, term')
+            evaluate(stack, Closure(term', environment))
         case Numeral(tag, type, n)
             if stack is _ :: _
                 numeral := expandNumeral(tag, type, n)
                 evaluate(stack, Closure(numeral, environment))
             closure
-        case Operation(_, _, arity, operator)
+        case Operation(tag, _, maybeTerm, arity, operator)
             result := operator(evaluate([]), stack.take(arity))
-            evaluate(stack.drop(arity), result)
+            if result is Just(closure')
+                evaluate(stack.drop(arity), closure')
+            if maybeTerm is Just(term')
+                evaluate(stack, Closure(term', environment))
+            runtimeError("operation", tag)
 
 
 def evaluateClosure(closure)

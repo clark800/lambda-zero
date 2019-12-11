@@ -64,7 +64,20 @@ toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 ℕ ⩴ {0, ↑(n : ℕ)}
 ℤ ⩴ {⧾(n : ℕ), ⧿(n : ℕ)}
 ℚ ⩴ {(numerator : ℤ) / (denominator : ℤ)}
+
 ↓ n ≔ n ⦊ 0 ↦ 0; ↑ n′ ↦ n′
+(=) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ False; ↑ m ↦ n = m)
+(≠) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ True); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≠ m)
+(<) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n < m)
+(>) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n > m)
+(≤) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n ≤ m)
+(≥) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≥ m)
+(+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
+(∸) ≔ 0 ↦ (0 ↦ 0; ↑ _ ↦ 0); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n ∸ m)
+(⋅) ≔ 0 ↦ (_ ↦ 0); ↑ n ↦ m ↦ m + n ⋅ m
+n ⫽ m ≔ if m = 0 or n < m then 0 else ↑((n ∸ m) ⫽ m)
+n % m ≔ if m = 0 then n else (if n < m then n else (n ∸ m) % m)
+
 positive(n) ≔ ⧾ n
 negative(n) ≔ ⧿ n
 negate ≔ ⧾ n ↦ ⧿ n; ⧿ n ↦ ⧾ n
@@ -81,17 +94,6 @@ f ° n ≔ n ⦊ 0 ↦ id; ↑ n′ ↦ f ∘ f ° n′
 (n)² ≔ n ⋅ n
 n ^ m ≔ m ⦊ 0 ↦ 1; ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′
 
-# (=) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ False; ↑ m ↦ n = m)
-# (≠) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ True); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≠ m)
-# (<) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n < m)
-# (>) ≔ 0 ↦ (0 ↦ False; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n > m)
-# (≤) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ True); ↑ n ↦ (0 ↦ False; ↑ m ↦ n ≤ m)
-# (≥) ≔ 0 ↦ (0 ↦ True; ↑ _ ↦ False); ↑ n ↦ (0 ↦ True; ↑ m ↦ n ≥ m)
-# (+) ≔ 0 ↦ m ↦ m; ↑ n ↦ m ↦ ↑(n + m)
-# (∸) ≔ 0 ↦ (0 ↦ 0; ↑ _ ↦ 0); ↑ n ↦ (0 ↦ ↑ n; ↑ m ↦ n ∸ m)
-# (⋅) ≔ 0 ↦ _ ↦ 0; ↑ n ↦ m ↦ m + n ⋅ m
-# n ⫽ m ≔ if m = 0 or n < m then 0 else ↑((n - m) ⫽ m)
-# n % m ≔ if m = 0 then n else (if n < m then n else (n - m) % m)
 
 # list
 List(a) ⩴ {[], (head : a) ∷ (tail : List(a))}

@@ -26,22 +26,20 @@ static int findOperationCode(Node* name) {
 }
 
 static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
+    int operationCode = findOperationCode(node);
+    if (isPseudoOperation(operationCode)) {
+        setType(node, OPERATION);
+        setValue(node, operationCode);
+        return;
+    }
     unsigned long long i = (unsigned long long)getValue(node);
     unsigned long long index = i > 0 ? i : findDebruijnIndex(node, parameters);
-    if (index > 0) {
-        unsigned long long localDepth = length(parameters) - globalDepth;
-        setValue(node, index <= localDepth ? (long long)index :
-            (long long)(index - length(parameters) - 1));
-        setType(node, VARIABLE);
-        return;
-    }
-    int code = findOperationCode(node);
-    if (code >= 0) {
-        setValue(node, code);
-        setType(node, OPERATION);
-        return;
-    }
-    syntaxError("undefined symbol", node);
+    syntaxErrorIf(index == 0, "undefined symbol", node);
+    unsigned long long localDepth = length(parameters) - globalDepth;
+    long long debruijn = (long long)(index <= localDepth ? index :
+        index - length(parameters) - 1);
+    setType(node, VARIABLE);
+    setValue(node, debruijn);
 }
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
@@ -51,6 +49,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
             append(parameters, getParameter(node));
             bindWith(getBody(node), parameters, globals);
             unappend(parameters);
+            setTag(node, getTag(getParameter(node)));
             setType(node, ABSTRACTION);
             break;
         case JUXTAPOSITION:
@@ -81,10 +80,14 @@ Array* bind(Hold* root) {
     Array* globals = newArray(2048);            // values of globals
     while (isLet(node) && !isUnderscore(getParameter(getLeft(node)))) {
         Node* definiendum = getParameter(getLeft(node));
+        Tag tag = getTag(definiendum);
         Node* definiens = getRight(node);
         bindWith(definiens, parameters, globals);
+        int operationCode = findOperationCode(definiendum);
+        if (operationCode >= 0 && !isPseudoOperation(operationCode))
+            setRight(node, Operation(tag, operationCode, definiens));
         append(parameters, definiendum);
-        append(globals, definiens);
+        append(globals, getRight(node));
         node = getBody(getLeft(node));
     }
     bindWith(node, parameters, globals);

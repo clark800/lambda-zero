@@ -5,6 +5,7 @@
 #include "array.h"
 #include "freelist.h"
 #include "util.h"
+#include "parse/opp/operator.h"
 #include "parse/term.h"
 #include "parse/parse.h"
 #include "closure.h"
@@ -13,12 +14,22 @@
 bool TEST = false;
 extern bool isIO;
 
+static void showTag(Tag tag, FILE* stream) {
+    if (getTagFixity(tag) == NOFIX) {
+        printString(tag.lexeme, stream);
+        return;
+    }
+    fputs("(", stream);
+    printString(tag.lexeme, stream);
+    fputs(")", stream);
+}
+
 static void serializeNode(Node* node, Node* locals, const Array* globals,
         unsigned int depth, FILE* stream) {
     switch (getTermType(node)) {
         case VARIABLE:
             if (isGlobal(node) || getDebruijnIndex(node) <= depth) {
-                printString(getLexeme(node), stream);
+                showTag(getTag(node), stream);
                 break;
             }
             unsigned long long debruijn = getDebruijnIndex(node);
@@ -34,13 +45,13 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             break;
         case ABSTRACTION:
             fputs("(", stream);
-            printString(getLexeme(getParameter(node)), stream);
+            showTag(getTag(node), stream);
             fputs(" \xE2\x86\xA6 ", stream); // u21A6
             serializeNode(getBody(node), locals, globals, depth + 1, stream);
             fputs(")", stream);
             break;
         case NUMERAL: fputll(getValue(node), stream); break;
-        case OPERATION: printString(getLexeme(node), stream); break;
+        case OPERATION: showTag(getTag(node), stream); break;
     }
 }
 

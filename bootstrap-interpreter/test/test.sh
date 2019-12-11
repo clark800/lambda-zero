@@ -84,9 +84,8 @@ summarize() {
 }
 
 SUITES="tokens.test quote.test brackets.test lambda.test syntax.test adt.test"
-OPERATOR_SUITES="arithmetic.test definition.test sections.test"
-PRELUDE_SUITES="tuples.test math.test prelude.test show.test infinite.test"
-META_PRELUDE_SUITES="tuples.test math.test prelude.test"
+PRELUDE_SUITES="arithmetic.test definition.test sections.test tuples.test math.test prelude.test show.test infinite.test"
+META_PRELUDE_SUITES="arithmetic.test definition.test sections.test tuples.test math.test prelude.test"
 
 run() {
     suite_failures=0
@@ -98,11 +97,6 @@ run() {
 
     for suite in $SUITES; do
         if ! oneline_suite "$suite"; then
-            suite_failures=$((suite_failures+1))
-        fi
-    done
-    for suite in $OPERATOR_SUITES; do
-        if ! oneline_suite "$suite" "$LIB/operators.zero"; then
             suite_failures=$((suite_failures+1))
         fi
     done

@@ -16,24 +16,31 @@ static Term* newBoolean(Tag tag, bool value) {
         value ? Variable(tag, 1) : Variable(tag, 2)));
 }
 
-static long long increment(long long n, Closure* operation) {
+static void operationError(const char* message) {
+    fputs("\nRuntime error: ", stderr);
+    fputs(message, stderr);
+    fputs("\n", stderr);
+    exit(1);
+}
+
+static long long increment(long long n) {
     if (n >= LLONG_MAX)
-        runtimeError("overflow in", operation);
+        operationError("overflow in 'up'");
     return n + 1;
 }
 
 // note: it is important to check for overflow before it occurs because
 // undefined behavior occurs immediately after an overflow, which is
 // impossible to recover from
-static long long add(long long left, long long right, Closure* operation) {
+static long long add(long long left, long long right) {
     if (left > LLONG_MAX - right)
-        runtimeError("overflow in", operation);
+        operationError("overflow in '+'");
     return left + right;
 }
 
-static long long multiply(long long left, long long right, Closure* operation) {
+static long long multiply(long long left, long long right) {
     if (right != 0 && left > LLONG_MAX / right)
-        runtimeError("overflow in", operation);
+        operationError("overflow in '*'");
     return left * right;
 }
 
@@ -60,7 +67,7 @@ static Hold* evaluateAbort(Closure* operation, Closure* message) {
         fputc((int)'\n', stderr);
     }
     STDERR = true;
-    return hold(message);
+    return message == NULL ? NULL : hold(message);
 }
 
 static Term* evaluatePut(Closure* operation, Term* left) {
@@ -99,10 +106,10 @@ static Term* computeOperation(Closure* operation,
         long long left, long long right) {
     Tag tag = getTag(getTerm(operation));
     switch (getOperationCode(getTerm(operation))) {
-        case INCREMENT: return Numeral(tag, increment(left, operation));
-        case PLUS: return Numeral(tag, add(left, right, operation));
+        case INCREMENT: return Numeral(tag, increment(left));
+        case PLUS: return Numeral(tag, add(left, right));
         case MONUS: return Numeral(tag, right >= left ? 0 : left - right);
-        case TIMES: return Numeral(tag, multiply(left, right, operation));
+        case TIMES: return Numeral(tag, multiply(left, right));
         case DIVIDE: return Numeral(tag, right == 0 ? 0 : left / right);
         case MODULO: return Numeral(tag, right == 0 ? left : left % right);
         case EQUAL: return newBoolean(tag, left == right);
@@ -121,8 +128,11 @@ static Hold* makeResult(Closure* operation, Term* node) {
 }
 
 static Hold* evaluateOperator(Closure* operation, Term* left, Term* right) {
-    long long leftValue = getNumericValue(operation, left);
-    long long rightValue = getNumericValue(operation, right);
+    if ((left != NULL && !isNumeral(left)) ||
+        (right != NULL && !isNumeral(right)))
+        return NULL;
+    long long leftValue = left == NULL ? 0 : getValue(left);
+    long long rightValue = right == NULL ? 0 : getValue(right);
     Term* result = computeOperation(operation, leftValue, rightValue);
     return makeResult(operation, result);
 }
@@ -142,8 +152,9 @@ Hold* evaluateOperationTerm(Closure* operation, Closure* left, Closure* right) {
         return evaluateAbort(operation, left);
     switch (getArity(getTerm(operation))) {
         case 0: return evaluateOperation(operation, NULL, NULL);
-        case 1: return evaluateOperation(operation, getTerm(left), NULL);
-        default:
-            return evaluateOperation(operation, getTerm(left), getTerm(right));
+        case 1: return left == NULL ? NULL :
+            evaluateOperation(operation, getTerm(left), NULL);
+        default: return left == NULL || right == NULL ? NULL :
+            evaluateOperation(operation, getTerm(left), getTerm(right));
     }
 }

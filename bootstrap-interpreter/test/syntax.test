@@ -1,6 +1,6 @@
 ===============================================================================
-syntax(+) := infixL(20) \n1 + 2
-3
+syntax(%%) := infixL(20) \nx %% y := x(y)\n(x -> x) %% 1
+1
 ===============================================================================
 (syntax(%%) := infixL(20) \nx -> x) \n%% := 1 \n%%
 1
@@ -11,8 +11,8 @@ syntax(+) := infixL(20) \n1 + 2
 syntax(%%) := infixL(20)\ndef f\n  syntax(%%) := prefix(20)\n  %% a := 1\n  %% 0\na %% b := 2\n0 %% 0
 2
 ===============================================================================
-syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x + y\n5 ++ 5
-10
+syntax(+) := infix(50)\nsyntax(++) := syntax(+)\nx ++ y := x(y)\n(x -> x) ++ 1
+1
 ===============================================================================
 syntax(if) := prefix(10)\nsyntax(then) := infixL(if _)\n1 then 0
 Syntax error: invalid prior for 'then' at line 3 column 3

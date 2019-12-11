@@ -30,4 +30,3 @@ Node* peek(Stack* stack, size_t i) {
     assert(!isEmpty(stack));
     return getListElement(getHead(stack), i);
 }
-

@@ -1,6 +1,7 @@
 #include <string.h>
 #include "tree.h"
 #include "opp/errors.h"
+#include "opp/operator.h"
 #include "ast.h"
 
 static unsigned int getCommaListLength(Node* node) {
@@ -68,7 +69,8 @@ Node* reduceOpenSquareBracket(Node* open, Node* before, Node* contents) {
 Node* reduceOpenBrace(Node* open, Node* before, Node* patterns) {
     syntaxErrorIf(before != NULL, "invalid operand before", open);
     if (patterns == NULL)
-        return SetBuilder(renameTag(getTag(open), "{}"), VOID);
+        return SetBuilder(setTagFixity(
+            renameTag(getTag(open), "{}"), NOFIX), VOID);
     return SetBuilder(getTag(open), newTuple(open, patterns));
 }
 
