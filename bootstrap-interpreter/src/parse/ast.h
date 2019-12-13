@@ -59,6 +59,10 @@ static inline Node* FixedName(Tag tag, const char* s) {
     return Name(renameTag(tag, s));
 }
 
+static inline Node* ForbiddenName(Tag tag) {
+    return newLeaf(tag, REFERENCE, 0, (void*)1);
+}
+
 static inline Node* SimpleArrow(Node* parameter, Node* body) {
     assert(isName(parameter));
     return newBranch(getTag(parameter), ARROW, SIMPLEARROW, parameter, body);

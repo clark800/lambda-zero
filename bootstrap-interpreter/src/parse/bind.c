@@ -7,11 +7,14 @@
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     if (isUnused(name))
        syntaxError("cannot reference a symbol starting with underscore", name);
-    long long depth = 0;
-    for (size_t i = 1; i <= length(parameters); ++i)
-        if (isSameLexeme(elementAt(parameters, length(parameters) - i), name))
-            if (depth++ == (long long)getData(name))
+    for (size_t i = 1; i <= length(parameters); ++i) {
+        Node* parameter = elementAt(parameters, length(parameters) - i);
+        if (isSameLexeme(parameter, name)) {
+            if (getData(parameter) == NULL)
                 return (unsigned long long)i;
+            syntaxError("cannot reference", name);
+        }
+    }
     return 0;
 }
 

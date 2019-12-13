@@ -160,9 +160,10 @@ static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
         scope = newDeconstructorDefinition(tag, form, scope, ms, n - i - 1, n);
     }
 
-    // define ADT name as outermost definition
-    Node* undefined = FixedName(tag, "(undefined)");
-    return applyPlainDefinition(tag, getHead(left), undefined, scope);
+    // define ADT name, but make it forbidden to access because the defined
+    // value is fake since this interpreter doesn't support types
+    Node* name = ForbiddenName(getTag(getHead(left)));
+    return applyPlainDefinition(tag, name, Number(tag, 0), scope);
 }
 
 Node* applyDefinition(Node* definition, Node* scope) {

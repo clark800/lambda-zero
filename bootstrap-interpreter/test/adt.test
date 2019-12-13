@@ -23,7 +23,7 @@ Syntax error: invalid constructor name '2' at line 1 column 11
 A ::= {a(b), c}\n0
 Syntax error: invalid constructor parameter 'b' at line 1 column 10
 ===============================================================================
-undefined := 0\nA ::= {()}\nA := 0\nA
+A ::= {()}\nA := 0\nA
 0
 ===============================================================================
 N ::= {z, s(_ : N)}\nz
