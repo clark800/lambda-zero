@@ -1,26 +1,26 @@
 #* bind.zero
 
 def findParameter(level, stack, lexeme)
-    with stack as table :: _
+    if stack is table :: _
         table.lookup(lexeme).mapJust(mapFirst((level --)))
     Void
 
 
 def findDefiniens(stack, lexeme)
-    with stack as table :: _
+    if stack is table :: _
         table.lookup(lexeme).mapJust(second) ?? Void
     Void
 
 
 def pushParameter(parameter, level, maybeNode, stack)
     lexeme := getLexeme(parameter)
-    with stack as top :: stack'
+    if stack is top :: stack'
         top.insert(lexeme, (level, maybeNode)) :: stack'
     [newDictionary([(lexeme, (level, maybeNode))])]
 
 
 def findType(lexeme, context)
-    with context.lookup(lexeme) as Just(((_, term), _))
+    if context.lookup(lexeme) is Just(((_, term), _))
         maybeAscription(term)
     Void
 
@@ -38,8 +38,8 @@ def getStringType(context, tag)
     natural := getNaturalType(context)
     listType := context.findType("[]") ??
         syntaxError("List not defined", tag)
-    with listType as Implicit(_, _, type)
-        with type as Application(_, left, _)
+    if listType is Implicit(_, _, type)
+        if type is Application(_, left, _)
             Application(noTag, left, natural)
         syntaxError("List type invalid", tag)
     syntaxError("List type invalid", tag)
@@ -92,13 +92,13 @@ def bindName(getBuiltin, level, stack, context, tag)
 
 
 def getADTName(constructor)
-    with constructor as Constructor(_, _, adtType, _, _, _, _)
+    if constructor is Constructor(_, _, adtType, _, _, _, _)
         getLexeme(getHead(adtType))
     astSyntaxError("invalid constructor", constructor)
 
 
 def getConstructionTypeAST(constructor)
-    with constructor as Constructor(_, parameterTypes, adtType, _, _, _, _)
+    if constructor is Constructor(_, parameterTypes, adtType, _, _, _, _)
         getArguments(adtType).fold(ImplicitArrow, adtType)
     astSyntaxError("invalid constructor", constructor)
 
@@ -127,7 +127,7 @@ def constructCaseAnnotation(tag, constructors)
 
 
 def buildCaseAnnotation(tag, constructorNames, context)
-    with constructorNames.map(getLexeme).map(`lookup(context)).sequence as
+    if constructorNames.map(getLexeme).map(`lookup(context)).sequence is
             Just(constructorPairs)
         constructors := constructorPairs.map(first).map(first)
         Just(constructCaseAnnotation(tag, constructors))
@@ -143,21 +143,21 @@ def bind(getBuiltin, level, stack, context, node)
             Variable(tag, debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
-            with arrowType as Double
+            if arrowType is Double
                 parameterTerm := parameter.bind'(level, stack, context)
                 # todo: add support for names on left side of double arrows
                 stack' := stack.pushParameter(Name(veil(tag)), level, Void)
                 bodyTerm := body.bind'(up level, stack', context)
                 Implication(tag, parameterTerm, bodyTerm)
 
-            with arrowType as Squiggle
+            if arrowType is Squiggle
                 stack' := stack.pushParameter(parameter, level, Void)
                 bodyTerm := body.bind'(up level, stack', context)
                 Implicit(tag, Top(tag), bodyTerm)
 
             stack' := stack.pushParameter(parameter, level, Void)
             (bodyTerm, codomain) := (
-                with body as ColonPair(_, body', type)
+                if body is ColonPair(_, body', type)
                     (body'.bind'(up level, stack', context),
                         type.bind'(up level, stack', context))
                 (body.bind'(up level, stack', context),
@@ -169,7 +169,7 @@ def bind(getBuiltin, level, stack, context, node)
                 Function(getTag(parameter), False, domain, codomain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case", node)
-            with buildCaseAnnotation(tag, constructorNames, context) as
+            if buildCaseAnnotation(tag, constructorNames, context) is
                     Just(typeAST)
                 domain := typeAST.bind'(level, stack, context)
                 CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
@@ -204,7 +204,7 @@ def bind(getBuiltin, level, stack, context, node)
                 function, count, index)
             typeAST := newReconstructorAST(parameterTypes, adtType, dataType)
             type := typeAST.bind'(level, stack, context)
-            with function as Number(_, value)
+            if function is Number(_, value)
                 Numeral(tag, type, value)
             Element(tag, type, function.bind'(level, stack, context))
         case TypedNode(tag, typeAST, node)
@@ -227,7 +227,7 @@ def bindDefinition(getBuiltin, state, (tag, node))
 
 
 def getDefinitions(node)
-    with node as Let(tag, isTypeConstructor, name, value, scope)
+    if node is Let(tag, isTypeConstructor, name, value, scope)
         (getTag(name), value) :: getDefinitions(scope)
     [(veil(getTag(node)), node)]
 

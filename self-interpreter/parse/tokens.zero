@@ -12,24 +12,24 @@ def parseEscapeCode(code, tag)
 
 
 def parseQuotedCharacter(tag, string)
-    with string as c :: cs
+    if string is c :: cs
         if c =/= '\\'
             Number(tag, c)
-        with cs as c' :: _
+        if cs is c' :: _
             Number(tag, parseEscapeCode(c', tag))
         syntaxError("missing end quote for", tag)
     syntaxError("missing end quote for", tag)
 
 
 def splitStringLiteral(string)
-    with string as c :: cs
+    if string is c :: cs
         n := if c = '\\' and not isNil(cs) then 2 else 1
         string.take(n) :: splitStringLiteral(string.drop(n))
     []
 
 
 def buildStringLiteral(tag, characters)
-    with characters as c :: cs
+    if characters is c :: cs
         prependList(tag, c, buildStringLiteral(tag, cs))
     newNil(tag)
 
@@ -50,8 +50,8 @@ def parseStringLiteral(tag)
 
 
 def parseCharacterLiteral(tag)
-    with getQuotedCharacters(tag) as c :: cs
-        with cs as []
+    if getQuotedCharacters(tag) is c :: cs
+        if cs is []
             c
         syntaxError("invalid character literal", tag)
     syntaxError("invalid character literal", tag)

@@ -1,7 +1,7 @@
 #* flatten.zero
 
 def isUnknown(term)
-    with term as Variable(_, n)
+    if term is Variable(_, n)
         n = 0
     False
 
@@ -21,7 +21,7 @@ def flattenClosure(Closure(term, environment))
         case Constant(_, index)
             term
         case Variable(tag, debruijn)
-            with environment.peek(debruijn -- 1) as Just(closure)
+            if environment.peek(debruijn -- 1) is Just(closure)
                 if isUnknown(getTerm(closure))
                     term
                 flattenClosure(evaluateClosure(closure))

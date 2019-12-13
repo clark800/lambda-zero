@@ -12,7 +12,7 @@ def showScheme(Scheme(universals, term))
 
 
 def addRenaming((renaming, metacontext), type)
-    with type as MetaVariable(source, address)
+    if type is MetaVariable(source, address)
         if renaming.hasKey(address)
             (renaming, metacontext)
         (type', metacontext') := metacontext.newMetaVariable(source)

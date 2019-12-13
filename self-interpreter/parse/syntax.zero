@@ -53,7 +53,7 @@ def reduceWhere(tag, left, right)
 
 
 def reduceIs(tag, left, right)
-    with left as Juxtaposition(_, left', right')
+    if left is Juxtaposition(_, left', right')
         if not isThisName(left', "if")
             pass
         asPattern := AsPattern(tag, right', right)
@@ -62,7 +62,7 @@ def reduceIs(tag, left, right)
 
 
 def reduceIfIs(tag, asPattern, thenBlock)
-    with asPattern as AsPattern(_, expression, pattern)
+    if asPattern is AsPattern(_, expression, pattern)
         elseBlock := Underscore(tag, 3)
         caseArrow := newCaseArrow(pattern, thenBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
@@ -73,7 +73,7 @@ def reduceIfIs(tag, asPattern, thenBlock)
 
 
 def reduceNewline(tag, left, right)
-    with left as Juxtaposition(_, left', right')
+    if left is Juxtaposition(_, left', right')
         if isThisName(left', "def")
             reduceDefine(tag, right', right)
         if isThisName(left', "case")
@@ -145,7 +145,7 @@ def findPrecedence(state, node)
 
 
 def parsePrecedence(state, node)
-    with node as Number(_, precedence)
+    if node is Number(_, precedence)
         if precedence > 99
             astSyntaxError("invalid precedence", node)
         precedence
@@ -156,7 +156,7 @@ def defineSyntax(state, definition, name, right)
     tag := getTag(definition)
     if not isName(name)
         astSyntaxError("expected name operand to", definition)
-    with right as Juxtaposition(_, fixity, argument)
+    if right is Juxtaposition(_, fixity, argument)
         if isThisName(fixity, "alias")
             getAliasSyntax(state, argument)
         if isThisName(fixity, "syntax")

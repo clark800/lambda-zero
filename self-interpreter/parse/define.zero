@@ -5,7 +5,7 @@ def isTupleConstructor(node)
 
 
 def isTuple(node)
-    with node as Juxtaposition(_, left, _)
+    if node is Juxtaposition(_, left, _)
         isTuple(left)
     isTupleConstructor(node)
 
@@ -40,33 +40,33 @@ def transformRecursion(name, value)
 def isValidPattern(node)
     if isName(node)
         True
-    with node as ColonPair(_, left, _)
+    if node is ColonPair(_, left, _)
         isValidPattern(left)
-    with node as Juxtaposition(_, left, right)
+    if node is Juxtaposition(_, left, right)
         isValidPattern(left) and isValidPattern(right)
-    with node as Arrow(_, arrowType, _, left, _, right)
-        with arrowType as Double
+    if node is Arrow(_, arrowType, _, left, _, right)
+        if arrowType is Double
             isValidPattern(left) and isValidPattern(right)
         False
     False
 
 
 def isValidConstructorParameter(parameter)
-    with parameter as ColonPair(_, left, right)
+    if parameter is ColonPair(_, left, right)
         isName(left) and isValidPattern(right)
     False
 
 
 def readParameterTypes(form)
-    with form as Juxtaposition(_, left, right)
-        with right as ColonPair(_, _, type)
+    if form is Juxtaposition(_, left, right)
+        if right is ColonPair(_, _, type)
             readParameterTypes(left) ++ [type]
         astSyntaxError("invalid form", form)
     []
 
 
 def newReconstructorAST'(parameterTypeASTs, returnTypeAST)
-    with parameterTypeASTs as parameterTypeAST :: parameterTypeASTs'
+    if parameterTypeASTs is parameterTypeAST :: parameterTypeASTs'
         bodyTypeAST := newReconstructorAST'(parameterTypeASTs', returnTypeAST)
         DoubleArrow(parameterTypeAST, bodyTypeAST)
     returnTypeAST
@@ -80,7 +80,7 @@ def newReconstructorAST(parameterTypeASTs, adtTypeAST, returnTypeAST)
 
 def getConstructorBody(name, n, m, j)
     tag := getTag(name)
-    with name as Number(tag, value)
+    if name is Number(tag, value)
         if value =/= 0
             astSyntaxError("invalid constructor name", name)
         Number(tag, 0)
@@ -106,7 +106,7 @@ def newConstructorDefinition(tag, adtType, dataType, n, (form, j), scope)
     constructor := Constructor(getTag(name), parameterTypes,
         adtType, dataType, body, n, j + 1)
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
-    with invalidParameters as parameter :: _
+    if invalidParameters is parameter :: _
         astSyntaxError("invalid constructor parameter", parameter)
     applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
 
@@ -157,7 +157,7 @@ def newConstructorDefinitions'(tag, adtType, dataType, n, ms, formj, scope)
 
 
 def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
-    with first(formj) as ColonPair(_, form', dataType)
+    if first(formj) is ColonPair(_, form', dataType)
         if not isValidConstructorAnnotation(adtType, dataType)
             astSyntaxError("inconsistent annotation form", dataType)
         newConstructorDefinitions'(tag, adtType, dataType, n, ms,
@@ -166,7 +166,7 @@ def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
 
 
 def getAnnotation(node)
-    with node as ColonPair(_, _, right)
+    if node is ColonPair(_, _, right)
         right
     astSyntaxError("missing annotation", node)
 
@@ -182,7 +182,7 @@ def newADT(tag, parameters, forms)
 
 
 def applyADTDefinition(tag, left, right, scope)
-    with right as SetBuilder(_, forms)
+    if right is SetBuilder(_, forms)
         n := length(forms)
         ms := forms.map(length <> getArguments)
         scope' := zip(forms, 0...).fold(
@@ -203,7 +203,7 @@ def applyADTDefinition(tag, left, right, scope)
 
 
 def applyDefinition(definition, scope)
-    with definition as Definition(tag, type, name, value)
+    if definition is Definition(tag, type, name, value)
         match type
             PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
             MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
@@ -214,7 +214,7 @@ def applyDefinition(definition, scope)
 
 
 def reduceDefine'(tag, definitionType, left, right)
-    with left as ColonPair(tag', left', codomain)
+    if left is ColonPair(tag', left', codomain)
         reduceDefine'(tag, definitionType, left',
             ColonPair(tag', right, codomain))
     if isTuple(left) or isAsPattern(left)
@@ -230,7 +230,7 @@ def reduceDefine'(tag, definitionType, left, right)
 def reduceDefine(tag, left, right)
     if isDefinition(right)   # todo: remove after converting exceptions
         astSyntaxError("missing scope for definition", right)
-    with left as Juxtaposition(_, left', right')
+    if left is Juxtaposition(_, left', right')
         if isThisName(left', "maybe")
             reduceDefine'(tag, MaybeDefinition, right', right)
         if isThisName(left', "try")

@@ -34,19 +34,19 @@ isRepeatable(c) := " `.,;".any((= c))
 
 
 def startsWithDigit(lexeme)
-    with lexeme as n :: _
+    if lexeme is n :: _
         isDigit(n)
     False
 
 
 def isNumeric(lexeme)
-    with lexeme as n :: ns
+    if lexeme is n :: ns
         isDigit(n) or ((n = '+' or n = '-') and startsWithDigit(ns))
     False
 
 
 def splitQuoteCharacter(quote, ns)
-    with ns as n :: ns'
+    if ns is n :: ns'
         if n = quote or isLineFeed(n)
             ([], ns)
         n' := if n = '\\' and not isNil(ns') then 2 else 1
@@ -59,9 +59,9 @@ def shiftSplit((a, b))
 
 
 def splitQuote(ns)
-    with ns as quote :: ns'
+    if ns is quote :: ns'
         (a, b) := ns'.splitWith(splitQuoteCharacter(quote))
-        with b as quote' :: _
+        if b is quote' :: _
             if quote' = quote
                 shiftSplit((quote :: a, b))
             (quote :: a, b)
@@ -71,7 +71,7 @@ def splitQuote(ns)
 
 def splitNumeric(ns)
     (before, after) := ns.splitWhen(isDelimiter)
-    with after as n :: ns'
+    if after is n :: ns'
         if n =/= '.' or not startsWithDigit(ns')
             (before, after)
         (before', after') := ns'.splitWhen(isDelimiter)
@@ -80,14 +80,14 @@ def splitNumeric(ns)
 
 
 def splitNewline(ns)
-    with ns as n :: ns'
+    if ns is n :: ns'
         (before, after) := ns'.splitWhen((=/= ' '))
         (n :: before, after)
     ([], [])
 
 
 def splitLexeme(ns)
-    with ns as c :: ns'
+    if ns is c :: ns'
         if c.isLineFeed then splitNewline(ns)
         if c.isQuote then splitQuote(ns)
         if c.isComment then ns.splitWhen(isLineFeed)
@@ -127,7 +127,7 @@ def showLocation(Location(file, line, column))
 
 
 def showTag(Tag(lexeme, fixity, _))
-    with lexeme as c :: _
+    if lexeme is c :: _
         if c = 0 then "\\0"
         if c = '\n' then "\\n"
         if fixity = NOFIX then lexeme
@@ -136,7 +136,7 @@ def showTag(Tag(lexeme, fixity, _))
 
 
 def showQuotedLexeme(lexeme)
-    with lexeme as c :: _
+    if lexeme is c :: _
         if c = '\n' then "(end of line)" else pass
     "'" ++ lexeme ++ "'"
 
@@ -165,7 +165,7 @@ getTokenCode(Token(_, code)) := code
 
 
 def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
-    with nextLexeme as c :: _
+    if nextLexeme is c :: _
         if isLineFeed(c) or isComment(c)
             Token(tag, VSpace)
         Token(tag, Newline)
@@ -173,7 +173,7 @@ def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
 
 
 def createToken(tag @ Tag(lexeme, _, _), nextTag)
-    with lexeme as c :: _
+    if lexeme is c :: _
         if c = ' ' then Token(tag, Space)
         if c = '\n' then createLineFeedToken(tag, nextTag)
         if c = '"' then Token(tag, String)

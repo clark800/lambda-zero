@@ -1,14 +1,14 @@
 #* parse.zero
 
 def onReduceHandler(state, operator, left, right, reduction)
-    with left as Just(left')
-        with left' as Definition(_, type, _, _)
-            with type as SyntaxDefinition
+    if left is Just(left')
+        if left' is Definition(_, type, _, _)
+            if type is SyntaxDefinition
                 popSyntax(state)
             pass
         pass
-    with reduction as Definition(_, type, definiendum, definiens)
-        with type as SyntaxDefinition
+    if reduction is Definition(_, type, definiendum, definiens)
+        if type is SyntaxDefinition
             state.pushSyntax(getTagLexeme(getTag(definiendum)),
                 defineSyntax(state, reduction, definiendum, definiens))
         pass
@@ -38,8 +38,8 @@ def isRightSectionOperator(operator)
 def shiftOperator''(state, operator)
     # handle section syntax
     (maybeTopItem, state') := unshift(state)
-    with maybeTopItem as Just(topItem)
-        with topItem as OperatorItem(top)
+    if maybeTopItem is Just(topItem)
+        if topItem is OperatorItem(top)
             if isThisOperator(top, "(") and isRightSectionOperator(operator)
                 openTag := renameTag(getOperatorTag(top), "( ", OPENFIX)
                 open := state'.parseSymbol(openTag, 0)
@@ -67,7 +67,7 @@ def shiftOperator'(state, operator)
         shiftOperator''(state'', operator)
 
     if isThisOperator(operator, "\n")
-        with getStack(state) as topItem :: _
+        if getStack(state) is topItem :: _
             if isOperator(topItem)
                 state  # ignore newlines after operators
             if getSubprecedence(operator) % 2 =/= 0
@@ -94,8 +94,8 @@ def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
     state := shiftToken(State([], OPERATORS), START)
     stack := getStack(tokens.cascade(shiftToken, state))
-    with stack as item :: remaining
-        with item as OperandItem(result)
+    if stack is item :: remaining
+        if item is OperandItem(result)
             if not isPreterm(result) and False
                 # currently bind has special case errors for non-preterms
                 astSyntaxError("parser error", result)  # force syntax errors

@@ -15,14 +15,14 @@ def unifyFailure(originals, metacontext, (left, right))
 
 
 def isFree(variable, metacontext)
-    with variable as MetaVariable(_, address)
+    if variable is MetaVariable(_, address)
         isVoid(metacontext.get(address) ?? Void)
     False
 
 
 def getValue(type, metacontext)
-    with type as MetaVariable(_, address)
-        with metacontext.get(address) ?? Void as Just(closure)
+    if type is MetaVariable(_, address)
+        if metacontext.get(address) ?? Void is Just(closure)
             closure
         pass
     throwError("internal error", getTermTag(type))
@@ -50,12 +50,12 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
         unify'(fail, metacontext, (metacontext.getValue(left), rightClosure))
     if isMetaVariable(right) and not isFree(right, metacontext)
         unify'(fail, metacontext, (leftClosure, metacontext.getValue(right)))
-    with left as Implicit(tag, type, body)
+    if left is Implicit(tag, type, body)
         (metavariable, metacontext') := metacontext.newMetaVariable(tag)
         closure := Closure(metavariable, leftEnvironment)
         environment := leftEnvironment.push(closure)
         unify'(fail, metacontext', (Closure(body, environment), rightClosure))
-    with right as Implicit(tag, type, body)
+    if right is Implicit(tag, type, body)
         (metavariable, metacontext') := metacontext.newMetaVariable(tag)
         closure := Closure(metavariable, rightEnvironment)
         environment := rightEnvironment.push(closure)
@@ -64,9 +64,9 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
         zip(getComponentClosures(leftClosure),
             getComponentClosures(rightClosure)).
             cascade(unify'(fail), metacontext)
-    with left as MetaVariable(_, address)
+    if left is MetaVariable(_, address)
         metacontext.set(address, Just(rightClosure))
-    with right as MetaVariable(_, address)
+    if right is MetaVariable(_, address)
         metacontext.set(address, Just(leftClosure))
     fail(metacontext, (left, right))
 
