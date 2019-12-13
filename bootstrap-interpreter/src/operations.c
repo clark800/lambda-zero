@@ -39,7 +39,6 @@ static long long multiply(long long left, long long right, Closure* operation) {
 
 unsigned int getArity(Term* operation) {
     switch (getOperationCode(operation)) {
-        case UNDEFINED: return 0;
         case ABORT: return 1;
         case EXIT: return 1;
         case INCREMENT: return 1;
@@ -59,10 +58,6 @@ static Hold* evaluateAbort(Closure* operation, Closure* message) {
     if (!TEST) {
         printRuntimeError("hit", operation);
         fputc((int)'\n', stderr);
-    }
-    if (message == NULL) {
-        fputs("undefined", stderr);
-        exit(1);
     }
     STDERR = true;
     return hold(message);
@@ -135,7 +130,6 @@ static Hold* evaluateOperator(Closure* operation, Term* left, Term* right) {
 static Hold* evaluateOperation(Closure* operation, Term* left, Term* right) {
     switch (getOperationCode(getTerm(operation))) {
         case EXIT: return error("\n");
-        case UNDEFINED: return evaluateAbort(operation, NULL);
         case PUT: return makeResult(operation, evaluatePut(operation, left));
         case GET: return makeResult(operation,
                             evaluateGet(operation, left, right));

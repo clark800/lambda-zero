@@ -100,8 +100,7 @@ def getBuiltin(tag)
         ("<=", (2, makeComparisonBuiltin((<=)))),
         (">=", (2, makeComparisonBuiltin((>=)))),
         ("abort", (1, abortBuiltin)),
-        ("(increment)", (1, makeUnaryBuiltin(incrementBuiltin))),
-        ("(undefined)", (0, closure -> (abort "undefined")))
+        ("(increment)", (1, makeUnaryBuiltin(incrementBuiltin)))
     ])
 
     builtins.lookup(getTagLexeme(tag))

@@ -60,8 +60,6 @@ def getOperationType(context, tag)
     if lexeme =*= "(increment)"
         natural := getNaturalType(context)
         Just(natural >-> natural)
-    if lexeme =*= "(undefined)"
-        Just(Implicit(tag', Top(tag'), Variable(tag', 1)))
     if lexeme =*= "abort"
         string := getStringType(context, tag)
         Just(Implicit(tag', Top(tag'), string >-> Variable(tag', 2)))
