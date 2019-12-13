@@ -137,7 +137,7 @@ def initialize(nx, ny, pixelsPerCell, serverData)
     height := ny * pixelsPerCell
     (info, vendor, formats, screens) := serverData
     windowID := info.lookup("resource-id-base") ?? 0
-    with screens as screen :: _
+    if screens is screen :: _
         rootID := screen.lookup("root") ?? 0
         screenWidth := screen.lookup("width-in-pixels") ?? 0
         screenHeight := screen.lookup("height-in-pixels") ?? 0

@@ -52,10 +52,19 @@ def reduceWhere(tag, left, right)
     applyDefinition(right, left)
 
 
-def reduceWith(tag, asPattern, withBlock)
-    with asPattern as AsPattern(_, expression, pattern)
+def reduceIs(tag, left, right)
+    if left is Juxtaposition(_, left', right')
+        if not isThisName(left', "if")
+            pass
+        asPattern := AsPattern(tag, right', right)
+        Juxtaposition(tag, FixedName(tag, "if is"), asPattern)
+    syntaxError("expected 'if' before", tag)
+
+
+def reduceIfIs(tag, asPattern, thenBlock)
+    if asPattern is AsPattern(_, expression, pattern)
         elseBlock := Underscore(tag, 3)
-        caseArrow := newCaseArrow(pattern, withBlock)
+        caseArrow := newCaseArrow(pattern, thenBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
         function := combineCases(tag, caseArrow, fallback)
         LockedArrow(FixedName(tag, "pass"),
@@ -64,13 +73,13 @@ def reduceWith(tag, asPattern, withBlock)
 
 
 def reduceNewline(tag, left, right)
-    with left as Juxtaposition(_, left', right')
+    if left is Juxtaposition(_, left', right')
         if isThisName(left', "def")
             reduceDefine(tag, right', right)
         if isThisName(left', "case")
             newCaseArrow(right', right)
-        if isThisName(left', "with")
-            reduceWith(tag, right', right)
+        if isThisName(left', "if is")
+            reduceIfIs(tag, right', right)
         reduceApply(tag, left, right)
     if isDefinition(left)
         applyDefinition(left, right)
@@ -136,7 +145,7 @@ def findPrecedence(state, node)
 
 
 def parsePrecedence(state, node)
-    with node as Number(_, precedence)
+    if node is Number(_, precedence)
         if precedence > 99
             astSyntaxError("invalid precedence", node)
         precedence
@@ -147,7 +156,7 @@ def defineSyntax(state, definition, name, right)
     tag := getTag(definition)
     if not isName(name)
         astSyntaxError("expected name operand to", definition)
-    with right as Juxtaposition(_, fixity, argument)
+    if right is Juxtaposition(_, fixity, argument)
         if isThisName(fixity, "alias")
             getAliasSyntax(state, argument)
         if isThisName(fixity, "syntax")
@@ -209,9 +218,8 @@ OPERATORS := [newDictionary([
     coreSyntax("=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreAlias("⇒", "=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreSyntax("case", 11, 11, NA, Prefix(reduceAdfix)),
-    coreSyntax("with", 11, 11, NA, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
-    coreSyntax("as", 12, 12, NA, Infix(reduceAsPattern)),
+    coreSyntax("is", 12, 12, NA, Infix(reduceIs)),
     coreSyntax("abort", 15, 15, LA, Prefix(reduceAdfix)),
     coreSyntax(".", 92, 92, LA, Infix(reducePipeline)),
     coreSyntax("$", 99, 99, LA, Prefix(reduceReservedAdfix)),

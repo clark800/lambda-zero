@@ -13,14 +13,14 @@ newMapping(mappings) := newTable((<=), mappings)
 
 
 def applyMapping(mapping, type)
-    with type as MetaVariable(_, address)
+    if type is MetaVariable(_, address)
         mapping.lookup(address) ?? type
     type.mapComponents(applyMapping(mapping))
 
 
 def getFreeVariables(metacontext, type)
-    with type as MetaVariable(_, address)
-        with metacontext.get(address) ?? Void as Just(closure)
+    if type is MetaVariable(_, address)
+        if metacontext.get(address) ?? Void is Just(closure)
             getFreeVariables(metacontext, flattenClosure(closure))
         [type]
     join(getComponents(type).map(getFreeVariables(metacontext))).
@@ -28,7 +28,7 @@ def getFreeVariables(metacontext, type)
 
 
 def showMaybeClosure(maybeClosure)
-    with maybeClosure as Just(Closure(type, _))
+    if maybeClosure is Just(Closure(type, _))
         showTerm(type)
     "Free"
 
@@ -47,8 +47,8 @@ def recursionError(type, type', metacontext)
 
 
 def substitute(metacontext, type)
-    with type as MetaVariable(tag, address)
-        with metacontext.get(address) ?? Void as Just(closure)
+    if type is MetaVariable(tag, address)
+        if metacontext.get(address) ?? Void is Just(closure)
             type' := flattenClosure(closure)
             type'' := type'.setLocation(tag)
             if type''.getFreeVariables(newArray([])).any(sameHead(type))

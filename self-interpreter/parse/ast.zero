@@ -26,10 +26,10 @@ AST ::= {
 
 
 def lockArrow(node)
-    with node as Arrow(tag, arrowType, constructors, left, annotation, right)
-        with arrowType as Simple
+    if node is Arrow(tag, arrowType, constructors, left, annotation, right)
+        if arrowType is Simple
             Arrow(tag, Locked, constructors, left, annotation, right)
-        with arrowType as Strict
+        if arrowType is Strict
             Arrow(tag, Locked, constructors, left, annotation, right)
         node
     node
@@ -137,12 +137,12 @@ isADT := ADT(_, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 
-isCase(node) := with node as Arrow(_, type, _, _, _, _);
+isCase(node) := if node is Arrow(_, type, _, _, _, _);
     (type |> Locked -> False; _ -> True) <| False
 
 Name(tag) := Reference(tag, 0)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
-isName(node) := with node as Reference(_, debruijn); debruijn = 0 <| False
+isName(node) := if node is Reference(_, debruijn); debruijn = 0 <| False
 SimpleArrow(parameter, body) :=
     Arrow(getTag(parameter), Simple, [], parameter, Void, body)
 StrictArrow(tag, constructors, body) :=
@@ -156,13 +156,13 @@ ImplicitArrow(parameter, body) :=
 
 
 def setAnnotation(annotation, node)
-    with node as Arrow(tag, arrowType, constructors, parameter, _, body)
+    if node is Arrow(tag, arrowType, constructors, parameter, _, body)
         Arrow(tag, arrowType, constructors, parameter, Just(annotation), body)
     abort("can only set annotation on arrow nodes")
 
 
-isSyntaxDefinition(node) := with node as Definition(_, type, _, _);
-    (with type as SyntaxDefinition; True <| False) <| False
+isSyntaxDefinition(node) := if node is Definition(_, type, _, _);
+    (if type is SyntaxDefinition; True <| False) <| False
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme

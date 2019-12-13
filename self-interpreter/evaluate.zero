@@ -11,17 +11,17 @@ def evaluate(stack, closure @ Closure(term, environment))
         case Top(tag)
             closure
         case Constant(tag, index)
-            with environment.get(index) as Just(closure')
+            if environment.get(index) is Just(closure')
                 evaluate(stack, closure')
             closure
         case Variable(_, debruijn)
-            with environment.peek(debruijn -- 1) as Just(closure')
+            if environment.peek(debruijn -- 1) is Just(closure')
                 evaluate(stack, closure')
             closure
         case MetaVariable(tag, _)
             if isNil(stack) then closure else runtimeError("metavariable", tag)
         case Function(_, _, _, _, body)
-            with stack as argument :: stack'
+            if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
         case Implication(tag, _, _)
@@ -36,7 +36,7 @@ def evaluate(stack, closure @ Closure(term, environment))
         case Element(_, _, term)
             evaluate(stack, Closure(term, environment))
         case Numeral(tag, type, n)
-            with stack as _ :: _
+            if stack is _ :: _
                 numeral := expandNumeral(tag, type, n)
                 evaluate(stack, Closure(numeral, environment))
             closure

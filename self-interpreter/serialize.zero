@@ -10,7 +10,7 @@ def serialize(closure)
             case Variable(tag, debruijn)
                 if debruijn <= depth
                     showTag(tag)
-                with environment.peek(debruijn -- depth -- 1) as Just(closure)
+                if environment.peek(debruijn -- depth -- 1) is Just(closure)
                     serialize'(closure, 0)
                 showTag(tag)
             case MetaVariable(tag, n)

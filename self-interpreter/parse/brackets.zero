@@ -1,13 +1,13 @@
 #* brackets.zero
 
 def applyToCommaList(tag, base, arguments)
-    with arguments as CommaPair(_, left, right)
+    if arguments is CommaPair(_, left, right)
         Juxtaposition(tag, applyToCommaList(tag, base, left), right)
     Juxtaposition(tag, base, arguments)
 
 
 def getCommaListSize(commaList)
-    with commaList as CommaPair(_, left, _)
+    if commaList is CommaPair(_, left, _)
         getCommaListSize(left) + 1
     1
 
@@ -20,26 +20,26 @@ def newTuple(tag, commaList)
 
 
 def getCommaListElements(commaList)
-    with commaList as CommaPair(_, left, right)
+    if commaList is CommaPair(_, left, right)
         getCommaListElements(left) ++ [right]
     [commaList]
 
 
 def reduceParentheses(tag, left, right)
-    with right as Just(contents)
+    if right is Just(contents)
         if isDefinition(contents)
             astSyntaxError("missing scope for definition", contents)
-        with left as Just(function)
+        if left is Just(function)
             applyToCommaList(tag, function, contents)
         if isCommaPair(contents)
             newTuple(tag, contents)
         if isArrow(contents)
             lockArrow(contents)
-        with contents as Juxtaposition(_, left, right)
+        if contents is Juxtaposition(_, left, right)
             Juxtaposition(tag, left, right)
         contents
     unit := FixedName(tag, "()")
-    with left as Just(function)
+    if left is Just(function)
         Juxtaposition(tag, function, unit)
     unit
 
@@ -51,13 +51,13 @@ def isPlaceholder(node)
 def reduceOpenSection(tag, left, right)
     if not isVoid(left)
         syntaxError("invalid operand before section", tag)
-    with right as Just(contents)
-        with contents as Juxtaposition(_, left', right')
+    if right is Just(contents)
+        if contents is Juxtaposition(_, left', right')
             # check for parenthesized adfix operator
             if isName(left') and isPlaceholder(right')
                 left'
             # check for parenthesized infix operator
-            with left' as Juxtaposition(_, left'', right'')
+            if left' is Juxtaposition(_, left'', right'')
                 if isThisName(right', "*.") and isThisName(right'', ".*") and
                     isName(left'') then left'' else pass
             LockedArrow(FixedName(tag, ".*"), contents)
@@ -76,7 +76,7 @@ def reduceCloseSection(tag, left, contents)
     # check for parenthesized operator
     if isName(contents)
         contents
-    with contents as Juxtaposition(_, left', right')
+    if contents is Juxtaposition(_, left', right')
         # check for parenthesized adfix operator
         if isName(left') and isPlaceholder(right')
             left'
@@ -85,14 +85,14 @@ def reduceCloseSection(tag, left, contents)
 
 
 def createList(tag, commaList, list)
-    with commaList as CommaPair(_, left, right)
+    if commaList is CommaPair(_, left, right)
         createList(tag, left, prependList(tag, right, list))
     prependList(tag, commaList, list)
 
 
 def reduceSquare(tag, left, right)
-    with right as Just(contents)
-        with left as Just(before)
+    if right is Just(contents)
+        if left is Just(before)
             n := getCommaListSize(contents)
             constructor := FixedName(tag, repeat('[').take(n))
             base := Juxtaposition(tag, constructor, before)
@@ -106,7 +106,7 @@ def reduceSquare(tag, left, right)
 def reduceCurly(tag, left, right)
     if not isVoid(left)
         syntaxError("invalid operand before", tag)
-    with right as Just(patterns)
+    if right is Just(patterns)
         SetBuilder(tag, getCommaListElements(patterns))
     SetBuilder(tag, [])
 
@@ -114,7 +114,7 @@ def reduceCurly(tag, left, right)
 def reduceOpenFile(tag, left, right)
     if not isVoid(left)
         syntaxError("invalid operand before", tag)
-    with right as Just(contents)
+    if right is Just(contents)
         contents
     syntaxError("no input", tag)
 

@@ -66,7 +66,7 @@ def FreeFunction(tag, body)
 
 
 def splitSpine(term)
-    with term as Application(_, left, right)
+    if term is Application(_, left, right)
         (applicand, arguments) := splitSpine(left)
         (applicand, arguments ++ [right])
     (term, [])
@@ -77,59 +77,59 @@ def getTermHead(term)
 
 
 def maybeAscription(node)
-    with node as Element(_, type, _)
+    if node is Element(_, type, _)
         Just(type)
-    with node as Numeral(_, type, _)
+    if node is Numeral(_, type, _)
         Just(type)
-    with node as Operation(_, type, _, _)
+    if node is Operation(_, type, _, _)
         Just(type)
     Void
 
 
 def maybeDebruijnIndex(term)
-    with term as Variable(_, debruijn)
+    if term is Variable(_, debruijn)
         Just(debruijn)
     Void
 
 
 def maybeBody(term)
-    with term as Function(_, _, _, _, body)
+    if term is Function(_, _, _, _, body)
         Just(body)
     Void
 
 
 def maybeApplicand(term)
-    with term as Application(_, applicand, _)
+    if term is Application(_, applicand, _)
         Just(applicand)
     Void
 
 
 def maybeArgument(term)
-    with term as Application(_, _, argument)
+    if term is Application(_, _, argument)
         Just(argument)
     Void
 
 
 def maybeNatural(term)
-    with term as Numeral(_, _, value)
+    if term is Numeral(_, _, value)
         Just(value)
     Void
 
 
 def maybeAddress(type)
-    with type as MetaVariable(_, address)
+    if type is MetaVariable(_, address)
         Just(address)
     Void
 
 
 def maybeCount(node)
-    with node as Constructor(_, _, _, _, _, count, _)
+    if node is Constructor(_, _, _, _, _, count, _)
         Just(count)
     Void
 
 
 def maybeConstructorIndex(node)
-    with node as Constructor(_, _, _, _, _, _, index)
+    if node is Constructor(_, _, _, _, _, _, index)
         Just(index)
     Void
 
@@ -189,8 +189,8 @@ def setLocation(Tag(_, _, location), term)
 
 
 def sameConstant(a, b)
-    with a as Constant(_, indexA)
-        with b as Constant(_, indexB)
+    if a is Constant(_, indexA)
+        if b is Constant(_, indexB)
             indexA = indexB
         False
     False
@@ -201,50 +201,50 @@ def isSameTerm(a, b)
         case Top(_)
             isTop(b)
         case Constant(_, index)
-            with b as Constant(_, index')
+            if b is Constant(_, index')
                 index = index'
             False
         case Variable(_, debruijn)
-            with b as Variable(_, debruijn')
+            if b is Variable(_, debruijn')
                 debruijn = debruijn'
             False
         case MetaVariable(_, index)
-            with b as MetaVariable(_, index')
+            if b is MetaVariable(_, index')
                 index = index'
             False
         case Function(_, _, domain, codomain, body)
-            with b as Function(_, _, domain', codomain', body')
+            if b is Function(_, _, domain', codomain', body')
                 isSameTerm(domain, domain') and
                 isSameTerm(codomain, codomain') and
                 isSameTerm(body, body')
             False
         case Implication(_, type, body)
-            with b as Implication(_, type', body')
+            if b is Implication(_, type', body')
                 isSameTerm(type, type') and isSameTerm(body, body')
             False
         case Implicit(_, type, body)
-            with b as Implicit(_, type', body')
+            if b is Implicit(_, type', body')
                 isSameTerm(type, type') and isSameTerm(body, body')
             False
         case Application(_, type, body)
-            with b as Application(_, type', body')
+            if b is Application(_, type', body')
                 isSameTerm(type, type') and isSameTerm(body, body')
             False
         case Construction(_, parameters, type)
-            with b as Construction(_, parameters', type')
+            if b is Construction(_, parameters', type')
                 isSameTerm(type, type') and zip(parameters, parameters').all(
                     uncurry(isSameTerm))
             False
         case Element(_, type, term)
-            with b as Element(_, type', term')
+            if b is Element(_, type', term')
                 isSameTerm(type, type') and isSameTerm(term, term')
             False
         case Numeral(_, _, value)
-            with b as Numeral(_, _, value')
+            if b is Numeral(_, _, value')
                 value = value'
             False
         case Operation(tag, _, _, _)
-            with b as Operation(tag', _, _, _)
+            if b is Operation(tag', _, _, _)
                 getTagLexeme(tag) =*= getTagLexeme(tag')
             False
 
@@ -253,13 +253,13 @@ def sameHead(term)
     case Top(_)
         isTop(term)
     case Constant(_, index)
-        with term as Constant(_, index')
+        if term is Constant(_, index')
             index = index'
         False
     case Variable(tag, _)
         False
     case MetaVariable(_, address)
-        with term as MetaVariable(_, address')
+        if term is MetaVariable(_, address')
             address = address'
         False
     case Function(_, _, _, _, _)
@@ -276,11 +276,11 @@ def sameHead(term)
     case Element(_, _, _)
         isElement(term)
     case Numeral(_, _, value)
-        with term as Numeral(_, _, value')
+        if term is Numeral(_, _, value')
             value = value'
         False
     case Operation(tag, _, _, _)
-        with term as Operation(tag', _, _, _)
+        if term is Operation(tag', _, _, _)
             getTagLexeme(tag) =*= getTagLexeme(tag')
         False
 
@@ -327,7 +327,7 @@ def getSuffix(count, index)
 
 def showConstruction(showTerm, headTag, arguments)
     argumentStrings := arguments.map(showTerm)
-    with argumentStrings as argumentString :: argumentStrings'
+    if argumentStrings is argumentString :: argumentStrings'
         fixity := getTagFixity(headTag)
         lexeme := getTagLexeme(headTag)
         if fixity = INFIX and length(arguments) = 2

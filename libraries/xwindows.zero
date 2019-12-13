@@ -264,7 +264,7 @@ def getConnectionSuccessResponse(stream)
 
 
 def getConnectionResponse(stream)
-    with stream as status :: stream'
+    if stream is status :: stream'
         if status = 0
             abort("Failed to connect to X Server")
         if status = 1
@@ -439,7 +439,7 @@ def handleEvents(eventHandler, stream, keymap, state)
         []
     (eventBytes, stream') := stream.read(32)
     event := parseEvent(keymap, eventBytes)
-    with eventHandler(event, state) as Just((response, state'))
+    if eventHandler(event, state) is Just((response, state'))
         response ++ handleEvents(eventHandler, stream', keymap, state')
     []
 
@@ -447,7 +447,7 @@ def handleEvents(eventHandler, stream, keymap, state)
 def defaultWindow(width, height, serverData)
     (info, vendor, formats, screens) := serverData
     windowID := info.lookup("resource-id-base") ?? 0
-    with screens as screen :: _
+    if screens is screen :: _
         rootID := screen.lookup("root") ?? 0
         screenWidth := screen.lookup("width-in-pixels") ?? 0
         screenHeight := screen.lookup("height-in-pixels") ?? 0
