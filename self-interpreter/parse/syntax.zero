@@ -57,7 +57,7 @@ def reduceIs(tag, left, right)
         if not isThisName(left', "if")
             pass
         asPattern := AsPattern(tag, right', right)
-        Juxtaposition(tag, FixedName(tag, "@if"), asPattern)
+        Juxtaposition(tag, FixedName(tag, "if is"), asPattern)
     syntaxError("expected 'if' before", tag)
 
 
@@ -78,7 +78,7 @@ def reduceNewline(tag, left, right)
             reduceDefine(tag, right', right)
         if isThisName(left', "case")
             newCaseArrow(right', right)
-        if isThisName(left', "with") or isThisName(left', "@if")
+        if isThisName(left', "if is")
             reduceIfIs(tag, right', right)
         reduceApply(tag, left, right)
     if isDefinition(left)
@@ -218,9 +218,7 @@ OPERATORS := [newDictionary([
     coreSyntax("=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreAlias("⇒", "=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreSyntax("case", 11, 11, NA, Prefix(reduceAdfix)),
-    coreSyntax("with", 11, 11, NA, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
-    coreSyntax("as", 12, 12, NA, Infix(reduceAsPattern)),
     coreSyntax("is", 12, 12, NA, Infix(reduceIs)),
     coreSyntax("abort", 15, 15, LA, Prefix(reduceAdfix)),
     coreSyntax(".", 92, 92, LA, Infix(reducePipeline)),

@@ -48,7 +48,7 @@ static Node* reduceIs(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isKeyphrase(left, "if"), "expected 'if' before", operator);
     Tag tag = getTag(operator);
     Node* asPattern = AsPattern(tag, getRight(left), right);
-    return Juxtaposition(tag, FixedName(tag, "@if"), asPattern);
+    return Juxtaposition(tag, FixedName(tag, "if is"), asPattern);
 }
 
 static Node* reduceIfIs(Node* operator, Node* asPattern, Node* thenBlock) {
@@ -80,7 +80,7 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return combineCases(getTag(operator), left, right);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
-    if (isKeyphrase(left, "with") || isKeyphrase(left, "@if"))
+    if (isKeyphrase(left, "if is"))
         return reduceIfIs(operator, getRight(left), right);
     return reduceApply(operator, left, right);
 }
@@ -168,9 +168,7 @@ void initSymbols(void) {
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
     addCoreSyntax("=>", 10, INFIX, R, reduceInfix);
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
-    addCoreSyntax("with", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
-    addCoreSyntax("as", 12, INFIX, N, reduceAsPattern);
     addCoreSyntax("is", 12, INFIX, N, reduceIs);
     addCoreSyntax("abort", 15, PREFIX, L, reduceAbort);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);
