@@ -33,12 +33,16 @@ def getComponentClosures(Closure(term, environment))
     getComponents(term).map(`Closure(environment))
 
 
+def substituteAndEvaluate(metacontext, Closure(term, environment))
+    evaluateClosure(Closure(substitute(metacontext, term), environment))
+
+
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
 def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
-    leftClosure := evaluateClosure(leftClosureRaw)
-    rightClosure := evaluateClosure(rightClosureRaw)
+    leftClosure := substituteAndEvaluate(metacontext, leftClosureRaw)
+    rightClosure := substituteAndEvaluate(metacontext, rightClosureRaw)
     _ @ Closure(left, leftEnvironment) := leftClosure
     _ @ Closure(right, rightEnvironment) := rightClosure
 

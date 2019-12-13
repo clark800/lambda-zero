@@ -72,9 +72,9 @@ def newReconstructorAST'(parameterTypeASTs, returnTypeAST)
     returnTypeAST
 
 
-def newReconstructorAST(parameterTypeASTs, returnTypeAST)
+def newReconstructorAST(parameterTypeASTs, adtTypeAST, returnTypeAST)
     typeAST := newReconstructorAST'(parameterTypeASTs, returnTypeAST)
-    parameters := getArguments(returnTypeAST)
+    parameters := getArguments(adtTypeAST)
     parameters.fold(ImplicitArrow, typeAST)
 
 
@@ -95,7 +95,7 @@ def getConstructorBody(name, n, m, j)
     (UnderscoreArrow(tag)^<>(n + m))(base)
 
 
-def newConstructorDefinition(tag, dataType, n, (form, j), scope)
+def newConstructorDefinition(tag, adtType, dataType, n, (form, j), scope)
     parameters := getArguments(form)
     m := length(parameters)
     name := getHead(form)
@@ -104,7 +104,7 @@ def newConstructorDefinition(tag, dataType, n, (form, j), scope)
         astSyntaxError("invalid constructor", name)   # force errors
     parameterTypes := readParameterTypes(form)
     constructor := Constructor(getTag(name), parameterTypes,
-        dataType, body, n, j + 1)
+        adtType, dataType, body, n, j + 1)
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     with invalidParameters as parameter :: _
         astSyntaxError("invalid constructor parameter", parameter)
@@ -130,7 +130,7 @@ def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
     ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
 
 
-def newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
+def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
     reconstructor := Underscore(tag, 3)
     arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
         newFallbackCase(tag, ms.at(k -- 1) ?? 0))
@@ -139,16 +139,30 @@ def newDeconstructorDefinition(tag, dataType, n, ms, (form, j), scope)
         UnderscoreArrow(tag, body)))
     parameterTypes := readParameterTypes(form)
     name := Name(addPrefix(getTag(getHead(form)), '@'))
-    type := newDeconstructorType(getTag(name), parameterTypes, dataType)
+    type := newDeconstructorType(getTag(name), parameterTypes, adtType)
     deconstructor := TypedNode(getTag(name), type, function)
     applyPlainDefinition(tag, name, deconstructor, scope)
 
 
-def newConstructorDefinitions(tag, dataType, n, ms, formj, scope)
+def isValidConstructorAnnotation(dataType, annotation)
+    length(getArguments(annotation)) = length(getArguments(dataType)) and
+        isThisName(getHead(annotation), getLexeme(getHead(dataType)))
+
+
+def newConstructorDefinitions'(tag, adtType, dataType, n, ms, formj, scope)
     # define deconstructor first in case the constructor name is the same
     # as the ADT name: this ensures that we always bind the ADT name
-    scope' := newConstructorDefinition(tag, dataType, n, formj, scope)
-    newDeconstructorDefinition(tag, dataType, n, ms, formj, scope')
+    scope' := newConstructorDefinition(tag, adtType, dataType, n, formj, scope)
+    newDeconstructorDefinition(tag, adtType, n, ms, formj, scope')
+
+
+def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
+    with first(formj) as ColonPair(_, form', dataType)
+        if not isValidConstructorAnnotation(adtType, dataType)
+            astSyntaxError("inconsistent annotation form", dataType)
+        newConstructorDefinitions'(tag, adtType, dataType, n, ms,
+            (form', second(formj)), scope)
+    newConstructorDefinitions'(tag, adtType, adtType, n, ms, formj, scope)
 
 
 def getAnnotation(node)

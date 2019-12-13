@@ -35,7 +35,7 @@ def reduceCommaPair(tag, left, right)
 def reduceColonPair(tag, left, right)
     if isColonPair(left) or not isValidPattern(left)
         syntaxError("invalid left side of colon", tag)
-    if isColonPair(right) or not isValidPattern(right)
+    if isColonPair(right)
         syntaxError("invalid right side of colon", tag)
     ColonPair(tag, left, right)
 

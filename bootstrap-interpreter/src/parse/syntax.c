@@ -27,7 +27,7 @@ static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
 static Node* reduceColonPair(Node* operator, Node* left, Node* right) {
     if (isColonPair(left) || !isValidPattern(left))
         syntaxError("invalid left side of colon", operator);
-    if (isColonPair(right) || !isValidPattern(right))
+    if (isColonPair(right))
         syntaxError("invalid right side of colon", operator);
     return ColonPair(getTag(operator), left, right);
 }
