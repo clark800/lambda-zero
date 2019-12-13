@@ -44,14 +44,21 @@ static Node* reduceWhere(Node* operator, Node* left, Node* right) {
     return applyDefinition(right, left);
 }
 
-static Node* reduceWith(Node* operator, Node* asPattern, Node* withBlock) {
+static Node* reduceIs(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isKeyphrase(left, "if"), "expected 'if' before", operator);
+    Tag tag = getTag(operator);
+    Node* asPattern = AsPattern(tag, getRight(left), right);
+    return Juxtaposition(tag, FixedName(tag, "@if"), asPattern);
+}
+
+static Node* reduceIfIs(Node* operator, Node* asPattern, Node* thenBlock) {
     if (!isAsPattern(asPattern))
         syntaxError("expected as pattern to right of", operator);
     Tag tag = getTag(operator);
     Node* expression = getLeft(asPattern);
     Node* pattern = getRight(asPattern);
     Node* elseBlock = Underscore(tag, 3);
-    Node* caseArrow = newCaseArrow(pattern, withBlock);
+    Node* caseArrow = newCaseArrow(pattern, thenBlock);
     Node* fallback = SimpleArrow(Underscore(tag, 0), elseBlock);
     Node* function = combineCases(tag, caseArrow, fallback);
     release(hold(caseArrow));
@@ -73,8 +80,8 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return combineCases(getTag(operator), left, right);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
-    if (isKeyphrase(left, "with"))
-        return reduceWith(operator, getRight(left), right);
+    if (isKeyphrase(left, "with") || isKeyphrase(left, "@if"))
+        return reduceIfIs(operator, getRight(left), right);
     return reduceApply(operator, left, right);
 }
 
@@ -164,6 +171,7 @@ void initSymbols(void) {
     addCoreSyntax("with", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
     addCoreSyntax("as", 12, INFIX, N, reduceAsPattern);
+    addCoreSyntax("is", 12, INFIX, N, reduceIs);
     addCoreSyntax("abort", 15, PREFIX, L, reduceAbort);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, PREFIX, L, reduceReserved);

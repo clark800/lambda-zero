@@ -52,10 +52,19 @@ def reduceWhere(tag, left, right)
     applyDefinition(right, left)
 
 
-def reduceWith(tag, asPattern, withBlock)
+def reduceIs(tag, left, right)
+    with left as Juxtaposition(_, left', right')
+        if not isThisName(left', "if")
+            pass
+        asPattern := AsPattern(tag, right', right)
+        Juxtaposition(tag, FixedName(tag, "@if"), asPattern)
+    syntaxError("expected 'if' before", tag)
+
+
+def reduceIfIs(tag, asPattern, thenBlock)
     with asPattern as AsPattern(_, expression, pattern)
         elseBlock := Underscore(tag, 3)
-        caseArrow := newCaseArrow(pattern, withBlock)
+        caseArrow := newCaseArrow(pattern, thenBlock)
         fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
         function := combineCases(tag, caseArrow, fallback)
         LockedArrow(FixedName(tag, "pass"),
@@ -69,8 +78,8 @@ def reduceNewline(tag, left, right)
             reduceDefine(tag, right', right)
         if isThisName(left', "case")
             newCaseArrow(right', right)
-        if isThisName(left', "with")
-            reduceWith(tag, right', right)
+        if isThisName(left', "with") or isThisName(left', "@if")
+            reduceIfIs(tag, right', right)
         reduceApply(tag, left, right)
     if isDefinition(left)
         applyDefinition(left, right)
@@ -212,6 +221,7 @@ OPERATORS := [newDictionary([
     coreSyntax("with", 11, 11, NA, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
     coreSyntax("as", 12, 12, NA, Infix(reduceAsPattern)),
+    coreSyntax("is", 12, 12, NA, Infix(reduceIs)),
     coreSyntax("abort", 15, 15, LA, Prefix(reduceAdfix)),
     coreSyntax(".", 92, 92, LA, Infix(reducePipeline)),
     coreSyntax("$", 99, 99, LA, Prefix(reduceReservedAdfix)),
