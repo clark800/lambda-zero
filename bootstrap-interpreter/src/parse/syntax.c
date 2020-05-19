@@ -46,6 +46,7 @@ static Node* reduceWhere(Node* operator, Node* left, Node* right) {
 
 static Node* reduceIs(Node* operator, Node* left, Node* right) {
     syntaxErrorIf(!isKeyphrase(left, "if"), "expected 'if' before", operator);
+    syntaxErrorIf(!isValidPattern(right), "expected pattern after", operator);
     Tag tag = getTag(operator);
     Node* asPattern = AsPattern(tag, getRight(left), right);
     return Juxtaposition(tag, FixedName(tag, "if is"), asPattern);
@@ -169,7 +170,7 @@ void initSymbols(void) {
     addCoreSyntax("=>", 10, INFIX, R, reduceInfix);
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
-    addCoreSyntax("is", 12, INFIX, N, reduceIs);
+    addCoreSyntax("is", 13, INFIX, L, reduceIs);
     addCoreSyntax("abort", 15, PREFIX, L, reduceAbort);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, PREFIX, L, reduceReserved);

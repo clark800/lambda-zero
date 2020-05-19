@@ -269,3 +269,9 @@ if [] is x :: xs\n  x\n0
 if [1] is x :: xs\n  if x = 1 then 2 * pass else 2\n3
 6
 ==========================================================================
+if x is (z -> z)\n  1\n0
+Syntax error: expected pattern after 'is' at line 1 column 6
+===============================================================================
+if x is A then 1 else 0
+Syntax error: invalid prior for 'then' at line 1 column 11
+===============================================================================
