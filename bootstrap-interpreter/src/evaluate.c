@@ -7,10 +7,11 @@
 #include "exception.h"
 #include "operations.h"
 
+extern bool isIO;
 static volatile bool INTERRUPT = false;
 
 typedef const Array Globals;
-static Hold* evaluateClosure(Closure* closure, Globals* globals);
+static Node* evaluateClosure(Closure* closure, Globals* globals);
 
 static bool isUpdate(Closure* closure) { return getTerm(closure) == VOID;}
 static Closure* getUpdateClosure(Closure* update) {return getLocals(update);}
@@ -83,39 +84,69 @@ static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
     } else {
         // lookup referenced closure in the local environment and switch to it
         Closure* referee = getReferee(reference, getLocals(closure));
-        if (!isValue(getTerm(referee)))
+        // only optimize in IO mode so that term serializations are standardized
+        if (isIO && !isValue(getTerm(referee)))
             push(stack, newUpdate(referee));
         setClosure(closure, referee);
     }
 }
 
-static Hold* popArgument(Closure* closure, Stack* stack, Globals* globals) {
-    eraseUpdates(stack);    // partially applied operations are not values
-    if (isEmpty(stack))
-        runtimeError("missing argument to", closure);
-    Hold* expression = pop(stack);
-    Hold* result = evaluateClosure(getNode(expression), globals);
-    release(expression);
-    return result;
-}
-
 static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
     unsigned int arity = getArity(getTerm(closure));
-    Hold* left = arity > 0 ? popArgument(closure, stack, globals) : NULL;
-    Hold* right = arity > 1 ? popArgument(closure, stack, globals) : NULL;
+    eraseUpdates(stack);    // partially applied operations are not values
+    Hold* left = arity >= 1 && !isEmpty(stack) ? pop(stack) : NULL;
+    eraseUpdates(stack);    // partially applied operations are not values
+    Hold* right = arity >= 2 && !isEmpty(stack) ? pop(stack) : NULL;
+
+    // save the closure data since evaluate will mutate the closure and we
+    // may have to revert if the operation optimization does not work
+    Hold* leftTerm = left == NULL ? NULL : hold(getTerm(getNode(left)));
+    Hold* leftLocals = left == NULL ? NULL : hold(getLocals(getNode(left)));
+    Hold* rightTerm = right == NULL ? NULL : hold(getTerm(getNode(right)));
+    Hold* rightLocals = right == NULL ? NULL : hold(getLocals(getNode(right)));
+
+    // left and right may be mutated in evaluateClosure
     Hold* result = evaluateOperationTerm(closure,
-        getNode(left), getNode(right));
-    setClosure(closure, getNode(result));
-    release(result);
-    if (left != NULL)
-        release(left);
-    if (right != NULL)
+        left == NULL ? NULL : evaluateClosure(getNode(left), globals),
+        right == NULL ? NULL : evaluateClosure(getNode(right), globals));
+
+    if (result == NULL) {
+        // restore stack to it's original state
+        if (right != NULL) {
+            setTerm(getNode(right), getNode(rightTerm));
+            setLocals(getNode(right), getNode(rightLocals));
+            push(stack, getNode(right));
+        }
+        if (left != NULL) {
+            setTerm(getNode(left), getNode(leftTerm));
+            setLocals(getNode(left), getNode(leftLocals));
+            push(stack, getNode(left));
+        }
+    }
+    if (right != NULL) {
+        release(rightTerm);
+        release(rightLocals);
         release(right);
+    }
+    if (left != NULL) {
+        release(leftTerm);
+        release(leftLocals);
+        release(left);
+    }
+    if (result == NULL) {
+        if (isLeaf(getTerm(closure)))
+            runtimeError("missing argument to", closure);
+        // fallback to term
+        setTerm(closure, getRight(getTerm(closure)));
+    } else {
+        setClosure(closure, getNode(result));
+        release(result);
+    }
 }
 
 static Term* expandNumeral(Term* numeral) {
     long long n = getValue(numeral);
-    Tag tag = getTag(numeral);
+    Tag tag = renameTag(getTag(numeral), "_");
     Term* body = n == 0 ? Variable(tag, 2) :
        Application(tag, Variable(tag, 1), Numeral(tag, n - 1));
     return Abstraction(tag, Abstraction(tag, body));
@@ -123,7 +154,7 @@ static Term* expandNumeral(Term* numeral) {
 
 static void interrupt(int parameter) {(void)parameter, INTERRUPT = true;}
 
-static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
+static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     while (true) {
         if (INTERRUPT)
             runtimeError("interrupted", closure);
@@ -134,12 +165,13 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
             case NUMERAL:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
-                    return hold(closure);
+                    return closure;
+                setLocals(closure, VOID);
                 setTerm(closure, expandNumeral(getTerm(closure))); break;
             case ABSTRACTION:
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
-                    return hold(closure);
+                    return closure;
                 evaluateLambda(closure, stack); break;
             default:
                 assert(false); break;
@@ -147,9 +179,11 @@ static Hold* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     }
 }
 
-static Hold* evaluateClosure(Closure* closure, Globals* globals) {
+static Closure* evaluateClosure(Closure* closure, Globals* globals) {
+    if (isValue(getTerm(closure)))
+        return closure;
     Stack* stack = newStack();
-    Hold* result = evaluate(closure, stack, globals);
+    Node* result = evaluate(closure, stack, globals);
     deleteStack(stack);
     return result;
 }
@@ -158,7 +192,7 @@ Hold* evaluateTerm(Term* term, Globals* globals) {
     INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, VOID, VOID));
     signal(SIGINT, interrupt);
-    Hold* result = evaluateClosure(getNode(closure), globals);
+    Hold* result = hold(evaluateClosure(getNode(closure), globals));
     signal(SIGINT, SIG_DFL);
     release(closure);
     deleteStack(INPUT_STACK);

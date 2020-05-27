@@ -3,10 +3,14 @@ typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, OPERATION} TermType;
 // names in Operations must line up with codes in OperationCode
 static const char* const Operations[] = {"+", "--", "*", "//", "%",
     "=", "=/=", "<", ">", "<=", ">=", "abort",
-    "(increment)", "(exit)", "(put)", "(get)"};
+    "up", "(exit)", "(put)", "(get)"};
 typedef enum {PLUS, MONUS, TIMES, DIVIDE, MODULO, EQUAL, NOTEQUAL,
       LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL,
       ABORT, INCREMENT, EXIT, PUT, GET} OperationCode;
+
+static inline bool isPseudoOperation(int c) {
+    return c == ABORT || c == EXIT || c == PUT || c == GET;
+}
 
 typedef Node Term;
 static inline TermType getTermType(Term* t) {return (TermType)getType(t);}
@@ -17,8 +21,8 @@ static inline bool isNumeral(Term* t) {return getType(t) == NUMERAL;}
 static inline bool isOperation(Term* t) {return getType(t) == OPERATION;}
 static inline bool isGlobal(Term* t) {return isVariable(t) && getValue(t) < 0;}
 
-static inline Term* Variable(Tag tag, long long value) {
-    return newLeaf(tag, VARIABLE, value, NULL);
+static inline Term* Variable(Tag tag, long long debruijn) {
+    return newLeaf(tag, VARIABLE, debruijn, NULL);
 }
 
 static inline Term* Abstraction(Tag tag, Term* body) {
@@ -33,8 +37,10 @@ static inline Term* Numeral(Tag tag, long long n) {
     return newLeaf(tag, NUMERAL, n, NULL);
 }
 
-static inline Term* Operation(Tag tag, long long n) {
-    return newLeaf(tag, OPERATION, n, NULL);
+// note: arithmetic operations are branches and always have a fallback term
+// but pseudo operations are leaves and don't have a fallback term
+static inline Term* Operation(Tag tag, OperationCode code, Term* term) {
+    return newBranch(tag, OPERATION, (char)code, VOID, term);
 }
 
 static inline unsigned long long getDebruijnIndex(Term* t) {
@@ -51,5 +57,5 @@ static inline unsigned long long getGlobalIndex(Term* t) {
 static inline Term* getParameter(Term* t) {return getLeft(t);}
 static inline Term* getBody(Term* t) {return getRight(t);}
 static inline OperationCode getOperationCode(Term* t) {
-  return (OperationCode)getValue(t);
+  return isLeaf(t) ? getValue(t) : getVariety(t);
 }

@@ -112,7 +112,7 @@ static inline Node* SetBuilder(Tag tag, Node* commaList) {
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
-    return Reference(renameTag(tag, "_"), (long long)debruijn);
+    return Reference(setTagFixity(renameTag(tag, "_"), 0), (long long)debruijn);
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
@@ -123,7 +123,7 @@ static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}
 
 static inline Node* prepend(Tag tag, Node* item, Node* list) {
     return Juxtaposition(tag, Juxtaposition(tag,
-        FixedName(tag, "::"), item), list);
+        Name(renameTag(tag, "::")), item), list);
 }
 
 static inline bool isTuple(Node* node) {
@@ -131,4 +131,3 @@ static inline bool isTuple(Node* node) {
     return isJuxtaposition(node) ? isTuple(getLeft(node)) :
         (isName(node) && getLexeme(node).start[0] == ',');
 }
-

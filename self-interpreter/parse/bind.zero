@@ -6,12 +6,6 @@ def findParameter(level, stack, lexeme)
     Void
 
 
-def findDefiniens(stack, lexeme)
-    if stack is table :: _
-        table.lookup(lexeme).mapJust(second) ?? Void
-    Void
-
-
 def pushParameter(parameter, level, maybeNode, stack)
     lexeme := getLexeme(parameter)
     if stack is top :: stack'
@@ -57,7 +51,7 @@ def getOperationType(context, tag)
         natural := getNaturalType(context)
         boolean := getBooleanType(context)
         Just(natural >-> natural >-> boolean)
-    if lexeme =*= "(increment)"
+    if lexeme =*= "up"
         natural := getNaturalType(context)
         Just(natural >-> natural)
     if lexeme =*= "abort"
@@ -66,10 +60,10 @@ def getOperationType(context, tag)
     Void
 
 
-def bindOperation(getBuiltin, context, tag)
+def bindOperation(getBuiltin, context, tag, maybeTerm)
     maybe (arity, optimize) := getBuiltin(tag)
     maybe type := getOperationType(context, tag)
-    Just(Operation(tag, type, arity, optimize))
+    Just(Operation(tag, type, maybeTerm, arity, optimize))
 
 
 def bindVariable(level, stack, tag)
@@ -82,12 +76,18 @@ def bindContextTerm(context, tag)
     context.lookup(getTagLexeme(tag)).mapJust(second)
 
 
+def bindPseudoOperation(getBuiltin, context, tag)
+    if getTagLexeme(tag) =*= "abort"
+        bindOperation(getBuiltin, context, tag, Void)
+    Void
+
+
 def bindName(getBuiltin, level, stack, context, tag)
     if isUnused(tag)
         syntaxError("cannot reference a symbol starting with underscore", tag)
     bindVariable(level, stack, tag) ??
         bindContextTerm(context, tag) ??
-        bindOperation(getBuiltin, context, tag) ??
+        bindPseudoOperation(getBuiltin, context, tag) ??
         syntaxError("undefined symbol", tag)
 
 
@@ -220,9 +220,11 @@ def bindGlobal(getBuiltin, context, node)
 def bindDefinition(getBuiltin, state, (tag, node))
     (tags, context, environment) := state
     term := bindGlobal(getBuiltin, context, node)
-    (index, environment') := environment.append(Closure(term, environment))
+    # note: operations can only be defined at the top level
+    definiens := bindOperation(getBuiltin, context, tag, Just(term)) ?? term
+    (index, environment') := environment.append(Closure(definiens, environment))
     constant := Constant(tag, index)
-    context' := context.insert(getTagLexeme(tag), ((node, term), constant))
+    context' := context.insert(getTagLexeme(tag), ((node, definiens), constant))
     (tag :: tags, context', environment')
 
 

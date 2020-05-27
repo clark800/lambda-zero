@@ -49,8 +49,8 @@ static Node* newMainCall(Node* name) {
     Node* print = Printer(tag);
     Node* get = FixedName(tag, "(get)");
     Node* get0 = Juxtaposition(tag, get, Number(tag, 0));
-    Node* operators = newChurchPair(tag,
-        FixedName(tag, "[]"), FixedName(tag, "::"));
+    Node* operators = newChurchPair(tag, FixedName(tag, "[]"),
+        Name(setTagFixity(renameTag(tag, "::"), INFIX)));
     Node* input = Juxtaposition(tag, get0, operators);
     return Juxtaposition(tag, print, Juxtaposition(tag, name, input));
 }
@@ -67,8 +67,7 @@ static Node* transformRecursion(Node* name, Node* value) {
         return value;
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);
-    Node* fix = FixedName(tag, "fix");
-    return Juxtaposition(tag, fix, LockedArrow(name, value));
+    return Juxtaposition(tag, FixedName(tag, "fix"), LockedArrow(name, value));
 }
 
 static bool isValidConstructorParameter(Node* parameter) {
@@ -90,11 +89,6 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
     if (isNumber(form) && getValue(form) == 0) {
         Node* zero = FixedName(getTag(form), "0");
         return applyPlainDefinition(tag, zero, form, scope);
-    }
-
-    if (isJuxtaposition(form) && isThisName(getLeft(form), "up")) {
-        Node* increment = FixedName(getTag(name), "(increment)");
-        return applyPlainDefinition(tag, name, increment, scope);
     }
 
     syntaxErrorIf(!isName(name), "invalid constructor name", name);

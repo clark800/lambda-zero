@@ -33,13 +33,13 @@
 Syntax error: magnitude of numeral is too large '9223372036854775808' at line 1 column 1
 ===============================================================================
 9223372036854775807 + 1
-\nRuntime error: overflow in '+' at line 1 column 21
+\nRuntime error: overflow in '+'
 ===============================================================================
 9223372036854775807 + 0
 9223372036854775807
 ===============================================================================
 ℕ ⩴ {0, ↑((↓) : ℕ)}\nup 9223372036854775807
-\nRuntime error: overflow in '(increment)' at line 1 column 13
+\nRuntime error: overflow in 'up'
 ===============================================================================
 1 // 0
 0
@@ -51,10 +51,10 @@ Syntax error: missing close for '(' at line 1 column 5
 Syntax error: missing left operand for '%' at line 1 column 1
 ===============================================================================
 (+)
-\nRuntime error: missing argument to '+' at line 1 column 2
+(_ ↦ ((_ (m ↦ m)) (n ↦ (m ↦ ((up) ((((x ↦ (x x)) (((<>) ((+) ↦ (_ ↦ ((_ (m ↦ m)) (n ↦ (m ↦ ((up) (((+) n) m)))))))) (x ↦ (x x)))) n) m))))))
 ===============================================================================
 1 + 2(3)
-\nRuntime error: expected numeric argument to '+' at line 1 column 3
+(_ ↦ (_ ↦ (_ ((((x ↦ (x x)) (((<>) ((+) ↦ (_ ↦ ((_ (m ↦ m)) (n ↦ (m ↦ ((up) (((+) n) m)))))))) (x ↦ (x x)))) 0) (2 3)))))
 ===============================================================================
 5 -- * 2
 Syntax error: missing left operand for '*' at line 1 column 6

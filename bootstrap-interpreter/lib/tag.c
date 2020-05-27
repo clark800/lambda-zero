@@ -4,7 +4,7 @@
 #include "tag.h"
 
 String newString(const char* start, unsigned int length) {
-    return (String){start, length, '\0'};
+    return (String){start, length, '\0', 0};
 }
 
 String toString(const char* start) {
@@ -24,8 +24,15 @@ Tag renameTag(Tag tag, const char* name) {
 }
 
 Tag addPrefix(Tag tag, char prefix) {
-    return newTag((String){tag.lexeme.start, tag.lexeme.length, prefix},
-        tag.location);
+    return tag.lexeme.prefix = prefix, tag;
+}
+
+Tag setTagFixity(Tag tag, char fixity) {
+    return tag.lexeme.fixity = fixity, tag;
+}
+
+char getTagFixity(Tag tag) {
+    return tag.lexeme.fixity;
 }
 
 bool isThisString(String a, const char* b) {

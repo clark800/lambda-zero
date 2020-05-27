@@ -34,7 +34,7 @@ def serialize(closure)
                 serialize'(Closure(term, environment), depth)
             case Numeral(_, _, n)
                 showNatural(n)
-            case Operation(tag, _, _, _)
+            case Operation(tag, _, _, _, _)
                 showTag(tag)
 
     result := serialize'(closure, 0)

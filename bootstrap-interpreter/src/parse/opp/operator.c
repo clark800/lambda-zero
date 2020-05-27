@@ -102,8 +102,8 @@ static Rules* findRules(String lexeme) {
 
 Node* parseOperator(Tag tag, long long subprecedence) {
     Rules* rules = findRules(tag.lexeme);
-    return rules == NULL ? NULL :
-        Operator(newTag(rules->alias, tag.location), subprecedence, rules);
+    return rules == NULL ? NULL : Operator(setTagFixity(newTag(rules->alias,
+        tag.location), (char)rules->fixity), subprecedence, rules);
 }
 
 static void appendSyntaxCopy(Rules* rules, String lexeme, String alias) {
