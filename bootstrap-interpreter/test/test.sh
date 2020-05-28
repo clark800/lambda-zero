@@ -53,7 +53,7 @@ oneline_suite() {
         prelude=$(printf "%s\n%s" "$prelude" "$(cat "$filename")")
     done
     header "$name"
-    while read -r line; do
+    while IFS='' read -r line; do
         read -r output_line
         expected_output=$(printf "%s" "$output_line" | insert_newlines)
         sedline=$(printf "%s" "$line" | insert_newlines)
@@ -64,7 +64,7 @@ oneline_suite() {
             failures=$((failures+1))
         fi
     done << EOF
-    $(grep -v "====" "$testcases_path")
+$(grep -v "====" "$testcases_path")
 EOF
     test "$failures" -eq 0
 }
