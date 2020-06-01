@@ -6,6 +6,7 @@ LIB="$ROOT/libraries"
 OUT="$DIR/main"
 
 (cd "$ROOT/tools/xc"; ./make)
+(cd "$ROOT/bootstrap-interpreter"; ./make)
 
 # BSD chmod still prints an error when the file is not found even with
 # the -f flag, so we redirect stderr to /dev/null to hide that message
