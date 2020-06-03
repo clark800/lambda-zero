@@ -51,6 +51,10 @@ def getTag
     TypedNode(tag, _, _) -> tag
 
 
+def astSyntaxError(message, node)
+    syntaxError(message, getTag(node))
+
+
 def isPreterm
     Reference(_, _) -> True
     Arrow(_, _, _, _, _, _) -> True
@@ -65,10 +69,6 @@ def isPreterm
     ADT(_, _, _) -> True
     Constructor(_, _, _, _, _, _, _) -> True
     TypedNode(_, _, _) -> True
-
-
-def astSyntaxError(message, node)
-    syntaxError(message, getTag(node))
 
 
 def containsName(name)
@@ -97,10 +97,16 @@ def showArrow
     Squiggle -> " ~> "
 
 
+def showAnnotation(showAST, annotation)
+    if annotation is Just(type)
+        " : " ++ showAST(type)
+    ""
+
+
 def showAST
     Reference(tag, _) -> showTag(tag)
     Arrow(tag, arrowType, _, parameter, annotation, body) ->
-        "(" ++ showAST(parameter) ++
+        "(" ++ showAST(parameter) ++ showAnnotation(showAST, annotation) ++
             showArrow(arrowType) ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
@@ -143,16 +149,18 @@ isCase(node) := if node is Arrow(_, type, _, _, _, _);
 Name(tag) := Reference(tag, 0)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
 isName(node) := if node is Reference(_, debruijn); debruijn = 0 <| False
-SimpleArrow(parameter, body) :=
-    Arrow(getTag(parameter), Simple, [], parameter, Void, body)
+
+def TypedArrow(arrowType, parameter, body)
+    if parameter is ColonPair(_, name, type)
+        Arrow(getTag(name), arrowType, [], name, Just(type), body)
+    Arrow(getTag(parameter), arrowType, [], parameter, Void, body)
+
+SimpleArrow := TypedArrow(Simple)
+LockedArrow := TypedArrow(Locked)
+DoubleArrow := TypedArrow(Double)
+ImplicitArrow := TypedArrow(Squiggle)
 StrictArrow(tag, constructors, body) :=
     Arrow(tag, Strict, constructors, Name(veil(tag)), Void, body)
-LockedArrow(parameter, body) :=
-    Arrow(getTag(parameter), Locked, [], parameter, Void, body)
-DoubleArrow(left, right) :=
-    Arrow(getTag(left), Double, [], left, Void, right)
-ImplicitArrow(parameter, body) :=
-    Arrow(getTag(parameter), Squiggle, [], parameter, Void, body)
 
 
 def setAnnotation(annotation, node)
