@@ -20,8 +20,8 @@ AST ::= {
     SetBuilder(tag : TagT, forms : List(AST)),
     ADT(tag : TagT, parameters : List(AST), objectType : AST,
         signatures : List(AST)),
-    Constructor(tag : TagT, parameterTypes : List(AST), adtType : AST,
-        dataType : AST, function : AST, count : ℕ, index : ℕ),
+    Constructor(tag : TagT, type : AST, adtType : AST, function : AST,
+        count : ℕ, index : ℕ),
     TypedNode(tag : TagT, type : AST, node : AST)
 }
 
@@ -48,7 +48,7 @@ def getTag
     ColonPair(tag, _, _) -> tag
     SetBuilder(tag, _) -> tag
     ADT(tag, _, _, _) -> tag
-    Constructor(tag, _, _, _, _, _, _) -> tag
+    Constructor(tag, _, _, _, _, _) -> tag
     TypedNode(tag, _, _) -> tag
 
 
@@ -68,7 +68,7 @@ def isPreterm
     ColonPair(_, _, _) -> False
     SetBuilder(_, _) -> False
     ADT(_, _, _, _) -> True
-    Constructor(_, _, _, _, _, _, _) -> True
+    Constructor(_, _, _, _, _, _) -> True
     TypedNode(_, _, _) -> True
 
 
@@ -86,7 +86,7 @@ def containsName(name)
     ColonPair(_, _, right) -> containsName(name, right)
     SetBuilder(_, _) -> False
     ADT(_, _, objectType, _) -> containsName(name, objectType)
-    Constructor(_, _, _, _, _, _, _) -> False
+    Constructor(_, _, _, _, _, _) -> False
     TypedNode(_, _, _) -> False
 
 
@@ -126,7 +126,7 @@ def showAST
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
     ADT(tag, parameters, objectType, _) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
-    Constructor(_, _, _, _, body, _, _) -> showAST(body)
+    Constructor(_, _, _, body, _, _) -> showAST(body)
     TypedNode(_, _, node) -> showAST(node)
 
 
@@ -141,7 +141,7 @@ isCommaPair := CommaPair(_, _, _) -> True; _ -> False
 isColonPair := ColonPair(_, _, _) -> True; _ -> False
 isSetBuilder := SetBuilder(_, _) -> True; _ -> False
 isADT := ADT(_, _, _, _) -> True; _ -> False
-isConstructor := Constructor(_, _, _, _, _, _, _) -> True; _ -> False
+isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 
 isCase(node) := if node is Arrow(_, type, _, _, _, _);
@@ -191,5 +191,17 @@ def getFixityCode(fixity)
         Postfix(_) -> POSTFIX
         Openfix(_) -> OPENFIX
         Closefix(_) -> CLOSEFIX
+
+
+def maybeCount(node)
+    if node is Constructor(_, _, _, _, count, _)
+        Just(count)
+    Void
+
+
+def maybeConstructorIndex(node)
+    if node is Constructor(_, _, _, _, _, index)
+        Just(index)
+    Void
 
 #*

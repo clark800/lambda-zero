@@ -92,13 +92,13 @@ def bindName(getBuiltin, level, stack, context, tag)
 
 
 def getADTName(constructor)
-    if constructor is Constructor(_, _, adtType, _, _, _, _)
+    if constructor is Constructor(_, _, adtType, _, _, _)
         getLexeme(getHead(adtType))
     astSyntaxError("invalid constructor", constructor)
 
 
 def getConstructionTypeAST(constructor)
-    if constructor is Constructor(_, parameterTypes, adtType, _, _, _, _)
+    if constructor is Constructor(_, _, adtType, _, _, _)
         getArguments(adtType).fold(ImplicitArrow, adtType)
     astSyntaxError("invalid constructor", constructor)
 
@@ -201,13 +201,11 @@ def bind(getBuiltin, level, stack, context, node)
             Construction(tag, parameters.map(bind'(level, stack, context)),
                 objectType.bind'(level, stack, context),
                 signatures.map(bind'(level, stack, context)))
-        case Constructor(tag, parameterTypes, adtType, dataType,
-                function, count, index)
-            typeAST := newReconstructorAST(parameterTypes, adtType, dataType)
-            type := typeAST.bind'(level, stack, context)
+        case Constructor(tag, type, adtType, function, count, index)
+            type' := type.bind'(level, stack, context)
             if function is Number(_, value)
-                Numeral(tag, type, value)
-            Element(tag, type, function.bind'(level, stack, context))
+                Numeral(tag, type', value)
+            Element(tag, type', function.bind'(level, stack, context))
         case TypedNode(tag, typeAST, node)
             type := typeAST.bind'(level, stack, context)
             Element(tag, type, node.bind'(level, stack, context))
