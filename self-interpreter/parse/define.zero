@@ -101,8 +101,7 @@ def getConstructorBody(name, parameters, n, j)
     parameters.fold(LockedArrow, construct)
 
 
-def newConstructorDefinition(tag, adtType, dataType, n, isADTBody, (form, j),
-        scope)
+def newConstructorDefinition(tag, adtType, dataType, n, (form, j), scope)
     name := getHead(form)
     parameters := getArguments(form)
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
@@ -112,9 +111,8 @@ def newConstructorDefinition(tag, adtType, dataType, n, isADTBody, (form, j),
     # when defining a constructor term, the ADT parameters are not in scope,
     # since they are only defined as implicits in the Element wrapper annotation
     # at the type level, not the term level. we erase the annotations to avoid
-    # undefined symbols errors during bind
-    parameters' := if isADTBody then parameters else
-        parameters.map(getParameterName)
+    # undefined symbols errors during bind.
+    parameters' := parameters.map(getParameterName)
     body := getConstructorBody(name, parameters', n, j)
     if not isPreterm(body)
         astSyntaxError("invalid constructor", name)   # force errors
@@ -166,8 +164,7 @@ def isValidConstructorAnnotation(dataType, annotation)
 def newConstructorDefinitions'(tag, adtType, dataType, n, ms, formj, scope)
     # define deconstructor first in case the constructor name is the same
     # as the ADT name: this ensures that we always bind the ADT name
-    scope' := newConstructorDefinition(
-        tag, adtType, dataType, n, False, formj, scope)
+    scope' := newConstructorDefinition(tag, adtType, dataType, n, formj, scope)
     newDeconstructorDefinition(tag, adtType, n, ms, formj, scope')
 
 
@@ -181,14 +178,23 @@ def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
     newConstructorDefinitions'(tag, adtType, adtType, n, ms, formj, scope)
 
 
-def newADT(tag, parameters, forms)
+def getConstructorType(adtType, form)
+    if form is ColonPair(_, form', dataType)
+        parameterTypes := getArguments(form').map(getParameterType)
+        newReconstructorAST'(parameterTypes, dataType)
+    parameterTypes := getArguments(form).map(getParameterType)
+    newReconstructorAST'(parameterTypes, adtType)
+
+
+def newADT(tag, adtType, parameters, forms)
     # todo: change name from "r" so it can't clash with user's names
     returnType := FixedName(tag, "r")
     annotations := forms.map(getArguments).map(map(getParameterType))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))
     bodyType := argumentTypes.fold(DoubleArrow, returnType)
     objectType := ImplicitArrow(returnType, bodyType)
-    ADT(tag, parameters, objectType)
+    signatures := forms.map(getConstructorType(adtType))
+    ADT(tag, parameters, objectType, signatures)
 
 
 def applyADTDefinition(tag, left, right, scope)
@@ -204,11 +210,9 @@ def applyADTDefinition(tag, left, right, scope)
         # todo: use the same method for parameters as with normal functions
         if not parameters.all(isName)
             astSyntaxError("parameters to type constructor must be names", name)
-        adt := newADT(getTag(name), parameters, forms)
-        value := parameters.fold(LockedArrow, adt)
-        value' := if forms.any(containsName(name)) then
-            applyFix(name, value) else value
-        Let(tag, True, name, value', scope')
+        adt := newADT(getTag(name), left, parameters, forms)
+        value := applyFix(name, parameters.fold(LockedArrow, adt))
+        Let(tag, True, name, value, scope')
     astSyntaxError("internal error", left)
 
 

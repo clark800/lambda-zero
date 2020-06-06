@@ -35,7 +35,7 @@ def evaluate(stack, closure @ Closure(term, environment))
         case Application(_, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
-        case Construction(tag, _, _)
+        case Construction(tag, _, _, _)
             if isNil(stack) then closure else runtimeError("construction", tag)
         case Element(_, _, term')
             evaluate(stack, Closure(term', environment))

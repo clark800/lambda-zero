@@ -18,7 +18,8 @@ Term ::= {
     Implication(tag : TagT, type : Term, body : Term),
     Implicit(tag : TagT, type : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
-    Construction(tag : TagT, parameters : List(Term), type : Term),
+    Construction(tag : TagT, parameters : List(Term), type : Term,
+        signatures : List(Term)),
     Element(tag : TagT, type : Term, term : Term),
     Numeral(tag : TagT, type : Term, value : ℕ),
     Operation(tag : TagT, type : Term, term : (Term)?, arity : ℕ, operator :
@@ -36,7 +37,7 @@ def getTermTag
     Implication(tag, _, _) -> tag
     Implicit(tag, _, _) -> tag
     Application(tag, _, _) -> tag
-    Construction(tag, _, _) -> tag
+    Construction(tag, _, _, _) -> tag
     Element(tag, _, _) -> tag
     Numeral(tag, _, _) -> tag
     Operation(tag, _, _, _, _) -> tag
@@ -50,7 +51,7 @@ isFunction := Function(_, _, _, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isImplicit := Implicit(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
-isConstruction := Construction(_, _, _) -> True; _ -> False
+isConstruction := Construction(_, _, _, _) -> True; _ -> False
 isElement := Element(_, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _, _, _) -> True; _ -> False
@@ -178,7 +179,8 @@ def setTag(tag)
     Implication(_, type, body) -> Implication(tag, type, body)
     Implicit(_, type, body) -> Implicit(tag, type, body)
     Application(_, left, right) -> Application(tag, left, right)
-    Construction(_, parameters, type) -> Construction(tag, parameters, type)
+    Construction(_, parameters, type, signatures) ->
+        Construction(tag, parameters, type, signatures)
     Element(_, type, term) -> Element(tag, type, term)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, type, term, arity, operator) ->
@@ -231,8 +233,8 @@ def isSameTerm(a, b)
             if b is Application(_, type', body')
                 isSameTerm(type, type') and isSameTerm(body, body')
             False
-        case Construction(_, parameters, type)
-            if b is Construction(_, parameters', type')
+        case Construction(_, parameters, type, _)
+            if b is Construction(_, parameters', type', _)
                 isSameTerm(type, type') and zip(parameters, parameters').all(
                     uncurry(isSameTerm))
             False
@@ -271,7 +273,7 @@ def sameHead(term)
         isImplicit(term)
     case Application(_, _, _)
         isApplication(term)
-    case Construction(tag, _, _)
+    case Construction(tag, _, _, _)
         isConstruction(term) and
             getTagLexeme(tag) =*= getTagLexeme(getTermTag(term))
     case Element(_, _, _)
@@ -295,7 +297,7 @@ def getComponents
     Implication(_, type, body) -> [type, body]
     Implicit(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
-    Construction(_, parameters, _) -> parameters
+    Construction(_, parameters, _, _) -> parameters
     Element(_, type, term) -> [type, term]
     Numeral(_, _, _) -> []
     Operation(_, _, _, _, _) -> []
@@ -313,8 +315,8 @@ def mapComponents(f, term)
         Implicit(tag, type, body) -> Implicit(tag, f(type), f(body))
         Application(tag, left, right) ->
             Application(tag, mapComponents(f, left), f(right))
-        Construction(tag, parameters, type) ->
-            Construction(tag, parameters.map(f), type)
+        Construction(tag, parameters, type, signatures) ->
+            Construction(tag, parameters.map(f), type, signatures)
         Element(tag, type, term) -> Element(tag, f(type), f(term))
         Numeral(_, _, _) -> term
         Operation(_, _, _, _, _) -> term
@@ -371,7 +373,7 @@ def showTerm
         "(" ++ showTag(tag) ++ " ⇝ " ++ showTerm(body) ++ ")"
     Application(_, applicand, argument) ->
         showApplication(showTerm, applicand, argument)
-    Construction(tag, parameters, _) ->
+    Construction(tag, parameters, _, _) ->
         showConstruction(showTerm, tag, parameters)
     Element(tag, _, term) -> showTerm(term)
     Numeral(_, _, n) -> showNatural(n)
