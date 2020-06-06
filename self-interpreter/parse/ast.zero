@@ -18,7 +18,8 @@ AST ::= {
     CommaPair(tag : TagT, left : AST, right : AST),
     ColonPair(tag : TagT, left : AST, right : AST),
     SetBuilder(tag : TagT, forms : List(AST)),
-    ADT(tag : TagT, parameters : List(AST), objectType : AST),
+    ADT(tag : TagT, parameters : List(AST), objectType : AST,
+        signatures : List(AST)),
     Constructor(tag : TagT, parameterTypes : List(AST), adtType : AST,
         dataType : AST, function : AST, count : ℕ, index : ℕ),
     TypedNode(tag : TagT, type : AST, node : AST)
@@ -46,7 +47,7 @@ def getTag
     CommaPair(tag, _, _) -> tag
     ColonPair(tag, _, _) -> tag
     SetBuilder(tag, _) -> tag
-    ADT(tag, _, _) -> tag
+    ADT(tag, _, _, _) -> tag
     Constructor(tag, _, _, _, _, _, _) -> tag
     TypedNode(tag, _, _) -> tag
 
@@ -66,7 +67,7 @@ def isPreterm
     CommaPair(_, _, _) -> False
     ColonPair(_, _, _) -> False
     SetBuilder(_, _) -> False
-    ADT(_, _, _) -> True
+    ADT(_, _, _, _) -> True
     Constructor(_, _, _, _, _, _, _) -> True
     TypedNode(_, _, _) -> True
 
@@ -84,7 +85,7 @@ def containsName(name)
     CommaPair(_, _, _) -> False
     ColonPair(_, _, right) -> containsName(name, right)
     SetBuilder(_, _) -> False
-    ADT(_, _, objectType) -> containsName(name, objectType)
+    ADT(_, _, objectType, _) -> containsName(name, objectType)
     Constructor(_, _, _, _, _, _, _) -> False
     TypedNode(_, _, _) -> False
 
@@ -123,7 +124,7 @@ def showAST
     ColonPair(tag, left, right) ->
         "(" ++ showAST(left) ++ " : " ++ showAST(right) ++ ")"
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
-    ADT(tag, parameters, objectType) ->
+    ADT(tag, parameters, objectType, _) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
     Constructor(_, _, _, _, body, _, _) -> showAST(body)
     TypedNode(_, _, node) -> showAST(node)
@@ -139,7 +140,7 @@ isAsPattern := AsPattern(_, _, _) -> True; _ -> False
 isCommaPair := CommaPair(_, _, _) -> True; _ -> False
 isColonPair := ColonPair(_, _, _) -> True; _ -> False
 isSetBuilder := SetBuilder(_, _) -> True; _ -> False
-isADT := ADT(_, _, _) -> True; _ -> False
+isADT := ADT(_, _, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 

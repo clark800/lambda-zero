@@ -197,9 +197,10 @@ def bind(getBuiltin, level, stack, context, node)
             astSyntaxError("colon not in valid location", node)
         case SetBuilder(_, _)
             astSyntaxError("must appear on the right side of '::='", node)
-        case ADT(tag, parameters, objectType)
+        case ADT(tag, parameters, objectType, signatures)
             Construction(tag, parameters.map(bind'(level, stack, context)),
-                objectType.bind'(level, stack, context))
+                objectType.bind'(level, stack, context),
+                signatures.map(bind'(level, stack, context)))
         case Constructor(tag, parameterTypes, adtType, dataType,
                 function, count, index)
             typeAST := newReconstructorAST(parameterTypes, adtType, dataType)

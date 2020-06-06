@@ -27,7 +27,7 @@ def serialize(closure)
             case Application(_, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++
                 " " ++ serialize'(Closure(argument, environment), depth) ++ ")"
-            case Construction(tag, parameters, _)
+            case Construction(tag, parameters, _, _)
                 showTag(tag) ++ "(" ++ parameters.map(x -> serialize'(
                     Closure(x, environment), depth)).joinWith(", ") ++ ")"
             case Element(tag, _, term)
