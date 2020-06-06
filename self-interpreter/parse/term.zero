@@ -123,18 +123,6 @@ def maybeAddress(type)
     Void
 
 
-def maybeCount(node)
-    if node is Constructor(_, _, _, _, _, count, _)
-        Just(count)
-    Void
-
-
-def maybeConstructorIndex(node)
-    if node is Constructor(_, _, _, _, _, _, index)
-        Just(index)
-    Void
-
-
 def maybeHead(term)
     maybe body := maybeBody(term)
     maybe body' := maybeBody(body)
