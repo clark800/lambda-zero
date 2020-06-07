@@ -57,10 +57,10 @@ def isValidConstructorParameter(parameter)
     False
 
 
-def getParameterName(parameter)
-    if parameter is ColonPair(_, name, _)
-        name
-    astSyntaxError("constructor parameter must be annotated", parameter)
+def removeAnnotation(node)
+    if node is ColonPair(_, left, _)
+        left
+    node
 
 
 def getParameterType(parameter)
@@ -76,8 +76,16 @@ def newReconstructorType(parameterTypeASTs, returnTypeAST)
     returnTypeAST
 
 
+def isValidConstructorAnnotation(dataType, annotation)
+    length(getArguments(annotation)) = length(getArguments(dataType)) and
+        isThisName(getHead(annotation), getLexeme(getHead(dataType)))
+
+
 def getConstructorType(adtType, form)
+    # check for GADT annotation of constructor return type
     if form is ColonPair(_, form', dataType)
+        if not isValidConstructorAnnotation(adtType, dataType)
+            astSyntaxError("inconsistent annotation form", dataType)
         parameterTypes := getArguments(form').map(getParameterType)
         newReconstructorType(parameterTypes, dataType)
     parameterTypes := getArguments(form).map(getParameterType)
@@ -110,8 +118,9 @@ def getConstructorBody(name, parameters, n, j)
 
 
 def newConstructorDefinition(tag, adtType, n, (form, j), scope)
-    name := getHead(form)
-    parameters := getArguments(form)
+    form' := removeAnnotation(form)
+    name := getHead(form')
+    parameters := getArguments(form')
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     if invalidParameters is parameter :: _
         astSyntaxError("invalid constructor parameter", parameter)
@@ -120,7 +129,7 @@ def newConstructorDefinition(tag, adtType, n, (form, j), scope)
     # since they are only defined as implicits in the Element wrapper annotation
     # at the type level, not the term level. we erase the annotations to avoid
     # undefined symbols errors during bind.
-    parameters' := parameters.map(getParameterName)
+    parameters' := parameters.map(removeAnnotation)
     body := getConstructorBody(name, parameters', n, j)
     if not isPreterm(body)
         astSyntaxError("invalid constructor", name)   # force errors
@@ -156,34 +165,20 @@ def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
     function := UnderscoreArrow(tag, UnderscoreArrow(tag,
         UnderscoreArrow(tag, body)))
-    parameters := getArguments(form)
+    form' := removeAnnotation(form)
+    parameters := getArguments(form')
     parameterTypes := parameters.map(getParameterType)
-    name := Name(addPrefix(getTag(getHead(form)), '@'))
+    name := Name(addPrefix(getTag(getHead(form')), '@'))
     type := newDeconstructorType(getTag(name), parameterTypes, adtType)
     deconstructor := TypedNode(getTag(name), type, function)
     applyPlainDefinition(tag, name, deconstructor, scope)
 
 
-def isValidConstructorAnnotation(dataType, annotation)
-    length(getArguments(annotation)) = length(getArguments(dataType)) and
-        isThisName(getHead(annotation), getLexeme(getHead(dataType)))
-
-
-def newConstructorDefinitions'(tag, adtType, n, ms, formj, scope)
+def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
     # define deconstructor first in case the constructor name is the same
     # as the ADT name: this ensures that we always bind the ADT name
     scope' := newConstructorDefinition(tag, adtType, n, formj, scope)
     newDeconstructorDefinition(tag, adtType, n, ms, formj, scope')
-
-
-def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
-    # check for GADT annotation of constructor return type
-    if first(formj) is ColonPair(_, form', dataType)
-        if not isValidConstructorAnnotation(adtType, dataType)
-            astSyntaxError("inconsistent annotation form", dataType)
-        newConstructorDefinitions'(tag, adtType, n, ms,
-            (form', second(formj)), scope)
-    newConstructorDefinitions'(tag, adtType, n, ms, formj, scope)
 
 
 def newADT(tag, adtType, parameters, forms)
