@@ -26,6 +26,12 @@ def applyTryDefinition(tag, name, value, scope)
         newPatternArrow(name, scope)), value)
 
 
+def applyBindDefinition(tag, name, value, scope)
+    # name <- value;; scope ==> value >> (name -> scope)
+    Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, ">>"), value),
+        LockedArrow(name, scope))
+
+
 def applyFix(name, value)
     tag := getTag(name)
     Juxtaposition(tag, FixedName(tag, "fix"), LockedArrow(name, value))
@@ -222,6 +228,7 @@ def applyDefinition(definition, scope)
             TryDefinition -> applyTryDefinition(tag, name, value, scope)
             SyntaxDefinition -> scope
             ADTDefinition -> applyADTDefinition(tag, name, value, scope)
+            BindDefinition -> applyBindDefinition(tag, name, value, scope)
     astSyntaxError("internal error", definition)
 
 

@@ -2,6 +2,7 @@
 
 syntax(match) := prefix(7)
 syntax(to) := interfix(match _)
+syntax(>>) := infixR(10)
 syntax(maybe) ≔ prefix(11)
 syntax(try) ≔ prefix(11)
 syntax(catch) ≔ interfix(try _)
@@ -11,6 +12,7 @@ syntax(then) ≔ interfix(if _)
 syntax(else) ≔ interfix(if _ then _)
 syntax(??) ≔ infixR(14)
 #syntax(abort) ≔ prefix(15)
+syntax(lift) := prefix(15)
 syntax(of) := infixL(16)
 
 syntax(or) ≔ infixR(17)
@@ -73,6 +75,7 @@ syntax(down) ≔ prefix(90)
 syntax(`) ≔ prefix(97)
 syntax(``) ≔ prefix(97)
 
+syntax(≫) := alias(>>)
 syntax(⁇) ≔ alias(??)
 syntax(\/) ≔ alias(or)
 syntax(∨) ≔ alias(\/)

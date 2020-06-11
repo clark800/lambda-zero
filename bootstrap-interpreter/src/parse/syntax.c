@@ -142,6 +142,11 @@ static Node* reduceCloseSection(Node* close, Node* before, Node* contents) {
     return LockedArrow(FixedName(getTag(close), "*."), contents);
 }
 
+static Node* reduceReverseArrow(Node* operator, Node* left, Node* right) {
+    syntaxErrorIf(!isName(left), "expected name to left of", operator);
+    return Definition(getTag(operator), BINDDEFINITION, left, right);
+}
+
 void initSymbols(void) {
     initSyntax();
     addBracketSyntax("", '\0', 0, OPENFIX, reduceOpenFile);
@@ -167,6 +172,7 @@ void initSymbols(void) {
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
+    addCoreSyntax("<-", 10, INFIX, R, reduceReverseArrow);
     addCoreSyntax("=>", 10, INFIX, R, reduceInfix);
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
@@ -179,6 +185,7 @@ void initSymbols(void) {
     addCoreAlias("\xE2\x89\x94", ":="); // u2254
     addCoreAlias("\xE2\xA9\xB4", "::="); // u2A74
     addCoreAlias("\xE2\x86\xA6", "->"); // u21A6
+    addCoreAlias("\xE2\x86\xA4", "<-"); // u21A4
     addCoreAlias("\xE2\x87\x92", "=>"); // u21D2
     addCoreAlias("\xE2\xA6\x8A", "|>"); // u298A
     addCoreAlias("\xE2\xA6\x89", "<|"); // u2989
