@@ -77,7 +77,7 @@ def bindPseudoOperation(getBuiltin, context, tag)
     Void
 
 
-def bindName(getBuiltin, stack, context, tag)
+def bindName(getBuiltin, context, stack, tag)
     if isUnused(tag)
         syntaxError("cannot reference a symbol starting with underscore", tag)
     bindVariable(stack, tag) ??
@@ -129,35 +129,35 @@ def buildCaseAnnotation(tag, constructorNames, context)
     Void
 
 
-def bind(getBuiltin, stack, context, node)
-    bind' := bind(getBuiltin)
+def bind(getBuiltin, context, stack, node)
+    bind' := bind(getBuiltin, context)
     match node
         case Reference(tag, debruijn)
             if debruijn = 0
-                bindName(getBuiltin, stack, context, tag)
+                bindName(getBuiltin, context, stack, tag)
             Variable(tag, debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
             if arrowType is Double
-                parameterTerm := parameter.bind'(stack, context)
+                parameterTerm := parameter.bind'(stack)
                 # todo: add support for names on left side of double arrows
                 stack' := stack.pushParameter(Name(veil(tag)), Void)
-                bodyTerm := body.bind'(stack', context)
+                bodyTerm := body.bind'(stack')
                 Implication(tag, parameterTerm, bodyTerm)
 
             if arrowType is Squiggle
                 stack' := stack.pushParameter(parameter, Void)
-                bodyTerm := body.bind'(stack', context)
+                bodyTerm := body.bind'(stack')
                 Implicit(tag, Top(tag), bodyTerm)
 
             stack' := stack.pushParameter(parameter, Void)
             (bodyTerm, codomain) := (
                 if body is ColonPair(_, body', type)
-                    (body'.bind'(stack', context), type.bind'(stack', context))
-                (body.bind'(stack', context), MetaVariable(veil(tag), 0))
+                    (body'.bind'(stack'), type.bind'(stack'))
+                (body.bind'(stack'), MetaVariable(veil(tag), 0))
             )
             if isNil(constructorNames)
-                domain := annotation.mapJust(bind'(stack, context)) ??
+                domain := annotation.mapJust(bind'(stack)) ??
                     MetaVariable(veil(tag), 0)
                 Function(getTag(parameter), False, domain, codomain, bodyTerm)
             if not isVoid(annotation)
@@ -165,19 +165,18 @@ def bind(getBuiltin, stack, context, node)
                     node)
             if buildCaseAnnotation(tag, constructorNames, context) is
                     Just(typeAST)
-                domain := typeAST.bind'(stack, context)
+                domain := typeAST.bind'(stack)
                 CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
             astSyntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
-            Application(tag, left.bind'(stack, context),
-                right.bind'(stack, context))
+            Application(tag, left.bind'(stack), right.bind'(stack))
         case Let(tag, isTypeConstructor, name, value, scope)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            valueTerm := value.bind'(stack, context)
+            valueTerm := value.bind'(stack)
             stack' := stack.pushParameter(name, Just((value, valueTerm)))
-            scopeTerm := scope.bind'(stack', context)
+            scopeTerm := scope.bind'(stack')
             abstraction := FreeFunction(getTag(name), scopeTerm)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
@@ -193,22 +192,21 @@ def bind(getBuiltin, stack, context, node)
         case SetBuilder(_, _)
             astSyntaxError("must appear on the right side of '::='", node)
         case ADT(tag, parameters, objectType, signatures)
-            Construction(tag, parameters.map(bind'(stack, context)),
-                objectType.bind'(stack, context),
-                signatures.map(bind'(stack, context)))
+            Construction(tag, parameters.map(bind'(stack)),
+                objectType.bind'(stack), signatures.map(bind'(stack)))
         case Constructor(tag, type, adtType, function, count, index)
-            type' := type.bind'(stack, context)
+            type' := type.bind'(stack)
             if function is Number(_, value)
                 Numeral(tag, type', value)
-            Element(tag, type', function.bind'(stack, context))
+            Element(tag, type', function.bind'(stack))
         case TypedNode(tag, typeAST, node)
-            type := typeAST.bind'(stack, context)
-            Element(tag, type, node.bind'(stack, context))
+            type := typeAST.bind'(stack)
+            Element(tag, type, node.bind'(stack))
 
 
 def bindGlobal(getBuiltin, context, node)
     stack := (0, newDictionary([]))
-    bind(getBuiltin, stack, context, node)
+    bind(getBuiltin, context, stack, node)
 
 
 def bindDefinition(getBuiltin, state, (tag, node))
