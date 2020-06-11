@@ -8,24 +8,24 @@ def pushParameter(parameter, maybeNode, (level, table))
     (up level, table.insert(getLexeme(parameter), (level, maybeNode)))
 
 
-def findType(lexeme, context)
-    if context.lookup(lexeme) is Just(((_, term), _))
+def findType(lexeme, globals)
+    if globals.lookup(lexeme) is Just(((_, term), _))
         maybeAscription(term)
     Void
 
 
-def getNaturalType(context)
-    context.findType("0") ?? Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
+def getNaturalType(globals)
+    globals.findType("0") ?? Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
 
 
-def getBooleanType(context)
-    context.findType("False") ??
+def getBooleanType(globals)
+    globals.findType("False") ??
         Variable(renameTag(noTag, "#BOOLEAN#", NOFIX), 0)
 
 
-def getStringType(context, tag)
-    natural := getNaturalType(context)
-    listType := context.findType("[]") ??
+def getStringType(globals, tag)
+    natural := getNaturalType(globals)
+    listType := globals.findType("[]") ??
         syntaxError("List not defined", tag)
     if listType is Implicit(_, _, type)
         if type is Application(_, left, _)
@@ -34,55 +34,55 @@ def getStringType(context, tag)
     syntaxError("List type invalid", tag)
 
 
-def getOperationType(context, tag)
+def getOperationType(globals, tag)
     tag' := veil(tag)
     lexeme := getTagLexeme(tag)
     syntax(>->) := syntax(++)
     (>->) := Implication(noTag)
     if ["+", "--", "*", "//", "%"].any((=*= lexeme))
-        natural := getNaturalType(context)
+        natural := getNaturalType(globals)
         Just(natural >-> natural >-> natural)
     if ["=", "=/=", "<", ">", "<=", ">="].any((=*= lexeme))
-        natural := getNaturalType(context)
-        boolean := getBooleanType(context)
+        natural := getNaturalType(globals)
+        boolean := getBooleanType(globals)
         Just(natural >-> natural >-> boolean)
     if lexeme =*= "up"
-        natural := getNaturalType(context)
+        natural := getNaturalType(globals)
         Just(natural >-> natural)
     if lexeme =*= "abort"
-        string := getStringType(context, tag)
+        string := getStringType(globals, tag)
         Just(Implicit(tag', Top(tag'), string >-> Variable(tag', 2)))
     Void
 
 
-def bindOperation(getBuiltin, context, tag, maybeTerm)
+def bindOperation(getBuiltin, globals, tag, maybeTerm)
     maybe (arity, optimize) := getBuiltin(tag)
-    maybe type := getOperationType(context, tag)
+    maybe type := getOperationType(globals, tag)
     Just(Operation(tag, type, maybeTerm, arity, optimize))
 
 
-def bindVariable(stack, tag)
+def bindVariable(locals, tag)
     lexeme := getTagLexeme(tag)
-    maybe (debruijn, maybeValue) := findParameter(stack, lexeme)
+    maybe (debruijn, maybeValue) := findParameter(locals, lexeme)
     Just(Variable(tag, debruijn))
 
 
-def bindContextTerm(context, tag)
-    context.lookup(getTagLexeme(tag)).mapJust(second)
+def bindContextTerm(globals, tag)
+    globals.lookup(getTagLexeme(tag)).mapJust(second)
 
 
-def bindPseudoOperation(getBuiltin, context, tag)
+def bindPseudoOperation(getBuiltin, globals, tag)
     if getTagLexeme(tag) =*= "abort"
-        bindOperation(getBuiltin, context, tag, Void)
+        bindOperation(getBuiltin, globals, tag, Void)
     Void
 
 
-def bindName(getBuiltin, stack, context, tag)
+def bindName(getBuiltin, globals, locals, tag)
     if isUnused(tag)
         syntaxError("cannot reference a symbol starting with underscore", tag)
-    bindVariable(stack, tag) ??
-        bindContextTerm(context, tag) ??
-        bindPseudoOperation(getBuiltin, context, tag) ??
+    bindVariable(locals, tag) ??
+        bindContextTerm(globals, tag) ??
+        bindPseudoOperation(getBuiltin, globals, tag) ??
         syntaxError("undefined symbol", tag)
 
 
@@ -121,67 +121,66 @@ def constructCaseAnnotation(tag, constructors)
     getConstructionTypeAST(constructor)
 
 
-def buildCaseAnnotation(tag, constructorNames, context)
-    if constructorNames.map(getLexeme).map(`lookup(context)).sequence is
+def buildCaseAnnotation(tag, constructorNames, globals)
+    if constructorNames.map(getLexeme).map(`lookup(globals)).sequence is
             Just(constructorPairs)
         constructors := constructorPairs.map(first).map(first)
         Just(constructCaseAnnotation(tag, constructors))
     Void
 
 
-def bind(getBuiltin, stack, context, node)
-    bind' := bind(getBuiltin)
+def bind(getBuiltin, globals, locals, node)
+    bind' := bind(getBuiltin, globals)
     match node
         case Reference(tag, debruijn)
             if debruijn = 0
-                bindName(getBuiltin, stack, context, tag)
+                bindName(getBuiltin, globals, locals, tag)
             Variable(tag, debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
             if arrowType is Double
-                parameterTerm := parameter.bind'(stack, context)
+                parameterTerm := parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
-                stack' := stack.pushParameter(Name(veil(tag)), Void)
-                bodyTerm := body.bind'(stack', context)
+                locals' := locals.pushParameter(Name(veil(tag)), Void)
+                bodyTerm := body.bind'(locals')
                 Implication(tag, parameterTerm, bodyTerm)
 
             if arrowType is Squiggle
-                stack' := stack.pushParameter(parameter, Void)
-                bodyTerm := body.bind'(stack', context)
+                locals' := locals.pushParameter(parameter, Void)
+                bodyTerm := body.bind'(locals')
                 Implicit(tag, Top(tag), bodyTerm)
 
-            stack' := stack.pushParameter(parameter, Void)
+            locals' := locals.pushParameter(parameter, Void)
             (bodyTerm, codomain) := (
                 if body is ColonPair(_, body', type)
-                    (body'.bind'(stack', context), type.bind'(stack', context))
-                (body.bind'(stack', context), MetaVariable(veil(tag), 0))
+                    (body'.bind'(locals'), type.bind'(locals'))
+                (body.bind'(locals'), MetaVariable(veil(tag), 0))
             )
             if isNil(constructorNames)
-                domain := annotation.mapJust(bind'(stack, context)) ??
+                domain := annotation.mapJust(bind'(locals)) ??
                     MetaVariable(veil(tag), 0)
                 Function(getTag(parameter), False, domain, codomain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
-            if buildCaseAnnotation(tag, constructorNames, context) is
+            if buildCaseAnnotation(tag, constructorNames, globals) is
                     Just(typeAST)
-                domain := typeAST.bind'(stack, context)
+                domain := typeAST.bind'(locals)
                 CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
             astSyntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
-            Application(tag, left.bind'(stack, context),
-                right.bind'(stack, context))
+            Application(tag, left.bind'(locals), right.bind'(locals))
         case Let(tag, isTypeConstructor, name, value, scope)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            valueTerm := value.bind'(stack, context)
-            stack' := stack.pushParameter(name, Just((value, valueTerm)))
-            scopeTerm := scope.bind'(stack', context)
+            valueTerm := value.bind'(locals)
+            locals' := locals.pushParameter(name, Just((value, valueTerm)))
+            scopeTerm := scope.bind'(locals')
             abstraction := FreeFunction(getTag(name), scopeTerm)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
-            Numeral(tag, getNaturalType(context), value)
+            Numeral(tag, getNaturalType(globals), value)
         case Definition(_, _, _, _)
             astSyntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)
@@ -193,33 +192,32 @@ def bind(getBuiltin, stack, context, node)
         case SetBuilder(_, _)
             astSyntaxError("must appear on the right side of '::='", node)
         case ADT(tag, parameters, objectType, signatures)
-            Construction(tag, parameters.map(bind'(stack, context)),
-                objectType.bind'(stack, context),
-                signatures.map(bind'(stack, context)))
+            Construction(tag, parameters.map(bind'(locals)),
+                objectType.bind'(locals), signatures.map(bind'(locals)))
         case Constructor(tag, type, adtType, function, count, index)
-            type' := type.bind'(stack, context)
+            type' := type.bind'(locals)
             if function is Number(_, value)
                 Numeral(tag, type', value)
-            Element(tag, type', function.bind'(stack, context))
+            Element(tag, type', function.bind'(locals))
         case TypedNode(tag, typeAST, node)
-            type := typeAST.bind'(stack, context)
-            Element(tag, type, node.bind'(stack, context))
+            type := typeAST.bind'(locals)
+            Element(tag, type, node.bind'(locals))
 
 
-def bindGlobal(getBuiltin, context, node)
-    stack := (0, newDictionary([]))
-    bind(getBuiltin, stack, context, node)
+def bindGlobal(getBuiltin, globals, node)
+    locals := (0, newDictionary([]))
+    bind(getBuiltin, globals, locals, node)
 
 
 def bindDefinition(getBuiltin, state, (tag, node))
-    (tags, context, environment) := state
-    term := bindGlobal(getBuiltin, context, node)
+    (tags, globals, environment) := state
+    term := bindGlobal(getBuiltin, globals, node)
     # note: operations can only be defined at the top level
-    definiens := bindOperation(getBuiltin, context, tag, Just(term)) ?? term
+    definiens := bindOperation(getBuiltin, globals, tag, Just(term)) ?? term
     (index, environment') := environment.append(Closure(definiens, environment))
     constant := Constant(tag, index)
-    context' := context.insert(getTagLexeme(tag), ((node, definiens), constant))
-    (tag :: tags, context', environment')
+    globals' := globals.insert(getTagLexeme(tag), ((node, definiens), constant))
+    (tag :: tags, globals', environment')
 
 
 def getDefinitions(node)
@@ -232,7 +230,7 @@ def bindAST(getBuiltin, node)
     # TODO: make state a parameter so we can bind with an existing state
     state := ([], newDictionary([]), newArray([]))
     state' := getDefinitions(node).cascade(bindDefinition(getBuiltin), state)
-    (tags, context, environment) := state'
-    (reverse(tags), context, environment)
+    (tags, globals, environment) := state'
+    (reverse(tags), globals, environment)
 
 #*
