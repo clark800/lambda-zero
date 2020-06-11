@@ -161,6 +161,12 @@ static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     return applyPlainDefinition(tag, name, Number(tag, 0), scope);
 }
 
+static Node* applyBindDefinition(Tag tag, Node* left, Node* right, Node* scope){
+    // left <- right;; scope ==> right >> (left -> scope)
+    return Juxtaposition(tag, Juxtaposition(tag,
+        FixedName(tag, ">>"), right), LockedArrow(left, scope));
+}
+
 Node* applyDefinition(Node* definition, Node* scope) {
     Tag tag = getTag(definition);
     Node* definiendum = getLeft(definition);
@@ -176,6 +182,8 @@ Node* applyDefinition(Node* definition, Node* scope) {
             return scope;
         case ADTDEFINITION:
             return applyADTDefinition(tag, definiendum, definiens, scope);
+        case BINDDEFINITION:
+            return applyBindDefinition(tag, definiendum, definiens, scope);
     }
     assert(false);
     return NULL;

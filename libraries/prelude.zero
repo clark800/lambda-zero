@@ -319,4 +319,11 @@ def showFullBinaryTree(showElement, tree)
 
     showFullBinaryTreeNode(0, tree)
 
+# state
+
+lift value ≔ state ↦ (value, state)
+f ≫ g ≔ state ↦ (g(value, state′) where (value, state′) ≔ f(state))
+getState ≔ state ↦ (state, state)
+setState(newState) ≔ state ↦ ((), newState)
+
 #*

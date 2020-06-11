@@ -1,7 +1,7 @@
 #* ast.zero
 
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
-    SyntaxDefinition, ADTDefinition}
+    SyntaxDefinition, ADTDefinition, BindDefinition}
 ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
 
 AST ::= {

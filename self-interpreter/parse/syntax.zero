@@ -24,6 +24,12 @@ def reduceDoubleArrow(tag, left, right)
     Arrow(tag, Double, [], left, Void, right)
 
 
+def reduceReverseArrow(tag, left, right)
+    if not isName(left)
+        syntaxError("expected name to left of", tag)
+    Definition(tag, BindDefinition, left, right)
+
+
 def reducePipeline(tag, left, right)
     reduceApply(tag, right, left)
 
@@ -217,6 +223,8 @@ OPERATORS := [newDictionary([
     coreSyntax(":", 9, 9, NA, Infix(reduceColonPair)),
     coreSyntax("->", 10, 10, RA, Infix(reduceArrow)),
     coreAlias("↦", "->", 10, 10, RA, Infix(reduceArrow)),
+    coreSyntax("<-", 10, 10, RA, Infix(reduceReverseArrow)),
+    coreAlias("↤", "<-", 10, 10, RA, Infix(reduceReverseArrow)),
     coreSyntax("=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreAlias("⇒", "=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreSyntax("case", 11, 11, NA, Prefix(reduceAdfix)),
