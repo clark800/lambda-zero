@@ -3,6 +3,8 @@
 def serialize(closure)
     def serialize'(Closure(term, environment), depth)
         match term
+            case Wildcard(tag)
+                "☆"
             case Top(tag)
                 "⊤"
             case Constant(tag, _)
@@ -20,9 +22,6 @@ def serialize(closure)
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
             case Implication(tag, type, body)
                 "(" ++ serialize'(Closure(type, environment), depth) ++ " ⇒ " ++
-                    serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Implicit(tag, type, body)
-                "(" ++ serialize'(Closure(type, environment), depth) ++ " ⇝ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
             case Application(_, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++

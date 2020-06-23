@@ -1,10 +1,5 @@
 #* substitute.zero
 
-def newMetaVariable(tag, metacontext)
-    (address, metacontext') := metacontext.append(Void)
-    (MetaVariable(tag, address), metacontext')
-
-
 newMetaVariables(tags, metacontext) :=
     tags.cascadeMap(newMetaVariable, metacontext)
 
