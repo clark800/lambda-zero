@@ -143,7 +143,6 @@ static Node* reduceCloseSection(Node* close, Node* before, Node* contents) {
 }
 
 static Node* reduceReverseArrow(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isName(left), "expected name to left of", operator);
     return Definition(getTag(operator), BINDDEFINITION, left, right);
 }
 
