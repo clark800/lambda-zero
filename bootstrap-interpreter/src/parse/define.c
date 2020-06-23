@@ -164,7 +164,7 @@ static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
 static Node* applyBindDefinition(Tag tag, Node* left, Node* right, Node* scope){
     // left <- right;; scope ==> right >> (left -> scope)
     return Juxtaposition(tag, Juxtaposition(tag,
-        FixedName(tag, ">>"), right), LockedArrow(left, scope));
+        FixedName(tag, ">>"), right), newLazyArrow(left, scope));
 }
 
 Node* applyDefinition(Node* definition, Node* scope) {

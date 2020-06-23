@@ -25,8 +25,6 @@ def reduceDoubleArrow(tag, left, right)
 
 
 def reduceReverseArrow(tag, left, right)
-    if not isName(left)
-        syntaxError("expected name to left of", tag)
     Definition(tag, BindDefinition, left, right)
 
 
