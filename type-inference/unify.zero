@@ -46,20 +46,12 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
     _ @ Closure(left, leftEnvironment) := leftClosure
     _ @ Closure(right, rightEnvironment) := rightClosure
 
+    if isWildcard(left) or isWildcard(right)
+        metacontext
     if isMetaVariable(left) and not isFree(left, metacontext)
         unify'(fail, metacontext, (metacontext.getValue(left), rightClosure))
     if isMetaVariable(right) and not isFree(right, metacontext)
         unify'(fail, metacontext, (leftClosure, metacontext.getValue(right)))
-    if left is Implicit(tag, type, body)
-        (metavariable, metacontext') := metacontext.newMetaVariable(tag)
-        closure := Closure(metavariable, leftEnvironment)
-        environment := leftEnvironment.push(closure)
-        unify'(fail, metacontext', (Closure(body, environment), rightClosure))
-    if right is Implicit(tag, type, body)
-        (metavariable, metacontext') := metacontext.newMetaVariable(tag)
-        closure := Closure(metavariable, rightEnvironment)
-        environment := rightEnvironment.push(closure)
-        unify'(fail, metacontext', (leftClosure, Closure(body, environment)))
     if sameHead(left, right)
         zip(getComponentClosures(leftClosure),
             getComponentClosures(rightClosure)).
