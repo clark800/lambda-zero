@@ -109,7 +109,7 @@ def infer(context @ (environment, types), metacontext)
         (type, metacontext)
     case Numeral(tag, type, value)
         (type, metacontext)
-    case Operation(tag, type, _, _, _)
+    case Operation(tag, type, _, _)
         (type, metacontext)
 
 

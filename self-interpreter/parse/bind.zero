@@ -90,9 +90,9 @@ def getOperationType(globals, tag)
 
 
 def bindOperation(getBuiltin, globals, tag, term)
-    maybe (arity, optimize) := getBuiltin(tag)
+    maybe (arity, operator) := getBuiltin(tag)
     maybe type := getOperationType(globals, tag)
-    Just(Operation(tag, type, term, arity, optimize))
+    Just(Operation(tag, type, term, Optimization(arity, operator)))
 
 
 def bindGlobal(globals, tag)

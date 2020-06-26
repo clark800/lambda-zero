@@ -44,7 +44,7 @@ def evaluate(stack, closure @ Closure(term, environment))
                 numeral := expandNumeral(tag, type, n)
                 evaluate(stack, Closure(numeral, environment))
             closure
-        case Operation(tag, _, term', arity, operator)
+        case Operation(tag, _, term', Optimization(arity, operator))
             result := operator(evaluate([]), stack.take(arity))
             if result is Just(closure')
                 evaluate(stack.drop(arity), closure')
