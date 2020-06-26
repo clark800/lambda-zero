@@ -89,10 +89,10 @@ def getOperationType(globals, tag)
     Void
 
 
-def bindOperation(getBuiltin, globals, tag, maybeTerm)
+def bindOperation(getBuiltin, globals, tag, term)
     maybe (arity, optimize) := getBuiltin(tag)
     maybe type := getOperationType(globals, tag)
-    Just(Operation(tag, type, maybeTerm, arity, optimize))
+    Just(Operation(tag, type, term, arity, optimize))
 
 
 def bindGlobal(globals, tag)
@@ -101,7 +101,9 @@ def bindGlobal(globals, tag)
 
 def bindPseudoOperation(getBuiltin, globals, tag)
     if getTagLexeme(tag) =*= "abort"
-        bindOperation(getBuiltin, globals, tag, Void)
+        # the abort operation never returns, so the fallback term will never
+        # be used and we can just let it be Wildcard
+        bindOperation(getBuiltin, globals, tag, Wildcard(tag))
     Void
 
 
@@ -263,7 +265,7 @@ def bindDefinition(getBuiltin, state, (tag, node))
     (bindings, globals, environment) := state
     (term, metacontext) := bindGlobal(getBuiltin, globals, node)
     # note: operations can only be defined at the top level
-    definiens := bindOperation(getBuiltin, globals, tag, Just(term)) ?? term
+    definiens := bindOperation(getBuiltin, globals, tag, term) ?? term
     closure := Closure(definiens, environment)
     (index, environment') := environment.append(closure)
     global := Global(node, definiens, Constant(tag, index))

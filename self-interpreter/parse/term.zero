@@ -25,7 +25,7 @@ Term ::= {
         signatures : List(Term)),
     Element(tag : TagT, type : Term, term : Term),
     Numeral(tag : TagT, type : Term, value : ℕ),
-    Operation(tag : TagT, type : Term, term : (Term)?, arity : ℕ, operator :
+    Operation(tag : TagT, type : Term, term : Term, arity : ℕ, operator :
         ((ClosureT(Term) => ClosureT(Term)) =>
             List(ClosureT(Term)) => ClosureT(Term)?))
 }
