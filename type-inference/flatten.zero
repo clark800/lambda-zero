@@ -56,7 +56,7 @@ def flattenClosure(Closure(term, environment))
             Element(tag, type', term')
         case Numeral(_, _, _)
             term
-        case Operation(_, _, _, _, _)
+        case Operation(_, _, _, _)
             term
 
 #*
