@@ -1,14 +1,5 @@
 #* inference.zero
 
-def pushContext(term, scheme, context @ (terms, schemes))
-    # TODO: replace schemes with an array of closures of types
-    (terms.push(Closure(term, terms)), schemes.push(scheme))
-
-
-def pushParameter(scheme, context)
-    pushContext(Unknown, scheme, context)
-
-
 def getAllFreeVariables(metacontext, metacontext')
     indices := (0 ...)[0, metacontext.getSize]
     join(indices.map(MetaVariable(noTag)).map(
@@ -16,6 +7,9 @@ def getAllFreeVariables(metacontext, metacontext')
 
 
 def generalize(metacontext, oldMetacontext, type)
+    # generalize over only metavariables newly introduced in the current
+    # definition and leave the rest in the type because they may correspond to
+    # the types of local variables that haven't yet been determined
     syntax(\\) := syntax(\)
     vs \\ vs' := vs |: (v -> not vs'.any(sameHead(v)))
     type' := type.substitute(metacontext)
@@ -46,63 +40,67 @@ def getInnerScheme(tag, outerType, environment)
     throwError("expected construction in case annotation", tag)
 
 
-def unifyCodomain(codomain, bodyType, context, metacontext)
+def unifyCodomain(codomain, bodyType, environment, metacontext)
     if isWildcard(codomain)
         (bodyType, metacontext)
-    metacontext' := unify(context, metacontext, (codomain, bodyType))
+    metacontext' := unify(environment, metacontext, (codomain, bodyType))
     if getSize(metacontext') < 0  # todo: remove this when unify returns Either
         abort("force unification errors")
     (codomain, metacontext')
 
 
-def infer(context @ (environment, types), metacontext)
+def infer(schemes, metacontext, closure @ Closure(term, environment))
+    match term
     case Wildcard(tag)
         (Wildcard(tag), metacontext)
     case Top(tag)
         (Top(tag), metacontext)
     case Constant(tag, index)
-        scheme := types.get(index) ?? throwError("unbound constant", tag)
+        scheme := schemes.get(index) ?? throwError("unbound constant", tag)
         scheme.instantiate(tag, metacontext)
     case Variable(tag, debruijn)
-        scheme := types.peek(debruijn -- 1) ??
+        scheme := schemes.peek(debruijn -- 1) ??
             throwError("unbound variable", tag)
         scheme.instantiate(tag, metacontext)
     case MetaVariable(tag, address)
         # todo: check for type in metacontext
-        if metacontext.get(address) ?? Void is Just(Closure(term, _))
-            infer(context, metacontext, term)
+        if metacontext.get(address) ?? Void is Just(closure')
+            infer(schemes, metacontext, closure')
         newMetaVariable(tag, metacontext)
     case Function(tag, isCase, domain, codomain, body)
         parameterScheme := if isCase then
             getInnerScheme(tag, domain, environment) else Scheme([], domain)
         # todo: type may contain variables which would get lost here
-        context' := context.pushParameter(parameterScheme)
-        (bodyType, metacontext) := infer(context', metacontext, body)
+        schemes' := schemes.push(parameterScheme)
+        bodyClosure := Closure(body, pushUnknown(environment))
+        (bodyType, metacontext) := infer(schemes', metacontext, bodyClosure)
         (codomain, metacontext) :=
-            unifyCodomain(codomain, bodyType, context, metacontext)
+            unifyCodomain(codomain, bodyType, environment, metacontext)
         (Implication(tag, domain, codomain), metacontext)
     case Implication(tag, type, body)
-        context' := context.pushParameter(Scheme([], type))
-        infer(context', metacontext, body).mapFirst(_ -> Top(veil(tag)))
+        schemes' := schemes.push(Scheme([], type))
+        bodyClosure := Closure(body, pushUnknown(environment))
+        infer(schemes', metacontext, bodyClosure).mapFirst(_ -> Top(veil(tag)))
     case Application(tag, applicand, argument)
-        (argumentType, metacontext') := infer(context, metacontext, argument)
+        argument' := Closure(argument, environment)
+        applicand' := Closure(applicand, environment)
+        (argumentType, metacontext') := infer(schemes, metacontext, argument')
         if applicand is Function(_, isCase, domain, codomain, body)
             if not isCase and isMetaVariable(domain)
                 # suppport polymorphism in nested functions
                 scheme := argumentType.generalize(metacontext', metacontext)
-                context' := context.pushParameter(scheme)
-                infer(context', metacontext', body)
+                body' := Closure(body, environment.push(argument'))
+                infer(schemes.push(scheme), metacontext', body')
             pass
-        (applicandType, metacontext'') :=
-            infer(context, metacontext', applicand)
-        (returnType, metacontext''') := metacontext''.newMetaVariable(tag)
+        (applicandType, metacontext) := infer(schemes, metacontext', applicand')
+        (returnType, metacontext) := metacontext.newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
-        (returnType, unify(context, metacontext''',
+        (returnType, unify(environment, metacontext,
             (applicandType, functionType)))
     case Construction(tag, parameters, objectType, signatures)
         metacontext' := signatures.cascade(m -> s ->
-            second(infer(context, m, s)), metacontext)
+            second(infer(schemes, m, Closure(s, environment))), metacontext)
         (Top(veil(tag)), metacontext')
     case Element(tag, type, term)
         (type, metacontext)
@@ -119,21 +117,17 @@ def getFixScheme(tag)
     Scheme([a], (a >-> a) >-> a)
 
 
-def inferType(context, Binding(tag, MetaClosure(metacontext, closure)))
-    term := getTerm(closure)
+def inferType(schemes, Binding(tag, MetaClosure(metacontext, closure)))
     if getTagLexeme(tag) =*= "fix"
-        context.pushContext(term, getFixScheme(getTermTag(term)))
-    (type, metacontext') := infer(context, metacontext, term)
-    scheme := type.generalize(metacontext', newArray([]))
-    context.pushContext(term, scheme)
+        schemes.push(getFixScheme(tag))
+    (type, metacontext') := infer(schemes, metacontext, closure)
+    schemes.push(type.generalize(metacontext', newArray([])))
 
 
 def main(input)
     bindings := reverse(parse(getBuiltin, input))
-    context := (newArray([]), newArray([])) # environment and schemes
-    context' := bindings.cascade(inferType, context)
-    schemes := second(context').toList
+    schemes := bindings.cascade(inferType, newArray([]))
     tags := bindings.map(getBindingTag)
-    showTypings(zip(tags, schemes))
+    showTypings(zip(tags, schemes.toList))
 
 #*
