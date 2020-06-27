@@ -211,7 +211,8 @@ def isSameTerm(a, b)
             False
         case Variable(_, debruijn)
             if b is Variable(_, debruijn')
-                debruijn = debruijn'
+                # debruijn = 0 represents an unknown value
+                debruijn =/= 0 and debruijn = debruijn'
             False
         case MetaVariable(_, index)
             if b is MetaVariable(_, index')
