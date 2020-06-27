@@ -63,8 +63,7 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
     fail(metacontext, (left, right))
 
 
-def unify(context, metacontext, types @ (left, right))
-    (environment, _) := context
+def unify(environment, metacontext, types @ (left, right))
     closures := (Closure(left, environment), Closure(right, environment))
     fail := unifyFailure(types)
     unify'(fail, metacontext, closures)
