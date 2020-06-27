@@ -14,8 +14,8 @@ def unifyFailure(originals, metacontext, (left, right))
         left.substitute(metacontext), right.substitute(metacontext))
 
 
-def isFree(variable, metacontext)
-    if variable is MetaVariable(_, address)
+def isFree(metavariable, metacontext)
+    if metavariable is MetaVariable(_, address)
         isVoid(metacontext.get(address) ?? Void)
     False
 

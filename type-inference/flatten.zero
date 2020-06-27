@@ -1,5 +1,9 @@
 #* flatten.zero
 
+# use Variable 0 to indicate that we don't have a value for the variable
+Unknown := Variable(noTag, 0)
+
+
 def isUnknown(term)
     if term is Variable(_, n)
         n = 0
@@ -7,8 +11,7 @@ def isUnknown(term)
 
 
 def pushUnknown(environment)
-    # use Variable 0 to indicate that we don't have a value for the variable
-    environment.push(Closure(Variable(noTag, 0), newArray([])))
+    environment.push(Closure(Unknown, newArray([])))
 
 
 # for any variable in term that has a value in the environment, substitute

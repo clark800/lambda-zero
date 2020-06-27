@@ -20,7 +20,9 @@ def evaluate(stack, closure @ Closure(term, environment))
             if environment.get(index) is Just(closure')
                 evaluate(stack, closure')
             closure
-        case Variable(_, debruijn)
+        case Variable(tag, debruijn)
+            if debruijn = 0
+                runtimeError("accessed unknown variable", tag)
             if environment.peek(debruijn -- 1) is Just(closure')
                 evaluate(stack, closure')
             closure

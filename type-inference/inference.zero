@@ -6,8 +6,7 @@ def pushContext(term, scheme, context @ (terms, schemes))
 
 
 def pushParameter(scheme, context)
-    # TODO: term should be an atom
-    pushContext(Top(noTag), scheme, context)
+    pushContext(Unknown, scheme, context)
 
 
 def newInstantiationMapping(universals, metacontext)
