@@ -10,21 +10,6 @@ def pushParameter(scheme, context)
     pushContext(Top(noTag), scheme, context)
 
 
-def getAllFreeVariables(metacontext, metacontext')
-    indices := (0 ...)[0, metacontext.getSize]
-    join(indices.map(MetaVariable(noTag)).map(
-        getFreeVariables(metacontext'))).deduplicateBy(sameHead)
-
-
-def generalize(metacontext, oldMetacontext, type)
-    syntax(\\) := syntax(\)
-    vs \\ vs' := vs |: (v -> not vs'.any(sameHead(v)))
-    type' := type.substitute(metacontext)
-    universals := type'.getFreeVariables(metacontext) \\
-        metacontext.getAllFreeVariables(oldMetacontext)
-    Scheme(universals, type')
-
-
 def newInstantiationMapping(universals, metacontext)
     tags := universals.map(getTermTag)
     (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
@@ -87,13 +72,6 @@ def infer(context @ (environment, types), metacontext)
         infer(context', metacontext, body).mapFirst(_ -> Top(veil(tag)))
     case Application(tag, applicand, argument)
         (argumentType, metacontext') := infer(context, metacontext, argument)
-        if applicand is Function(_, isCase, domain, codomain, body)
-            if not isCase and isMetaVariable(domain)
-                # suppport polymorphism in nested functions
-                scheme := argumentType.generalize(metacontext', metacontext)
-                context' := context.pushParameter(scheme)
-                infer(context', metacontext', body)
-            pass
         (applicandType, metacontext'') :=
             infer(context, metacontext', applicand)
         (returnType, metacontext''') := metacontext''.newMetaVariable(tag)
@@ -120,12 +98,18 @@ def getFixScheme(tag)
     Scheme([a], (a >-> a) >-> a)
 
 
+def generalize(metacontext, type)
+    type' := type.substitute(metacontext)
+    universals := type'.getFreeVariables(metacontext)
+    Scheme(universals, type')
+
+
 def inferType(context, Binding(tag, MetaClosure(metacontext, closure)))
     term := getTerm(closure)
     if getTagLexeme(tag) =*= "fix"
         context.pushContext(term, getFixScheme(getTermTag(term)))
     (type, metacontext') := infer(context, metacontext, term)
-    scheme := type.generalize(metacontext', newArray([]))
+    scheme := type.generalize(metacontext')
     context.pushContext(term, scheme)
 
 
