@@ -275,3 +275,6 @@ Syntax error: expected pattern after 'is' at line 1 column 6
 if x is A then 1 else 0
 Syntax error: invalid prior for 'then' at line 1 column 11
 ===============================================================================
+main(input) := showSubscript(123)
+₁₂₃
+===============================================================================

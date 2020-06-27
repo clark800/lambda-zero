@@ -86,90 +86,6 @@ def splitSpine(term)
     (term, [])
 
 
-def getTermHead(term)
-    first(splitSpine(term))
-
-
-def maybeAscription(node)
-    if node is Element(_, type, _)
-        Just(type)
-    if node is Numeral(_, type, _)
-        Just(type)
-    if node is Operation(_, type, _, _)
-        Just(type)
-    Void
-
-
-def maybeDebruijnIndex(term)
-    if term is Variable(_, debruijn)
-        Just(debruijn)
-    Void
-
-
-def maybeBody(term)
-    if term is Function(_, _, _, _, body)
-        Just(body)
-    Void
-
-
-def maybeApplicand(term)
-    if term is Application(_, applicand, _)
-        Just(applicand)
-    Void
-
-
-def maybeArgument(term)
-    if term is Application(_, _, argument)
-        Just(argument)
-    Void
-
-
-def maybeNatural(term)
-    if term is Numeral(_, _, value)
-        Just(value)
-    Void
-
-
-def maybeAddress(type)
-    if type is MetaVariable(_, address)
-        Just(address)
-    Void
-
-
-def maybeHead(term)
-    maybe body := maybeBody(term)
-    maybe body' := maybeBody(body)
-    maybe applicand := maybeApplicand(body')
-    maybeArgument(applicand)
-
-
-def maybeTail(term)
-    maybe body := maybeBody(term)
-    maybe body' := maybeBody(body)
-    maybeArgument(body')
-
-
-def maybeIsNil(term)
-    # returns True for [], False for non-nil list, Void for non-list
-    # term should be (n -> p -> n) or (n -> p -> ((p c) cs))
-
-    def ifNil(result)
-        maybe body := maybeBody(term)
-        maybe body' := maybeBody(body)
-        maybe debruijn := maybeDebruijnIndex(body')
-        if debruijn = 2 then Just(result) else Void
-
-    def ifPush(result)
-        maybe body := maybeBody(term)
-        maybe body' := maybeBody(body)
-        maybe applicand := maybeApplicand(body')
-        maybe applicand' := maybeApplicand(applicand)
-        maybe debruijn := maybeDebruijnIndex(applicand')
-        if debruijn = 1 then Just(result) else Void
-
-    ifNil(Just(True)) ?? ifPush(Just(False)) ?? Void
-
-
 def setTag(tag)
     Wildcard(_) -> Wildcard(tag)
     Top(_) -> Top(tag)
@@ -191,67 +107,7 @@ def setLocation(Tag(_, _, location), term)
     term.setTag(getTermTag(term).setTagLocation(location))
 
 
-def sameConstant(a, b)
-    if a is Constant(_, indexA)
-        if b is Constant(_, indexB)
-            indexA = indexB
-        False
-    False
-
-
-def isSameTerm(a, b)
-    match a
-        case Wildcard(_)
-            False
-        case Top(_)
-            isTop(b)
-        case Constant(_, index)
-            if b is Constant(_, index')
-                index = index'
-            False
-        case Variable(_, debruijn)
-            if b is Variable(_, debruijn')
-                # debruijn = 0 represents an unknown value
-                debruijn =/= 0 and debruijn = debruijn'
-            False
-        case MetaVariable(_, index)
-            if b is MetaVariable(_, index')
-                index = index'
-            False
-        case Function(_, _, domain, codomain, body)
-            if b is Function(_, _, domain', codomain', body')
-                isSameTerm(domain, domain') and
-                isSameTerm(codomain, codomain') and
-                isSameTerm(body, body')
-            False
-        case Implication(_, type, body)
-            if b is Implication(_, type', body')
-                isSameTerm(type, type') and isSameTerm(body, body')
-            False
-        case Application(_, type, body)
-            if b is Application(_, type', body')
-                isSameTerm(type, type') and isSameTerm(body, body')
-            False
-        case Construction(_, parameters, type, _)
-            if b is Construction(_, parameters', type', _)
-                isSameTerm(type, type') and zip(parameters, parameters').all(
-                    uncurry(isSameTerm))
-            False
-        case Element(_, type, term)
-            if b is Element(_, type', term')
-                isSameTerm(type, type') and isSameTerm(term, term')
-            False
-        case Numeral(_, _, value)
-            if b is Numeral(_, _, value')
-                value = value'
-            False
-        case Operation(tag, _, _, _)
-            if b is Operation(tag', _, _, _)
-                getTagLexeme(tag) =*= getTagLexeme(tag')
-            False
-
-
-def sameHead(term)
+def isSameHead(term)
     case Wildcard(_)
         False
     case Top(_)
@@ -312,19 +168,12 @@ def mapComponents(f, term)
         Function(tag, isCase, domain, codomain, body) ->
             Function(tag, isCase, f(domain), f(codomain), f(body))
         Implication(tag, type, body) -> Implication(tag, f(type), f(body))
-        Application(tag, left, right) ->
-            Application(tag, mapComponents(f, left), f(right))
+        Application(tag, left, right) -> Application(tag, f(left), f(right))
         Construction(tag, parameters, type, signatures) ->
             Construction(tag, parameters.map(f), type, signatures)
         Element(tag, type, term) -> Element(tag, f(type), f(term))
         Numeral(_, _, _) -> term
         Operation(_, _, _, _) -> term
-
-
-def getSuffix(count, index)
-    if count <= 1 or index = 0 then ""
-    subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(index).map(x -> subscripts.at(x -- '0') ?? "").join
 
 
 def showConstruction(showTerm, headTag, arguments)

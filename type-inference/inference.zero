@@ -3,7 +3,7 @@
 def getAllFreeVariables(metacontext, metacontext')
     indices := (0 ...)[0, metacontext.getSize]
     join(indices.map(MetaVariable(noTag)).map(
-        getFreeVariables(metacontext'))).deduplicateBy(sameHead)
+        getFreeVariables(metacontext'))).deduplicateBy(isSameHead)
 
 
 def generalize(metacontext, oldMetacontext, type)
@@ -11,23 +11,16 @@ def generalize(metacontext, oldMetacontext, type)
     # definition and leave the rest in the type because they may correspond to
     # the types of local variables that haven't yet been determined
     syntax(\\) := syntax(\)
-    vs \\ vs' := vs |: (v -> not vs'.any(sameHead(v)))
+    vs \\ vs' := vs |: (v -> not vs'.any(isSameHead(v)))
     type' := type.substitute(metacontext)
     universals := type'.getFreeVariables(metacontext) \\
         metacontext.getAllFreeVariables(oldMetacontext)
     Scheme(universals, type')
 
 
-def newInstantiationMapping(universals, metacontext)
-    tags := universals.map(getTermTag)
-    (metaVariables, metacontext') := newMetaVariables(tags, metacontext)
-    addresses := universals.map(maybeAddress).prune
-    mapping := newMapping(zip(addresses, metaVariables))
-    (mapping, metacontext')
-
-
 def instantiate(tag, metacontext, Scheme(universals, type))
-    (mapping, metacontext') := newInstantiationMapping(universals, metacontext)
+    (universals', metacontext') := copyMetaVariables(universals, metacontext)
+    mapping := newMapping(zip(universals, universals'))
     (type.applyMapping(mapping).setLocation(tag), metacontext')
 
 

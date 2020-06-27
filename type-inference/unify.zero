@@ -52,7 +52,7 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
         unify'(fail, metacontext, (metacontext.getValue(left), rightClosure))
     if isMetaVariable(right) and not isFree(right, metacontext)
         unify'(fail, metacontext, (leftClosure, metacontext.getValue(right)))
-    if sameHead(left, right)
+    if isSameHead(left, right)
         zip(getComponentClosures(leftClosure),
             getComponentClosures(rightClosure)).
             cascade(unify'(fail), metacontext)
