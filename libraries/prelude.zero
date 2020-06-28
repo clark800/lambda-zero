@@ -266,6 +266,10 @@ def showPair(showFirst, showSecond, xsxs)
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
 showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
+def showSubscript(n)
+    subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
+    showNatural(n).map((-- '0')).map(`at(subscripts)).prune.join
+
 # parsing
 parseDigit(digit) ≔ if isDigit(digit) then Just(digit ∸ '0') else Void
 parseNatural(ns) ≔ if isNil(ns) then Void else

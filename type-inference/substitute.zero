@@ -1,10 +1,20 @@
 #* substitute.zero
 
-newMetaVariables(tags, metacontext) :=
+def copyMetaVariables(metavariables, metacontext)
+    tags := metavariables.map(getTermTag)
     tags.cascadeMap(newMetaVariable, metacontext)
 
 
-newMapping(mappings) := newTable((<=), mappings)
+def convertMapping((metavariable, term))
+    if metavariable is MetaVariable(_, address)
+        Just((address, term))
+    Void
+
+
+def newMapping(mappings)
+    # mappings is a list of (metavariable, term) pairs
+    # the returned mapping is a table from metavariable address to term
+    newTable((<=), mappings.filterMap(convertMapping))
 
 
 def applyMapping(mapping, type)
@@ -19,7 +29,7 @@ def getFreeVariables(metacontext, type)
             getFreeVariables(metacontext, flattenClosure(closure))
         [type]
     join(getComponents(type).map(getFreeVariables(metacontext))).
-        deduplicateBy(sameHead)
+        deduplicateBy(isSameHead)
 
 
 def showMaybeClosure(maybeClosure)
@@ -45,7 +55,7 @@ def substitute(metacontext, type)
     if type is MetaVariable(tag, address)
         if metacontext.get(address) ?? Void is Just(closure)
             type' := flattenClosure(closure).setLocation(tag)
-            if type'.getFreeVariables(newArray([])).any(sameHead(type))
+            if type'.getFreeVariables(newArray([])).any(isSameHead(type))
                 recursionError(type, type', metacontext)
             type'.substitute(metacontext)
         type

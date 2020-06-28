@@ -43,6 +43,70 @@ def serialize(closure)
     if result.length = 0 then "" else result
 
 
+def maybeDebruijnIndex(term)
+    if term is Variable(_, debruijn)
+        Just(debruijn)
+    Void
+
+
+def maybeBody(term)
+    if term is Function(_, _, _, _, body)
+        Just(body)
+    Void
+
+
+def maybeApplicand(term)
+    if term is Application(_, applicand, _)
+        Just(applicand)
+    Void
+
+
+def maybeArgument(term)
+    if term is Application(_, _, argument)
+        Just(argument)
+    Void
+
+
+def maybeNatural(term)
+    if term is Numeral(_, _, value)
+        Just(value)
+    Void
+
+
+def maybeHead(term)
+    maybe body := maybeBody(term)
+    maybe body' := maybeBody(body)
+    maybe applicand := maybeApplicand(body')
+    maybeArgument(applicand)
+
+
+def maybeTail(term)
+    maybe body := maybeBody(term)
+    maybe body' := maybeBody(body)
+    maybeArgument(body')
+
+
+def maybeIsNil(term)
+    # returns True for [], False for non-nil list, Void for non-list
+    # term should be (n -> p -> n) or (n -> p -> ((p c) cs))
+
+    def ifNil(result)
+        maybe body := maybeBody(term)
+        maybe body' := maybeBody(body)
+        maybe debruijn := maybeDebruijnIndex(body')
+        if debruijn = 2 then Just(result) else Void
+
+    def ifPush(result)
+        maybe body := maybeBody(term)
+        maybe body' := maybeBody(body)
+        maybe applicand := maybeApplicand(body')
+        maybe applicand' := maybeApplicand(applicand)
+        maybe debruijn := maybeDebruijnIndex(applicand')
+        if debruijn = 1 then Just(result) else Void
+
+    ifNil(Just(True)) ?? ifPush(Just(False)) ?? Void
+
+
 def serializeString(evaluateClosure, closure)
     closure' := evaluateClosure(closure)
     term := getTerm(closure')
@@ -61,6 +125,5 @@ def serializeString(evaluateClosure, closure)
     maybe remaining := serializeString(evaluateClosure, enclose(tailTerm))
 
     Just(character :: remaining)
-
 
 #*

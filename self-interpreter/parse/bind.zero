@@ -48,7 +48,11 @@ def pushInline(parameter, term, (level, table))
 
 def findType(lexeme, globals)
     if globals.lookup(lexeme) is Just(Global(_, term, _))
-        maybeAscription(term)
+        if term is Element(_, type, _)
+            Just(type)
+        if term is Numeral(_, type, _)
+            Just(type)
+        Void
     Void
 
 
