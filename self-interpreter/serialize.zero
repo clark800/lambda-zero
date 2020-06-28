@@ -3,10 +3,14 @@
 def serialize(closure)
     def serialize'(Closure(term, environment), depth)
         match term
+            case Unknown(tag)
+                "■"
             case Wildcard(tag)
                 "☆"
-            case Top(tag)
-                "⊤"
+            case MetaVariable(tag, n)
+                showTag(tag)
+            case Universe(tag, level)
+                "⊤" ++ showSubscript(level)
             case Constant(tag, _)
                 showTag(tag)
             case Variable(tag, debruijn)
@@ -14,8 +18,6 @@ def serialize(closure)
                     showTag(tag)
                 if environment.peek(debruijn -- depth -- 1) is Just(closure)
                     serialize'(closure, 0)
-                showTag(tag)
-            case MetaVariable(tag, n)
                 showTag(tag)
             case Function(tag, _, _, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++

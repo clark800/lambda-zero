@@ -18,11 +18,12 @@ OptimizationT(term) ::= {Optimization(
 # unified once, and thus can never cause a type error and does not need to be
 # stored in the metacontext
 Term ::= {
+    Unknown(tag : TagT),
     Wildcard(tag : TagT),
-    Top(tag : TagT),
+    MetaVariable(tag : TagT, id : ℕ),
+    Universe(tag : TagT, level : ℕ),
     Constant(tag : TagT, id : ℕ),
     Variable(tag : TagT, debruijn : ℕ),
-    MetaVariable(tag : TagT, id : ℕ),
     Function(tag : TagT, isCase : 𝔹,
         domain : Term, codomain : Term, body : Term),
     Implication(tag : TagT, type : Term, body : Term),
@@ -42,11 +43,12 @@ MetaClosureT ::= {MetaClosure(
 )}
 
 def getTermTag
+    Unknown(tag) -> tag
     Wildcard(tag) -> tag
-    Top(tag) -> tag
+    MetaVariable(tag, _) -> tag
+    Universe(tag, _) -> tag
     Constant(tag, _) -> tag
     Variable(tag, _) -> tag
-    MetaVariable(tag, _) -> tag
     Function(tag, _, _, _, _) -> tag
     Implication(tag, _, _) -> tag
     Application(tag, _, _) -> tag
@@ -56,11 +58,12 @@ def getTermTag
     Operation(tag, _, _, _) -> tag
 
 
+isUnknown := Unknown(_) -> True; _ -> False
 isWildcard := Wildcard(_) -> True; _ -> False
-isTop := Top(_) -> True; _ -> False
+isMetaVariable := MetaVariable(_, _) -> True; _ -> False
+isUniverse := Universe(_, _) -> True; _ -> False
 isConstant := Constant(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
-isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isFunction := Function(_, _, _, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
@@ -87,11 +90,12 @@ def splitSpine(term)
 
 
 def setTag(tag)
+    Unknown(_) -> Unknown(tag)
     Wildcard(_) -> Wildcard(tag)
-    Top(_) -> Top(tag)
+    MetaVariable(_, index) -> MetaVariable(tag, index)
+    Universe(_, level) -> Universe(tag, level)
     Constant(_, index) -> Constant(tag, index)
     Variable(_, debruijn) -> Variable(tag, debruijn)
-    MetaVariable(_, index) -> MetaVariable(tag, index)
     Function(_, isCase, domain, codomain, body) ->
         Function(tag, isCase, domain, codomain, body)
     Implication(_, type, body) -> Implication(tag, type, body)
@@ -108,19 +112,23 @@ def setLocation(Tag(_, _, location), term)
 
 
 def isSameHead(term)
+    case Unknown(_)
+        False
     case Wildcard(_)
         False
-    case Top(_)
-        isTop(term)
+    case MetaVariable(_, address)
+        if term is MetaVariable(_, address')
+            address = address'
+        False
+    case Universe(_, level)
+        if term is Universe(_, level')
+            level = level'
+        False
     case Constant(_, index)
         if term is Constant(_, index')
             index = index'
         False
     case Variable(tag, _)
-        False
-    case MetaVariable(_, address)
-        if term is MetaVariable(_, address')
-            address = address'
         False
     case Function(_, _, _, _, _)
         isFunction(term)
@@ -144,11 +152,12 @@ def isSameHead(term)
 
 
 def getComponents
+    Unknown(_) -> []
     Wildcard(_) -> []
-    Top(_) -> []
+    MetaVariable(_, _) -> []
+    Universe(_, _) -> []
     Constant(_, _) -> []
     Variable(_, _) -> []
-    MetaVariable(_, _) -> []
     Function(_, _, domain, codomain, body) -> [domain, codomain, body]
     Implication(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
@@ -160,11 +169,12 @@ def getComponents
 
 def mapComponents(f, term)
     match term
+        Unknown(_) -> term
         Wildcard(_) -> term
-        Top(_) -> term
+        MetaVariable(_, _) -> term
+        Universe(_, _) -> term
         Constant(_, _) -> term
         Variable(_, _) -> term
-        MetaVariable(_, _) -> term
         Function(tag, isCase, domain, codomain, body) ->
             Function(tag, isCase, f(domain), f(codomain), f(body))
         Implication(tag, type, body) -> Implication(tag, f(type), f(body))
@@ -208,11 +218,12 @@ def showMetaVariable(n)
 
 
 def showTerm
+    Unknown(_) -> "■"
     Wildcard(_) -> "☆"
-    Top(_) -> "⊤"
+    MetaVariable(tag, n) -> showMetaVariable(n)
+    Universe(_, level) -> "⊤" ++ showSubscript(level)
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
     Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
-    MetaVariable(tag, n) -> showMetaVariable(n)
     Function(tag, _, domain, _, body) ->
         "(" ++ showTag(tag) ++ " : " ++
             showTerm(domain) ++ " ↦ " ++ showTerm(body) ++ ")"
