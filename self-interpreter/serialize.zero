@@ -13,10 +13,10 @@ def serialize(closure)
                 "⊤" ++ showSubscript(level)
             case Constant(tag, _)
                 showTag(tag)
-            case Variable(tag, debruijn)
-                if debruijn <= depth
+            case Variable(tag, index)
+                if index <= depth
                     showTag(tag)
-                if environment.peek(debruijn -- depth -- 1) is Just(closure)
+                if environment.peek(index -- depth -- 1) is Just(closure)
                     serialize'(closure, 0)
                 showTag(tag)
             case Function(tag, _, _, _, body)
@@ -46,8 +46,8 @@ def serialize(closure)
 
 
 def maybeDebruijnIndex(term)
-    if term is Variable(_, debruijn)
-        Just(debruijn)
+    if term is Variable(_, index)
+        Just(index)
     Void
 
 
@@ -116,15 +116,16 @@ def serializeString(evaluateClosure, closure)
     if nil
         Just([])
 
-    dummy := Closure(Variable(noTag, 0), newArray([]))
-    environment' := getEnvironment(closure').push(dummy).push(dummy)
-    enclose := `Closure(environment')
+    unknown := enclose(Unknown(getTermTag(term)))
+    environment' := getEnvironment(closure').push(unknown).push(unknown)
 
     maybe headTerm := maybeHead(term)
-    maybe character := maybeNatural(getTerm(evaluateClosure(enclose(headTerm))))
+    closure' := Closure(headTerm, environment')
+    maybe character := maybeNatural(getTerm(evaluateClosure(closure')))
 
     maybe tailTerm := maybeTail(term)
-    maybe remaining := serializeString(evaluateClosure, enclose(tailTerm))
+    closure'' := Closure(tailTerm, environment')
+    maybe remaining := serializeString(evaluateClosure, closure'')
 
     Just(character :: remaining)
 

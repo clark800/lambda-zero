@@ -8,6 +8,8 @@ ClosureT(term) ::= {Closure(
 getTerm(Closure(term, _)) := term
 getEnvironment(Closure(_, environment)) := environment
 
+enclose(term) := Closure(term, newArray([]))
+
 OptimizationT(term) ::= {Optimization(
     arity : ℕ,
     operator : ((ClosureT(term) => ClosureT(term)) =>
@@ -22,8 +24,8 @@ Term ::= {
     Wildcard(tag : TagT),
     MetaVariable(tag : TagT, id : ℕ),
     Universe(tag : TagT, level : ℕ),
-    Constant(tag : TagT, id : ℕ),
-    Variable(tag : TagT, debruijn : ℕ),
+    Constant(tag : TagT, index : ℕ),
+    Variable(tag : TagT, index : ℕ),
     Function(tag : TagT, isCase : 𝔹,
         domain : Term, codomain : Term, body : Term),
     Implication(tag : TagT, type : Term, body : Term),
@@ -95,7 +97,7 @@ def setTag(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Universe(_, level) -> Universe(tag, level)
     Constant(_, index) -> Constant(tag, index)
-    Variable(_, debruijn) -> Variable(tag, debruijn)
+    Variable(_, index) -> Variable(tag, index)
     Function(_, isCase, domain, codomain, body) ->
         Function(tag, isCase, domain, codomain, body)
     Implication(_, type, body) -> Implication(tag, type, body)
