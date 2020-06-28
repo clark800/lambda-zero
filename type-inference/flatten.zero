@@ -1,17 +1,7 @@
 #* flatten.zero
 
-# use Variable 0 to indicate that we don't have a value for the variable
-Unknown := Variable(noTag, 0)
-
-
-def isUnknown(term)
-    if term is Variable(_, n)
-        n = 0
-    False
-
-
-def pushUnknown(environment)
-    environment.push(Closure(Unknown, newArray([])))
+def pushUnknown(tag, environment)
+    environment.push(Closure(Unknown(tag), newArray([])))
 
 
 # for any variable in term that has a value in the environment, substitute
@@ -19,11 +9,15 @@ def pushUnknown(environment)
 # todo: can remove this when we use closures instead of schemes for types
 def flattenClosure(Closure(term, environment))
     match term
+        case Unknown(_)
+            term
         case Wildcard(_)
             term
-        case Top(_)
+        case MetaVariable(_, _)
             term
-        case Constant(_, index)
+        case Universe(_, _)
+            term
+        case Constant(_, _)
             term
         case Variable(tag, debruijn)
             if environment.peek(debruijn -- 1) is Just(closure)
@@ -31,16 +25,16 @@ def flattenClosure(Closure(term, environment))
                     term
                 flattenClosure(evaluateClosure(closure))
             term
-        case MetaVariable(_, _)
-            term
         case Function(tag, isCase, domain, codomain, body)
             domain' := flattenClosure(Closure(domain, environment))
             codomain' := flattenClosure(Closure(codomain, environment))
-            body' := flattenClosure(Closure(body, pushUnknown(environment)))
+            body' := flattenClosure(
+                Closure(body, pushUnknown(tag, environment)))
             Function(tag, isCase, domain', codomain', body')
         case Implication(tag, type, body)
             type' := flattenClosure(Closure(type, environment))
-            body' := flattenClosure(Closure(body, pushUnknown(environment)))
+            body' := flattenClosure(
+                Closure(body, pushUnknown(tag, environment)))
             Implication(tag, type', body')
         case Application(tag, left, right)
             left' := flattenClosure(Closure(left, environment))

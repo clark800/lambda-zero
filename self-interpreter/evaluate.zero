@@ -12,22 +12,22 @@ def expandNumeral(tag, type, n)
 
 def evaluate(stack, closure @ Closure(term, environment))
     match term
+        case Unknown(tag)
+            runtimeError("accessed unknown variable", tag)
         case Wildcard(tag)
             closure
-        case Top(tag)
+        case MetaVariable(tag, _)
+            if isNil(stack) then closure else runtimeError("metavariable", tag)
+        case Universe(tag, level)
             closure
         case Constant(tag, index)
             if environment.get(index) is Just(closure')
                 evaluate(stack, closure')
             closure
         case Variable(tag, debruijn)
-            if debruijn = 0
-                runtimeError("accessed unknown variable", tag)
             if environment.peek(debruijn -- 1) is Just(closure')
                 evaluate(stack, closure')
             closure
-        case MetaVariable(tag, _)
-            if isNil(stack) then closure else runtimeError("metavariable", tag)
         case Function(_, _, _, _, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
