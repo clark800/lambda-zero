@@ -1,5 +1,9 @@
 #* interpret.zero
 
+def runtimeError(message, tag)
+    throwError("\nRuntime error: " ++ message, tag)
+
+
 def splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
     afterCode |> [] -> (code, []); _ :: input' -> (code, input')

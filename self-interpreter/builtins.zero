@@ -15,7 +15,7 @@ def newNumeral(tag, value)
 def makeUnaryBuiltin(f, evaluate, arguments)
     if arguments is argument :: arguments'
         if getTerm(evaluate(argument)) is Numeral(_, _, value)
-            Just(Closure(newNumeral(noTag, f(value)), newArray([])))
+            Just(enclose(newNumeral(noTag, f(value))))
         Void
     Void
 
@@ -26,7 +26,7 @@ def makeBinaryBuiltin(constructor, f, evaluate, arguments)
             if getTerm(evaluate(left)) is Numeral(_, _, value)
                 if getTerm(evaluate(right)) is Numeral(_, _, value')
                     result := constructor(f(value, value'))
-                    Just(Closure(result, newArray([])))
+                    Just(enclose(result))
                 Void
             Void
         Void

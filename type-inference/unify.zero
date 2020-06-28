@@ -46,6 +46,8 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
     _ @ Closure(left, leftEnvironment) := leftClosure
     _ @ Closure(right, rightEnvironment) := rightClosure
 
+    if isUnknown(left) or isUnknown(right)
+        fail(metacontext, (left, right))
     if isWildcard(left) or isWildcard(right)
         metacontext
     if isMetaVariable(left) and not isFree(left, metacontext)

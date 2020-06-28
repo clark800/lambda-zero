@@ -58,8 +58,8 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
     case Constant(tag, index)
         scheme := schemes.get(index) ?? throwError("unbound constant", tag)
         scheme.instantiate(tag, metacontext)
-    case Variable(tag, debruijn)
-        scheme := schemes.peek(debruijn -- 1) ??
+    case Variable(tag, index)
+        scheme := schemes.peek(index -- 1) ??
             throwError("unbound variable", tag)
         scheme.instantiate(tag, metacontext)
     case Function(tag, isCase, domain, codomain, body)

@@ -1,9 +1,5 @@
 #* evaluate.zero
 
-def runtimeError(message, tag)
-    throwError("\nRuntime error: " ++ message, tag)
-
-
 def expandNumeral(tag, type, n)
     FreeFunction(tag, FreeFunction(tag,
             n |> 0 -> Variable(tag, 2); up n' ->
@@ -13,42 +9,36 @@ def expandNumeral(tag, type, n)
 def evaluate(stack, closure @ Closure(term, environment))
     match term
         case Unknown(tag)
-            runtimeError("accessed unknown variable", tag)
+            closure
         case Wildcard(tag)
-            closure
-        case MetaVariable(tag, _)
-            if isNil(stack) then closure else runtimeError("metavariable", tag)
+            if isNil(stack) then closure else enclose(Unknown(tag))
+        case MetaVariable(tag, id)
+            if isNil(stack) then closure else enclose(Unknown(tag))
         case Universe(tag, level)
-            closure
+            if isNil(stack) then closure else enclose(Unknown(tag))
         case Constant(tag, index)
-            if environment.get(index) is Just(closure')
-                evaluate(stack, closure')
-            closure
-        case Variable(tag, debruijn)
-            if environment.peek(debruijn -- 1) is Just(closure')
-                evaluate(stack, closure')
-            closure
-        case Function(_, _, _, _, body)
+            evaluate(stack, environment.get(index) ?? enclose(Unknown(tag)))
+        case Variable(tag, index)
+            evaluate(stack, environment.peek(index -- 1) ??
+                enclose(Unknown(tag)))
+        case Function(tag, isCase, domain, codomain, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
-        case Implication(tag, _, _)
-            if isNil(stack) then closure else runtimeError("implication", tag)
-        case Application(_, applicand, argument)
+        case Implication(tag, type, term')
+            if isNil(stack) then closure else enclose(Unknown(tag))
+        case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
-        case Construction(tag, _, _, _)
-            if isNil(stack) then closure else runtimeError("construction", tag)
-        case Element(_, _, term')
+        case Construction(tag, parameter, type, signatures)
+            if isNil(stack) then closure else enclose(Unknown(tag))
+        case Element(tag, type, term')
             evaluate(stack, Closure(term', environment))
         case Numeral(tag, type, n)
-            if stack is _ :: _
-                numeral := expandNumeral(tag, type, n)
-                evaluate(stack, Closure(numeral, environment))
-            closure
-        case Operation(tag, _, term', Optimization(arity, operator))
-            result := operator(evaluate([]), stack.take(arity))
-            if result is Just(closure')
+            if isNil(stack) then closure else
+            evaluate(stack, Closure(expandNumeral(tag, type, n), environment))
+        case Operation(tag, type, term', Optimization(arity, operator))
+            if operator(evaluate([]), stack.take(arity)) is Just(closure')
                 evaluate(stack.drop(arity), closure')
             evaluate(stack, Closure(term', environment))
 
