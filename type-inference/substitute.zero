@@ -1,28 +1,5 @@
 #* substitute.zero
 
-def copyMetaVariables(metavariables, metacontext)
-    tags := metavariables.map(getTermTag)
-    tags.cascadeMap(newMetaVariable, metacontext)
-
-
-def convertMapping((metavariable, term))
-    if metavariable is MetaVariable(_, address)
-        Just((address, term))
-    Void
-
-
-def newMapping(mappings)
-    # mappings is a list of (metavariable, term) pairs
-    # the returned mapping is a table from metavariable address to term
-    newTable((<=), mappings.filterMap(convertMapping))
-
-
-def applyMapping(mapping, type)
-    if type is MetaVariable(_, address)
-        mapping.lookup(address) ?? type
-    type.mapComponents(applyMapping(mapping))
-
-
 def getFreeVariables(metacontext, type)
     if type is MetaVariable(_, address)
         if metacontext.get(address) ?? Void is Just(closure)

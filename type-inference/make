@@ -37,7 +37,7 @@ cat "$LIB/operators.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/flatten.zero" \
     "$DIR/substitute.zero" \
-    "$DIR/show.zero" \
+    "$DIR/scheme.zero" \
     "$DIR/unify.zero" \
     "$DIR/inference.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"

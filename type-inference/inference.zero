@@ -18,10 +18,9 @@ def generalize(metacontext, oldMetacontext, type)
     Scheme(universals, type')
 
 
-def instantiate(tag, metacontext, Scheme(universals, type))
-    (universals', metacontext') := copyMetaVariables(universals, metacontext)
-    mapping := newMapping(zip(universals, universals'))
-    (type.applyMapping(mapping).setLocation(tag), metacontext')
+def instantiate(tag, metacontext, scheme)
+    (Scheme(_, type), metacontext') := renameScheme(scheme, metacontext)
+    (type.setLocation(tag), metacontext')
 
 
 def getInnerScheme(tag, outerType, environment)
