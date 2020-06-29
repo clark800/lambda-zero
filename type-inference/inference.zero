@@ -23,13 +23,19 @@ def instantiate(tag, metacontext, scheme)
     (type.setLocation(tag), metacontext')
 
 
-def getInnerScheme(tag, outerType, environment)
-    _ @ Closure(construction, environment') :=
-        evaluateClosure(Closure(outerType, environment))
-    if construction is Construction(_, _, type, _)
-        universals := type.getFreeVariables(newArray([]))
-        Scheme(universals, flattenClosure(Closure(type, environment')))
-    throwError("expected construction in case annotation", tag)
+def getParameterScheme(tag, isCase, domain, metacontext)
+    if isCase
+        if getTerm(domain) is Construction(_, _, type, _)
+            # we have to be careful to not resolve type until after we
+            # rename it or we'll get a collision with the metavariable
+            # for the return type in type.
+            scheme := Scheme(type.getFreeVariables(newArray([])), type)
+            (scheme', metacontext') := renameScheme(scheme, metacontext)
+            _ @ Scheme(universals, type') := scheme'
+            type'' := resolve(Closure(type', getEnvironment(domain)))
+            (Scheme(universals, type''), metacontext')
+        throwError("expected construction in case annotation", tag)
+    (Scheme([], resolve(domain)), metacontext)
 
 
 def unifyCodomain(codomain, bodyType, environment, metacontext)
@@ -62,17 +68,18 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
             throwError("unbound variable", tag)
         scheme.instantiate(tag, metacontext)
     case Function(tag, isCase, domain, codomain, body)
-        parameterScheme := if isCase then
-            getInnerScheme(tag, domain, environment) else Scheme([], domain)
-        # todo: type may contain variables which would get lost here
-        schemes' := schemes.push(parameterScheme)
+        domain' := evaluateClosure(Closure(domain, environment))
+        (scheme, metacontext) :=
+            getParameterScheme(tag, isCase, domain', metacontext)
+        schemes' := schemes.push(scheme)
         bodyClosure := Closure(body, pushUnknown(tag, environment))
         (bodyType, metacontext) := infer(schemes', metacontext, bodyClosure)
         (codomain, metacontext) :=
             unifyCodomain(codomain, bodyType, environment, metacontext)
         (Implication(tag, domain, codomain), metacontext)
     case Implication(tag, type, body)
-        schemes' := schemes.push(Scheme([], type))
+        type' := resolve(evaluateClosure(Closure(type, environment)))
+        schemes' := schemes.push(Scheme([], type'))
         bodyClosure := Closure(body, pushUnknown(tag, environment))
         (_, metacontext') := infer(schemes', metacontext, bodyClosure)
         (Universe(tag, 1), metacontext')
