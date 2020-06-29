@@ -28,6 +28,7 @@ Term ::= {
     Variable(tag : TagT, index : ℕ),
     Function(tag : TagT, isCase : 𝔹,
         domain : Term, codomain : Term, body : Term),
+    MetaFunction(tag : TagT, type : Term, body : Term),
     Implication(tag : TagT, type : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
     Construction(tag : TagT, parameters : List(Term), type : Term,
@@ -52,6 +53,7 @@ def getTermTag
     Constant(tag, _) -> tag
     Variable(tag, _) -> tag
     Function(tag, _, _, _, _) -> tag
+    MetaFunction(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
     Application(tag, _, _) -> tag
     Construction(tag, _, _, _) -> tag
@@ -67,6 +69,7 @@ isUniverse := Universe(_, _) -> True; _ -> False
 isConstant := Constant(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isFunction := Function(_, _, _, _, _) -> True; _ -> False
+isMetaFunction := MetaFunction(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
 isConstruction := Construction(_, _, _, _) -> True; _ -> False
@@ -100,6 +103,7 @@ def setTag(tag)
     Variable(_, index) -> Variable(tag, index)
     Function(_, isCase, domain, codomain, body) ->
         Function(tag, isCase, domain, codomain, body)
+    MetaFunction(_, type, body) -> MetaFunction(tag, type, body)
     Implication(_, type, body) -> Implication(tag, type, body)
     Application(_, left, right) -> Application(tag, left, right)
     Construction(_, parameters, type, signatures) ->
@@ -154,6 +158,8 @@ def showTerm
     Function(tag, _, domain, _, body) ->
         "(" ++ showTag(tag) ++ " : " ++
             showTerm(domain) ++ " ↦ " ++ showTerm(body) ++ ")"
+    MetaFunction(tag, type, body) ->
+        "(" ++ showTag(tag) ++ " ↝ " ++ showTerm(body) ++ ")"
     Implication(tag, type, body) ->
         if isImplication(type) then
             "(" ++ showTerm(type) ++ ")" ++ " ⇒ " ++ showTerm(body) else

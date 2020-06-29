@@ -22,6 +22,9 @@ def serialize(closure)
             case Function(tag, _, _, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
+            case MetaFunction(tag, type, body)
+                "(" ++ showTag(tag) ++ " ↝ " ++
+                    serialize'(Closure(body, environment), depth + 1) ++ ")"
             case Implication(tag, type, body)
                 "(" ++ serialize'(Closure(type, environment), depth) ++ " ⇒ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"

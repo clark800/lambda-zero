@@ -2,6 +2,13 @@
 
 SchemeT(term) ::= {Scheme(universals : List(term), type : term)}
 
+getUniversals(Scheme(universals, _)) := universals
+getType(Scheme(_, type)) := type
+
+def newMetaVariable(tag, metacontext)
+    (index, metacontext') := metacontext.append(Void)
+    (MetaVariable(tag, index), metacontext')
+
 
 def convertMapping((metavariable, term))
     if metavariable is MetaVariable(_, address)

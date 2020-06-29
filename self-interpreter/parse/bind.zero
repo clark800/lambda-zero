@@ -24,11 +24,6 @@ getBindingTag(Binding(tag, _)) := tag
 getBindingMetaClosure(Binding(tag, metaclosure)) := metaclosure
 
 
-def newMetaVariable(tag, metacontext)
-    (index, metacontext') := metacontext.append(Void)
-    (MetaVariable(tag, index), metacontext')
-
-
 def bindLocal((level, table), tag)
     maybe item := table.lookup(getTagLexeme(tag))
     match item
@@ -68,28 +63,30 @@ def getBooleanType(globals)
 def getStringType(globals, tag)
     natural := getNaturalType(globals)
     listType := globals.findType("[]") ?? syntaxError("List not defined", tag)
-    if listType is Application(_, listTypeConstructor, _)
-        Application(noTag, listTypeConstructor, natural)
-    syntaxError("List type invalid", tag)
+    if listType is MetaFunction(_, _, listApplication)
+        if listApplication is Application(_, listTypeConstructor, _)
+            Application(noTag, listTypeConstructor, natural)
+        pass
+    syntaxError("List type invalid: " ++ showTerm(listType), tag)
 
 
 def getOperationType(globals, tag)
     lexeme := getTagLexeme(tag)
-    syntax(>->) := syntax(++)
-    (>->) := Implication(noTag)
+    syntax(=>>) := syntax(++)
+    (=>>) := Implication(noTag)
     if ["+", "--", "*", "//", "%"].any((=*= lexeme))
         natural := getNaturalType(globals)
-        Just(natural >-> natural >-> natural)
+        Just(natural =>> natural =>> natural)
     if ["=", "=/=", "<", ">", "<=", ">="].any((=*= lexeme))
         natural := getNaturalType(globals)
         boolean := getBooleanType(globals)
-        Just(natural >-> natural >-> boolean)
+        Just(natural =>> natural =>> boolean)
     if lexeme =*= "up"
         natural := getNaturalType(globals)
-        Just(natural >-> natural)
+        Just(natural =>> natural)
     if lexeme =*= "abort"
         stringType := getStringType(globals, tag)
-        Just(stringType >-> Wildcard(veil(tag)))
+        Just(stringType =>> Wildcard(veil(tag)))
     Void
 
 
@@ -128,7 +125,7 @@ def getADTName(constructor)
 
 def getConstructionTypeAST(constructor)
     if constructor is Constructor(_, _, adtType, _, _, _)
-        getArguments(adtType).fold(ImplicitArrow, adtType)
+        getArguments(adtType).fold(MetaArrow, adtType)
     astSyntaxError("invalid constructor", constructor)
 
 
@@ -175,20 +172,17 @@ def bind(getBuiltin, globals, locals, node)
             if arrowType is Double
                 parameterTerm <- parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
-                locals' := locals.pushParameter(Name(veil(tag)))
-                bodyTerm <- body.bind'(locals')
+                bodyTerm <- body.bind'(locals.pushParameter(Name(veil(tag))))
                 lift Implication(tag, parameterTerm, bodyTerm)
 
             if arrowType is Squiggle
                 domain <- (
                     if annotation is Just(type)
-                        type' <- type.bind'(locals)
-                        lift Just(type')
-                    lift Void
+                        type.bind'(locals)
+                    lift Wildcard(veil(tag))
                 )
-                metavariable <- newMetaVariable(getTag(parameter))
-                locals' := locals.pushInline(parameter, metavariable)
-                body.bind'(locals')
+                bodyTerm <- body.bind'(locals.pushParameter(parameter))
+                lift MetaFunction(getTag(parameter), domain, bodyTerm)
 
             locals' := locals.pushParameter(parameter)
             (bodyTerm, codomain) <- (
@@ -203,7 +197,7 @@ def bind(getBuiltin, globals, locals, node)
                 domain <- (
                     if annotation is Just(type)
                         type.bind'(locals)
-                    newMetaVariable(veil(tag))
+                    lift Wildcard(veil(tag))
                 )
                 lift Function(getTag(parameter), False,
                     domain, codomain, bodyTerm)
@@ -223,7 +217,7 @@ def bind(getBuiltin, globals, locals, node)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            domain <- newMetaVariable(veil(tag))
+            domain := Wildcard(veil(tag))
             codomain := Wildcard(veil(tag))
             valueTerm <- value.bind'(locals)
             locals' := locals.pushParameter(name)
