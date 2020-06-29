@@ -3,7 +3,7 @@
 def getFreeVariables(metacontext, type)
     if type is MetaVariable(_, address)
         if metacontext.get(address) ?? Void is Just(closure)
-            getFreeVariables(metacontext, flattenClosure(closure))
+            getFreeVariables(metacontext, resolve(closure))
         [type]
     join(getComponents(type).map(getFreeVariables(metacontext))).
         deduplicateBy(isSameHead)
@@ -31,7 +31,7 @@ def recursionError(type, type', metacontext)
 def substitute(metacontext, type)
     if type is MetaVariable(tag, address)
         if metacontext.get(address) ?? Void is Just(closure)
-            type' := flattenClosure(closure).setLocation(tag)
+            type' := resolve(closure).setLocation(tag)
             if type'.getFreeVariables(newArray([])).any(isSameHead(type))
                 recursionError(type, type', metacontext)
             type'.substitute(metacontext)

@@ -1,0 +1,43 @@
+#* resolve.zero
+
+def pushUnknown(tag, environment)
+    environment.push(enclose(Unknown(tag)))
+
+
+# for any variable in term that has a value in the environment, substitute
+# the variable with the value from the environment recursively
+def resolve(Closure(term, environment))
+    resolve'(t) := resolve(Closure(t, environment))
+    match term
+        Unknown(tag) -> term
+        Wildcard(tag) -> term
+        MetaVariable(tag, id) -> term
+        Universe(tag, level) -> term
+        Constant(tag, index) -> (
+            #if environment.get(index) is Just(closure)
+            #    resolve(closure)
+            term
+        )
+        Variable(tag, index) -> (
+            if environment.peek(index -- 1) is Just(closure)
+                if isUnknown(getTerm(closure)) then term else
+                    resolve(evaluateClosure(closure))
+            term
+        )
+        Function(tag, isCase, domain, codomain, body) ->
+            Function(tag, isCase, resolve'(domain), resolve'(codomain),
+                resolve(Closure(body, pushUnknown(tag, environment))))
+        Implication(tag, type, body) ->
+            Implication(tag, resolve'(type),
+                resolve(Closure(body, pushUnknown(tag, environment))))
+        Application(tag, left, right) ->
+            Application(tag, resolve'(left), resolve'(right))
+        Construction(tag, parameters, objectType, signatures) ->
+            Construction(tag, parameters.map(resolve'),
+                resolve'(objectType), signatures.map(resolve'))
+        Element(tag, type, term) ->
+            Element(tag, resolve'(type), resolve'(term))
+        Numeral(_, _, _) -> term
+        Operation(_, _, _, _) -> term
+
+#*
