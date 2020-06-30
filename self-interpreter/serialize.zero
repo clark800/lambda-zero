@@ -5,8 +5,6 @@ def serialize(closure)
         match term
             case Unknown(tag)
                 "■"
-            case Wildcard(tag)
-                "☆"
             case MetaVariable(tag, n)
                 showTag(tag)
             case Universe(tag, level)

@@ -85,7 +85,9 @@ def getOperationType(globals, tag)
         Just(natural =>> natural)
     if lexeme =*= "abort"
         stringType := getStringType(globals, tag)
-        Just(stringType =>> Wildcard(veil(tag)))
+        tag' := veil(tag)
+        type := stringType =>> Variable(tag', 2)
+        Just(MetaFunction(tag', Universe(tag', 0), type))
     Void
 
 
@@ -102,8 +104,8 @@ def bindGlobal(globals, tag)
 def bindPseudoOperation(getBuiltin, globals, tag)
     if getTagLexeme(tag) =*= "abort"
         # the abort operation never returns, so the fallback term will never
-        # be used and we can just let it be Wildcard
-        bindOperation(getBuiltin, globals, tag, Wildcard(tag))
+        # be used and we can just let it be Unknown
+        bindOperation(getBuiltin, globals, tag, Unknown(tag))
     Void
 
 
@@ -168,7 +170,8 @@ def bind(getBuiltin, globals, locals, node)
             Variable(tag, debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
-            wildcard := Wildcard(veil(tag))
+            tag' := veil(tag)
+            wildcard := MetaFunction(tag', Universe(tag', 0), Variable(tag', 1))
             if arrowType is Double
                 parameterTerm := parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
@@ -203,11 +206,12 @@ def bind(getBuiltin, globals, locals, node)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            domain := Wildcard(veil(tag))
-            codomain := Wildcard(veil(tag))
+            tag' := veil(tag)
+            wildcard := MetaFunction(tag', Universe(tag', 0), Variable(tag', 1))
             valueTerm := value.bind'(locals)
             body := scope.bind'(locals.pushParameter(name))
-            abstraction := Function(getTag(name), False, domain, codomain, body)
+            abstraction := Function(getTag(name), False,
+                wildcard, wildcard, body)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNaturalType(globals), value)

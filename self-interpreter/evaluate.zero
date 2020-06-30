@@ -10,8 +10,6 @@ def evaluate(stack, closure @ Closure(term, environment))
     match term
         case Unknown(tag)
             closure
-        case Wildcard(tag)
-            if isNil(stack) then closure else enclose(Unknown(tag))
         case MetaVariable(tag, id)
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Universe(tag, level)

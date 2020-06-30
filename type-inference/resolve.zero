@@ -10,7 +10,6 @@ def resolve(Closure(term, environment))
     resolve'(t) := resolve(Closure(t, environment))
     match term
         Unknown(tag) -> term
-        Wildcard(tag) -> term
         MetaVariable(tag, id) -> term
         Universe(tag, level) -> term
         Constant(tag, index) -> (

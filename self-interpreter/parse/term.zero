@@ -16,12 +16,8 @@ OptimizationT(term) ::= {Optimization(
         List(ClosureT(term)) => ClosureT(term)?)
 )}
 
-# Wildcard is a MetaVariable that is only referred to once, so it will only be
-# unified once, and thus can never cause a type error and does not need to be
-# stored in the metacontext
 Term ::= {
     Unknown(tag : TagT),
-    Wildcard(tag : TagT),
     MetaVariable(tag : TagT, id : ℕ),
     Universe(tag : TagT, level : ℕ),
     Constant(tag : TagT, index : ℕ),
@@ -41,7 +37,6 @@ Term ::= {
 
 def getTermTag
     Unknown(tag) -> tag
-    Wildcard(tag) -> tag
     MetaVariable(tag, _) -> tag
     Universe(tag, _) -> tag
     Constant(tag, _) -> tag
@@ -57,7 +52,6 @@ def getTermTag
 
 
 isUnknown := Unknown(_) -> True; _ -> False
-isWildcard := Wildcard(_) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isUniverse := Universe(_, _) -> True; _ -> False
 isConstant := Constant(_, _) -> True; _ -> False
@@ -77,7 +71,8 @@ def CaseFunction(tag, domain, codomain, body)
 
 
 def FreeFunction(tag, body)
-    wildcard := Wildcard(veil(tag))
+    tag' := veil(tag)
+    wildcard := MetaFunction(tag', Universe(tag', 0), Variable(tag', 1))
     Function(tag, False, wildcard, wildcard, body)
 
 
@@ -90,7 +85,6 @@ def splitSpine(term)
 
 def setTag(tag)
     Unknown(_) -> Unknown(tag)
-    Wildcard(_) -> Wildcard(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Universe(_, level) -> Universe(tag, level)
     Constant(_, index) -> Constant(tag, index)
@@ -144,7 +138,6 @@ def showMetaVariable(n)
 
 def showTerm
     Unknown(_) -> "■"
-    Wildcard(_) -> "☆"
     MetaVariable(tag, n) -> showMetaVariable(n)
     Universe(_, level) -> "⊤" ++ showSubscript(level)
     Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
