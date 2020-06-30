@@ -38,12 +38,6 @@ Term ::= {
     Operation(tag : TagT, type : Term, term : Term, op : OptimizationT(Term))
 }
 
-MetaClosureT ::= {MetaClosure(
-    # first is value, second is annotated type
-    #metacontext : ArrayT((ClosureT(Term))? && (ClosureT(Term))?),
-    metacontext : ArrayT((ClosureT(Term))?),
-    closure : ClosureT(Term)
-)}
 
 def getTermTag
     Unknown(tag) -> tag

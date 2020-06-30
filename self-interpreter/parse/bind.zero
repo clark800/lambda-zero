@@ -13,7 +13,7 @@ GlobalT ::= {Global(
 
 BindingT ::= {Binding(
     tag : TagT,
-    metaclosure : MetaClosureT
+    closure : ClosureT(Term)
 )}
 
 getGlobalAST(Global(ast, _, _)) := ast
@@ -21,8 +21,7 @@ getGlobalTerm(Global(_, term, _)) := term
 getGlobalConstant(Global(_, _, constant)) := constant
 
 getBindingTag(Binding(tag, _)) := tag
-getBindingMetaClosure(Binding(tag, metaclosure)) := metaclosure
-
+getBindingClosure(Binding(_, closure)) := closure
 
 def bindLocal((level, table), tag)
     maybe item := table.lookup(getTagLexeme(tag))
@@ -165,67 +164,53 @@ def bind(getBuiltin, globals, locals, node)
     match node
         case Reference(tag, debruijn)
             if debruijn = 0
-                lift bindName(getBuiltin, globals, locals, tag)
-            lift Variable(tag, debruijn)
+                bindName(getBuiltin, globals, locals, tag)
+            Variable(tag, debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
+            wildcard := Wildcard(veil(tag))
             if arrowType is Double
-                parameterTerm <- parameter.bind'(locals)
+                parameterTerm := parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
-                bodyTerm <- body.bind'(locals.pushParameter(Name(veil(tag))))
-                lift Implication(tag, parameterTerm, bodyTerm)
-
-            if arrowType is Squiggle
-                domain <- (
-                    if annotation is Just(type)
-                        type.bind'(locals)
-                    lift Wildcard(veil(tag))
-                )
-                bodyTerm <- body.bind'(locals.pushParameter(parameter))
-                lift MetaFunction(getTag(parameter), domain, bodyTerm)
+                bodyTerm := body.bind'(locals.pushParameter(Name(veil(tag))))
+                Implication(tag, parameterTerm, bodyTerm)
 
             locals' := locals.pushParameter(parameter)
-            (bodyTerm, codomain) <- (
+
+            if arrowType is Squiggle
+                domain := annotation.mapJust(bind'(locals)) ?? wildcard
+                MetaFunction(getTag(parameter), domain, body.bind'(locals'))
+
+            (bodyTerm, codomain) := (
                 if body is ColonPair(_, body', type)
-                    bodyTerm <- body'.bind'(locals')
-                    codomain <- type.bind'(locals')
-                    lift (bodyTerm, codomain)
-                bodyTerm <- body.bind'(locals')
-                lift (bodyTerm, Wildcard(veil(tag)))
+                    (body'.bind'(locals'), type.bind'(locals'))
+                (body.bind'(locals'), wildcard)
             )
             if isNil(constructorNames)
-                domain <- (
-                    if annotation is Just(type)
-                        type.bind'(locals)
-                    lift Wildcard(veil(tag))
-                )
-                lift Function(getTag(parameter), False,
-                    domain, codomain, bodyTerm)
+                domain := annotation.mapJust(bind'(locals)) ?? wildcard
+                Function(getTag(parameter), False, domain, codomain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
             if buildCaseAnnotation(tag, constructorNames, globals) is
                     Just(typeAST)
-                domain <- typeAST.bind'(locals)
-                lift CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
+                domain := typeAST.bind'(locals)
+                CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
             astSyntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
-            leftTerm <- left.bind'(locals)
-            rightTerm <- right.bind'(locals)
-            lift Application(tag, leftTerm, rightTerm)
+            Application(tag, left.bind'(locals), right.bind'(locals))
         case Let(tag, isTypeConstructor, name, value, scope)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
             domain := Wildcard(veil(tag))
             codomain := Wildcard(veil(tag))
-            valueTerm <- value.bind'(locals)
-            locals' := locals.pushParameter(name)
-            body <- scope.bind'(locals')
+            valueTerm := value.bind'(locals)
+            body := scope.bind'(locals.pushParameter(name))
             abstraction := Function(getTag(name), False, domain, codomain, body)
-            lift Application(tag, abstraction, valueTerm)
+            Application(tag, abstraction, valueTerm)
         case Number(tag, value)
-            lift Numeral(tag, getNaturalType(globals), value)
+            Numeral(tag, getNaturalType(globals), value)
         case Definition(_, _, _, _)
             astSyntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)
@@ -237,39 +222,34 @@ def bind(getBuiltin, globals, locals, node)
         case SetBuilder(_, _)
             astSyntaxError("must appear on the right side of '::='", node)
         case ADT(tag, parameters, objectType, signatures)
-            parameterTerms <- parameters.mapState(bind'(locals))
-            objectTerm <- objectType.bind'(locals)
-            signatureTerms <- signatures.mapState(bind'(locals))
-            lift Construction(tag, parameterTerms, objectTerm, signatureTerms)
+            parameterTerms := parameters.map(bind'(locals))
+            objectTerm := objectType.bind'(locals)
+            signatureTerms := signatures.map(bind'(locals))
+            Construction(tag, parameterTerms, objectTerm, signatureTerms)
         case Constructor(tag, type, adtType, function, count, index)
-            type' <- type.bind'(locals)
+            type' := type.bind'(locals)
             if function is Number(_, value)
-                lift Numeral(tag, type', value)
-            functionTerm <- function.bind'(locals)
-            lift Element(tag, type', functionTerm)
-        case TypedNode(tag, typeAST, node)
-            type <- typeAST.bind'(locals)
-            term <- node.bind'(locals)
-            lift Element(tag, type, term)
+                Numeral(tag, type', value)
+            Element(tag, type', function.bind'(locals))
+        case TypedNode(tag, type, node)
+            Element(tag, type.bind'(locals), node.bind'(locals))
 
 
 def bindGlobal(getBuiltin, globals, node)
     locals := (0, newDictionary([]))
-    metacontext := newArray([])
-    bind(getBuiltin, globals, locals, node, metacontext)
+    bind(getBuiltin, globals, locals, node)
 
 
 def bindDefinition(getBuiltin, state, (tag, node))
     (bindings, globals, environment) := state
-    (term, metacontext) := bindGlobal(getBuiltin, globals, node)
+    term := bindGlobal(getBuiltin, globals, node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, globals, tag, term) ?? term
     closure := Closure(definiens, environment)
     (index, environment') := environment.append(closure)
     global := Global(node, definiens, Constant(tag, index))
     globals' := globals.insert(getTagLexeme(tag), global)
-    binding := Binding(tag, MetaClosure(metacontext, closure))
-    (binding :: bindings, globals', environment')
+    (Binding(tag, closure) :: bindings, globals', environment')
 
 
 def getDefinitions(node)
