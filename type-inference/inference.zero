@@ -139,11 +139,12 @@ def getFixScheme(tag)
     Scheme([a], (a =>> a) =>> a)
 
 
-def inferType(schemes, Binding(tag, MetaClosure(metacontext, closure)))
+def inferType(schemes, Binding(tag, closure))
     if getTagLexeme(tag) =*= "fix"
         schemes.push(getFixScheme(tag))
+    metacontext := newArray([])
     (type, metacontext') := infer(schemes, metacontext, closure)
-    schemes.push(type.generalize(metacontext', newArray([])))
+    schemes.push(type.generalize(metacontext', metacontext))
 
 
 def main(input)
