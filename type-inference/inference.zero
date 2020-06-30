@@ -57,7 +57,9 @@ def isWildcard(term)
 def unifyCodomain(codomain, bodyType, environment, metacontext)
     if isWildcard(codomain)
         (bodyType, metacontext)
-    metacontext' := unify(environment, metacontext, (codomain, bodyType))
+    metacontext' := unify(metacontext, (
+        resolve(Closure(codomain, environment)),
+        resolve(Closure(bodyType, environment))))
     if getSize(metacontext') < 0  # todo: remove this when unify returns Either
         abort("force unification errors")
     (codomain, metacontext')
@@ -69,8 +71,8 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
         (term, metacontext)
     case MetaVariable(tag, address)
         # todo: check for type in metacontext
-        if metacontext.get(address) ?? Void is Just(closure')
-            infer(schemes, metacontext, closure')
+        if metacontext.get(address) ?? Void is Just(term)
+            infer(schemes, metacontext, enclose(term))
         newMetaVariable(tag, metacontext)
     case Universe(tag, level)
         (Universe(tag, up level), metacontext)
@@ -121,8 +123,9 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
         (returnType, metacontext) := metacontext.newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
-        (returnType, unify(environment, metacontext,
-            (applicandType, functionType)))
+        (returnType, unify(metacontext,
+            (resolve(Closure(applicandType, environment)),
+             resolve(Closure(functionType, environment)))))
     case Construction(tag, parameters, objectType, signatures)
         metacontext' := signatures.cascade(m -> s ->
             second(infer(schemes, m, Closure(s, environment))), metacontext)
