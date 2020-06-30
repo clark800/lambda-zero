@@ -21,6 +21,8 @@ def isSameHead(term)
         False
     case Function(_, _, _, _, _)
         isFunction(term)
+    case MetaFunction(_, _, _)
+        isMetaFunction(term)
     case Implication(_, _, _)
         isImplication(term)
     case Application(_, _, _)
@@ -48,6 +50,7 @@ def getComponents
     Constant(_, _) -> []
     Variable(_, _) -> []
     Function(_, _, domain, codomain, body) -> [domain, codomain, body]
+    MetaFunction(_, type, body) -> [type, body]
     Implication(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
     Construction(_, parameters, _, _) -> parameters
@@ -66,6 +69,7 @@ def mapComponents(f, term)
         Variable(_, _) -> term
         Function(tag, isCase, domain, codomain, body) ->
             Function(tag, isCase, f(domain), f(codomain), f(body))
+        MetaFunction(tag, type, body) -> MetaFunction(tag, f(type), f(body))
         Implication(tag, type, body) -> Implication(tag, f(type), f(body))
         Application(tag, left, right) -> Application(tag, f(left), f(right))
         Construction(tag, parameters, type, signatures) ->

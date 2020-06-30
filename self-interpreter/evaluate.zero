@@ -25,7 +25,9 @@ def evaluate(stack, closure @ Closure(term, environment))
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
-        case Implication(tag, type, term')
+        case MetaFunction(tag, type, body)
+            if isNil(stack) then closure else enclose(Unknown(tag))
+        case Implication(tag, type, body)
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,

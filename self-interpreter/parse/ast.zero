@@ -159,7 +159,7 @@ def TypedArrow(arrowType, parameter, body)
 SimpleArrow := TypedArrow(Simple)
 LockedArrow := TypedArrow(Locked)
 DoubleArrow := TypedArrow(Double)
-ImplicitArrow := TypedArrow(Squiggle)
+MetaArrow := TypedArrow(Squiggle)
 StrictArrow(tag, constructors, body) :=
     Arrow(tag, Strict, constructors, Name(veil(tag)), Void, body)
 

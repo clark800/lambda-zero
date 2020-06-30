@@ -98,10 +98,10 @@ def getConstructorType(adtType, form)
     newReconstructorType(parameterTypes, adtType)
 
 
-def getConstructorTypeWithImplicits(adtType, form)
+def getMetaConstructorType(adtType, form)
     type := getConstructorType(adtType, form)
     parameters := getArguments(adtType)
-    parameters.fold(ImplicitArrow, type)
+    parameters.fold(MetaArrow, type)
 
 
 def getConstructorBody(name, parameters, n, j)
@@ -140,7 +140,7 @@ def newConstructorDefinition(tag, adtType, n, (form, j), scope)
     if not isPreterm(body)
         astSyntaxError("invalid constructor", name)   # force errors
     parameterTypes := parameters.map(getParameterType)
-    type := getConstructorTypeWithImplicits(adtType, form)
+    type := getMetaConstructorType(adtType, form)
     constructor := Constructor(getTag(name), type, adtType, body, n, j + 1)
     applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
 
@@ -156,12 +156,12 @@ def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
     # todo: change name from "r" so it can't clash with user's names
     returnType := FixedName(tag, "r")
     reconstructorType := newReconstructorType(parameterTypeASTs, returnType)
-    syntax(>->) := syntax(++)
-    (>->) := DoubleArrow
-    fallbackType := adtTypeAST >-> returnType
-    typeAST := reconstructorType >-> fallbackType >-> adtTypeAST >-> returnType
+    syntax(=>>) := syntax(++)
+    (=>>) := DoubleArrow
+    fallbackType := adtTypeAST =>> returnType
+    typeAST := reconstructorType =>> fallbackType =>> adtTypeAST =>> returnType
     parameters := getArguments(adtTypeAST)
-    ImplicitArrow(returnType, parameters.fold(ImplicitArrow, typeAST))
+    MetaArrow(returnType, parameters.fold(MetaArrow, typeAST))
 
 
 def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
@@ -193,7 +193,7 @@ def newADT(tag, adtType, parameters, forms)
     annotations := forms.map(getArguments).map(map(getParameterType))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))
     bodyType := argumentTypes.fold(DoubleArrow, returnType)
-    objectType := ImplicitArrow(returnType, bodyType)
+    objectType := MetaArrow(returnType, bodyType)
     signatures := forms.map(getConstructorType(adtType))
     ADT(tag, parameters, objectType, signatures)
 

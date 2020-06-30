@@ -23,19 +23,27 @@ def instantiate(tag, metacontext, scheme)
     (type.setLocation(tag), metacontext')
 
 
+def convertToScheme(term, metacontext)
+    # note: term must be closed
+    if term is MetaFunction(tag, type, body)
+        (metavariable, metacontext') := newMetaVariable(tag, metacontext)
+        body' := resolve(Closure(body, newArray([enclose(metavariable)])))
+        (Scheme(universals, term), metacontext'') :=
+            convertToScheme(body', metacontext')
+        (Scheme(metavariable :: universals, term), metacontext'')
+    (Scheme([], term), metacontext)
+
+
+def peelMetaFunctions(term, metacontext)
+    convertToScheme(term, metacontext).mapFirst(getType)
+
+
 def getParameterScheme(tag, isCase, domain, metacontext)
     if isCase
-        if getTerm(domain) is Construction(_, _, type, _)
-            # we have to be careful to not resolve type until after we
-            # rename it or we'll get a collision with the metavariable
-            # for the return type in type.
-            scheme := Scheme(type.getFreeVariables(newArray([])), type)
-            (scheme', metacontext') := renameScheme(scheme, metacontext)
-            _ @ Scheme(universals, type') := scheme'
-            type'' := resolve(Closure(type', getEnvironment(domain)))
-            (Scheme(universals, type''), metacontext')
+        if domain is Construction(_, _, type, _)
+            convertToScheme(type, metacontext)
         throwError("expected construction in case annotation", tag)
-    (Scheme([], resolve(domain)), metacontext)
+    (Scheme([], domain), metacontext)
 
 
 def unifyCodomain(codomain, bodyType, environment, metacontext)
@@ -68,15 +76,26 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
             throwError("unbound variable", tag)
         scheme.instantiate(tag, metacontext)
     case Function(tag, isCase, domain, codomain, body)
-        domain' := evaluateClosure(Closure(domain, environment))
+        # we have to resolve to a closed term before calling peelMetaFunctions
+        domain := resolve(evaluateClosure(Closure(domain, environment)))
+        (domain, metacontext) := peelMetaFunctions(domain, metacontext)
+        domain := resolve(evaluateClosure(Closure(domain, environment)))
+        (domain, metacontext) := if isWildcard(domain) then
+            newMetaVariable(tag, metacontext) else (domain, metacontext)
         (scheme, metacontext) :=
-            getParameterScheme(tag, isCase, domain', metacontext)
+            getParameterScheme(tag, isCase, domain, metacontext)
         schemes' := schemes.push(scheme)
         bodyClosure := Closure(body, pushUnknown(tag, environment))
         (bodyType, metacontext) := infer(schemes', metacontext, bodyClosure)
         (codomain, metacontext) :=
             unifyCodomain(codomain, bodyType, environment, metacontext)
         (Implication(tag, domain, codomain), metacontext)
+    case MetaFunction(tag, type, body)
+        type' := resolve(evaluateClosure(Closure(type, environment)))
+        schemes' := schemes.push(Scheme([], type'))
+        (metavariable, metacontext') := newMetaVariable(tag, metacontext)
+        bodyClosure := Closure(body, environment.push(enclose(metavariable)))
+        infer(schemes', metacontext', bodyClosure)
     case Implication(tag, type, body)
         type' := resolve(evaluateClosure(Closure(type, environment)))
         schemes' := schemes.push(Scheme([], type'))
@@ -105,7 +124,8 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
             second(infer(schemes, m, Closure(s, environment))), metacontext)
         (Universe(tag, 1), metacontext')
     case Element(tag, type, term)
-        (type, metacontext)
+        # type should always be a closed term, so this should be safe
+        peelMetaFunctions(type, metacontext)
     case Numeral(tag, type, value)
         (type, metacontext)
     case Operation(tag, type, _, _)
@@ -113,10 +133,10 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
 
 
 def getFixScheme(tag)
-    syntax(>->) := syntax(++)
-    (>->) := Implication(tag)
+    syntax(=>>) := syntax(++)
+    (=>>) := Implication(tag)
     a := MetaVariable(veil(tag), 0)
-    Scheme([a], (a >-> a) >-> a)
+    Scheme([a], (a =>> a) =>> a)
 
 
 def inferType(schemes, Binding(tag, MetaClosure(metacontext, closure)))
