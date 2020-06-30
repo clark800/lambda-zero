@@ -3,8 +3,6 @@
 def isSameHead(term)
     case Unknown(_)
         False
-    case Wildcard(_)
-        False
     case MetaVariable(_, address)
         if term is MetaVariable(_, address')
             address = address'
@@ -44,7 +42,6 @@ def isSameHead(term)
 
 def getComponents
     Unknown(_) -> []
-    Wildcard(_) -> []
     MetaVariable(_, _) -> []
     Universe(_, _) -> []
     Constant(_, _) -> []
@@ -62,7 +59,6 @@ def getComponents
 def mapComponents(f, term)
     match term
         Unknown(_) -> term
-        Wildcard(_) -> term
         MetaVariable(_, _) -> term
         Universe(_, _) -> term
         Constant(_, _) -> term

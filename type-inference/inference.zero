@@ -46,6 +46,14 @@ def getParameterScheme(tag, isCase, domain, metacontext)
     (Scheme([], domain), metacontext)
 
 
+def isWildcard(term)
+    if term is MetaFunction(_, _, body)
+        if body is Variable(_, index)
+            index = 1
+        False
+    False
+
+
 def unifyCodomain(codomain, bodyType, environment, metacontext)
     if isWildcard(codomain)
         (bodyType, metacontext)
@@ -58,8 +66,6 @@ def unifyCodomain(codomain, bodyType, environment, metacontext)
 def infer(schemes, metacontext, closure @ Closure(term, environment))
     match term
     case Unknown(tag)
-        (term, metacontext)
-    case Wildcard(tag)
         (term, metacontext)
     case MetaVariable(tag, address)
         # todo: check for type in metacontext
@@ -80,8 +86,6 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
         domain := resolve(evaluateClosure(Closure(domain, environment)))
         (domain, metacontext) := peelMetaFunctions(domain, metacontext)
         domain := resolve(evaluateClosure(Closure(domain, environment)))
-        (domain, metacontext) := if isWildcard(domain) then
-            newMetaVariable(tag, metacontext) else (domain, metacontext)
         (scheme, metacontext) :=
             getParameterScheme(tag, isCase, domain, metacontext)
         schemes' := schemes.push(scheme)
@@ -101,7 +105,7 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
         schemes' := schemes.push(Scheme([], type'))
         bodyClosure := Closure(body, pushUnknown(tag, environment))
         (_, metacontext') := infer(schemes', metacontext, bodyClosure)
-        (Universe(tag, 1), metacontext')
+        (Universe(tag, 0), metacontext')
     case Application(tag, applicand, argument)
         argument' := Closure(argument, environment)
         applicand' := Closure(applicand, environment)
@@ -122,14 +126,15 @@ def infer(schemes, metacontext, closure @ Closure(term, environment))
     case Construction(tag, parameters, objectType, signatures)
         metacontext' := signatures.cascade(m -> s ->
             second(infer(schemes, m, Closure(s, environment))), metacontext)
-        (Universe(tag, 1), metacontext')
+        (Universe(tag, 0), metacontext')
     case Element(tag, type, term)
         # type should always be a closed term, so this should be safe
         peelMetaFunctions(type, metacontext)
     case Numeral(tag, type, value)
         (type, metacontext)
     case Operation(tag, type, _, _)
-        (type, metacontext)
+        # type should always be a closed term, so this should be safe
+        peelMetaFunctions(type, metacontext)
 
 
 def getFixScheme(tag)

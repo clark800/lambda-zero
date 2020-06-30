@@ -48,8 +48,6 @@ def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
 
     if isUnknown(left) or isUnknown(right)
         fail(metacontext, (left, right))
-    if isWildcard(left) or isWildcard(right)
-        metacontext
     if left is MetaFunction(tag, type, body)
         (metavariable, metacontext') := newMetaVariable(tag, metacontext)
         closure' := Closure(body, leftEnvironment.push(enclose(metavariable)))
