@@ -68,7 +68,9 @@ def unify'(fail, metacontext, (left, right))
     fail(metacontext, (left, right))
 
 
-def unify(metacontext, types)
-    unify'(unifyFailure(types), metacontext, types)
+def unify(left, right, metacontext)
+    types := (left, right)
+    metacontext' := unify'(unifyFailure(types), metacontext, types)
+    ((), metacontext')
 
 #*

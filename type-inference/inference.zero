@@ -18,32 +18,32 @@ def generalize(metacontext, oldMetacontext, type)
     Scheme(universals, type')
 
 
-def instantiate(tag, metacontext, scheme)
-    (Scheme(_, type), metacontext') := renameScheme(scheme, metacontext)
-    (type.setLocation(tag), metacontext')
+def instantiate(tag, scheme)
+    Scheme(_, type) <- renameScheme(scheme)
+    lift type.setLocation(tag)
 
 
-def convertToScheme(term, metacontext)
+def convertToScheme(term)
     # note: term must be closed
     if term is MetaFunction(tag, type, body)
-        (metavariable, metacontext') := newMetaVariable(tag, metacontext)
+        metavariable <- newMetaVariable(tag)
         body' := resolve(Closure(body, newArray([enclose(metavariable)])))
-        (Scheme(universals, term), metacontext'') :=
-            convertToScheme(body', metacontext')
-        (Scheme(metavariable :: universals, term), metacontext'')
-    (Scheme([], term), metacontext)
+        Scheme(universals, term) <- convertToScheme(body')
+        lift Scheme(metavariable :: universals, term)
+    lift Scheme([], term)
 
 
-def peelMetaFunctions(term, metacontext)
-    convertToScheme(term, metacontext).mapFirst(getType)
+def peelMetaFunctions(term)
+    Scheme(_, term) <- convertToScheme(term)
+    lift term
 
 
-def getParameterScheme(tag, isCase, domain, metacontext)
+def getParameterScheme(tag, isCase, domain)
     if isCase
         if domain is Construction(_, _, type, _)
-            convertToScheme(type, metacontext)
+            convertToScheme(type)
         throwError("expected construction in case annotation", tag)
-    (Scheme([], domain), metacontext)
+    lift Scheme([], domain)
 
 
 def isWildcard(term)
@@ -54,88 +54,88 @@ def isWildcard(term)
     False
 
 
-def unifyCodomain(codomain, bodyType, environment, metacontext)
+def unifyCodomain(codomain, bodyType, environment)
     if isWildcard(codomain)
-        (bodyType, metacontext)
-    metacontext' := unify(metacontext, (
-        resolve(Closure(codomain, environment)),
-        resolve(Closure(bodyType, environment))))
-    if getSize(metacontext') < 0  # todo: remove this when unify returns Either
+        lift bodyType
+    _ <- unify(resolve(Closure(codomain, environment)),
+              resolve(Closure(bodyType, environment)))
+    metacontext <- getState
+    if getSize(metacontext) < 0  # todo: remove this when unify returns Either
         abort("force unification errors")
-    (codomain, metacontext')
+    lift codomain
 
 
 def pushContext(scheme, term, context @ (environment, schemes))
     (environment.push(Closure(term, environment)), schemes.push(scheme))
 
 
-def infer(context @ (environment, schemes), metacontext)
+def infer(context @ (environment, schemes))
     case Unknown(tag)
-        (Unknown(tag), metacontext)
+        lift Unknown(tag)
     case MetaVariable(tag, address)
         # todo: check for type in metacontext
+        metacontext <- getState
         if metacontext.get(address) ?? Void is Just(term)
-            term.infer(context, metacontext)
-        newMetaVariable(tag, metacontext)
+            term.infer(context)
+        newMetaVariable(tag)
     case Universe(tag, level)
-        (Universe(tag, up level), metacontext)
+        lift Universe(tag, up level)
     case Constant(tag, index)
         scheme := schemes.get(index) ?? throwError("unbound constant", tag)
-        scheme.instantiate(tag, metacontext)
+        scheme.instantiate(tag)
     case Variable(tag, index)
         scheme := schemes.peek(index -- 1) ??
             throwError("unbound variable", tag)
-        scheme.instantiate(tag, metacontext)
+        scheme.instantiate(tag)
     case Function(tag, isCase, domain, codomain, body)
         # we have to resolve to a closed term before calling peelMetaFunctions
         domain := resolve(evaluateClosure(Closure(domain, environment)))
-        (domain, metacontext) := peelMetaFunctions(domain, metacontext)
+        domain <- peelMetaFunctions(domain)
         domain := resolve(evaluateClosure(Closure(domain, environment)))
-        (scheme, metacontext) :=
-            getParameterScheme(tag, isCase, domain, metacontext)
+        scheme <- getParameterScheme(tag, isCase, domain)
         context' := context.pushContext(scheme, Unknown(tag))
-        (bodyType, metacontext) := body.infer(context', metacontext)
-        (codomain, metacontext) :=
-            unifyCodomain(codomain, bodyType, environment, metacontext)
-        (Implication(tag, domain, codomain), metacontext)
+        bodyType <- body.infer(context')
+        codomain <- unifyCodomain(codomain, bodyType, environment)
+        lift Implication(tag, domain, codomain)
     case MetaFunction(tag, type, body)
         type' := resolve(evaluateClosure(Closure(type, environment)))
-        (metavariable, metacontext') := newMetaVariable(tag, metacontext)
+        metavariable <- newMetaVariable(tag)
         context' := context.pushContext(Scheme([], type'), metavariable)
-        body.infer(context', metacontext')
+        body.infer(context')
     case Implication(tag, type, body)
         type' := resolve(evaluateClosure(Closure(type, environment)))
         context' := context.pushContext(Scheme([], type'), Unknown(tag))
-        (_, metacontext') := body.infer(context', metacontext)
-        (Universe(tag, 0), metacontext')
+        _ <- body.infer(context')
+        lift Universe(tag, 0)
     case Application(tag, applicand, argument)
-        (argumentType, metacontext') := argument.infer(context, metacontext)
+        metacontext <- getState
+        argumentType <- argument.infer(context)
         if applicand is Function(_, isCase, domain, codomain, body)
             if not isCase and isMetaVariable(domain)
                 # suppport polymorphism in nested functions
+                metacontext' <- getState
                 scheme := argumentType.generalize(metacontext', metacontext)
                 context' := context.pushContext(scheme, argument)
-                body.infer(context', metacontext')
+                body.infer(context')
             pass
-        (applicandType, metacontext) := applicand.infer(context, metacontext')
-        (returnType, metacontext) := metacontext.newMetaVariable(tag)
+        applicandType <- applicand.infer(context)
+        returnType <- newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
-        (returnType, unify(metacontext,
-            (resolve(Closure(applicandType, environment)),
-             resolve(Closure(functionType, environment)))))
+        _ <- unify(resolve(Closure(applicandType, environment)),
+                  resolve(Closure(functionType, environment)))
+        lift returnType
     case Construction(tag, parameters, objectType, signatures)
-        metacontext' := signatures.cascade(m -> s ->
-            second(s.infer(context, m)), metacontext)
-        (Universe(tag, 0), metacontext')
+        _ <- signatures.mapState(infer(context))
+        lift Universe(tag, 0)
     case Element(tag, type, term)
         # type should always be a closed term, so this should be safe
-        peelMetaFunctions(type, metacontext)
+        peelMetaFunctions(type)
     case Numeral(tag, type, value)
-        (type, metacontext)
+        lift type
     case Operation(tag, type, _, _)
         # type should always be a closed term, so this should be safe
-        peelMetaFunctions(type, metacontext)
+        peelMetaFunctions(type)
 
 
 def getFixScheme(tag)
@@ -155,7 +155,7 @@ def inferType(schemes, Binding(tag, closure @ Closure(term, environment)))
         schemes.push(getFixScheme(tag))
     metacontext := newArray([])
     context := (environment, schemes)
-    (type, metacontext') := term.infer(context, metacontext)
+    (type, metacontext') := infer(context, term, metacontext)
     type' := normalize(resolve(Closure(type, environment)))
     schemes.push(type'.generalize(metacontext', metacontext))
 
