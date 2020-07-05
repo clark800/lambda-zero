@@ -50,63 +50,18 @@ def findType(lexeme, globals)
     Void
 
 
-def getNaturalType(globals)
-    globals.findType("0") ?? Variable(renameTag(noTag, "#NATURAL#", NOFIX), 0)
-
-
-def getBooleanType(globals)
-    globals.findType("False") ??
-        Variable(renameTag(noTag, "#BOOLEAN#", NOFIX), 0)
-
-
-def getStringType(globals, tag)
-    natural := getNaturalType(globals)
-    listType := globals.findType("[]") ?? syntaxError("List not defined", tag)
-    if listType is MetaFunction(_, _, listApplication)
-        if listApplication is Application(_, listTypeConstructor, _)
-            Application(noTag, listTypeConstructor, natural)
-        pass
-    syntaxError("List type invalid: " ++ showTerm(listType), tag)
-
-
-def getOperationType(globals, tag)
-    lexeme := getTagLexeme(tag)
-    syntax(=>>) := syntax(++)
-    (=>>) := Implication(noTag)
-    if ["+", "--", "*", "//", "%"].any((=*= lexeme))
-        natural := getNaturalType(globals)
-        Just(natural =>> natural =>> natural)
-    if ["=", "=/=", "<", ">", "<=", ">="].any((=*= lexeme))
-        natural := getNaturalType(globals)
-        boolean := getBooleanType(globals)
-        Just(natural =>> natural =>> boolean)
-    if lexeme =*= "up"
-        natural := getNaturalType(globals)
-        Just(natural =>> natural)
-    if lexeme =*= "abort"
-        stringType := getStringType(globals, tag)
-        tag' := veil(tag)
-        type := stringType =>> Variable(tag', 2)
-        Just(MetaFunction(tag', Universe(tag', 0), type))
-    Void
+def getNaturalType(tag, globals)
+    globals.findType("0") ??
+        syntaxError("must define 0 before using numerals", tag)
 
 
 def bindOperation(getBuiltin, globals, tag, term)
     maybe (arity, operator) := getBuiltin(tag)
-    maybe type := getOperationType(globals, tag)
-    Just(Operation(tag, type, term, Optimization(arity, operator)))
+    Just(Operation(tag, term, Optimization(arity, operator)))
 
 
 def bindGlobal(globals, tag)
     globals.lookup(getTagLexeme(tag)).mapJust(getGlobalConstant)
-
-
-def bindPseudoOperation(getBuiltin, globals, tag)
-    if getTagLexeme(tag) =*= "abort"
-        # the abort operation never returns, so the fallback term will never
-        # be used and we can just let it be Unknown
-        bindOperation(getBuiltin, globals, tag, Unknown(tag))
-    Void
 
 
 def bindName(getBuiltin, globals, locals, tag)
@@ -114,7 +69,6 @@ def bindName(getBuiltin, globals, locals, tag)
         syntaxError("cannot reference a symbol starting with underscore", tag)
     bindLocal(locals, tag) ??
         bindGlobal(globals, tag) ??
-        bindPseudoOperation(getBuiltin, globals, tag) ??
         syntaxError("undefined symbol", tag)
 
 
@@ -214,7 +168,7 @@ def bind(getBuiltin, globals, locals, node)
                 wildcard, wildcard, body)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
-            Numeral(tag, getNaturalType(globals), value)
+            Numeral(tag, getNaturalType(tag, globals), value)
         case Definition(_, _, _, _)
             astSyntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)

@@ -34,8 +34,8 @@ def isSameHead(term)
         if term is Numeral(_, _, value')
             value = value'
         False
-    case Operation(tag, _, _, _)
-        if term is Operation(tag', _, _, _)
+    case Operation(tag, _, _)
+        if term is Operation(tag', _, _)
             getTagLexeme(tag) =*= getTagLexeme(tag')
         False
 
@@ -53,7 +53,7 @@ def getComponents
     Construction(_, parameters, _, _) -> parameters
     Element(_, type, term) -> [type, term]
     Numeral(_, _, _) -> []
-    Operation(_, _, _, _) -> []
+    Operation(_, _, _) -> []
 
 
 def mapComponents(f, term)
@@ -72,6 +72,6 @@ def mapComponents(f, term)
             Construction(tag, parameters.map(f), type, signatures)
         Element(tag, type, term) -> Element(tag, f(type), f(term))
         Numeral(_, _, _) -> term
-        Operation(_, _, _, _) -> term
+        Operation(_, _, _) -> term
 
 #*

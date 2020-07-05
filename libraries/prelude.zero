@@ -101,6 +101,8 @@ prepend ≔ (∷)
 isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
 cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
+abort(message : List(ℕ)) := abort(message)
+
 xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
 length(xs) ≔ xs.fold(const((↑)), 0)
