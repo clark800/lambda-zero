@@ -1,41 +1,41 @@
 #* substitute.zero
 
-def getFreeVariables(metacontext, type)
-    if type is MetaVariable(_, address)
-        if metacontext.get(address) ?? Void is Just(closure)
-            getFreeVariables(metacontext, resolve(closure))
-        [type]
-    join(getComponents(type).map(getFreeVariables(metacontext))).
+def getFreeVariables(metacontext, term)
+    if term is MetaVariable(_, address)
+        if metacontext.get(address) ?? Void is Just(term)
+            getFreeVariables(metacontext, term)
+        [term]
+    join(getComponents(term).map(getFreeVariables(metacontext))).
         deduplicateBy(isSameHead)
 
 
-def showMaybeClosure(maybeClosure)
-    if maybeClosure is Just(Closure(type, _))
-        showTerm(type)
+def showMaybeTerm(maybeTerm)
+    if maybeTerm is Just(term)
+        showTerm(term)
     "Free"
 
 
 def showMetacontext(metacontext)
-    zip(0 ..., metacontext.toList).map((address, maybeClosure) ->
+    zip(0 ..., metacontext.toList).map((address, maybeTerm) ->
         showMetaVariable(address) ++ " := " ++
-        showMaybeClosure(maybeClosure)).joinWith("\n")
+        showMaybeTerm(maybeTerm)).joinWith("\n")
 
 
-def recursionError(type, type', metacontext)
-    abort("Type error: recursive type at " ++
-        showTermLocation(type) ++ " and " ++ showTermLocation(type') ++
-        ":\n" ++ showTerm(type) ++ " = " ++ showTerm(type') ++ "\n\n" ++
+def recursionError(term, term', metacontext)
+    abort("Type error: recursion at " ++
+        showTermLocation(term) ++ " and " ++ showTermLocation(term') ++
+        ":\n" ++ showTerm(term) ++ " = " ++ showTerm(term') ++ "\n\n" ++
         showMetacontext(metacontext))
 
 
-def substitute(metacontext, type)
-    if type is MetaVariable(tag, address)
-        if metacontext.get(address) ?? Void is Just(closure)
-            type' := resolve(closure).setLocation(tag)
-            if type'.getFreeVariables(newArray([])).any(isSameHead(type))
-                recursionError(type, type', metacontext)
-            type'.substitute(metacontext)
-        type
-    type.mapComponents(substitute(metacontext))
+def substitute(metacontext, term)
+    if term is MetaVariable(tag, address)
+        if metacontext.get(address) ?? Void is Just(term')
+            term' := term'.setLocation(tag)
+            if term'.getFreeVariables(newArray([])).any(isSameHead(term))
+                recursionError(term, term', metacontext)
+            term'.substitute(metacontext)
+        term
+    term.mapComponents(substitute(metacontext))
 
 #*

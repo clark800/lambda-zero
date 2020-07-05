@@ -22,58 +22,53 @@ def isFree(metavariable, metacontext)
 
 def getValue(type, metacontext)
     if type is MetaVariable(_, address)
-        if metacontext.get(address) ?? Void is Just(closure)
-            closure
+        if metacontext.get(address) ?? Void is Just(term)
+            term
         pass
     throwError("internal error", getTermTag(type))
 
 
-def getComponentClosures(Closure(term, environment))
-    # TODO: right side of binders need an extra item in the environment
-    getComponents(term).map(`Closure(environment))
+def substituteAndEvaluate(metacontext, term)
+    resolve(evaluateClosure(enclose(substitute(metacontext, term))))
 
 
-def substituteAndEvaluate(metacontext, Closure(term, environment))
-    evaluateClosure(Closure(substitute(metacontext, term), environment))
+def insertMetaVariable(term, metacontext)
+    tag := getTermTag(term)
+    (metavariable, metacontext') := newMetaVariable(tag, metacontext)
+    closure' := Closure(term, newArray([enclose(metavariable)]))
+    (resolve(closure'), metacontext')
 
 
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
-def unify'(fail, metacontext, (leftClosureRaw, rightClosureRaw))
-    leftClosure := substituteAndEvaluate(metacontext, leftClosureRaw)
-    rightClosure := substituteAndEvaluate(metacontext, rightClosureRaw)
-    _ @ Closure(left, leftEnvironment) := leftClosure
-    _ @ Closure(right, rightEnvironment) := rightClosure
+def unify'(fail, metacontext, (left, right))
+    left := substituteAndEvaluate(metacontext, left)
+    right := substituteAndEvaluate(metacontext, right)
 
     if isUnknown(left) or isUnknown(right)
         fail(metacontext, (left, right))
     if left is MetaFunction(tag, type, body)
-        (metavariable, metacontext') := newMetaVariable(tag, metacontext)
-        closure' := Closure(body, leftEnvironment.push(enclose(metavariable)))
-        unify'(fail, metacontext', (closure', rightClosure))
+        (left', metacontext') := insertMetaVariable(body, metacontext)
+        unify'(fail, metacontext', (left', right))
     if right is MetaFunction(tag, type, body)
-        (metavariable, metacontext') := newMetaVariable(tag, metacontext)
-        closure' := Closure(body, rightEnvironment.push(enclose(metavariable)))
-        unify'(fail, metacontext', (leftClosure, closure'))
+        (right', metacontext') := insertMetaVariable(body, metacontext)
+        unify'(fail, metacontext', (left, right'))
     if isMetaVariable(left) and not isFree(left, metacontext)
-        unify'(fail, metacontext, (metacontext.getValue(left), rightClosure))
+        unify'(fail, metacontext, (metacontext.getValue(left), right))
     if isMetaVariable(right) and not isFree(right, metacontext)
-        unify'(fail, metacontext, (leftClosure, metacontext.getValue(right)))
+        unify'(fail, metacontext, (left, metacontext.getValue(right)))
     if isSameHead(left, right)
-        zip(getComponentClosures(leftClosure),
-            getComponentClosures(rightClosure)).
+        zip(getComponents(left), getComponents(right)).
             cascade(unify'(fail), metacontext)
     if left is MetaVariable(_, address)
-        metacontext.set(address, Just(rightClosure))
+        metacontext.set(address, Just(right))
     if right is MetaVariable(_, address)
-        metacontext.set(address, Just(leftClosure))
+        metacontext.set(address, Just(left))
     fail(metacontext, (left, right))
 
 
-def unify(environment, metacontext, types @ (left, right))
-    closures := (Closure(left, environment), Closure(right, environment))
-    fail := unifyFailure(types)
-    unify'(fail, metacontext, closures)
+def unify(metacontext, types)
+    unify'(unifyFailure(types), metacontext, types)
 
 #*
