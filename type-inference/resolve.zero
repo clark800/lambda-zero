@@ -41,6 +41,6 @@ def resolve(Closure(term, environment))
         Element(tag, type, term) ->
             Element(tag, resolve'(type), resolve'(term))
         Numeral(_, _, _) -> term
-        Operation(_, _, _, _) -> term
+        Operation(_, _, _) -> term
 
 #*

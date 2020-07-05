@@ -133,9 +133,8 @@ def infer(context @ (environment, schemes))
         peelMetaFunctions(type)
     case Numeral(tag, type, value)
         lift type
-    case Operation(tag, type, _, _)
-        # type should always be a closed term, so this should be safe
-        peelMetaFunctions(type)
+    case Operation(tag, term, _)
+        term.infer(context)
 
 
 def getFixScheme(tag)
