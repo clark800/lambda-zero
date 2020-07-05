@@ -144,12 +144,18 @@ def getFixScheme(tag)
     Scheme([a], (a =>> a) =>> a)
 
 
+def normalize(term)
+    # todo: evaluateTerm will return Unknown for variables inside binders
+    resolve(evaluateTerm(term)).mapComponents(normalize)
+
+
 def inferType(schemes, Binding(tag, closure))
     if getTagLexeme(tag) =*= "fix"
         schemes.push(getFixScheme(tag))
     metacontext := newArray([])
     (type, metacontext') := infer(schemes, metacontext, closure)
-    schemes.push(type.generalize(metacontext', metacontext))
+    type' := normalize(resolve(Closure(type, getEnvironment(closure))))
+    schemes.push(type'.generalize(metacontext', metacontext))
 
 
 def main(input)
