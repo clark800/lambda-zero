@@ -13,8 +13,8 @@ def resolve(Closure(term, environment))
         MetaVariable(tag, id) -> term
         Universe(tag, level) -> term
         Constant(tag, index) -> (
-            #if environment.get(index) is Just(closure)
-            #    resolve(closure)
+            if environment.get(index) is Just(closure)
+                resolve(evaluateClosure(closure))
             term
         )
         Variable(tag, index) -> (
@@ -24,7 +24,8 @@ def resolve(Closure(term, environment))
             term
         )
         Function(tag, isCase, domain, codomain, body) ->
-            Function(tag, isCase, resolve'(domain), resolve'(codomain),
+            Function(tag, isCase, resolve'(domain),
+                resolve(Closure(codomain, pushUnknown(tag, environment))),
                 resolve(Closure(body, pushUnknown(tag, environment))))
         MetaFunction(tag, type, body) ->
             MetaFunction(tag, resolve'(type),

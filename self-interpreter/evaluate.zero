@@ -47,7 +47,7 @@ def evaluateClosure(closure)
     evaluate([], closure)
 
 
-def evaluateTerm(environment, term)
-    evaluateClosure(Closure(term, environment))
+def evaluateTerm(term)
+    evaluateClosure(Closure(term, newArray([])))
 
 #*
