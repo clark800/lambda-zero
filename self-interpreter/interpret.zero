@@ -23,11 +23,18 @@ def constructString(tag, string)
     newNilTerm(veil(tag))
 
 
+def evaluateCheck(closure)
+    closure' := evaluateClosure(closure)
+    if isUnknown(getTerm(closure'))
+        runtimeError("unknown value", getTermTag(getTerm(closure')))
+    closure'
+
+
 def evaluateMain(Closure(main, environment), input)
     # todo: use tag for "input" parameter to main
     tag := getTermTag(main)
     term := Application(tag, main, constructString(tag, input))
-    serializeString(evaluateClosure, Closure(term, environment)) ??
+    serializeString(evaluateCheck, Closure(term, environment)) ??
         runtimeError("expected string from", tag)
 
 
@@ -47,7 +54,7 @@ def main(input)
         if code.startsWith("#% dump")
             tags := reverse(bindings.map(getBindingTag))
             showDefinitions(tags, environment)
-        closure := evaluateClosure(Closure(term, environment))
+        closure := evaluateCheck(Closure(term, environment))
         if isMain(getTerm(closure))
             evaluateMain(closure, input')
         serialize(closure)
