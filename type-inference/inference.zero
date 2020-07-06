@@ -49,7 +49,9 @@ def getParameterScheme(tag, isCase, domain)
 def isWildcard(term)
     if term is MetaFunction(_, _, body)
         if body is Variable(_, index)
-            index = 1
+            if index is -_ n
+                n = 1
+            False
         False
     False
 
@@ -80,12 +82,8 @@ def infer(context @ (environment, schemes))
         newMetaVariable(tag)
     case Universe(tag, level)
         lift Universe(tag, up level)
-    case Constant(tag, index)
-        scheme := schemes.get(index) ?? throwError("unbound constant", tag)
-        scheme.instantiate(tag)
     case Variable(tag, index)
-        scheme := schemes.peek(index -- 1) ??
-            throwError("unbound variable", tag)
+        scheme := schemes.seek(index) ?? throwError("unbound variable", tag)
         scheme.instantiate(tag)
     case Function(tag, isCase, domain, codomain, body)
         # we have to resolve to a closed term before calling peelMetaFunctions

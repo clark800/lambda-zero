@@ -9,14 +9,16 @@ def serialize(closure)
                 showTag(tag)
             case Universe(tag, level)
                 "⊤" ++ showSubscript(level)
-            case Constant(tag, _)
-                showTag(tag)
             case Variable(tag, index)
-                if index <= depth
-                    showTag(tag)
-                if environment.peek(index -- depth -- 1) is Just(closure)
-                    serialize'(closure, 0)
-                showTag(tag)
+                match index
+                    case +_ n
+                        showTag(tag)
+                    case -_ n
+                        if n <= depth
+                            showTag(tag)
+                        if environment.peek(n -- depth -- 1) is Just(closure)
+                            serialize'(closure, 0)
+                        showTag(tag)
             case Function(tag, _, _, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
@@ -48,7 +50,9 @@ def serialize(closure)
 
 def maybeDebruijnIndex(term)
     if term is Variable(_, index)
-        Just(index)
+        if index is -_ n
+            Just(n)
+        Void
     Void
 
 

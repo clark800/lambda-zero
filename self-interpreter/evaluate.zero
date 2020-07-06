@@ -2,8 +2,8 @@
 
 def expandNumeral(tag, type, n)
     FreeFunction(tag, FreeFunction(tag,
-            n |> 0 -> Variable(tag, 2); up n' ->
-                Application(tag, Variable(tag, 1), Numeral(tag, type, n'))))
+            n |> 0 -> Variable(tag, -_ 2); up n' ->
+                Application(tag, Variable(tag, -_ 1), Numeral(tag, type, n'))))
 
 
 def evaluate(stack, closure @ Closure(term, environment))
@@ -14,11 +14,8 @@ def evaluate(stack, closure @ Closure(term, environment))
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Universe(tag, level)
             if isNil(stack) then closure else enclose(Unknown(tag))
-        case Constant(tag, index)
-            evaluate(stack, environment.get(index) ?? enclose(Unknown(tag)))
         case Variable(tag, index)
-            evaluate(stack, environment.peek(index -- 1) ??
-                enclose(Unknown(tag)))
+            evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
         case Function(tag, isCase, domain, codomain, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))

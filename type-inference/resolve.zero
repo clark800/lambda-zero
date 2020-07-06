@@ -12,13 +12,8 @@ def resolve(Closure(term, environment))
         Unknown(tag) -> term
         MetaVariable(tag, id) -> term
         Universe(tag, level) -> term
-        Constant(tag, index) -> (
-            if environment.get(index) is Just(closure)
-                resolve(evaluateClosure(closure))
-            term
-        )
         Variable(tag, index) -> (
-            if environment.peek(index -- 1) is Just(closure)
+            if environment.seek(index) is Just(closure)
                 if isUnknown(getTerm(closure)) then term else
                     resolve(evaluateClosure(closure))
             term
