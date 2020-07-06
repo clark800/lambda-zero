@@ -11,10 +11,6 @@ def isSameHead(term)
         if term is Universe(_, level')
             level = level'
         False
-    case Constant(_, index)
-        if term is Constant(_, index')
-            index = index'
-        False
     case Variable(tag, _)
         False
     case Function(_, _, _, _, _)
@@ -44,7 +40,6 @@ def getComponents
     Unknown(_) -> []
     MetaVariable(_, _) -> []
     Universe(_, _) -> []
-    Constant(_, _) -> []
     Variable(_, _) -> []
     Function(_, _, domain, codomain, body) -> [domain, codomain, body]
     MetaFunction(_, type, body) -> [type, body]
@@ -61,7 +56,6 @@ def mapComponents(f, term)
         Unknown(_) -> term
         MetaVariable(_, _) -> term
         Universe(_, _) -> term
-        Constant(_, _) -> term
         Variable(_, _) -> term
         Function(tag, isCase, domain, codomain, body) ->
             Function(tag, isCase, f(domain), f(codomain), f(body))

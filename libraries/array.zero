@@ -14,4 +14,8 @@ Array(size, data).push(value) := Array(up size, data.pushRAL(value))
 Array(size, data).pop := Array(down size, data.popRAL)
 Array(size, data).peek(n) := data.getRAL(n)
 
+def seek(index, array)
+    match index
+        +_ n -> array.get(n)
+        -_ n -> if n = 0 then array.get(n) else array.peek(n -- 1)
 #*

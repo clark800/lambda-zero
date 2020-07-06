@@ -27,7 +27,7 @@ def bindLocal((level, table), tag)
     maybe item := table.lookup(getTagLexeme(tag))
     match item
         case Parameter(level')
-            Just(Variable(tag, level -- level'))
+            Just(Variable(tag, -_(level -- level')))
         case Inline(term)
             Just(term)
 
@@ -121,11 +121,10 @@ def bind(getBuiltin, globals, locals, node)
         case Reference(tag, debruijn)
             if debruijn = 0
                 bindName(getBuiltin, globals, locals, tag)
-            Variable(tag, debruijn)
+            Variable(tag, -_ debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
-            tag' := veil(tag)
-            wildcard := MetaFunction(tag', Universe(tag', 0), Variable(tag', 1))
+            wildcard := Wildcard(veil(tag))
             if arrowType is Double
                 parameterTerm := parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
@@ -160,8 +159,7 @@ def bind(getBuiltin, globals, locals, node)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            tag' := veil(tag)
-            wildcard := MetaFunction(tag', Universe(tag', 0), Variable(tag', 1))
+            wildcard := Wildcard(veil(tag))
             valueTerm := value.bind'(locals)
             body := scope.bind'(locals.pushParameter(name))
             abstraction := Function(getTag(name), False,
@@ -205,7 +203,7 @@ def bindDefinition(getBuiltin, state, (tag, node))
     definiens := bindOperation(getBuiltin, globals, tag, term) ?? term
     closure := Closure(definiens, environment)
     (index, environment') := environment.append(closure)
-    global := Global(node, definiens, Constant(tag, index))
+    global := Global(node, definiens, Variable(tag, +_ index))
     globals' := globals.insert(getTagLexeme(tag), global)
     (Binding(tag, closure) :: bindings, globals', environment')
 

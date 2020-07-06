@@ -20,8 +20,7 @@ Term ::= {
     Unknown(tag : TagT),
     MetaVariable(tag : TagT, id : ℕ),
     Universe(tag : TagT, level : ℕ),
-    Constant(tag : TagT, index : ℕ),
-    Variable(tag : TagT, index : ℕ),
+    Variable(tag : TagT, index : ℤ),
     Function(tag : TagT, isCase : 𝔹,
         domain : Term, codomain : Term, body : Term),
     MetaFunction(tag : TagT, type : Term, body : Term),
@@ -31,7 +30,7 @@ Term ::= {
         signatures : List(Term)),
     Element(tag : TagT, type : Term, term : Term),
     Numeral(tag : TagT, type : Term, value : ℕ),
-    Operation(tag : TagT, term : Term, op : OptimizationT(Term))
+    Operation(tag : TagT, term : Term, optimization : OptimizationT(Term))
 }
 
 
@@ -39,7 +38,6 @@ def getTermTag
     Unknown(tag) -> tag
     MetaVariable(tag, _) -> tag
     Universe(tag, _) -> tag
-    Constant(tag, _) -> tag
     Variable(tag, _) -> tag
     Function(tag, _, _, _, _) -> tag
     MetaFunction(tag, _, _) -> tag
@@ -54,7 +52,6 @@ def getTermTag
 isUnknown := Unknown(_) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isUniverse := Universe(_, _) -> True; _ -> False
-isConstant := Constant(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isFunction := Function(_, _, _, _, _) -> True; _ -> False
 isMetaFunction := MetaFunction(_, _, _) -> True; _ -> False
@@ -66,13 +63,16 @@ isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _) -> True; _ -> False
 
 
+def Wildcard(tag)
+    MetaFunction(tag, Universe(tag, 0), Variable(tag, -_ 1))
+
+
 def CaseFunction(tag, domain, codomain, body)
     Function(tag, True, domain, codomain, body)
 
 
 def FreeFunction(tag, body)
-    tag' := veil(tag)
-    wildcard := MetaFunction(tag', Universe(tag', 0), Variable(tag', 1))
+    wildcard := Wildcard(veil(tag))
     Function(tag, False, wildcard, wildcard, body)
 
 
@@ -87,7 +87,6 @@ def setTag(tag)
     Unknown(_) -> Unknown(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Universe(_, level) -> Universe(tag, level)
-    Constant(_, index) -> Constant(tag, index)
     Variable(_, index) -> Variable(tag, index)
     Function(_, isCase, domain, codomain, body) ->
         Function(tag, isCase, domain, codomain, body)
@@ -124,7 +123,7 @@ def showConstruction(showTerm, headTag, arguments)
 def showApplication(showTerm, applicand, argument)
     (headTerm, applicandArguments) := splitSpine(applicand)
     arguments := applicandArguments ++ [argument]
-    if isConstant(headTerm)
+    if isVariable(headTerm)
         showConstruction(showTerm, getTermTag(headTerm), arguments)
     showTerm(headTerm) ++ "(" ++ arguments.map(showTerm).joinWith(", ") ++ ")"
 
@@ -140,8 +139,7 @@ def showTerm
     Unknown(_) -> "■"
     MetaVariable(tag, n) -> showMetaVariable(n)
     Universe(_, level) -> "⊤" ++ showSubscript(level)
-    Constant(tag, n) -> showTag(tag) # ++ "$" ++ showNatural(n)
-    Variable(tag, n) -> showTag(tag) # ++ "#" ++ showNatural(n)
+    Variable(tag, index) -> showTag(tag) # ++ "#" ++ showInteger(index)
     Function(tag, _, domain, _, body) ->
         "(" ++ showTag(tag) ++ " : " ++
             showTerm(domain) ++ " ↦ " ++ showTerm(body) ++ ")"

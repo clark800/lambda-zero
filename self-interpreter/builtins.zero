@@ -3,19 +3,14 @@
 maxInteger := 9223372036854775807
 
 
-def newBoolean(tag, b)
-    FreeFunction(tag, FreeFunction(tag, Variable(tag, if b then 1 else 2)))
-
-
-def newNumeral(tag, value)
-    typeN := Variable(renameTag(tag, "#NATURAL#", NOFIX), 0)
-    Numeral(tag, typeN, value)
+def newBoolean(tag, numeralType, b)
+    FreeFunction(tag, FreeFunction(tag, Variable(tag, -_(if b then 1 else 2))))
 
 
 def makeUnaryBuiltin(f, evaluate, arguments)
     if arguments is argument :: arguments'
-        if getTerm(evaluate(argument)) is Numeral(_, _, value)
-            Just(enclose(newNumeral(noTag, f(value))))
+        if getTerm(evaluate(argument)) is Numeral(_, type, value)
+            Just(enclose(Numeral(noTag, type, f(value))))
         Void
     Void
 
@@ -23,9 +18,9 @@ def makeUnaryBuiltin(f, evaluate, arguments)
 def makeBinaryBuiltin(constructor, f, evaluate, arguments)
     if arguments is left :: arguments'
         if arguments' is right :: _
-            if getTerm(evaluate(left)) is Numeral(_, _, value)
+            if getTerm(evaluate(left)) is Numeral(_, type, value)
                 if getTerm(evaluate(right)) is Numeral(_, _, value')
-                    result := constructor(f(value, value'))
+                    result := constructor(noTag, type, f(value, value'))
                     Just(enclose(result))
                 Void
             Void
@@ -34,11 +29,11 @@ def makeBinaryBuiltin(constructor, f, evaluate, arguments)
 
 
 def makeNaturalBuiltin(f, evaluate, arguments)
-    makeBinaryBuiltin(newNumeral(noTag), f, evaluate, arguments)
+    makeBinaryBuiltin(Numeral, f, evaluate, arguments)
 
 
 def makeComparisonBuiltin(f, evaluate, arguments)
-    makeBinaryBuiltin(newBoolean(noTag), f, evaluate, arguments)
+    makeBinaryBuiltin(newBoolean, f, evaluate, arguments)
 
 
 def addBuiltin(left, right)
