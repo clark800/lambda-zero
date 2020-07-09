@@ -62,6 +62,8 @@ def getDomain(tag, environment)
             scheme <- convertToScheme(type)
             lift (domain, scheme)
         throwError("expected construction in case annotation", tag)
+    case Opaque(type)
+        throwError("cannot get domain of instance", tag)
 
 
 def infer(context @ (environment, schemes))
@@ -79,6 +81,9 @@ def infer(context @ (environment, schemes))
         scheme := schemes.seek(index) ?? throwError("unbound variable", tag)
         scheme.instantiate(tag)
     case Function(tag, type, body)
+        if type is Opaque(type')
+            # type should always be a closed term, so this should be safe
+            peelIntersections(type')
         (domain, scheme) <- type.getDomain(tag, environment)
         range <- body.infer(context.pushContext(scheme, Unknown(tag)))
         lift Implication(tag, domain, range)
@@ -112,9 +117,6 @@ def infer(context @ (environment, schemes))
     case Construction(tag, parameters, objectType, signatures)
         _ <- signatures.mapState(infer(context))
         lift Universe(tag, 0)
-    case Element(tag, type, term)
-        # type should always be a closed term, so this should be safe
-        peelIntersections(type)
     case Numeral(tag, type, value)
         lift type
     case Operation(tag, term, _)

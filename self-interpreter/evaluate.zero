@@ -29,8 +29,6 @@ def evaluate(stack, closure @ Closure(term, environment))
                 Closure(applicand, environment))
         case Construction(tag, parameter, type, signatures)
             if isNil(stack) then closure else enclose(Unknown(tag))
-        case Element(tag, type, term')
-            evaluate(stack, Closure(term', environment))
         case Numeral(tag, type, n)
             if isNil(stack) then closure else
             evaluate(stack, Closure(expandNumeral(tag, type, n), environment))

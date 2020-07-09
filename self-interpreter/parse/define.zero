@@ -132,7 +132,7 @@ def newConstructorDefinition(tag, adtType, n, (form, j), scope)
         astSyntaxError("invalid constructor parameter", parameter)
 
     # when defining a constructor term, the ADT parameters are not in scope,
-    # since they are only defined as implicits in the Element wrapper annotation
+    # since they are only defined as implicits in the annotation
     # at the type level, not the term level. we erase the annotations to avoid
     # undefined symbols errors during bind.
     parameters' := parameters.map(removeAnnotation)
