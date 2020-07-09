@@ -25,7 +25,7 @@ def instantiate(tag, scheme)
 
 def convertToScheme(term)
     # note: term must be closed
-    if term is MetaFunction(tag, type, body)
+    if term is Intersection(tag, type, body)
         metavariable <- newMetaVariable(tag)
         body' := resolve(Closure(body, newArray([enclose(metavariable)])))
         Scheme(universals, term) <- convertToScheme(body')
@@ -33,7 +33,7 @@ def convertToScheme(term)
     lift Scheme([], term)
 
 
-def peelMetaFunctions(term)
+def peelIntersections(term)
     Scheme(_, term) <- convertToScheme(term)
     lift term
 
@@ -43,9 +43,9 @@ def pushContext(scheme, term, context @ (environment, schemes))
 
 
 def metaevaluate(closure @ Closure(term, environment))
-    # we have to resolve to a closed term before calling peelMetaFunctions
+    # we have to resolve to a closed term before calling peelIntersections
     term := resolve(evaluateClosure(closure))
-    term <- peelMetaFunctions(term)
+    term <- peelIntersections(term)
     lift resolve(evaluateClosure(Closure(term, environment)))
 
 
@@ -82,16 +82,13 @@ def infer(context @ (environment, schemes))
         (domain, scheme) <- type.getDomain(tag, environment)
         range <- body.infer(context.pushContext(scheme, Unknown(tag)))
         lift Implication(tag, domain, range)
-    case MetaFunction(tag, type, body)
-        type' := resolve(evaluateClosure(Closure(type, environment)))
-        metavariable <- newMetaVariable(tag)
-        context' := context.pushContext(Scheme([], type'), metavariable)
-        body.infer(context')
-    case Implication(tag, type, body)
-        type' := resolve(evaluateClosure(Closure(type, environment)))
-        context' := context.pushContext(Scheme([], type'), Unknown(tag))
-        _ <- body.infer(context')
+    case Implication(tag, domain, body)
+        domain' := resolve(evaluateClosure(Closure(domain, environment)))
+        _ <- body.infer(context.pushContext(Scheme([], domain'), Unknown(tag)))
         lift Universe(tag, 0)
+    case Intersection(tag, domain, body)
+        domain' := resolve(evaluateClosure(Closure(domain, environment)))
+        body.infer(context.pushContext(Scheme([], domain'), Unknown(tag)))
     case Application(tag, applicand, argument)
         metacontext <- getState
         argumentType <- argument.infer(context)
@@ -117,7 +114,7 @@ def infer(context @ (environment, schemes))
         lift Universe(tag, 0)
     case Element(tag, type, term)
         # type should always be a closed term, so this should be safe
-        peelMetaFunctions(type)
+        peelIntersections(type)
     case Numeral(tag, type, value)
         lift type
     case Operation(tag, term, _)

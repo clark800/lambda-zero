@@ -25,11 +25,11 @@ def resolve(Closure(term, environment))
                 PatternMatch(domain) -> PatternMatch(resolve'(domain))
             Function(tag, resolveAnnotation(type),
                 resolve(Closure(body, pushUnknown(tag, environment))))
-        MetaFunction(tag, type, body) ->
-            MetaFunction(tag, resolve'(type),
-                resolve(Closure(body, pushUnknown(tag, environment))))
         Implication(tag, type, body) ->
             Implication(tag, resolve'(type),
+                resolve(Closure(body, pushUnknown(tag, environment))))
+        Intersection(tag, type, body) ->
+            Intersection(tag, resolve'(type),
                 resolve(Closure(body, pushUnknown(tag, environment))))
         Application(tag, left, right) ->
             Application(tag, resolve'(left), resolve'(right))

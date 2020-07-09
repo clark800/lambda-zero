@@ -2,7 +2,7 @@
 
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition, BindDefinition}
-ArrowType ::= {Simple, Strict, Locked, Double, Squiggle}
+ArrowType ::= {Simple, Strict, Locked, Double, Tail}
 
 AST ::= {
     Reference(tag : TagT, debruijn : ℕ),
@@ -95,7 +95,7 @@ def showArrow
     Strict -> " -> "
     Locked -> " -> "
     Double -> " => "
-    Squiggle -> " ~> "
+    Tail -> " >-> "
 
 
 def showAnnotation(showAST, annotation)
@@ -159,7 +159,7 @@ def TypedArrow(arrowType, parameter, body)
 SimpleArrow := TypedArrow(Simple)
 LockedArrow := TypedArrow(Locked)
 DoubleArrow := TypedArrow(Double)
-MetaArrow := TypedArrow(Squiggle)
+TailArrow := TypedArrow(Tail)
 StrictArrow(tag, constructors, body) :=
     Arrow(tag, Strict, constructors, Name(veil(tag)), Void, body)
 

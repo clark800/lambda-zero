@@ -28,8 +28,8 @@ Term ::= {
     Universe(tag : TagT, level : ℕ),
     Variable(tag : TagT, index : ℤ),
     Function(tag : TagT, type : Annotation(Term), body : Term),
-    MetaFunction(tag : TagT, type : Term, body : Term),
-    Implication(tag : TagT, type : Term, body : Term),
+    Implication(tag : TagT, domain : Term, body : Term),
+    Intersection(tag : TagT, domain : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
     Construction(tag : TagT, parameters : List(Term), type : Term,
         signatures : List(Term)),
@@ -45,8 +45,8 @@ def getTermTag
     Universe(tag, _) -> tag
     Variable(tag, _) -> tag
     Function(tag, _, _) -> tag
-    MetaFunction(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
+    Intersection(tag, _, _) -> tag
     Application(tag, _, _) -> tag
     Construction(tag, _, _, _) -> tag
     Element(tag, _, _) -> tag
@@ -59,8 +59,8 @@ isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isUniverse := Universe(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isFunction := Function(_, _, _) -> True; _ -> False
-isMetaFunction := MetaFunction(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
+isIntersection := Intersection(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
 isConstruction := Construction(_, _, _, _) -> True; _ -> False
 isElement := Element(_, _, _) -> True; _ -> False
@@ -85,8 +85,8 @@ def setTag(tag)
     Universe(_, level) -> Universe(tag, level)
     Variable(_, index) -> Variable(tag, index)
     Function(_, type, body) -> Function(tag, type, body)
-    MetaFunction(_, type, body) -> MetaFunction(tag, type, body)
-    Implication(_, type, body) -> Implication(tag, type, body)
+    Implication(_, domain, body) -> Implication(tag, domain, body)
+    Intersection(_, domain, body) -> Intersection(tag, domain, body)
     Application(_, left, right) -> Application(tag, left, right)
     Construction(_, parameters, type, signatures) ->
         Construction(tag, parameters, type, signatures)
@@ -144,12 +144,12 @@ def showTerm
     Function(tag, type, body) ->
         "(" ++ showTag(tag) ++ type.showAnnotation(showTerm) ++
             " ↦ " ++ showTerm(body) ++ ")"
-    MetaFunction(tag, type, body) ->
-        "(" ++ showTag(tag) ++ " ↝ " ++ showTerm(body) ++ ")"
-    Implication(tag, type, body) ->
-        if isImplication(type) then
-            "(" ++ showTerm(type) ++ ")" ++ " ⇒ " ++ showTerm(body) else
-                showTerm(type) ++ " ⇒ " ++ showTerm(body)
+    Implication(tag, domain, body) ->
+        if isImplication(domain) then
+            "(" ++ showTerm(domain) ++ ")" ++ " ⇒ " ++ showTerm(body) else
+                showTerm(domain) ++ " ⇒ " ++ showTerm(body)
+    Intersection(tag, domain, body) ->
+        "(" ++ showTag(tag) ++ " ↣ " ++ showTerm(body) ++ ")"
     Application(_, applicand, argument) ->
         showApplication(showTerm, applicand, argument)
     Construction(tag, parameters, _, _) ->

@@ -101,7 +101,7 @@ def getConstructorType(adtType, form)
 def getMetaConstructorType(adtType, form)
     type := getConstructorType(adtType, form)
     parameters := getArguments(adtType)
-    parameters.fold(MetaArrow, type)
+    parameters.fold(TailArrow, type)
 
 
 def getConstructorBody(name, parameters, n, j)
@@ -161,7 +161,7 @@ def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
     fallbackType := adtTypeAST =>> returnType
     typeAST := reconstructorType =>> fallbackType =>> adtTypeAST =>> returnType
     parameters := getArguments(adtTypeAST)
-    MetaArrow(returnType, parameters.fold(MetaArrow, typeAST))
+    TailArrow(returnType, parameters.fold(TailArrow, typeAST))
 
 
 def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
@@ -193,7 +193,7 @@ def newADT(tag, adtType, parameters, forms)
     annotations := forms.map(getArguments).map(map(getParameterType))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))
     bodyType := argumentTypes.fold(DoubleArrow, returnType)
-    objectType := MetaArrow(returnType, bodyType)
+    objectType := TailArrow(returnType, bodyType)
     signatures := forms.map(getConstructorType(adtType))
     ADT(tag, parameters, objectType, signatures)
 

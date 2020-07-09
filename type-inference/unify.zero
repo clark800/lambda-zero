@@ -66,19 +66,19 @@ def unify'(fail, metacontext, (left, right))
             unify'(fail, metacontext, (metacontext.getValue(left), right))
         case Universe(_, _)
             if isSameHead(left, right) then metacontext else fail'
-        case MetaFunction(_, domain, body)
-            if right is MetaFunction(tag, domain', body')
-                metacontext' := unify'(fail, metacontext, (domain', domain))
-                # todo: handle dependent types
-                unify'(fail, metacontext', (body, body'))
-            (left', metacontext') := insertMetaVariable(body, metacontext)
-            unify'(fail, metacontext', (left', right))
         case Implication(_, domain, body)
             if right is Implication(_, domain', body')
                 metacontext' := unify'(fail, metacontext, (domain', domain))
                 # todo: handle dependent types
                 unify'(fail, metacontext', (body, body'))
             fail'
+        case Intersection(_, domain, body)
+            if right is Intersection(tag, domain', body')
+                metacontext' := unify'(fail, metacontext, (domain', domain))
+                # todo: handle dependent types
+                unify'(fail, metacontext', (body, body'))
+            (left', metacontext') := insertMetaVariable(body, metacontext)
+            unify'(fail, metacontext', (left', right))
         case Construction(_, parameters, _, _)
             if not isSameHead(left, right)
                 fail'

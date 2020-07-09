@@ -17,10 +17,10 @@ def isSameHead(term)
         False
     case Function(_, _, _)
         isFunction(term)
-    case MetaFunction(_, _, _)
-        isMetaFunction(term)
     case Implication(_, _, _)
         isImplication(term)
+    case Intersection(_, _, _)
+        isIntersection(term)
     case Application(_, _, _)
         isApplication(term)
     case Construction(tag, _, _, _)
@@ -50,8 +50,8 @@ def getComponents
     Universe(_, _) -> []
     Variable(_, _) -> []
     Function(_, type, body) -> getAnnotationComponents(type) ++ [body]
-    MetaFunction(_, type, body) -> [type, body]
-    Implication(_, type, body) -> [type, body]
+    Implication(_, domain, body) -> [domain, body]
+    Intersection(_, domain, body) -> [domain, body]
     Application(_, left, right) -> [left, right]
     Construction(_, parameters, _, _) -> parameters
     Element(_, type, term) -> [type, term]
@@ -73,8 +73,8 @@ def mapComponents(f, term)
         Variable(_, _) -> term
         Function(tag, type, body) ->
             Function(tag, type.mapAnnotation(f), f(body))
-        MetaFunction(tag, type, body) -> MetaFunction(tag, f(type), f(body))
-        Implication(tag, type, body) -> Implication(tag, f(type), f(body))
+        Implication(tag, domain, body) -> Implication(tag, f(domain), f(body))
+        Intersection(tag, domain, body) -> Intersection(tag, f(domain), f(body))
         Application(tag, left, right) -> Application(tag, f(left), f(right))
         Construction(tag, parameters, type, signatures) ->
             Construction(tag, parameters.map(f), type, signatures)
