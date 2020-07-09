@@ -80,6 +80,8 @@ def unify'(fail, metacontext, (left, right))
                 unify'(fail, metacontext', (body, body'))
             fail'
         case Construction(_, parameters, _, _)
+            if not isSameHead(left, right)
+                fail'
             if right is Construction(_, parameters', _, _)
                 zip(parameters, parameters').cascade(unify'(fail), metacontext)
             fail'
@@ -90,6 +92,8 @@ def unify'(fail, metacontext, (left, right))
 def unify(left, right, metacontext)
     types := (left, right)
     metacontext' := unify'(unifyFailure(types), metacontext, types)
+    if getSize(metacontext') < 0  # todo: remove this and use either type
+        abort("force unification errors")
     ((), metacontext')
 
 #*

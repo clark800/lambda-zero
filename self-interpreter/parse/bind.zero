@@ -124,7 +124,6 @@ def bind(getBuiltin, globals, locals, node)
             Variable(tag, -_ debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
-            wildcard := Wildcard(veil(tag))
             if arrowType is Double
                 parameterTerm := parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
@@ -134,20 +133,21 @@ def bind(getBuiltin, globals, locals, node)
             locals' := locals.pushParameter(parameter)
 
             if arrowType is Squiggle
-                domain := annotation.mapJust(bind'(locals)) ?? wildcard
+                domain := annotation.mapJust(bind'(locals)) ?? Universe(tag, 0)
                 MetaFunction(getTag(parameter), domain, body.bind'(locals'))
 
             bodyTerm := body.bind'(locals')
             if isNil(constructorNames)
-                domain := annotation.mapJust(bind'(locals)) ?? wildcard
-                Function(getTag(parameter), False, domain, bodyTerm)
+                domain := annotation.mapJust(bind'(locals))
+                type := domain.mapJust(Domain) ?? Inferred
+                Function(getTag(parameter), type, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
             if buildCaseAnnotation(tag, constructorNames, globals) is
                     Just(typeAST)
                 domain := typeAST.bind'(locals)
-                CaseFunction(getTag(parameter), domain, bodyTerm)
+                Function(getTag(parameter), PatternMatch(domain), bodyTerm)
             astSyntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind'(locals), right.bind'(locals))
@@ -155,10 +155,9 @@ def bind(getBuiltin, globals, locals, node)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            wildcard := Wildcard(veil(tag))
             valueTerm := value.bind'(locals)
             body := scope.bind'(locals.pushParameter(name))
-            abstraction := Function(getTag(name), False, wildcard, body)
+            abstraction := Function(getTag(name), Inferred, body)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNaturalType(tag, globals), value)

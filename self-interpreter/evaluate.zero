@@ -16,13 +16,13 @@ def evaluate(stack, closure @ Closure(term, environment))
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Variable(tag, index)
             evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
-        case Function(tag, isCase, domain, body)
+        case Function(tag, type, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
-        case MetaFunction(tag, type, body)
+        case MetaFunction(tag, domain, body)
             if isNil(stack) then closure else enclose(Unknown(tag))
-        case Implication(tag, type, body)
+        case Implication(tag, domain, body)
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,

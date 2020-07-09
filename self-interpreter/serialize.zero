@@ -19,7 +19,7 @@ def serialize(closure)
                         if environment.peek(n -- depth -- 1) is Just(closure)
                             serialize'(closure, 0)
                         showTag(tag)
-            case Function(tag, _, _, body)
+            case Function(tag, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
             case MetaFunction(tag, type, body)
@@ -57,7 +57,7 @@ def maybeDebruijnIndex(term)
 
 
 def maybeBody(term)
-    if term is Function(_, _, _, body)
+    if term is Function(_, _, body)
         Just(body)
     Void
 
