@@ -23,6 +23,7 @@ def resolve(Closure(term, environment))
                 Inferred -> Inferred
                 Domain(domain) -> Domain(resolve'(domain))
                 PatternMatch(domain) -> PatternMatch(resolve'(domain))
+                Opaque(type) -> Opaque(type)
             Function(tag, resolveAnnotation(type),
                 resolve(Closure(body, pushUnknown(tag, environment))))
         Implication(tag, type, body) ->
@@ -36,8 +37,6 @@ def resolve(Closure(term, environment))
         Construction(tag, parameters, objectType, signatures) ->
             Construction(tag, parameters.map(resolve'),
                 resolve'(objectType), signatures.map(resolve'))
-        Element(tag, type, term) ->
-            Element(tag, resolve'(type), resolve'(term))
         Numeral(_, _, _) -> term
         Operation(_, _, _) -> term
 

@@ -40,19 +40,12 @@ def pushInline(parameter, term, (level, table))
     (level, table.insert(getLexeme(parameter), Inline(term)))
 
 
-def findType(lexeme, globals)
-    if globals.lookup(lexeme) is Just(Global(_, term, _))
-        if term is Element(_, type, _)
-            Just(type)
-        if term is Numeral(_, type, _)
-            Just(type)
-        Void
-    Void
-
-
 def getNaturalType(tag, globals)
-    globals.findType("0") ??
-        syntaxError("must define 0 before using numerals", tag)
+    if globals.lookup("0") is Just(Global(_, term, _))
+        if term is Numeral(_, type, _)
+            type
+        syntaxError("0 must be a numeral to use numerals", tag)
+    syntaxError("must define 0 before using numerals", tag)
 
 
 def bindOperation(getBuiltin, globals, tag, term)
@@ -180,9 +173,13 @@ def bind(getBuiltin, globals, locals, node)
             type' := type.bind'(locals)
             if function is Number(_, value)
                 Numeral(tag, type', value)
-            Element(tag, type', function.bind'(locals))
+            if function.bind'(locals) is Function(tag, _, body)
+                Function(tag, Opaque(type'), body)
+            astSyntaxError("constructor must be a function", node)
         case TypedNode(tag, type, node)
-            Element(tag, type.bind'(locals), node.bind'(locals))
+            if node.bind'(locals) is Function(tag, _, body)
+                Function(tag, Opaque(type.bind'(locals)), body)
+            astSyntaxError("typed node must be a function", node)
 
 
 def bindGlobal(getBuiltin, globals, node)
