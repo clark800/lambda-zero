@@ -59,8 +59,8 @@ def isWildcard(term)
 def unifyCodomain(codomain, bodyType, environment)
     if isWildcard(codomain)
         lift bodyType
-    _ <- unify(resolve(Closure(codomain, environment)),
-              resolve(Closure(bodyType, environment)))
+    _ <- unify(resolve(Closure(bodyType, environment)),
+              resolve(Closure(codomain, environment)))
     metacontext <- getState
     if getSize(metacontext) < 0  # todo: remove this when unify returns Either
         abort("force unification errors")
@@ -120,6 +120,7 @@ def infer(context @ (environment, schemes))
         returnType <- newMetaVariable(tag)
         applicandTag := getTermTag(applicand)
         functionType := Implication(applicandTag, argumentType, returnType)
+        # applicandType <: functionType  =>  argumentType <: parameterType
         _ <- unify(resolve(Closure(applicandType, environment)),
                   resolve(Closure(functionType, environment)))
         lift returnType
