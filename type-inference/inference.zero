@@ -38,26 +38,30 @@ def peelMetaFunctions(term)
     lift term
 
 
-def getParameterScheme(tag, isCase, domain)
-    if isCase
-        if domain is Construction(_, _, type, _)
-            convertToScheme(type)
-        throwError("expected construction in case annotation", tag)
-    lift Scheme([], domain)
-
-
-def isWildcard(term)
-    if term is MetaFunction(_, _, body)
-        if body is Variable(_, index)
-            if index is -_ n
-                n = 1
-            False
-        False
-    False
-
-
 def pushContext(scheme, term, context @ (environment, schemes))
     (environment.push(Closure(term, environment)), schemes.push(scheme))
+
+
+def metaevaluate(closure @ Closure(term, environment))
+    # we have to resolve to a closed term before calling peelMetaFunctions
+    term := resolve(evaluateClosure(closure))
+    term <- peelMetaFunctions(term)
+    lift resolve(evaluateClosure(Closure(term, environment)))
+
+
+def getDomain(tag, environment)
+    case Inferred
+        metavariable <- newMetaVariable(tag)
+        lift (metavariable, Scheme([], metavariable))
+    case Domain(domain)
+        domain <- metaevaluate(Closure(domain, environment))
+        lift (domain, Scheme([], domain))
+    case PatternMatch(domain)
+        domain <- metaevaluate(Closure(domain, environment))
+        if domain is Construction(_, _, type, _)
+            scheme <- convertToScheme(type)
+            lift (domain, scheme)
+        throwError("expected construction in case annotation", tag)
 
 
 def infer(context @ (environment, schemes))
@@ -74,14 +78,9 @@ def infer(context @ (environment, schemes))
     case Variable(tag, index)
         scheme := schemes.seek(index) ?? throwError("unbound variable", tag)
         scheme.instantiate(tag)
-    case Function(tag, isCase, domain, body)
-        # we have to resolve to a closed term before calling peelMetaFunctions
-        domain := resolve(evaluateClosure(Closure(domain, environment)))
-        domain <- peelMetaFunctions(domain)
-        domain := resolve(evaluateClosure(Closure(domain, environment)))
-        scheme <- getParameterScheme(tag, isCase, domain)
-        context' := context.pushContext(scheme, Unknown(tag))
-        range <- body.infer(context')
+    case Function(tag, type, body)
+        (domain, scheme) <- type.getDomain(tag, environment)
+        range <- body.infer(context.pushContext(scheme, Unknown(tag)))
         lift Implication(tag, domain, range)
     case MetaFunction(tag, type, body)
         type' := resolve(evaluateClosure(Closure(type, environment)))
@@ -96,8 +95,9 @@ def infer(context @ (environment, schemes))
     case Application(tag, applicand, argument)
         metacontext <- getState
         argumentType <- argument.infer(context)
-        if applicand is Function(_, isCase, domain, body)
-            if not isCase and isMetaVariable(domain)
+        if applicand is Function(_, type, body)
+            if type is Inferred
+                # todo: support Domain annotations
                 # suppport polymorphism in nested functions
                 metacontext' <- getState
                 scheme := argumentType.generalize(metacontext', metacontext)

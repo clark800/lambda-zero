@@ -15,7 +15,7 @@ def isSameHead(term)
         if term is Variable(_, index')
             index =:= index'
         False
-    case Function(_, _, _, _)
+    case Function(_, _, _)
         isFunction(term)
     case MetaFunction(_, _, _)
         isMetaFunction(term)
@@ -38,12 +38,18 @@ def isSameHead(term)
         False
 
 
+def getAnnotationComponents
+    Inferred -> []
+    Domain(term) -> [term]
+    PatternMatch(term) -> [term]
+
+
 def getComponents
     Unknown(_) -> []
     MetaVariable(_, _) -> []
     Universe(_, _) -> []
     Variable(_, _) -> []
-    Function(_, _, domain, body) -> [domain, body]
+    Function(_, type, body) -> getAnnotationComponents(type) ++ [body]
     MetaFunction(_, type, body) -> [type, body]
     Implication(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
@@ -53,14 +59,20 @@ def getComponents
     Operation(_, _, _) -> []
 
 
+def mapAnnotation(f)
+    Inferred -> Inferred
+    Domain(term) -> Domain(f(term))
+    PatternMatch(term) -> PatternMatch(f(term))
+
+
 def mapComponents(f, term)
     match term
         Unknown(_) -> term
         MetaVariable(_, _) -> term
         Universe(_, _) -> term
         Variable(_, _) -> term
-        Function(tag, isCase, domain, body) ->
-            Function(tag, isCase, f(domain), f(body))
+        Function(tag, type, body) ->
+            Function(tag, type.mapAnnotation(f), f(body))
         MetaFunction(tag, type, body) -> MetaFunction(tag, f(type), f(body))
         Implication(tag, type, body) -> Implication(tag, f(type), f(body))
         Application(tag, left, right) -> Application(tag, f(left), f(right))
