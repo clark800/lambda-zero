@@ -42,30 +42,49 @@ def insertMetaVariable(term, metacontext)
 # Robinson's Unification Algorithm
 # see Comparing Unification Algorithms in First-Order Theorem Proving
 # by Krystof Hoder and Andrei Voronkov
+# unify' enforces that left <: right
 def unify'(fail, metacontext, (left, right))
+    fail' := fail(metacontext, (left, right))
     left := substituteAndEvaluate(metacontext, left)
     right := substituteAndEvaluate(metacontext, right)
 
-    if isUnknown(left) or isUnknown(right)
-        fail(metacontext, (left, right))
-    if left is MetaFunction(tag, type, body)
-        (left', metacontext') := insertMetaVariable(body, metacontext)
-        unify'(fail, metacontext', (left', right))
-    if right is MetaFunction(tag, type, body)
-        (right', metacontext') := insertMetaVariable(body, metacontext)
-        unify'(fail, metacontext', (left, right'))
-    if isMetaVariable(left) and not isFree(left, metacontext)
-        unify'(fail, metacontext, (metacontext.getValue(left), right))
-    if isMetaVariable(right) and not isFree(right, metacontext)
-        unify'(fail, metacontext, (left, metacontext.getValue(right)))
-    if isSameHead(left, right)
-        zip(getComponents(left), getComponents(right)).
-            cascade(unify'(fail), metacontext)
-    if left is MetaVariable(_, address)
-        metacontext.set(address, Just(right))
+    if right is Unknown(_)
+        fail'
     if right is MetaVariable(_, address)
-        metacontext.set(address, Just(left))
-    fail(metacontext, (left, right))
+        if isFree(right, metacontext)
+            if isSameHead(left, right)
+                metacontext
+            metacontext.set(address, Just(left))
+        unify'(fail, metacontext, (left, metacontext.getValue(right)))
+
+    match left
+        case MetaVariable(_, address)
+            if isFree(left, metacontext)
+                if isSameHead(left, right)
+                    metacontext
+                metacontext.set(address, Just(right))
+            unify'(fail, metacontext, (metacontext.getValue(left), right))
+        case Universe(_, _)
+            if isSameHead(left, right) then metacontext else fail'
+        case MetaFunction(_, domain, body)
+            if right is MetaFunction(tag, domain', body')
+                metacontext' := unify'(fail, metacontext, (domain', domain))
+                # todo: handle dependent types
+                unify'(fail, metacontext', (body, body'))
+            (left', metacontext') := insertMetaVariable(body, metacontext)
+            unify'(fail, metacontext', (left', right))
+        case Implication(_, domain, body)
+            if right is Implication(_, domain', body')
+                metacontext' := unify'(fail, metacontext, (domain', domain))
+                # todo: handle dependent types
+                unify'(fail, metacontext', (body, body'))
+            fail'
+        case Construction(_, parameters, _, _)
+            if right is Construction(_, parameters', _, _)
+                zip(parameters, parameters').cascade(unify'(fail), metacontext)
+            fail'
+        case _
+            fail'
 
 
 def unify(left, right, metacontext)
