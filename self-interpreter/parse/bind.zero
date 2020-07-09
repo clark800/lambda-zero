@@ -137,21 +137,17 @@ def bind(getBuiltin, globals, locals, node)
                 domain := annotation.mapJust(bind'(locals)) ?? wildcard
                 MetaFunction(getTag(parameter), domain, body.bind'(locals'))
 
-            (bodyTerm, codomain) := (
-                if body is ColonPair(_, body', type)
-                    (body'.bind'(locals'), type.bind'(locals'))
-                (body.bind'(locals'), wildcard)
-            )
+            bodyTerm := body.bind'(locals')
             if isNil(constructorNames)
                 domain := annotation.mapJust(bind'(locals)) ?? wildcard
-                Function(getTag(parameter), False, domain, codomain, bodyTerm)
+                Function(getTag(parameter), False, domain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
             if buildCaseAnnotation(tag, constructorNames, globals) is
                     Just(typeAST)
                 domain := typeAST.bind'(locals)
-                CaseFunction(getTag(parameter), domain, codomain, bodyTerm)
+                CaseFunction(getTag(parameter), domain, bodyTerm)
             astSyntaxError("invalid constructors", node)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind'(locals), right.bind'(locals))
@@ -162,8 +158,7 @@ def bind(getBuiltin, globals, locals, node)
             wildcard := Wildcard(veil(tag))
             valueTerm := value.bind'(locals)
             body := scope.bind'(locals.pushParameter(name))
-            abstraction := Function(getTag(name), False,
-                wildcard, wildcard, body)
+            abstraction := Function(getTag(name), False, wildcard, body)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNaturalType(tag, globals), value)

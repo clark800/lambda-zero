@@ -18,9 +18,8 @@ def resolve(Closure(term, environment))
                     resolve(evaluateClosure(closure))
             term
         )
-        Function(tag, isCase, domain, codomain, body) ->
+        Function(tag, isCase, domain, body) ->
             Function(tag, isCase, resolve'(domain),
-                resolve(Closure(codomain, pushUnknown(tag, environment))),
                 resolve(Closure(body, pushUnknown(tag, environment))))
         MetaFunction(tag, type, body) ->
             MetaFunction(tag, resolve'(type),
