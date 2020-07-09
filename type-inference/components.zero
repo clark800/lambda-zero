@@ -15,7 +15,7 @@ def isSameHead(term)
         if term is Variable(_, index')
             index =:= index'
         False
-    case Function(_, _, _, _, _)
+    case Function(_, _, _, _)
         isFunction(term)
     case MetaFunction(_, _, _)
         isMetaFunction(term)
@@ -43,7 +43,7 @@ def getComponents
     MetaVariable(_, _) -> []
     Universe(_, _) -> []
     Variable(_, _) -> []
-    Function(_, _, domain, codomain, body) -> [domain, codomain, body]
+    Function(_, _, domain, body) -> [domain, body]
     MetaFunction(_, type, body) -> [type, body]
     Implication(_, type, body) -> [type, body]
     Application(_, left, right) -> [left, right]
@@ -59,8 +59,8 @@ def mapComponents(f, term)
         MetaVariable(_, _) -> term
         Universe(_, _) -> term
         Variable(_, _) -> term
-        Function(tag, isCase, domain, codomain, body) ->
-            Function(tag, isCase, f(domain), f(codomain), f(body))
+        Function(tag, isCase, domain, body) ->
+            Function(tag, isCase, f(domain), f(body))
         MetaFunction(tag, type, body) -> MetaFunction(tag, f(type), f(body))
         Implication(tag, type, body) -> Implication(tag, f(type), f(body))
         Application(tag, left, right) -> Application(tag, f(left), f(right))

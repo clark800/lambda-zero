@@ -16,7 +16,7 @@ def evaluate(stack, closure @ Closure(term, environment))
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Variable(tag, index)
             evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
-        case Function(tag, isCase, domain, codomain, body)
+        case Function(tag, isCase, domain, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure

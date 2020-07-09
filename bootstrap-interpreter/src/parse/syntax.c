@@ -7,8 +7,7 @@
 #include "brackets.h"
 
 static Node* reduceArrow(Node* operator, Node* left, Node* right) {
-    if (isColonPair(right))
-        return reduceArrow(operator, left, getLeft(right));
+    (void)operator;
     if (isName(left))
         return SimpleArrow(left, right);
     if (isColonPair(left))

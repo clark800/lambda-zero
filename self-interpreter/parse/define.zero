@@ -233,9 +233,6 @@ def applyDefinition(definition, scope)
 
 
 def reduceDefine'(tag, definitionType, left, right)
-    if left is ColonPair(tag', left', codomain)
-        reduceDefine'(tag, definitionType, left',
-            ColonPair(tag', right, codomain))
     if isTuple(left) or isAsPattern(left)
         Definition(tag, definitionType, left, right)
     (name, value) := getNameAndValue(newPatternArrow, left, right)

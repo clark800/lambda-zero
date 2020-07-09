@@ -56,17 +56,6 @@ def isWildcard(term)
     False
 
 
-def unifyCodomain(codomain, bodyType, environment)
-    if isWildcard(codomain)
-        lift bodyType
-    _ <- unify(resolve(Closure(bodyType, environment)),
-              resolve(Closure(codomain, environment)))
-    metacontext <- getState
-    if getSize(metacontext) < 0  # todo: remove this when unify returns Either
-        abort("force unification errors")
-    lift codomain
-
-
 def pushContext(scheme, term, context @ (environment, schemes))
     (environment.push(Closure(term, environment)), schemes.push(scheme))
 
@@ -85,16 +74,15 @@ def infer(context @ (environment, schemes))
     case Variable(tag, index)
         scheme := schemes.seek(index) ?? throwError("unbound variable", tag)
         scheme.instantiate(tag)
-    case Function(tag, isCase, domain, codomain, body)
+    case Function(tag, isCase, domain, body)
         # we have to resolve to a closed term before calling peelMetaFunctions
         domain := resolve(evaluateClosure(Closure(domain, environment)))
         domain <- peelMetaFunctions(domain)
         domain := resolve(evaluateClosure(Closure(domain, environment)))
         scheme <- getParameterScheme(tag, isCase, domain)
         context' := context.pushContext(scheme, Unknown(tag))
-        bodyType <- body.infer(context')
-        codomain <- unifyCodomain(codomain, bodyType, environment)
-        lift Implication(tag, domain, codomain)
+        range <- body.infer(context')
+        lift Implication(tag, domain, range)
     case MetaFunction(tag, type, body)
         type' := resolve(evaluateClosure(Closure(type, environment)))
         metavariable <- newMetaVariable(tag)
@@ -108,7 +96,7 @@ def infer(context @ (environment, schemes))
     case Application(tag, applicand, argument)
         metacontext <- getState
         argumentType <- argument.infer(context)
-        if applicand is Function(_, isCase, domain, codomain, body)
+        if applicand is Function(_, isCase, domain, body)
             if not isCase and isMetaVariable(domain)
                 # suppport polymorphism in nested functions
                 metacontext' <- getState
