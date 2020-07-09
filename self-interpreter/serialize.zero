@@ -22,11 +22,12 @@ def serialize(closure)
             case Function(tag, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case MetaFunction(tag, type, body)
-                "(" ++ showTag(tag) ++ " ↝ " ++
-                    serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Implication(tag, type, body)
-                "(" ++ serialize'(Closure(type, environment), depth) ++ " ⇒ " ++
+            case Implication(tag, domain, body)
+                "(" ++ serialize'(Closure(domain, environment), depth) ++
+                " ⇒ " ++ serialize'(Closure(body, environment), depth + 1) ++
+                ")"
+            case Intersection(tag, domain, body)
+                "(" ++ showTag(tag) ++ " ↣ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
             case Application(_, applicand, argument)
                 "(" ++ serialize'(Closure(applicand, environment), depth) ++

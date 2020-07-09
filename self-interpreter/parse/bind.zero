@@ -80,7 +80,7 @@ def getADTName(constructor)
 
 def getConstructionTypeAST(constructor)
     if constructor is Constructor(_, _, adtType, _, _, _)
-        getArguments(adtType).fold(MetaArrow, adtType)
+        getArguments(adtType).fold(TailArrow, adtType)
     astSyntaxError("invalid constructor", constructor)
 
 
@@ -132,9 +132,9 @@ def bind(getBuiltin, globals, locals, node)
 
             locals' := locals.pushParameter(parameter)
 
-            if arrowType is Squiggle
+            if arrowType is Tail
                 domain := annotation.mapJust(bind'(locals)) ?? Universe(tag, 0)
-                MetaFunction(getTag(parameter), domain, body.bind'(locals'))
+                Intersection(getTag(parameter), domain, body.bind'(locals'))
 
             bodyTerm := body.bind'(locals')
             if isNil(constructorNames)
