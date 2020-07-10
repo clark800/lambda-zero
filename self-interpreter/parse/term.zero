@@ -147,7 +147,7 @@ def showTerm
             "(" ++ showTerm(domain) ++ ")" ++ " ⇒ " ++ showTerm(body) else
                 showTerm(domain) ++ " ⇒ " ++ showTerm(body)
     Intersection(tag, domain, body) ->
-        "(" ++ showTag(tag) ++ " ↣ " ++ showTerm(body) ++ ")"
+        showTag(tag) ++ " ↣ " ++ showTerm(body)
     Application(_, applicand, argument) ->
         showApplication(showTerm, applicand, argument)
     Construction(tag, parameters, _, _) ->

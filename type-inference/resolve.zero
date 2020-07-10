@@ -4,7 +4,7 @@ def pushUnknown(tag, environment)
     environment.push(enclose(Unknown(tag)))
 
 
-# for any variable in term that has a value in the environment, substitute
+# for any variable in term that has a value in the environment, replace
 # the variable with the value from the environment recursively
 def resolve(Closure(term, environment))
     resolve'(t) := resolve(Closure(t, environment))
@@ -18,13 +18,8 @@ def resolve(Closure(term, environment))
                     resolve(evaluateClosure(closure))
             term
         )
-        case Function(tag, type, body)
-            def resolveAnnotation
-                Inferred -> Inferred
-                Domain(domain) -> Domain(resolve'(domain))
-                PatternMatch(domain) -> PatternMatch(resolve'(domain))
-                Opaque(type) -> Opaque(type)
-            Function(tag, resolveAnnotation(type),
+        Function(tag, type, body) ->
+            Function(tag, type.mapDomain(resolve'),
                 resolve(Closure(body, pushUnknown(tag, environment))))
         Implication(tag, type, body) ->
             Implication(tag, resolve'(type),

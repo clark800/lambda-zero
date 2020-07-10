@@ -1,0 +1,26 @@
+#* instantiate.zero
+
+def instantiate(term, intersection)  # must be closed terms
+    if intersection is Intersection(_, _, body)
+        resolve(Closure(body, newArray([enclose(term)])))
+    throwError("expected intersection in instantiate", getTermTag(intersection))
+
+
+def splitUniversals(term)
+    if term is Intersection(tag, _, body)
+        (universals, body') <- splitUniversals(body)
+        metavariable <- newMetaVariable(tag)
+        lift (universals ++ [metavariable], body')
+    lift ([], term)
+
+
+def instantiateAll(term)    # must be a closed term
+    (universals, body) <- splitUniversals(term)
+    lift resolve(Closure(body, newArray(universals.map(enclose))))
+
+
+def instantiateClosure(closure)
+    term <- instantiateAll(resolve(closure))
+    lift resolve(evaluateClosure(enclose(term)))
+
+#*

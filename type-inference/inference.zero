@@ -1,72 +1,26 @@
 #* inference.zero
 
-def getAllFreeVariables(metacontext, metacontext')
-    indices := (0 ...)[0, metacontext.getSize]
-    join(indices.map(MetaVariable(noTag)).map(
-        getFreeVariables(metacontext'))).deduplicateBy(isSameHead)
-
-
-def generalize(metacontext, oldMetacontext, type)
-    # generalize over only metavariables newly introduced in the current
-    # definition and leave the rest in the type because they may correspond to
-    # the types of local variables that haven't yet been determined
-    syntax(\\) := syntax(\)
-    vs \\ vs' := vs |: (v -> not vs'.any(isSameHead(v)))
-    type' := type.substitute(metacontext)
-    universals := type'.getFreeVariables(metacontext) \\
-        metacontext.getAllFreeVariables(oldMetacontext)
-    Scheme(universals, type')
-
-
-def instantiate(tag, scheme)
-    Scheme(_, type) <- renameScheme(scheme)
-    lift type.setLocation(tag)
-
-
-def convertToScheme(term)
-    # note: term must be closed
-    if term is Intersection(tag, type, body)
-        metavariable <- newMetaVariable(tag)
-        body' := resolve(Closure(body, newArray([enclose(metavariable)])))
-        Scheme(universals, term) <- convertToScheme(body')
-        lift Scheme(metavariable :: universals, term)
-    lift Scheme([], term)
-
-
-def peelIntersections(term)
-    Scheme(_, term) <- convertToScheme(term)
-    lift term
-
-
-def pushContext(scheme, term, context @ (environment, schemes))
-    (environment.push(Closure(term, environment)), schemes.push(scheme))
-
-
-def metaevaluate(closure @ Closure(term, environment))
-    # we have to resolve to a closed term before calling peelIntersections
-    term := resolve(evaluateClosure(closure))
-    term <- peelIntersections(term)
-    lift resolve(evaluateClosure(Closure(term, environment)))
+def pushContext(type, term, context @ (environment, types))
+    (environment.push(Closure(term, environment)), types.push(type))
 
 
 def getDomain(tag, environment)
     case Inferred
         metavariable <- newMetaVariable(tag)
-        lift (metavariable, Scheme([], metavariable))
+        lift (metavariable, metavariable)
     case Domain(domain)
-        domain <- metaevaluate(Closure(domain, environment))
-        lift (domain, Scheme([], domain))
+        domain := resolve(evaluateClosure(Closure(domain, environment)))
+        lift (domain, domain)
     case PatternMatch(domain)
-        domain <- metaevaluate(Closure(domain, environment))
-        if domain is Construction(_, _, type, _)
-            scheme <- convertToScheme(type)
-            lift (domain, scheme)
-        throwError("expected construction in case annotation", tag)
+        outerDomain <- instantiateClosure(Closure(domain, environment))
+        if outerDomain is Construction(_, _, innerDomain, _)
+            lift (outerDomain, innerDomain)
+        throwError("expected construction in pattern match annotation", tag)
     case Opaque(type)
         throwError("cannot get domain of instance", tag)
 
 
-def infer(context @ (environment, schemes))
+def infer(context @ (environment, types))
     case Unknown(tag)
         lift Unknown(tag)
     case MetaVariable(tag, address)
@@ -78,22 +32,21 @@ def infer(context @ (environment, schemes))
     case Universe(tag, level)
         lift Universe(tag, up level)
     case Variable(tag, index)
-        scheme := schemes.seek(index) ?? throwError("unbound variable", tag)
-        scheme.instantiate(tag)
+        type := types.seek(index) ?? throwError("unbound variable", tag)
+        instantiateAll(type)  # todo: remove this after implementing subtyping
     case Function(tag, type, body)
         if type is Opaque(type')
-            # type should always be a closed term, so this should be safe
-            peelIntersections(type')
-        (domain, scheme) <- type.getDomain(tag, environment)
-        range <- body.infer(context.pushContext(scheme, Unknown(tag)))
-        lift Implication(tag, domain, range)
+            instantiateClosure(Closure(type', environment))
+        (outerDomain, innerDomain) <- type.getDomain(tag, environment)
+        range <- body.infer(context.pushContext(innerDomain, Unknown(tag)))
+        lift Implication(tag, outerDomain, range)
     case Implication(tag, domain, body)
         domain' := resolve(evaluateClosure(Closure(domain, environment)))
-        _ <- body.infer(context.pushContext(Scheme([], domain'), Unknown(tag)))
+        _ <- body.infer(context.pushContext(domain', Unknown(tag)))
         lift Universe(tag, 0)
     case Intersection(tag, domain, body)
         domain' := resolve(evaluateClosure(Closure(domain, environment)))
-        body.infer(context.pushContext(Scheme([], domain'), Unknown(tag)))
+        body.infer(context.pushContext(domain', Unknown(tag)))
     case Application(tag, applicand, argument)
         metacontext <- getState
         argumentType <- argument.infer(context)
@@ -102,9 +55,8 @@ def infer(context @ (environment, schemes))
                 # todo: support Domain annotations
                 # suppport polymorphism in nested functions
                 metacontext' <- getState
-                scheme := argumentType.generalize(metacontext', metacontext)
-                context' := context.pushContext(scheme, argument)
-                body.infer(context')
+                type' := argumentType.generalizeAll(metacontext', metacontext)
+                body.infer(context.pushContext(type', argument))
             pass
         applicandType <- applicand.infer(context)
         returnType <- newMetaVariable(tag)
@@ -123,11 +75,13 @@ def infer(context @ (environment, schemes))
         term.infer(context)
 
 
-def getFixScheme(tag)
+def getFixType(tag)
     syntax(=>>) := syntax(++)
-    (=>>) := Implication(tag)
-    a := MetaVariable(veil(tag), 0)
-    Scheme([a], (a =>> a) =>> a)
+    tag := renameTag(tag, "a", NOFIX)
+    (=>>) := Implication(veil(tag))
+    a1 := Variable(tag, -_ 1)
+    a2 := Variable(tag, -_ 2)
+    Intersection(tag, Universe(veil(tag), 0), (a1 =>> a2) =>> a2)
 
 
 def normalize(term)
@@ -135,20 +89,34 @@ def normalize(term)
     resolve(evaluateTerm(term)).mapComponents(normalize)
 
 
-def inferType(schemes, Binding(tag, closure @ Closure(term, environment)))
+def inferType(types, Binding(tag, closure @ Closure(term, environment)))
     if getTagLexeme(tag) =*= "fix"
-        schemes.push(getFixScheme(tag))
+        types.push(getFixType(tag))
     metacontext := newArray([])
-    context := (environment, schemes)
+    context := (environment, types)
     (type, metacontext') := infer(context, term, metacontext)
-    type' := normalize(resolve(Closure(type, environment)))
-    schemes.push(type'.generalize(metacontext', metacontext))
+    type := normalize(resolve(Closure(type, environment)))
+    types.push(type.generalizeAll(metacontext', metacontext))
+
+
+def showType(type)
+    if type is Intersection(tag, _, body)
+        "∀" ++ showTag(tag) ++ " " ++ showType(body)
+    showTerm(type)
+
+
+def showTyping((tag, type))
+    showTag(tag) ++ " : " ++ showType(type)
+
+
+def showTypings(typings)
+    typings.map(showTyping).joinWith("\n") ++ "\n"
 
 
 def main(input)
     bindings := reverse(parse(getBuiltin, input))
-    schemes := bindings.cascade(inferType, newArray([]))
+    types := bindings.cascade(inferType, newArray([]))
     tags := bindings.map(getBindingTag)
-    showTypings(zip(tags, schemes.toList))
+    showTypings(zip(tags, types.toList))
 
 #*

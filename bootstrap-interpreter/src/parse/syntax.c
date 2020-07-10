@@ -175,7 +175,7 @@ void initSymbols(void) {
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
     addCoreSyntax("is", 13, INFIX, L, reduceIs);
-    addCoreSyntax("abort", 15, PREFIX, L, reduceAbort);
+    addCoreSyntax("abort", 14, PREFIX, L, reduceAbort);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, PREFIX, L, reduceReserved);
     addCoreSyntax("syntax", 99, PREFIX, L, reducePrefix);

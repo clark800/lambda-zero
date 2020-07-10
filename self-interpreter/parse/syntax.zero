@@ -228,7 +228,7 @@ OPERATORS := [newDictionary([
     coreSyntax("case", 11, 11, NA, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
     coreSyntax("is", 13, 13, LA, Infix(reduceIs)),
-    coreSyntax("abort", 15, 15, LA, Prefix(reduceAdfix)),
+    coreSyntax("abort", 14, 14, LA, Prefix(reduceAdfix)),
     coreSyntax(".", 92, 92, LA, Infix(reducePipeline)),
     coreSyntax("$", 99, 99, LA, Prefix(reduceReservedAdfix)),
     coreSyntax("syntax", 99, 99, LA, Prefix(reduceAdfix)),
