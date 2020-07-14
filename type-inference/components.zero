@@ -39,7 +39,7 @@ def isSameHead(term)
 def getAnnotationComponents
     Inferred -> []
     Domain(term) -> [term]
-    PatternMatch(term) -> [term]
+    PatternMatch(term) -> []
     Opaque(term) -> []
 
 
@@ -57,27 +57,37 @@ def getComponents
     Operation(_, _, _) -> []
 
 
-def mapAnnotation(f)
+# PatternMatch and Opaque will never contain metavariables or unbound
+# Variables, so we can skip them here
+def mapDomain(f)
     Inferred -> Inferred
-    Domain(term) -> Domain(f(term))
-    PatternMatch(term) -> PatternMatch(f(term))
-    Opaque(term) -> Opaque(f(term))
+    Domain(domain) -> Domain(f(domain))
+    PatternMatch(domain) -> PatternMatch(domain)
+    Opaque(type) -> Opaque(type)
 
 
-def mapComponents(f, term)
+def mapComponentsWithDepth(f, depth, term)
     match term
         Unknown(_) -> term
         MetaVariable(_, _) -> term
         Universe(_, _) -> term
         Variable(_, _) -> term
         Function(tag, type, body) ->
-            Function(tag, type.mapAnnotation(f), f(body))
-        Implication(tag, domain, body) -> Implication(tag, f(domain), f(body))
-        Intersection(tag, domain, body) -> Intersection(tag, f(domain), f(body))
-        Application(tag, left, right) -> Application(tag, f(left), f(right))
+            Function(tag, type.mapDomain(f(depth)), body.f(up depth))
+        Implication(tag, domain, body) ->
+            Implication(tag, domain.f(depth), body.f(up depth))
+        Intersection(tag, domain, body) ->
+            Intersection(tag, domain.f(depth), body.f(up depth))
+        Application(tag, left, right) ->
+            Application(tag, left.f(depth), right.f(depth))
         Construction(tag, parameters, type, signatures) ->
-            Construction(tag, parameters.map(f), type, signatures)
+            Construction(tag, parameters.map(f(depth)),
+                type.f(depth), signatures)
         Numeral(_, _, _) -> term
         Operation(_, _, _) -> term
+
+
+def mapComponents(f, term)
+    mapComponentsWithDepth(_ -> f, 0, term)
 
 #*

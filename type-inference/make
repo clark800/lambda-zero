@@ -35,11 +35,12 @@ cat "$LIB/operators.zero" \
     "$PARSER/serialize.zero" \
     "$PARSER/builtins.zero" \
     "$PARSER/evaluate.zero" \
-    "$DIR/resolve.zero" \
     "$DIR/components.zero" \
+    "$DIR/resolve.zero" \
     "$DIR/substitute.zero" \
-    "$DIR/scheme.zero" \
     "$DIR/unify.zero" \
+    "$DIR/generalize.zero" \
+    "$DIR/instantiate.zero" \
     "$DIR/inference.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"
 

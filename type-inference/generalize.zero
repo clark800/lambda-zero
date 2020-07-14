@@ -1,0 +1,46 @@
+#* generalize.zero
+
+def substituteVariable(tag, metaIndex, depth, term)
+    sub := substituteVariable(tag, metaIndex)
+    if term is MetaVariable(_, index)
+        if index = metaIndex then Variable(tag, -_ depth) else term
+    if term is Variable(tag, index)
+        match index
+            +_ n -> term
+            -_ n -> if n >= depth then Variable(tag, -_ (up n)) else term
+    mapComponentsWithDepth(substituteVariable(tag, metaIndex), depth, term)
+
+
+def generalize(metavariable, term)
+    # todo: pass domain in as a parameter
+    if metavariable is MetaVariable(tag, metaIndex)
+        domain := Universe(veil(tag), 0)
+        body := substituteVariable(tag, metaIndex, 1, term)
+        Intersection(tag, domain, body)
+    throwError("generalize excepts a metavariable", getTermTag(metavariable))
+
+
+def getAllFreeVariables(metacontext, metacontext')
+    indices := (0 ...)[0, metacontext.getSize]
+    join(indices.map(MetaVariable(noTag)).map(
+        getFreeVariables(metacontext'))).deduplicateBy(isSameHead)
+
+
+def renameMetavariable(n, metavariable)
+    tag := getTermTag(metavariable)
+    metavariable.setTag(renameTag(tag, showMetaVariable(n), NOFIX))
+
+
+def generalizeAll(metacontext, oldMetacontext, type)
+    # generalize over only metavariables newly introduced in the current
+    # definition and leave the rest in the type because they may correspond to
+    # the types of local variables that haven't yet been determined
+    syntax(\\) := syntax(\)
+    vs \\ vs' := vs |: (v -> not vs'.any(isSameHead(v)))
+    type' := type.substitute(metacontext)
+    universals := type'.getFreeVariables(metacontext) \\
+        metacontext.getAllFreeVariables(oldMetacontext)
+    metavariables := zip(0 ..., universals).map(uncurry(renameMetavariable))
+    metavariables.fold(generalize, type')
+
+#*

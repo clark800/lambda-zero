@@ -1,5 +1,10 @@
 #* unify.zero
 
+def newMetaVariable(tag, metacontext)
+    (index, metacontext') := metacontext.append(Void)
+    (MetaVariable(tag, index), metacontext')
+
+
 def unificationError(originals, left, right)
     abort("Type error: Can't unify\n" ++
         showTerm(left) ++ "\nwith\n" ++ showTerm(right) ++
