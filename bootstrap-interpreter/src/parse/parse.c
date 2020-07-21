@@ -50,7 +50,11 @@ static void shiftNode(Stack* stack, Node* node) {
             erase(stack, ";");
     }
     if (isThisOperator(node, "\n")) {
-        if (!isOperator(getTop(stack))) {
+        Node* top = getTop(stack);
+        if (isOperator(top)) {
+            if (getFixity(top) == PREFIX)
+                syntaxError("missing operand after", top);
+        } else {
             if (getValue(node) % 2 != 0)
                 syntaxError("odd-width indent after", node);
             shift(stack, node);

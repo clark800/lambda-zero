@@ -68,7 +68,9 @@ def shiftOperator'(state, operator)
 
     if isThisOperator(operator, "\n")
         if getStack(state) is topItem :: _
-            if isOperator(topItem)
+            if topItem is OperatorItem(top)
+                if getFixityCode(getFixity(getSyntax(top))) = PREFIX
+                    opSyntaxError("missing operand after", top)
                 state  # ignore newlines after operators
             if getSubprecedence(operator) % 2 =/= 0
                 opSyntaxError("odd-width indent after", operator)
