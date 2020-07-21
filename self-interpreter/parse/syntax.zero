@@ -17,6 +17,10 @@ def reduceArrow(_tag, left, right)
         SimpleArrow(left, right)  # might be a case or might not be a case
     if isColonPair(left)
         newPatternArrow(left, right)
+    if left is Juxtaposition(_, left', right')
+        if isThisName(left', "case")
+            newCaseArrow(right', right)
+        pass
     newCaseArrow(left, right)
 
 

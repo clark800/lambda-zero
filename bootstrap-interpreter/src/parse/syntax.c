@@ -12,6 +12,8 @@ static Node* reduceArrow(Node* operator, Node* left, Node* right) {
         return SimpleArrow(left, right);
     if (isColonPair(left))
         return newLazyArrow(left, right);
+    if (isKeyphrase(left, "case"))
+        return newCaseArrow(getRight(left), right);
     return newCaseArrow(left, right);
 }
 

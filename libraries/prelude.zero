@@ -292,7 +292,7 @@ BinaryTree(a) ⩴ {
 
 def search((≾), hash, key, tree)
     match tree
-        case Tip; Void
+        case Tip -> Void
         case Fork(datum, left, right)
             key′ ≔ hash(datum)
             if key ≾ key′
@@ -319,7 +319,7 @@ def showFullBinaryTree(showElement, tree)
 
     def showFullBinaryTreeNode(indent, node)
         match node
-            case Leaf(x); showElementLine(indent, x)
+            case Leaf(x) -> showElementLine(indent, x)
             case Branch(x, left, right)
                 showElementLine(indent, x) ⧺
                     showFullBinaryTreeNode(↑ indent, left) ⧺
