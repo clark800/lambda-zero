@@ -2,10 +2,10 @@
 
 def list.pushRAL(x)
     match list
-        case []; [(1, Leaf(x))]
+        case [] -> [(1, Leaf(x))]
         case (size, tree) :: rest
             match rest
-                case []; (1, Leaf(x)) :: list
+                case [] -> (1, Leaf(x)) :: list
                 case (size', tree') :: rest'
                     if size = size'
                         (size + size' + 1, Branch(x, tree, tree')) :: rest'
@@ -14,10 +14,10 @@ def list.pushRAL(x)
 
 def list.popRAL
     match list
-        case []; []
+        case [] -> []
         case (size, tree) :: rest
             match tree
-                case Leaf(_); rest
+                case Leaf(_) -> rest
                 case Branch(_, left, right)
                     size' := size // 2
                     (size', left) :: (size', right) :: rest
@@ -25,7 +25,7 @@ def list.popRAL
 
 def list.peekRAL
     match list
-        case []; Void
+        case [] -> Void
         case (size, tree) :: _
             match tree
                 Leaf(x) -> Just(x)
@@ -47,7 +47,7 @@ def seekTree(n, size, tree)
 
 def list.getRAL(n)
     match list
-        case []; Void
+        case [] -> Void
         case (size, tree) :: rest
             if n < size then seekTree(n, size, tree) else rest.getRAL(n -- size)
 
@@ -67,7 +67,7 @@ def updateTree(n, x, size, tree)
 
 def list.setRAL(n, x)
     match list
-        case []; []
+        case [] -> []
         case (size, tree) :: rest
             if n < size
                 (size, updateTree(n, x, size, tree)) :: rest
@@ -76,14 +76,14 @@ def list.setRAL(n, x)
 
 def flattenPreorderTree(tree)
     match tree
-        case Leaf(x); [x]
+        case Leaf(x) -> [x]
         case Branch(x, left, right)
             x :: flattenPreorderTree(left) ++ flattenPreorderTree(right)
 
 
 def list.toListRAL
     match list
-        case []; []
+        case [] -> []
         case (_, tree) :: rest
             flattenPreorderTree(tree) ++ toListRAL(rest)
 

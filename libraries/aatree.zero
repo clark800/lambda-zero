@@ -12,10 +12,10 @@ def getLevelAA(tree)
 
 def skewAA(tree)
     match tree
-        case Tip; Tip
+        case Tip -> Tip
         case Fork(datum @ AADatum(n, _), left, right)
             match left
-                case Tip; tree
+                case Tip -> tree
                 case Fork(datum' @ AADatum(n', _), left', right')
                     if n =/= n'
                         tree
@@ -24,10 +24,10 @@ def skewAA(tree)
 
 def splitAA(tree)
     match tree
-        case Tip; Tip
+        case Tip -> Tip
         case Fork(datum @ AADatum(n, _), left, right)
             match right
-                case Tip; tree
+                case Tip -> tree
                 case Fork(AADatum(n', value'), left', right')
                     if getLevelAA(right') =/= n
                         tree
@@ -38,7 +38,7 @@ def splitAA(tree)
 def insertAA((~<), hash, value, tree)
     ss := splitAA <> skewAA
     match tree
-        case Tip; Fork(AADatum(1, value), Tip, Tip)
+        case Tip -> Fork(AADatum(1, value), Tip, Tip)
         case Fork(datum @ AADatum(n, value'), left, right)
             key := hash(value)
             key' := hash(value')

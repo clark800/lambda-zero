@@ -17,7 +17,7 @@ def getDimensions(matrix)
 
 def crossProduct(xs, ys)
     match xs
-        case []; []
+        case [] -> []
         case x :: xs'
             ys.map(y -> (x, y)) ++ crossProduct(xs', ys)
 
