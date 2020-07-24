@@ -65,7 +65,7 @@ def unify'(fail, metacontext, (left, right))
                     unify'(fail, metacontext, (left', right))
                 metacontext.setMetaVariable(index', Just(right))
             fail'
-        case Universe(_, _)
+        case Type(_, _)
             if isSameHead(left, right) then metacontext else fail'
         case Implication(tag, domain, body)
             if right is Implication(tag', domain', body')

@@ -12,7 +12,7 @@ def evaluate(stack, closure @ Closure(term, environment))
             closure
         case MetaVariable(tag, index)
             if isNil(stack) then closure else enclose(Unknown(tag))
-        case Universe(tag, level)
+        case Type(tag, index)
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Variable(tag, index)
             evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))

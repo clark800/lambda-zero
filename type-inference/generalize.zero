@@ -14,7 +14,7 @@ def substituteVariable(tag, metaIndex, depth, term)
 def generalize(metavariable, term)
     # todo: pass domain in as a parameter
     if metavariable is MetaVariable(tag, metaIndex)
-        domain := Universe(veil(tag), 0)
+        domain := Type(veil(tag), +_ 0)
         body := substituteVariable(tag, metaIndex, 1, term)
         Intersection(tag, domain, body)
     throwError("generalize excepts a metavariable", getTermTag(metavariable))

@@ -26,7 +26,7 @@ Annotation(term) ::= {
 Term ::= {
     Unknown(tag : TagT),
     MetaVariable(tag : TagT, index : ℤ),
-    Universe(tag : TagT, level : ℕ),
+    Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
     Function(tag : TagT, type : Annotation(Term), body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
@@ -42,7 +42,7 @@ Term ::= {
 def getTermTag
     Unknown(tag) -> tag
     MetaVariable(tag, _) -> tag
-    Universe(tag, _) -> tag
+    Type(tag, _) -> tag
     Variable(tag, _) -> tag
     Function(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
@@ -55,7 +55,7 @@ def getTermTag
 
 isUnknown := Unknown(_) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
-isUniverse := Universe(_, _) -> True; _ -> False
+isType := Type(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isFunction := Function(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
@@ -80,7 +80,7 @@ def splitSpine(term)
 def setTag(tag)
     Unknown(_) -> Unknown(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
-    Universe(_, level) -> Universe(tag, level)
+    Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
     Function(_, type, body) -> Function(tag, type, body)
     Implication(_, domain, body) -> Implication(tag, domain, body)
@@ -143,7 +143,7 @@ def showAnnotation(showTerm)
 def showTerm
     Unknown(_) -> "■"
     MetaVariable(tag, index) -> showMetaVariable(index)
-    Universe(_, level) -> "⊤" ++ showSubscript(level)
+    Type(_, index) -> "⊤" ++ showIntegerSubscript(index)
     Variable(tag, index) -> showTag(tag) # ++ "#" ++ showInteger(index)
     Function(tag, type, body) ->
         "(" ++ showTag(tag) ++ type.showAnnotation(showTerm) ++
