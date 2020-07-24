@@ -8,6 +8,7 @@ def pushUnknown(tag, environment)
 # the variable with the value from the environment recursively
 def resolve(Closure(term, environment))
     resolve'(t) := resolve(Closure(t, environment))
+    resolve''(tag, t) := resolve(Closure(t, pushUnknown(tag, environment)))
     match term
         Unknown(tag) -> term
         MetaVariable(tag, index) -> term
@@ -18,15 +19,12 @@ def resolve(Closure(term, environment))
                     resolve(evaluateClosure(closure))
             term
         )
-        Function(tag, type, body) ->
-            Function(tag, type.mapDomain(resolve'),
-                resolve(Closure(body, pushUnknown(tag, environment))))
-        Implication(tag, type, body) ->
-            Implication(tag, resolve'(type),
-                resolve(Closure(body, pushUnknown(tag, environment))))
-        Intersection(tag, type, body) ->
-            Intersection(tag, resolve'(type),
-                resolve(Closure(body, pushUnknown(tag, environment))))
+        Function(tag, domain, body) ->
+            Function(tag, domain.mapDomain(resolve'), resolve''(tag, body))
+        Implication(tag, domain, body) ->
+            Implication(tag, resolve'(domain), resolve''(tag, body))
+        Intersection(tag, domain, body) ->
+            Intersection(tag, resolve'(domain), resolve''(tag, body))
         Application(tag, left, right) ->
             Application(tag, resolve'(left), resolve'(right))
         Construction(tag, parameters, objectType, signatures) ->
