@@ -11,7 +11,7 @@ main(input) := showString(deduplicate("abc" ++ "bbd"))
 main(input) := showString(deduplicate("acbbcda"))
 "acbd"
 ===============================================================================
-main(input) := ((0..10).map(positive))[3, 7].showList(showInteger)
+main(input) := ((0..10).map((+_)))[3, 7].showList(showInteger)
 [+3, +4, +5, +6]
 ===============================================================================
 main(input) := " 12 3  4 ".splitWhen((= '3')).showPair(showString, showString)
@@ -35,7 +35,7 @@ main(input) := words(" 12 3  4 ").showList(showList(showNatural))
 main(input) := showString("   12 3  4 ".dropWhile((= ' ')))
 "12 3  4 "
 ===============================================================================
-main(input) := (5..9).map(positive).showList(showInteger)
+main(input) := (5..9).map((+_)).showList(showInteger)
 [+5, +6, +7, +8, +9]
 ===============================================================================
 main(input) := second(splitWhen((>= 3), (1 .. 5))).showList(showNatural)

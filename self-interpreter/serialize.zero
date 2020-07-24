@@ -5,8 +5,8 @@ def serialize(closure)
         match term
             case Unknown(tag)
                 "■"
-            case MetaVariable(tag, n)
-                showTag(tag)
+            case MetaVariable(tag, index)
+                showMetaVariable(index)
             case Universe(tag, level)
                 "⊤" ++ showSubscript(level)
             case Variable(tag, index)

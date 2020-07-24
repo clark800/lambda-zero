@@ -4,6 +4,8 @@ DIR=$(dirname "$0")
 LIB="$DIR/../libraries"
 OUT="$DIR/main"
 
+(cd ../bootstrap-interpreter || exit; make)
+
 # BSD chmod still prints an error when the file is not found even with
 # the -f flag, so we redirect stderr to /dev/null to hide that message
 chmod -f +w "$OUT" 2> /dev/null || true

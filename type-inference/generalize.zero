@@ -3,11 +3,11 @@
 def substituteVariable(tag, metaIndex, depth, term)
     sub := substituteVariable(tag, metaIndex)
     if term is MetaVariable(_, index)
-        if index = metaIndex then Variable(tag, -_ depth) else term
+        if index =:= metaIndex then Variable(tag, -_ depth) else term
     if term is Variable(tag, index)
         match index
             +_ n -> term
-            -_ n -> if n >= depth then Variable(tag, -_ (up n)) else term
+            -_ n -> if n >= depth then Variable(tag, -_(up n)) else term
     mapComponentsWithDepth(substituteVariable(tag, metaIndex), depth, term)
 
 
@@ -20,15 +20,15 @@ def generalize(metavariable, term)
     throwError("generalize excepts a metavariable", getTermTag(metavariable))
 
 
-def getAllFreeVariables(metacontext, metacontext')
-    indices := (0 ...)[0, metacontext.getSize]
+def getAllFreeVariables(Metacontext(positives, negatives), metacontext')
+    indices := map((+_), 0 ...)[0, positives.getSize]
     join(indices.map(MetaVariable(noTag)).map(
         getFreeVariables(metacontext'))).deduplicateBy(isSameHead)
 
 
 def renameMetavariable(n, metavariable)
     tag := getTermTag(metavariable)
-    metavariable.setTag(renameTag(tag, showMetaVariable(n), NOFIX))
+    metavariable.setTag(renameTag(tag, showMetaVariable(+_ n), NOFIX))
 
 
 def generalizeAll(metacontext, oldMetacontext, type)

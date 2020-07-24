@@ -11,7 +11,6 @@ CMD="$DIR/../main -t"
 
 if test "$#" -gt 0 && test "$1" = "meta"; then
     META=1
-    "$DIR/../../self-interpreter/make"
     CMD="$DIR/../../self-interpreter/main"
 else
     META=0

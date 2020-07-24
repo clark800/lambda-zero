@@ -3,9 +3,9 @@
 def isSameHead(term)
     case Unknown(_)
         False
-    case MetaVariable(_, address)
-        if term is MetaVariable(_, address')
-            address = address'
+    case MetaVariable(_, index)
+        if term is MetaVariable(_, index')
+            index =:= index'
         False
     case Universe(_, level)
         if term is Universe(_, level')

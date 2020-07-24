@@ -1,10 +1,23 @@
 #* substitute.zero
 
-def getFreeVariables(metacontext, term)
-    if term is MetaVariable(_, address)
-        if metacontext.get(address) ?? Void is Just(term)
-            getFreeVariables(metacontext, term)
-        [term]
+MetacontextT ::= {
+    Metacontext(positives : ArrayT((Term)?), negatives : ArrayT((Term)?))
+}
+
+emptyMetacontext := Metacontext(newArray([]), newArray([]))
+
+
+def setMetaVariable(index, value, Metacontext(positives, negatives))
+    Metacontext(positives.set(index, value), negatives)
+
+
+def getFreeVariables(metacontext @ Metacontext(positives, negatives), term)
+    if term is MetaVariable(_, index)
+        if index is +_ index'
+            if positives.get(index') ?? Void is Just(term)
+                getFreeVariables(metacontext, term)
+            [term]
+        []
     join(getComponents(term).map(getFreeVariables(metacontext))).
         deduplicateBy(isSameHead)
 
@@ -15,9 +28,9 @@ def showMaybeTerm(maybeTerm)
     "Free"
 
 
-def showMetacontext(metacontext)
-    zip(0 ..., metacontext.toList).map((address, maybeTerm) ->
-        showMetaVariable(address) ++ " := " ++
+def showMetacontext(Metacontext(positives, negatives))
+    zip((0 ...).map((+_)), positives.toList).map((index, maybeTerm) ->
+        showMetaVariable(index) ++ " := " ++
         showMaybeTerm(maybeTerm)).joinWith("\n")
 
 
@@ -28,13 +41,16 @@ def recursionError(term, term', metacontext)
         showMetacontext(metacontext))
 
 
-def substitute(metacontext, term)
-    if term is MetaVariable(tag, address)
-        if metacontext.get(address) ?? Void is Just(term')
-            term' := term'.setLocation(tag)
-            if term'.getFreeVariables(newArray([])).any(isSameHead(term))
-                recursionError(term, term', metacontext)
-            term'.substitute(metacontext)
+def substitute(metacontext @ Metacontext(positives, negatives), term)
+    if term is MetaVariable(tag, index)
+        if index is +_ index'
+            if positives.get(index') ?? Void is Just(term')
+                term' := term'.setLocation(tag)
+                freeVariables := term'.getFreeVariables(emptyMetacontext)
+                if freeVariables.any(isSameHead(term))
+                    recursionError(term, term', metacontext)
+                term'.substitute(metacontext)
+            term
         term
     term.mapComponents(substitute(metacontext))
 

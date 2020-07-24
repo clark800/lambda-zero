@@ -78,10 +78,7 @@ toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
 n ⫽ m ≔ if m = 0 or n < m then 0 else ↑((n ∸ m) ⫽ m)
 n % m ≔ if m = 0 then n else (if n < m then n else (n ∸ m) % m)
 
-(≐) ≔ ᐩ n ↦ (ᐩ m ↦ n = m; ᐨ m ↦ n = 0 and m = 0);
-      ᐨ n ↦ (ᐩ m ↦ n = 0 and m = 0; ᐨ m ↦ n = m)
-positive(n) ≔ ᐩ n
-negative(n) ≔ ᐨ n
+(≐) ≔ ᐩ n ↦ (ᐩ m ↦ n = m; ᐨ m ↦ False); ᐨ n ↦ (ᐩ m ↦ False; ᐨ m ↦ n = m)
 negate ≔ ᐩ n ↦ ᐨ n; ᐨ n ↦ ᐩ n
 abs ≔ ᐩ n ↦ ᐩ n; ᐨ n ↦ ᐩ n
 min(n, m) ≔ if n ≤ m then n else m
@@ -103,7 +100,7 @@ prepend ≔ (∷)
 isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
 cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
-abort(message : List(ℕ)) := abort(message)
+abort(message : List(ℕ)) ≔ abort(message)
 
 xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
@@ -271,7 +268,7 @@ def showPair(showFirst, showSecond, xsxs)
 showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 def showSubscript(n)
-    subscripts := ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
+    subscripts ≔ ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
     showNatural(n).map((-- '0')).map(`at(subscripts)).prune.join
 
 # parsing
@@ -292,7 +289,7 @@ BinaryTree(a) ⩴ {
 
 def search((≾), hash, key, tree)
     match tree
-        case Tip -> Void
+        case Tip ↦ Void
         case Fork(datum, left, right)
             key′ ≔ hash(datum)
             if key ≾ key′
@@ -319,7 +316,7 @@ def showFullBinaryTree(showElement, tree)
 
     def showFullBinaryTreeNode(indent, node)
         match node
-            case Leaf(x) -> showElementLine(indent, x)
+            case Leaf(x) ↦ showElementLine(indent, x)
             case Branch(x, left, right)
                 showElementLine(indent, x) ⧺
                     showFullBinaryTreeNode(↑ indent, left) ⧺
@@ -333,6 +330,6 @@ lift value ≔ state ↦ (value, state)
 f ≫ g ≔ state ↦ (g(value, state′) where (value, state′) ≔ f(state))
 getState ≔ state ↦ (state, state)
 setState(newState) ≔ state ↦ ((), newState)
-mapState(f, xs) := state -> xs.cascadeMap(f, state)
+mapState(f, xs) ≔ state ↦ xs.cascadeMap(f, state)
 
 #*
