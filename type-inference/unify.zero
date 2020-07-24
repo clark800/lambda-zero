@@ -32,11 +32,8 @@ def substituteAndEvaluate(metacontext, term)
     resolve(evaluateClosure(enclose(substitute(metacontext, term))))
 
 
-def insertMetaVariable(term, metacontext)
-    tag := getTermTag(term)
-    (metavariable, metacontext') := newPositiveMetaVariable(tag, metacontext)
-    closure' := Closure(term, newArray([enclose(metavariable)]))
-    (resolve(closure'), metacontext')
+def substituteArgument(argument, term)
+    resolve(Closure(term, newArray([enclose(argument)])))
 
 
 # Robinson's Unification Algorithm
@@ -70,19 +67,21 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Universe(_, _)
             if isSameHead(left, right) then metacontext else fail'
-        case Implication(_, domain, body)
-            if right is Implication(_, domain', body')
+        case Implication(tag, domain, body)
+            if right is Implication(tag', domain', body')
                 metacontext' := unify'(fail, metacontext, (domain', domain))
-                # todo: handle dependent types
-                unify'(fail, metacontext', (body, body'))
+                (m, metacontext'') := newNegativeMetaVariable(tag, metacontext')
+                unify'(fail, metacontext'',
+                    (body.substituteArgument(m), body'.substituteArgument(m)))
             fail'
-        case Intersection(_, domain, body)
-            if right is Intersection(tag, domain', body')
+        case Intersection(tag, domain, body)
+            if right is Intersection(tag', domain', body')
                 metacontext' := unify'(fail, metacontext, (domain', domain))
-                # todo: handle dependent types
-                unify'(fail, metacontext', (body, body'))
-            (left', metacontext') := insertMetaVariable(body, metacontext)
-            unify'(fail, metacontext', (left', right))
+                (m, metacontext'') := newNegativeMetaVariable(tag, metacontext')
+                unify'(fail, metacontext'',
+                    (body.substituteArgument(m), body'.substituteArgument(m)))
+            (m, metacontext') := newPositiveMetaVariable(tag, metacontext)
+            unify'(fail, metacontext', (body.substituteArgument(m), right))
         case Construction(_, parameters, _, _)
             if not isSameHead(left, right)
                 fail'
