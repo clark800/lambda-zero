@@ -47,7 +47,7 @@ main(input) := (0 ...).take(10).map(showNatural).join
 main(input) := (0 ...).take(10).map(showNatural).joinWith("")
 0123456789
 ===============================================================================
-main(input) := primes.take(5).map(negative).showList(showInteger)
+main(input) := primes.take(5).map((-_)).showList(showInteger)
 [-2, -3, -5, -7, -11]
 ===============================================================================
 main(input) := primes.take(10).showList(showNatural)

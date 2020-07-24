@@ -1,8 +1,13 @@
 #* unify.zero
 
-def newMetaVariable(tag, metacontext)
-    (index, metacontext') := metacontext.append(Void)
-    (MetaVariable(tag, index), metacontext')
+def newPositiveMetaVariable(tag, Metacontext(positives, negatives))
+    (index, positives') := positives.append(Void)
+    (MetaVariable(tag, +_ index), Metacontext(positives', negatives))
+
+
+def newNegativeMetaVariable(tag, Metacontext(positives, negatives))
+    (index, negatives') := negatives.append(Void)
+    (MetaVariable(tag, -_ index), Metacontext(positives, negatives'))
 
 
 def unificationError(originals, left, right)
@@ -19,18 +24,8 @@ def unifyFailure(originals, metacontext, (left, right))
         left.substitute(metacontext), right.substitute(metacontext))
 
 
-def isFree(metavariable, metacontext)
-    if metavariable is MetaVariable(_, address)
-        isVoid(metacontext.get(address) ?? Void)
-    False
-
-
-def getValue(type, metacontext)
-    if type is MetaVariable(_, address)
-        if metacontext.get(address) ?? Void is Just(term)
-            term
-        pass
-    throwError("internal error", getTermTag(type))
+def getValue(index, Metacontext(positives, negatives))
+    positives.get(index) ?? Void
 
 
 def substituteAndEvaluate(metacontext, term)
@@ -39,7 +34,7 @@ def substituteAndEvaluate(metacontext, term)
 
 def insertMetaVariable(term, metacontext)
     tag := getTermTag(term)
-    (metavariable, metacontext') := newMetaVariable(tag, metacontext)
+    (metavariable, metacontext') := newPositiveMetaVariable(tag, metacontext)
     closure' := Closure(term, newArray([enclose(metavariable)]))
     (resolve(closure'), metacontext')
 
@@ -55,20 +50,24 @@ def unify'(fail, metacontext, (left, right))
 
     if right is Unknown(_)
         fail'
-    if right is MetaVariable(_, address)
-        if isFree(right, metacontext)
-            if isSameHead(left, right)
-                metacontext
-            metacontext.set(address, Just(left))
-        unify'(fail, metacontext, (left, metacontext.getValue(right)))
+    if right is MetaVariable(_, index)
+        if isSameHead(left, right)
+            metacontext
+        if index is +_ index'
+            if metacontext.getValue(index') is Just(right')
+                unify'(fail, metacontext, (left, right'))
+            metacontext.setMetaVariable(index', Just(left))
+        fail'
 
     match left
-        case MetaVariable(_, address)
-            if isFree(left, metacontext)
-                if isSameHead(left, right)
-                    metacontext
-                metacontext.set(address, Just(right))
-            unify'(fail, metacontext, (metacontext.getValue(left), right))
+        case MetaVariable(_, index)
+            if isSameHead(left, right)
+                metacontext
+            if index is +_ index'
+                if metacontext.getValue(index') is Just(left')
+                    unify'(fail, metacontext, (left', right))
+                metacontext.setMetaVariable(index', Just(right))
+            fail'
         case Universe(_, _)
             if isSameHead(left, right) then metacontext else fail'
         case Implication(_, domain, body)
@@ -97,7 +96,8 @@ def unify'(fail, metacontext, (left, right))
 def unify(left, right, metacontext)
     types := (left, right)
     metacontext' := unify'(unifyFailure(types), metacontext, types)
-    if getSize(metacontext') < 0  # todo: remove this and use either type
+    _ @ Metacontext(positives, negatives) := metacontext'
+    if getSize(positives) < 0  # todo: remove this and use either type
         abort("force unification errors")
     ((), metacontext')
 

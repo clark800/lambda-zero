@@ -9,7 +9,7 @@ def instantiate(term, intersection)  # must be closed terms
 def splitUniversals(term)
     if term is Intersection(tag, _, body)
         (universals, body') <- splitUniversals(body)
-        metavariable <- newMetaVariable(tag)
+        metavariable <- newPositiveMetaVariable(tag)
         lift (universals ++ [metavariable], body')
     lift ([], term)
 

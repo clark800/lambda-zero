@@ -25,7 +25,7 @@ Annotation(term) ::= {
 
 Term ::= {
     Unknown(tag : TagT),
-    MetaVariable(tag : TagT, id : ℕ),
+    MetaVariable(tag : TagT, index : ℤ),
     Universe(tag : TagT, level : ℕ),
     Variable(tag : TagT, index : ℤ),
     Function(tag : TagT, type : Annotation(Term), body : Term),
@@ -120,11 +120,17 @@ def showApplication(showTerm, applicand, argument)
     showTerm(headTerm) ++ "(" ++ arguments.map(showTerm).joinWith(", ") ++ ")"
 
 
-def showMetaVariable(n)
+def showPositiveMetaVariable(n)
     characters := ['a', 'b', 'c', 'd']
     if n < 4
         [characters.at(n) ?? '#']
-    showMetaVariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
+    showPositiveMetaVariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
+
+
+def showMetaVariable(index)
+    match index
+        +_ n -> showPositiveMetaVariable(n)
+        -_ n -> "■" ++ showSubscript(n)
 
 
 def showAnnotation(showTerm)
@@ -136,7 +142,7 @@ def showAnnotation(showTerm)
 
 def showTerm
     Unknown(_) -> "■"
-    MetaVariable(tag, n) -> showMetaVariable(n)
+    MetaVariable(tag, index) -> showMetaVariable(index)
     Universe(_, level) -> "⊤" ++ showSubscript(level)
     Variable(tag, index) -> showTag(tag) # ++ "#" ++ showInteger(index)
     Function(tag, type, body) ->
