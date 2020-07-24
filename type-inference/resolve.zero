@@ -12,7 +12,7 @@ def resolve(Closure(term, environment))
     match term
         Unknown(tag) -> term
         MetaVariable(tag, index) -> term
-        Universe(tag, level) -> term
+        Type(tag, index) -> term
         Variable(tag, index) -> (
             if environment.seek(index) is Just(closure)
                 if isUnknown(getTerm(closure)) then term else

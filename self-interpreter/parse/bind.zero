@@ -126,7 +126,7 @@ def bind(getBuiltin, globals, locals, node)
             locals' := locals.pushParameter(parameter)
 
             if arrowType is Tail
-                domain := annotation.mapJust(bind'(locals)) ?? Universe(tag, 0)
+                domain := annotation.mapJust(bind'(locals)) ?? Type(tag, +_ 0)
                 Intersection(getTag(parameter), domain, body.bind'(locals'))
 
             bodyTerm := body.bind'(locals')

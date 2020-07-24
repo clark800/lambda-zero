@@ -7,9 +7,9 @@ def isSameHead(term)
         if term is MetaVariable(_, index')
             index =:= index'
         False
-    case Universe(_, level)
-        if term is Universe(_, level')
-            level = level'
+    case Type(_, index)
+        if term is Type(_, index')
+            index =:= index'
         False
     case Variable(_, index)
         if term is Variable(_, index')
@@ -46,7 +46,7 @@ def getAnnotationComponents
 def getComponents
     Unknown(_) -> []
     MetaVariable(_, _) -> []
-    Universe(_, _) -> []
+    Type(_, _) -> []
     Variable(_, _) -> []
     Function(_, type, body) -> getAnnotationComponents(type) ++ [body]
     Implication(_, domain, body) -> [domain, body]
@@ -70,7 +70,7 @@ def mapComponentsWithDepth(f, depth, term)
     match term
         Unknown(_) -> term
         MetaVariable(_, _) -> term
-        Universe(_, _) -> term
+        Type(_, _) -> term
         Variable(_, _) -> term
         Function(tag, type, body) ->
             Function(tag, type.mapDomain(f(depth)), body.f(up depth))

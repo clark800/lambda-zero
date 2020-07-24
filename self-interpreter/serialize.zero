@@ -7,8 +7,8 @@ def serialize(closure)
                 "■"
             case MetaVariable(tag, index)
                 showMetaVariable(index)
-            case Universe(tag, level)
-                "⊤" ++ showSubscript(level)
+            case Type(tag, index)
+                "⊤" ++ showIntegerSubscript(index)
             case Variable(tag, index)
                 match index
                     case +_ n

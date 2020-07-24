@@ -80,7 +80,7 @@ n % m ≔ if m = 0 then n else (if n < m then n else (n ∸ m) % m)
 
 (≐) ≔ ᐩ n ↦ (ᐩ m ↦ n = m; ᐨ m ↦ False); ᐨ n ↦ (ᐩ m ↦ False; ᐨ m ↦ n = m)
 negate ≔ ᐩ n ↦ ᐨ n; ᐨ n ↦ ᐩ n
-abs ≔ ᐩ n ↦ ᐩ n; ᐨ n ↦ ᐩ n
+abs ≔ ᐩ n ↦ n; ᐨ n ↦ n
 min(n, m) ≔ if n ≤ m then n else m
 max(n, m) ≔ if n ≥ m then n else m
 mod(d, n) ≔ n % d
@@ -260,8 +260,8 @@ def showNatural(n)
         if m = 0 then [] else ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
     if n = 0 then "0" else reverse(showReversedNatural(n))
 
-showSign ≔ ᐩ _ ↦ "+"; ᐨ _ ↦ "-"
-showInteger(z) ≔ showSign(z) ⧺ showNatural(z ⦊ ᐩ n ↦ n; ᐨ n ↦ n)
+showSign ≔ ᐩ _ ↦ ""; ᐨ _ ↦ "-"
+showInteger(z) ≔ showSign(z) ⧺ showNatural(abs(z))
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
 def showPair(showFirst, showSecond, xsxs)
     "(" ⧺ showFirst(xsxs.first) ⧺ ", " ⧺ showSecond(xsxs.second) ⧺ ")"
@@ -270,6 +270,9 @@ showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 def showSubscript(n)
     subscripts ≔ ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
     showNatural(n).map((-- '0')).map(`at(subscripts)).prune.join
+
+showSubscriptSign ≔ ᐩ _ ↦ ""; ᐨ _ ↦ "₋"
+showIntegerSubscript(z) ≔ showSubscriptSign(z) ⧺ showSubscript(abs(z))
 
 # parsing
 parseDigit(digit) ≔ if isDigit(digit) then Just(digit ∸ '0') else Void
