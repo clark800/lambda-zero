@@ -13,7 +13,7 @@ def getDomain(tag, environment)
         lift (domain, domain)
     case PatternMatch(domain)
         outerDomain <- instantiateClosure(Closure(domain, environment))
-        if outerDomain is Construction(_, _, innerDomain, _)
+        if outerDomain is Construction(_, _, innerDomain)
             lift (outerDomain, innerDomain)
         throwError("expected construction in pattern match annotation", tag)
     case Opaque(type)
@@ -65,8 +65,7 @@ def infer(context @ (environment, types))
         _ <- unify(resolve(Closure(applicandType, environment)),
                   resolve(Closure(functionType, environment)))
         lift returnType
-    case Construction(tag, parameters, objectType, signatures)
-        _ <- signatures.mapState(infer(context))
+    case Construction(tag, parameters, objectType)
         lift Type(tag, +_ 0)
     case Numeral(tag, type, value)
         lift type
