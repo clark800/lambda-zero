@@ -7,6 +7,16 @@ MetacontextT ::= {
 emptyMetacontext := Metacontext(newArray([]), newArray([]))
 
 
+def newPositiveMetaVariable(tag, Metacontext(positives, negatives))
+    (index, positives') := positives.append(Void)
+    (MetaVariable(tag, +_ index), Metacontext(positives', negatives))
+
+
+def newNegativeMetaVariable(tag, Metacontext(positives, negatives))
+    (index, negatives') := negatives.append(Void)
+    (MetaVariable(tag, -_ index), Metacontext(positives, negatives'))
+
+
 def setMetaVariable(index, value, Metacontext(positives, negatives))
     Metacontext(positives.set(index, value), negatives)
 

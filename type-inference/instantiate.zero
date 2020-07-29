@@ -1,8 +1,21 @@
 #* instantiate.zero
 
-def instantiate(term, intersection)  # must be closed terms
+def substituteArgument'(argument, depth, term)
+    if term is Variable(tag, index)
+        match index
+            +_ n -> term
+            -_ n -> if n > depth then Variable(tag, -_(up n)) else
+                  (if n = depth then argument else term)
+    mapComponentsWithDepth(substituteArgument'(argument), depth, term)
+
+
+def substituteArgument(argument, term)
+    substituteArgument'(argument, 1, term)
+
+
+def instantiate(term, intersection)
     if intersection is Intersection(_, _, body)
-        resolve(Closure(body, newArray([enclose(term)])))
+        substituteArgument(term, body)
     throwError("expected intersection in instantiate", getTermTag(intersection))
 
 
@@ -14,9 +27,11 @@ def splitUniversals(term)
     lift ([], term)
 
 
-def instantiateAll(term)    # must be a closed term
-    (universals, body) <- splitUniversals(term)
-    lift resolve(Closure(body, newArray(universals.map(enclose))))
+def instantiateAll(term)
+    if isIntersection(term)
+        metavariable <- newPositiveMetaVariable(getTermTag(term))
+        instantiateAll(instantiate(metavariable, term))
+    lift term
 
 
 def instantiateClosure(closure)
