@@ -89,9 +89,13 @@ def getFixType(tag)
     Intersection(tag, Type(veil(tag), +_ 0), (a1 =>> a2) =>> a2)
 
 
+def reduceTerm(term)
+    value := resolve(evaluateTerm(term))
+    if isUnknown(value) then term else value
+
+
 def normalize(term)
-    # todo: evaluateTerm will return Unknown for variables inside binders
-    resolve(evaluateTerm(term)).mapComponents(normalize)
+    reduceTerm(term).mapComponents(normalize)
 
 
 def inferType(types, Binding(tag, closure @ Closure(term, environment)))
@@ -100,8 +104,9 @@ def inferType(types, Binding(tag, closure @ Closure(term, environment)))
     metacontext := emptyMetacontext
     context := (environment, types)
     (type, metacontext') := infer(context, term, metacontext)
-    type := normalize(resolve(Closure(type, environment)))
-    types.push(type.generalizeAll(metacontext', metacontext))
+    type' := resolve(Closure(type, environment))
+    type'' := type'.generalizeAll(metacontext', metacontext)
+    types.push(normalize(type''))
 
 
 def showType(type)
