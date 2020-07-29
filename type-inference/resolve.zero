@@ -15,8 +15,7 @@ def resolve(Closure(term, environment))
         Type(tag, index) -> term
         Variable(tag, index) -> (
             if environment.seek(index) is Just(closure)
-                if isUnknown(getTerm(closure)) then term else
-                    resolve(evaluateClosure(closure))
+                if isUnknown(getTerm(closure)) then term else resolve(closure)
             term
         )
         Function(tag, domain, body) ->
