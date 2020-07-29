@@ -108,8 +108,8 @@ def buildCaseAnnotation(tag, constructorNames, globals)
     Void
 
 
-def bind(getBuiltin, globals, locals, node)
-    bind' := bind(getBuiltin, globals)
+def bind(getBuiltin, globals, index, locals, node)
+    bind' := bind(getBuiltin, globals, index)
     match node
         case Reference(tag, debruijn)
             if debruijn = 0
@@ -166,8 +166,9 @@ def bind(getBuiltin, globals, locals, node)
             astSyntaxError("must appear on the right side of '::='", node)
         case ADT(tag, parameters, objectType, signatures)
             parameterTerms := parameters.map(bind'(locals))
-            objectTerm := objectType.bind'(locals)
-            Construction(tag, parameterTerms, objectTerm)
+            body := objectType.bind'(locals.pushParameter(Name(tag)))
+            domain := Type(tag, -_ index)
+            Construction(tag, domain, parameterTerms, body)
         case Constructor(tag, type, adtType, function, count, index)
             type' := type.bind'(locals)
             if function is Number(_, value)
@@ -181,14 +182,14 @@ def bind(getBuiltin, globals, locals, node)
             astSyntaxError("typed node must be a function", node)
 
 
-def bindGlobal(getBuiltin, globals, node)
+def bindGlobal(getBuiltin, globals, index, node)
     locals := (0, newDictionary([]))
-    bind(getBuiltin, globals, locals, node)
+    bind(getBuiltin, globals, index, locals, node)
 
 
 def bindDefinition(getBuiltin, state, (tag, node))
     (bindings, globals, environment) := state
-    term := bindGlobal(getBuiltin, globals, node)
+    term := bindGlobal(getBuiltin, globals, getSize(environment), node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, globals, tag, term) ?? term
     closure := Closure(definiens, environment)
