@@ -23,9 +23,8 @@ def isSameHead(term)
         isIntersection(term)
     case Application(_, _, _)
         isApplication(term)
-    case Construction(tag, _, _)
-        isConstruction(term) and
-            getTagLexeme(tag) =*= getTagLexeme(getTermTag(term))
+    case Construction(tag, _, _, _)
+        isConstruction(term)
     case Numeral(_, _, value)
         if term is Numeral(_, _, value')
             value = value'
@@ -52,7 +51,7 @@ def getComponents
     Implication(_, domain, body) -> [domain, body]
     Intersection(_, domain, body) -> [domain, body]
     Application(_, left, right) -> [left, right]
-    Construction(_, parameters, _) -> parameters
+    Construction(_, domain, parameters, body) -> domain :: parameters
     Numeral(_, _, _) -> []
     Operation(_, _, _) -> []
 
@@ -80,8 +79,9 @@ def mapComponentsWithDepth(f, depth, term)
             Intersection(tag, domain.f(depth), body.f(up depth))
         Application(tag, left, right) ->
             Application(tag, left.f(depth), right.f(depth))
-        Construction(tag, parameters, type) ->
-            Construction(tag, parameters.map(f(depth)), type.f(depth))
+        Construction(tag, domain, parameters, body) ->
+            Construction(tag, domain.f(depth), parameters.map(f(depth)),
+                body.f(up depth))
         Numeral(_, _, _) -> term
         Operation(_, _, _) -> term
 

@@ -27,7 +27,7 @@ def evaluate(stack, closure @ Closure(term, environment))
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
-        case Construction(tag, parameter, type)
+        case Construction(tag, domain, parameter, body)
             if isNil(stack) then closure else enclose(Unknown(tag))
         case Numeral(tag, type, n)
             if isNil(stack) then closure else

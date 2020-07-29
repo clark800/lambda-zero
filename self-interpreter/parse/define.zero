@@ -215,7 +215,7 @@ def applyADTDefinition(tag, left, right, scope)
         if not parameters.all(isName)
             astSyntaxError("parameters to type constructor must be names", name)
         adt := newADT(getTag(name), left, parameters, forms)
-        value := applyFix(name, parameters.fold(LockedArrow, adt))
+        value := parameters.fold(LockedArrow, adt)
         Let(tag, True, name, value, scope')
     astSyntaxError("internal error", left)
 

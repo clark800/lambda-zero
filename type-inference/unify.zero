@@ -82,10 +82,10 @@ def unify'(fail, metacontext, (left, right))
                     (body.substituteArgument(m), body'.substituteArgument(m)))
             (m, metacontext') := newPositiveMetaVariable(tag, metacontext)
             unify'(fail, metacontext', (body.substituteArgument(m), right))
-        case Construction(_, parameters, _)
-            if not isSameHead(left, right)
-                fail'
-            if right is Construction(_, parameters', _)
+        case Construction(_, domain, parameters, _)
+            if right is Construction(_, domain', parameters', _)
+                if not isSameHead(domain, domain')
+                    fail'
                 zip(parameters, parameters').cascade(unify'(fail), metacontext)
             fail'
         case _
