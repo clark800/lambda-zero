@@ -27,9 +27,8 @@ def resolve(Closure(term, environment))
             Intersection(tag, resolve'(domain), resolve''(tag, body))
         Application(tag, left, right) ->
             Application(tag, resolve'(left), resolve'(right))
-        Construction(tag, parameters, objectType, signatures) ->
-            Construction(tag, parameters.map(resolve'),
-                resolve'(objectType), signatures.map(resolve'))
+        Construction(tag, parameters, objectType) ->
+            Construction(tag, parameters.map(resolve'), resolve'(objectType))
         Numeral(_, _, _) -> term
         Operation(_, _, _) -> term
 
