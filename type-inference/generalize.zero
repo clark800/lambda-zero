@@ -1,7 +1,6 @@
 #* generalize.zero
 
 def substituteVariable(tag, metaIndex, depth, term)
-    sub := substituteVariable(tag, metaIndex)
     if term is MetaVariable(_, index)
         if index =:= metaIndex then Variable(tag, -_ depth) else term
     if term is Variable(tag, index)
