@@ -7,6 +7,20 @@ MetacontextT ::= {
 emptyMetacontext := Metacontext(newArray([]), newArray([]))
 
 
+def showMaybeTerm(maybeTerm)
+    if maybeTerm is Just(term)
+        showTerm(term)
+    "Free"
+
+
+def showMetacontext(Metacontext(positives, negatives))
+    if getSize(positives) = 0
+        "Empty"
+    zip((0 ...).map((+_)), positives.toList).map((index, maybeTerm) ->
+        showMetaVariable(index) ++ " := " ++
+        showMaybeTerm(maybeTerm)).joinWith("\n")
+
+
 def newPositiveMetaVariable(tag, Metacontext(positives, negatives))
     (index, positives') := positives.append(Void)
     (MetaVariable(tag, +_ index), Metacontext(positives', negatives))
@@ -30,18 +44,6 @@ def getFreeVariables(metacontext @ Metacontext(positives, negatives), term)
         []
     join(getComponents(term).map(getFreeVariables(metacontext))).
         deduplicateBy(isSameHead)
-
-
-def showMaybeTerm(maybeTerm)
-    if maybeTerm is Just(term)
-        showTerm(term)
-    "Free"
-
-
-def showMetacontext(Metacontext(positives, negatives))
-    zip((0 ...).map((+_)), positives.toList).map((index, maybeTerm) ->
-        showMetaVariable(index) ++ " := " ++
-        showMaybeTerm(maybeTerm)).joinWith("\n")
 
 
 def recursionError(term, term', metacontext)

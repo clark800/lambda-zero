@@ -1,11 +1,25 @@
 #* instantiate.zero
 
+
+def shiftIndices'(offset, depth, term)
+    if term is Variable(tag, index)
+        match index
+            +_ n -> term
+            -_ n -> if n > depth then Variable(tag, -_(n + offset)) else term
+    mapComponentsWithDepth(shiftIndices'(offset), depth, term)
+
+
+def shiftIndices(offset, term)
+    if offset = 0 then term else shiftIndices'(offset, 0, term)
+
+
 def substituteArgument'(argument, depth, term)
     if term is Variable(tag, index)
         match index
             +_ n -> term
-            -_ n -> if n > depth then Variable(tag, -_(up n)) else
-                  (if n = depth then argument else term)
+            -_ n -> if n > depth then Variable(tag, -_(down n)) else
+                  (if n = depth then
+                   shiftIndices(down depth, argument) else term)
     mapComponentsWithDepth(substituteArgument'(argument), depth, term)
 
 
