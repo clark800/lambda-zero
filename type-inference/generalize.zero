@@ -16,7 +16,7 @@ def generalize(metavariable, term)
         domain := Type(veil(tag), +_ 0)
         body := substituteVariable(tag, metaIndex, 1, term)
         Intersection(tag, domain, body)
-    throwError("generalize excepts a metavariable", getTermTag(metavariable))
+    throwError("generalize expects a metavariable", getTermTag(metavariable))
 
 
 def getAllFreeVariables(Metacontext(positives, negatives), metacontext')
