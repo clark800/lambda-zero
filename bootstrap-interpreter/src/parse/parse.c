@@ -44,6 +44,7 @@ bool isRightSectionOperator(Node* op) {
 
 static void shiftNode(Stack* stack, Node* node) {
     debugParseState(getTag(node), stack, DEBUG >= 2);
+    Hold* nodeHold = hold(node);
     if (isOperator(node) && getFixity(node) == CLOSEFIX) {
         erase(stack, "\n");
         if (isThisOperator(node, ")"))
@@ -65,23 +66,23 @@ static void shiftNode(Stack* stack, Node* node) {
             shift(stack, node);
         } else if (isThisOperator(top, "(") && isRightSectionOperator(node)) {
             erase(stack, "(");
-            Node* open = parseSymbol(renameTag(getTag(top), "( "), 0);
-            Node* placeholder = Name(renameTag(getTag(top), ".*"));
-            shift(stack, open);
-            shift(stack, placeholder);
+            Hold* open = hold(parseSymbol(renameTag(getTag(top), "( "), 0));
+            Hold* placeholder = hold(Name(renameTag(getTag(top), ".*")));
+            shift(stack, getNode(open));
+            shift(stack, getNode(placeholder));
             shift(stack, node);
-            release(hold(open));
-            release(hold(placeholder));
+            release(open);
+            release(placeholder);
         } else if (isThisOperator(node, ")") && isLeftSectionOperator(top)) {
-            Node* close = parseSymbol(renameTag(getTag(node), " )"), 0);
-            Node* placeholder = Name(renameTag(getTag(node), "*."));
-            shift(stack, placeholder);
-            shift(stack, close);
-            release(hold(placeholder));
-            release(hold(close));
+            Hold* close = hold(parseSymbol(renameTag(getTag(node), " )"), 0));
+            Hold* placeholder = hold(Name(renameTag(getTag(node), "*.")));
+            shift(stack, getNode(placeholder));
+            shift(stack, getNode(close));
+            release(placeholder);
+            release(close);
         } else shift(stack, node);
     } else shift(stack, node);
-    release(hold(node));
+    release(nodeHold);
 }
 
 static Hold* synthesize(Token (*lexer)(Token), Token start) {

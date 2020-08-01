@@ -29,8 +29,8 @@ void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents) {
 }
 
 void shiftClose(Stack* stack, Node* close) {
-    Hold* hold = pop(stack);
-    Node* contents = getNode(hold);
+    Hold* contentsHold = pop(stack);
+    Node* contents = getNode(contentsHold);
     if (isOperator(contents)) {
         if (getFixity(contents) == OPENFIX)
             shiftBracket(stack, contents, close, NULL);
@@ -40,7 +40,7 @@ void shiftClose(Stack* stack, Node* close) {
         shiftBracket(stack, getNode(open), close, contents);
         release(open);
     }
-    release(hold);
+    release(contentsHold);
 }
 
 static void reduceTop(Stack* stack) {

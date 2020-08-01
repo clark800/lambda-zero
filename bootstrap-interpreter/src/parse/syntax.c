@@ -60,10 +60,10 @@ static Node* reduceIfIs(Node* operator, Node* asPattern, Node* thenBlock) {
     Node* expression = getLeft(asPattern);
     Node* pattern = getRight(asPattern);
     Node* elseBlock = Underscore(tag, 3);
-    Node* caseArrow = newCaseArrow(pattern, thenBlock);
+    Hold* caseArrow = hold(newCaseArrow(pattern, thenBlock));
     Node* fallback = SimpleArrow(Underscore(tag, 0), elseBlock);
-    Node* function = combineCases(tag, caseArrow, fallback);
-    release(hold(caseArrow));
+    Node* function = combineCases(tag, getNode(caseArrow), fallback);
+    release(caseArrow);
     return LockedArrow(FixedName(tag, "pass"),
         Juxtaposition(tag, function, expression));
 }
