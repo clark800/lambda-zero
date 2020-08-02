@@ -22,7 +22,7 @@ static inline bool isOperation(Term* t) {return getType(t) == OPERATION;}
 static inline bool isGlobal(Term* t) {return isVariable(t) && getValue(t) < 0;}
 
 static inline Term* Variable(Tag tag, long long debruijn) {
-    return newLeaf(tag, VARIABLE, debruijn, NULL);
+    return newLeaf(tag, VARIABLE, 0, (void*)debruijn);
 }
 
 static inline Term* Abstraction(Tag tag, Term* body) {
@@ -34,7 +34,7 @@ static inline Term* Application(Tag tag, Term* left, Term* right) {
 }
 
 static inline Term* Numeral(Tag tag, long long n) {
-    return newLeaf(tag, NUMERAL, n, NULL);
+    return newLeaf(tag, NUMERAL, 0, (void*)n);
 }
 
 // note: arithmetic operations are branches and always have a fallback term

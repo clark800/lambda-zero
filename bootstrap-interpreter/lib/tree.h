@@ -11,7 +11,7 @@ void destroyNodeAllocator(void);
 
 Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right);
 Node* newPair(Node* left, Node* right);
-Node* newLeaf(Tag tag, char type, long long value, void* data);
+Node* newLeaf(Tag tag, char type, char variety, void* data);
 
 bool isLeaf(Node* node);
 Tag getTag(Node* node);

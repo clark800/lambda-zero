@@ -56,7 +56,7 @@ static void shiftNode(Stack* stack, Node* node) {
             if (getFixity(top) == PREFIX)
                 syntaxError("missing operand after", top);
         } else {
-            if (getValue(node) % 2 != 0)
+            if (getSubprecedence(node) % 2 != 0)
                 syntaxError("odd-width indent after", node);
             shift(stack, node);
         }

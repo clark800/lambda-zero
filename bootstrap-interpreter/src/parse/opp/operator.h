@@ -7,6 +7,7 @@ Fixity getFixity(Node* op);
 bool isOperator(Node* node);
 bool isSpecialOperator(Node* op);
 bool isHigherPrecedence(Node* left, Node* right);
+unsigned char getSubprecedence(Node* op);
 Node* reduce(Node* op, Node* left, Node* right);
 Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents);
 Node* parseOperator(Tag tag, long long subprecedence);
