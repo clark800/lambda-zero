@@ -24,8 +24,8 @@ static void showTag(Tag tag, FILE* stream) {
     fputs(")", stream);
 }
 
-static void serializeNode(Node* node, Node* locals, const Array* globals,
-        unsigned int depth, FILE* stream) {
+static void serializeNode(Node* node, Node* locals, unsigned int depth,
+        FILE* stream) {
     switch (getTermType(node)) {
         case VARIABLE:
             if (isGlobal(node) || getDebruijnIndex(node) <= depth) {
@@ -34,20 +34,20 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
             }
             unsigned long long debruijn = getDebruijnIndex(node);
             Closure* next = getListElement(locals, debruijn - depth - 1);
-            serializeNode(getTerm(next), getLocals(next), globals, 0, stream);
+            serializeNode(getTerm(next), getLocals(next), 0, stream);
             break;
         case APPLICATION:
             fputs("(", stream);
-            serializeNode(getLeft(node), locals, globals, depth, stream);
+            serializeNode(getLeft(node), locals, depth, stream);
             fputs(" ", stream);
-            serializeNode(getRight(node), locals, globals, depth, stream);
+            serializeNode(getRight(node), locals, depth, stream);
             fputs(")", stream);
             break;
         case ABSTRACTION:
             fputs("(", stream);
             showTag(getTag(node), stream);
             fputs(" \xE2\x86\xA6 ", stream); // u21A6
-            serializeNode(getBody(node), locals, globals, depth + 1, stream);
+            serializeNode(getBody(node), locals, depth + 1, stream);
             fputs(")", stream);
             break;
         case NUMERAL: fputll(getValue(node), stream); break;
@@ -55,8 +55,8 @@ static void serializeNode(Node* node, Node* locals, const Array* globals,
     }
 }
 
-static void serialize(Closure* closure, const Array* globals) {
-    serializeNode(getTerm(closure), getLocals(closure), globals, 0, stdout);
+static void serialize(Closure* closure) {
+    serializeNode(getTerm(closure), getLocals(closure), 0, stdout);
     fputs("\n", stdout);
 }
 
@@ -96,7 +96,7 @@ static void interpret(const char* sourceCode) {
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     size_t memoryUsageBeforeSerialize = getMemoryUsage();
     if (!isIO)
-        serialize(getNode(valueClosure), program.globals);
+        serialize(getNode(valueClosure));
     checkForMemoryLeak("serialize", memoryUsageBeforeSerialize);
     release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);

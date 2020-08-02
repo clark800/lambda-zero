@@ -13,7 +13,7 @@ static volatile bool INTERRUPT = false;
 typedef const Array Globals;
 static Node* evaluateClosure(Closure* closure, Globals* globals);
 
-static bool isUpdate(Closure* closure) { return getTerm(closure) == VOID;}
+static bool isUpdate(Closure* closure) {return getTerm(closure) == VOID;}
 static Closure* getUpdateClosure(Closure* update) {return getLocals(update);}
 
 static Closure* newUpdate(Closure* closure) {
@@ -93,7 +93,8 @@ static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
 
 static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
     unsigned int arity = getArity(getTerm(closure));
-    eraseUpdates(stack);    // partially applied operations are not values
+    setLocals(closure, VOID);
+    applyUpdates(closure, stack);
     Hold* left = arity >= 1 && !isEmpty(stack) ? pop(stack) : NULL;
     eraseUpdates(stack);    // partially applied operations are not values
     Hold* right = arity >= 2 && !isEmpty(stack) ? pop(stack) : NULL;
@@ -163,10 +164,10 @@ static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
             case VARIABLE: evaluateReference(closure, stack, globals); break;
             case OPERATION: evaluateOperation(closure, stack, globals); break;
             case NUMERAL:
+                setLocals(closure, VOID);
                 applyUpdates(closure, stack);
                 if (isEmpty(stack))
                     return closure;
-                setLocals(closure, VOID);
                 setTerm(closure, expandNumeral(getTerm(closure))); break;
             case ABSTRACTION:
                 applyUpdates(closure, stack);

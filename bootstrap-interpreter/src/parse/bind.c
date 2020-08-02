@@ -82,9 +82,9 @@ Array* bind(Hold* root) {
         Tag tag = getTag(definiendum);
         Node* definiens = getRight(node);
         bindWith(definiens, parameters, globals);
-        int operationCode = findOperationCode(definiendum);
-        if (operationCode >= 0 && !isPseudoOperation(operationCode))
-            setRight(node, Operation(tag, operationCode, definiens));
+        int code = findOperationCode(definiendum);
+        if (code >= 0 && !isPseudoOperation(code))
+            setRight(node, Operation(tag, (OperationCode)code, definiens));
         append(parameters, definiendum);
         append(globals, getRight(node));
         node = getBody(getLeft(node));
