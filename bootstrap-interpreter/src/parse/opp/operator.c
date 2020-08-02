@@ -18,7 +18,8 @@ typedef struct {
 } Rules;
 
 static inline Node* Operator(Tag tag, long long subprecedence, void* rules) {
-    return newLeaf(tag, 0, subprecedence, rules);
+    tokenErrorIf(subprecedence >= 256, "indent too big", tag);
+    return newLeaf(tag, 0, (char)subprecedence, rules);
 }
 
 bool isOperator(Node* node) {
@@ -33,6 +34,7 @@ static inline Rules* getRules(Node* op) {
 Fixity getFixity(Node* op) {return getRules(op)->fixity;}
 bool isSpecialOperator(Node* op) {return getRules(op)->special;}
 char getBracketType(Node* op) {return getRules(op)->bracketType;}
+unsigned char getSubprecedence(Node* op) {return (unsigned char)getVariety(op);}
 
 static Node* getPriorNode(Node* operator, Node* left, Node* right) {
     Rules* rules = getRules(operator);
@@ -83,8 +85,8 @@ bool isHigherPrecedence(Node* left, Node* right) {
             syntaxError("operator is non-associative", right);
 
         if (leftRules->associativity == R)
-            return getValue(left) > getValue(right);
-        return getValue(left) >= getValue(right);
+            return getSubprecedence(left) > getSubprecedence(right);
+        return getSubprecedence(left) >= getSubprecedence(right);
     }
 
     return leftRules->rightPrecedence > rightRules->leftPrecedence;

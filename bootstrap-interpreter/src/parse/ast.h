@@ -50,7 +50,7 @@ static inline bool isKeyphrase(Node* n, const char* key) {
 static inline bool isUnderscore(Node* n) {return isThisName(n, "_");}
 
 static inline Node* Reference(Tag tag, long long value) {
-    return newLeaf(tag, REFERENCE, value, NULL);
+    return newLeaf(tag, REFERENCE, 0, (void*)value);
 }
 
 static inline Node* Name(Tag tag) {return Reference(tag, 0);}
@@ -60,8 +60,10 @@ static inline Node* FixedName(Tag tag, const char* s) {
 }
 
 static inline Node* ForbiddenName(Tag tag) {
-    return newLeaf(tag, REFERENCE, 0, (void*)1);
+    return newLeaf(tag, REFERENCE, 1, (void*)0);
 }
+
+static inline bool isForbidden(Node* name) {return getVariety(name) != 0;}
 
 static inline Node* SimpleArrow(Node* parameter, Node* body) {
     assert(isName(parameter));
@@ -99,7 +101,7 @@ static inline Node* Let(Tag tag, Node* left, Node* right) {
 }
 
 static inline Node* Number(Tag tag, long long n) {
-    return newLeaf(tag, NUMBER, n, NULL);
+    return newLeaf(tag, NUMBER, 0, (void*)n);
 }
 
 static inline Node* Definition(Tag tag, DefinitionVariety variety,

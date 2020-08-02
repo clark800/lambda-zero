@@ -10,9 +10,8 @@ static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     for (size_t i = 1; i <= length(parameters); ++i) {
         Node* parameter = elementAt(parameters, length(parameters) - i);
         if (isSameLexeme(parameter, name)) {
-            if (getData(parameter) == NULL)
-                return (unsigned long long)i;
-            syntaxError("cannot reference", name);
+            syntaxErrorIf(isForbidden(name), "cannot reference", name);
+            return (unsigned long long)i;
         }
     }
     return 0;

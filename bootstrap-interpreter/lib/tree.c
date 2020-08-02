@@ -11,43 +11,42 @@ typedef union {
 
 struct Node {
     unsigned int referenceCount;
-    char isBranch, type;
+    char type, variety;
     Tag tag;
     Branch left, right;
 };
 
-Node VOID_NODE = {.referenceCount=1, .isBranch=0, .type=0, .tag={.lexeme={
+Node VOID_NODE = {.referenceCount=1, .type=0, .variety=0, .tag={.lexeme={
     .start="VOID", .length=4}, .location={.file=NULL, .line=0, .column=0}},
     .left={.value=0}, .right={.value=0}};
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {initPool(sizeof(Node), 4096);}
 void destroyNodeAllocator() {destroyPool();}
-bool isLeaf(Node* node) {return node->isBranch == 0;}
+bool isLeaf(Node* node) {return node->right.child == NULL;}
 Tag getTag(Node* node) {return node->tag;}
 String getLexeme(Node* node) {return node->tag.lexeme;}
 void setTag(Node* node, Tag tag) {node->tag = tag;}
 char getType(Node* node) {return node->type;}
 void setType(Node* node, char type) {node->type = type;}
-char getVariety(Node* node) {return (char)(node->isBranch - 1);}
-void setVariety(Node* node, char variety) {node->isBranch = ++variety;}
+char getVariety(Node* node) {return node->variety;}
+void setVariety(Node* node, char variety) {node->variety = variety;}
 Node* getLeft(Node* node) {return node->left.child;}
 Node* getRight(Node* node) {return node->right.child;}
 long long getValue(Node* node) {return node->left.value;}
 void setValue(Node* node, long long value) {node->left.value = value;}
-void* getData(Node* node) {return (void*)node->right.child;}
+void* getData(Node* node) {return (void*)node->left.child;}
 Node* copyNode(Node* node, Node* source) {return *node = *source, node;}
 Node* reference(Node* node) {return node->referenceCount += 1, node;}
 
-Node* newNode(Tag tag, char isBranch, char type, Node* left, Node* right) {
+Node* newNode(Tag tag, char type, char variety, Node* left, Node* right) {
     return copyNode((Node*)allocate(), &(Node)
-        {.referenceCount=0, .isBranch=isBranch, .type=type, .tag=tag,
+        {.referenceCount=0, .type=type, .variety=variety, .tag=tag,
         .left={.child=left}, .right={.child=right}});
 }
 
 Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right) {
-    return newNode(tag, (char)(variety + 1), type,
-                reference(left), reference(right));
+    return newNode(tag, type, variety, reference(left), reference(right));
 }
 
 Node* newPair(Node* left, Node* right) {
@@ -55,10 +54,8 @@ Node* newPair(Node* left, Node* right) {
     return newBranch(tag, -1, 0, left, right);
 }
 
-Node* newLeaf(Tag tag, char type, long long value, void* data) {
-    Node* node = newNode(tag, 0, type, NULL, (Node*)data);
-    setValue(node, value);
-    return node;
+Node* newLeaf(Tag tag, char type, char variety, void* data) {
+    return newNode(tag, type, variety, (Node*)data, NULL);
 }
 
 void releaseNode(Node* node) {
