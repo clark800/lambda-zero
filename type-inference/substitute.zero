@@ -31,19 +31,12 @@ def newNegativeMetaVariable(tag, Metacontext(positives, negatives))
     (MetaVariable(tag, -_ index), Metacontext(positives, negatives'))
 
 
-def setMetaVariable(index, value, Metacontext(positives, negatives))
-    Metacontext(positives.set(index, value), negatives)
+def getMetaValue(index, Metacontext(positives, negatives))
+    positives.get(index) ?? Void
 
 
-def getFreeVariables(metacontext @ Metacontext(positives, negatives), term)
-    if term is MetaVariable(_, index)
-        if index is +_ index'
-            if positives.get(index') ?? Void is Just(term)
-                getFreeVariables(metacontext, term)
-            [term]
-        []
-    join(getComponents(term).map(getFreeVariables(metacontext))).
-        deduplicateBy(isSameHead)
+def setMetaValue(index, value, Metacontext(positives, negatives))
+    Metacontext(positives.set(index, Just(value)), negatives)
 
 
 def recursionError(term, term', metacontext)
@@ -53,17 +46,20 @@ def recursionError(term, term', metacontext)
         showMetacontext(metacontext))
 
 
-def substitute(metacontext @ Metacontext(positives, negatives), term)
+def substitute'(metacontext, indices, term)
     if term is MetaVariable(tag, index)
         if index is +_ index'
-            if positives.get(index') ?? Void is Just(term')
-                term' := term'.setLocation(tag)
-                freeVariables := term'.getFreeVariables(emptyMetacontext)
-                if freeVariables.any(isSameHead(term))
+            if metacontext.getMetaValue(index') is Just(term')
+                if indices.contains((= index'))
                     recursionError(term, term', metacontext)
-                term'.substitute(metacontext)
+                term'' := term'.setLocation(tag)
+                term''.substitute'(metacontext, index' :: indices)
             term
         term
-    term.mapComponents(substitute(metacontext))
+    term.mapComponents(substitute'(metacontext, indices))
+
+
+def substitute(metacontext, term)
+    substitute'(metacontext, [], term)
 
 #*

@@ -54,16 +54,7 @@ def infer(context @ (environment, types))
         domain' := resolve(evaluateClosure(Closure(domain, environment)))
         body.infer(context.pushContext(domain', Unknown(tag)))
     case Application(tag, applicand, argument)
-        metacontext <- getState
         argumentType <- argument.infer(context)
-        if applicand is Function(_, type, body)
-            if type is Inferred
-                # todo: support Domain annotations
-                # suppport polymorphism in nested functions
-                metacontext' <- getState
-                type' := argumentType.generalizeAll(metacontext', metacontext)
-                body.infer(context.pushContext(type', argument))
-            pass
         applicandType <- applicand.infer(context)
         returnType <- newPositiveMetaVariable(tag)
         applicandTag := getTermTag(applicand)
@@ -106,11 +97,10 @@ def normalize(term)
 def inferType(types, Binding(tag, closure @ Closure(term, environment)))
     if getTagLexeme(tag) =*= "fix"
         types.push(getFixType(tag))
-    metacontext := emptyMetacontext
     context := (environment, types)
-    (type, metacontext') := infer(context, term, metacontext)
+    (type, metacontext) := infer(context, term, emptyMetacontext)
     type' := resolve(Closure(type, environment))
-    type'' := type'.generalizeAll(metacontext', metacontext)
+    type'' := type'.generalizeAll(metacontext)
     types.push(normalize(type''))
 
 

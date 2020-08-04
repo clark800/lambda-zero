@@ -14,14 +14,53 @@ def unifyFailure(originals, metacontext, (left, right))
         left.substitute(metacontext), right.substitute(metacontext))
 
 
-def getValue(index, Metacontext(positives, negatives))
-    positives.get(index) ?? Void
+def isNegativeMetaVariable(term)
+    if term is MetaVariable(_, index)
+        isNegative(index)
+    False
+
+
+def isSamePrimitive(term)
+    case Unknown(_) -> False
+    case MetaVariable(_, index)
+        if term is MetaVariable(_, index')
+            index =:= index'
+        False
+    case Type(_, index)
+        if term is Type(_, index')
+            index =:= index'
+        False
+    case Variable(_, index)
+        if term is Variable(_, index')
+            index =:= index'
+        False
+    case Function(_, _, _) -> False
+    case Implication(_, _, _) -> False
+    case Intersection(_, _, _) -> False
+    case Application(_, _, _) -> False
+    case Construction(_, _, _, _) -> False
+    case Numeral(_, _, value)
+        if term is Numeral(_, _, value')
+            value = value'
+        False
+    case Operation(tag, _, _)
+        if term is Operation(tag', _, _)
+            getTagLexeme(tag) =*= getTagLexeme(tag')
+        False
 
 
 def substituteAndEvaluate(metacontext, term)
-    term' := substitute(metacontext, term)
-    result := resolve(evaluateClosure(enclose(term')))
-    if isUnknown(result) then term' else result
+    if term is MetaVariable(_, index)
+        if index is +_ n
+            if metacontext.getMetaValue(n) is Just(value)
+                substituteAndEvaluate(metacontext, value)
+            term
+        term
+    if isApplication(term)
+        term' := term.substitute(metacontext)
+        value := resolve(evaluateClosure(enclose(term')))
+        if isUnknown(value) then term' else value
+    term
 
 
 # Robinson's Unification Algorithm
@@ -33,47 +72,34 @@ def unify'(fail, metacontext, (left, right))
     left := substituteAndEvaluate(metacontext, left)
     right := substituteAndEvaluate(metacontext, right)
 
-    if right is Unknown(_)
-        fail'
-    if right is MetaVariable(_, index)
-        if isSameHead(left, right)
-            metacontext
-        if index is +_ index'
-            if metacontext.getValue(index') is Just(right')
-                unify'(fail, metacontext, (left, right'))
-            metacontext.setMetaVariable(index', Just(left))
+    if isUnknown(left) or isUnknown(right)
         fail'
 
+    if isSamePrimitive(left, right)
+        metacontext
+
+    if isNegativeMetaVariable(left) or isNegativeMetaVariable(right)
+        fail'
+
+    if right is MetaVariable(_, index)
+        metacontext.setMetaValue(abs(index), left)
+
     match left
-        case Unknown(tag)
-            fail'
+        case Unknown(tag) -> fail'
         case MetaVariable(tag, index)
-            if isSameHead(left, right)
-                metacontext
-            if index is +_ index'
-                if metacontext.getValue(index') is Just(left')
-                    unify'(fail, metacontext, (left', right))
-                metacontext.setMetaVariable(index', Just(right))
-            fail'
-        case Type(tag, index)
-            if isSameHead(left, right) then metacontext else fail'
-        case Variable(tag, index)
-            fail'
-        case Function(tag, domain, body)
-            fail'
+            metacontext.setMetaValue(abs(index), right)
+        case Type(tag, index) -> fail'
+        case Variable(tag, index) -> fail'
+        case Function(tag, domain, body) -> fail'
         case Implication(tag, domain, body)
             if right is Implication(tag', domain', body')
                 metacontext' := unify'(fail, metacontext, (domain', domain))
-                (m, metacontext'') := newNegativeMetaVariable(tag, metacontext')
-                unify'(fail, metacontext'',
-                    (body.substituteArgument(m), body'.substituteArgument(m)))
+                unify'(fail, metacontext', (body, body'))
             fail'
         case Intersection(tag, domain, body)
             if right is Intersection(tag', domain', body')
                 metacontext' := unify'(fail, metacontext, (domain', domain))
-                (m, metacontext'') := newNegativeMetaVariable(tag, metacontext')
-                unify'(fail, metacontext'',
-                    (body.substituteArgument(m), body'.substituteArgument(m)))
+                unify'(fail, metacontext', (body, body'))
             fail'
         case Application(tag, left', right')
             if right is Application(tag', left'', right'')
@@ -82,17 +108,13 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Construction(tag, domain, parameters, body)
             if right is Construction(tag', domain', parameters', body')
-                if not isSameHead(domain, domain')
+                if not isSamePrimitive(domain, domain')
                     fail'
+                #unify'(fail, metacontext, (body, body'))
                 zip(parameters, parameters').cascade(unify'(fail), metacontext)
-                #(m, metacontext') := newNegativeMetaVariable(tag, metacontext)
-                #unify'(fail, metacontext',
-                #    (body.substituteArgument(m), body'.substituteArgument(m)))
             fail'
-        case Numeral(tag, type, value)
-            if isSameHead(left, right) then metacontext else fail'
-        case Operation(tag, term, optimization)
-            if isSameHead(left, right) then metacontext else fail'
+        case Numeral(tag, type, value) -> fail'
+        case Operation(tag, term, optimization) -> fail'
 
 
 def unify(left, right, metacontext)

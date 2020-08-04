@@ -33,14 +33,6 @@ def instantiate(term, intersection)
     throwError("expected intersection in instantiate", getTermTag(intersection))
 
 
-def splitUniversals(term)
-    if term is Intersection(tag, _, body)
-        (universals, body') <- splitUniversals(body)
-        metavariable <- newPositiveMetaVariable(tag)
-        lift (universals ++ [metavariable], body')
-    lift ([], term)
-
-
 def instantiateAll(term)
     if isIntersection(term)
         metavariable <- newPositiveMetaVariable(getTermTag(term))
