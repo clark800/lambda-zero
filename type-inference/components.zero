@@ -1,40 +1,5 @@
 #* components.zero
 
-def isSameHead(term)
-    case Unknown(_)
-        False
-    case MetaVariable(_, index)
-        if term is MetaVariable(_, index')
-            index =:= index'
-        False
-    case Type(_, index)
-        if term is Type(_, index')
-            index =:= index'
-        False
-    case Variable(_, index)
-        if term is Variable(_, index')
-            index =:= index'
-        False
-    case Function(_, _, _)
-        isFunction(term)
-    case Implication(_, _, _)
-        isImplication(term)
-    case Intersection(_, _, _)
-        isIntersection(term)
-    case Application(_, _, _)
-        isApplication(term)
-    case Construction(tag, _, _, _)
-        isConstruction(term)
-    case Numeral(_, _, value)
-        if term is Numeral(_, _, value')
-            value = value'
-        False
-    case Operation(tag, _, _)
-        if term is Operation(tag', _, _)
-            getTagLexeme(tag) =*= getTagLexeme(tag')
-        False
-
-
 def getAnnotationComponents
     Inferred -> []
     Domain(term) -> [term]

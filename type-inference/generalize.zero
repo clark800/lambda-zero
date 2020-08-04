@@ -19,10 +19,14 @@ def generalize(metavariable, term)
     throwError("generalize expects a metavariable", getTermTag(metavariable))
 
 
-def getAllFreeVariables(Metacontext(positives, negatives), metacontext')
-    indices := map((+_), 0 ...)[0, positives.getSize]
-    join(indices.map(MetaVariable(noTag)).map(
-        getFreeVariables(metacontext'))).deduplicateBy(isSameHead)
+def getMetaVariables'(term)
+    if term is MetaVariable(_, index)
+        if isPositive(index) then [(abs(index), term)] else []
+    join(getComponents(term).map(getMetaVariables'))
+
+
+def getMetaVariables(term)
+    getMetaVariables'(term).deduplicateBy((=).on(first)).map(second)
 
 
 def renameMetavariable(n, metavariable)
@@ -30,15 +34,10 @@ def renameMetavariable(n, metavariable)
     metavariable.setTag(renameTag(tag, showMetaVariable(+_ n), NOFIX))
 
 
-def generalizeAll(metacontext, oldMetacontext, type)
-    # generalize over only metavariables newly introduced in the current
-    # definition and leave the rest in the type because they may correspond to
-    # the types of local variables that haven't yet been determined
-    syntax(\\) := syntax(\)
-    vs \\ vs' := vs |: (v -> not vs'.any(isSameHead(v)))
+def generalizeAll(metacontext, type)
     type' := type.substitute(metacontext)
-    universals := type'.getFreeVariables(metacontext) \\
-        metacontext.getAllFreeVariables(oldMetacontext)
+    # after subsitution, all metavariables in type' are free metavariables
+    universals := getMetaVariables(type')
     metavariables := zip(0 ..., universals).map(uncurry(renameMetavariable))
     metavariables.fold(generalize, type')
 
