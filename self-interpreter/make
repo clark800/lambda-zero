@@ -35,6 +35,7 @@ cat "$LIB/operators.zero" \
     "$DIR/parse/parse.zero" \
     "$DIR/serialize.zero" \
     "$DIR/builtins.zero" \
+    "$DIR/metacontext.zero" \
     "$DIR/evaluate.zero" \
     "$DIR/interpret.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"
