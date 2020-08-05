@@ -17,7 +17,6 @@ OptimizationT(term) ::= {Optimization(
 )}
 
 Domain(term) ::= {
-    Inferred,
     Annotation(_ : term),
     PatternMatch(_ : term)
 }
@@ -66,7 +65,7 @@ isOperation := Operation(_, _, _) -> True; _ -> False
 
 
 def FreeFunction(tag, body)
-    Function(tag, Inferred, body)
+    Function(tag, Annotation(Unknown(tag)), body)
 
 
 def splitSpine(term)
@@ -133,8 +132,7 @@ def showMetaVariable(index)
 
 
 def showDomain(showTerm)
-    Inferred -> ""
-    Annotation(term) -> " : " ++ showTerm(term)
+    Annotation(term) -> if isUnknown(term) then "" else " : " ++ showTerm(term)
     PatternMatch(term) -> " : " ++ showTerm(term)
 
 

@@ -5,10 +5,10 @@ def pushContext(type, term, context @ (environment, types))
 
 
 def getDomain(tag, environment)
-    case Inferred
-        metavariable <- newPositiveMetaVariable(tag)
-        lift (metavariable, metavariable)
     case Annotation(domain)
+        if isUnknown(domain)
+            metavariable <- newPositiveMetaVariable(tag)
+            lift (metavariable, metavariable)
         domain := resolveClosure(evaluateClosure(Closure(domain, environment)))
         lift (domain, domain)
     case PatternMatch(domain)
