@@ -34,11 +34,11 @@ def renameMetavariable(n, metavariable)
     metavariable.setTag(renameTag(tag, showMetaVariable(+_ n), NOFIX))
 
 
-def generalizeAll(metacontext, type)
-    type' := type.substitute(metacontext)
-    # after subsitution, all metavariables in type' are free metavariables
-    universals := getMetaVariables(type')
+def generalizeAll(metacontext, closure)
+    type := closure.resolve(metacontext)
+    # after resolve, all metavariables in type are free metavariables
+    universals := getMetaVariables(type)
     metavariables := zip(0 ..., universals).map(uncurry(renameMetavariable))
-    metavariables.fold(generalize, type')
+    metavariables.fold(generalize, type)
 
 #*

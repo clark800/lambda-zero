@@ -1,24 +1,25 @@
 #* metacontext.zero
 
-MetacontextT ::= {
-    Metacontext(positives : ArrayT((Term)?), negatives : ArrayT((Term)?))
-}
+MetacontextT ::= {Metacontext(
+    positives : ArrayT((ClosureT(Term))?),
+    negatives : ArrayT((ClosureT(Term))?)
+)}
 
 emptyMetacontext := Metacontext(newArray([]), newArray([]))
 
 
-def showMaybeTerm(maybeTerm)
-    if maybeTerm is Just(term)
-        showTerm(term)
+def showMaybeClosure(maybeClosure)
+    if maybeClosure is Just(closure)
+        serialize(closure)
     "Free"
 
 
 def showMetacontext(Metacontext(positives, negatives))
     if getSize(positives) = 0
         "Empty"
-    zip((0 ...).map((+_)), positives.toList).map((index, maybeTerm) ->
+    zip((0 ...).map((+_)), positives.toList).map((index, maybeClosure) ->
         showMetaVariable(index) ++ " := " ++
-        showMaybeTerm(maybeTerm)).joinWith("\n")
+        showMaybeClosure(maybeClosure)).joinWith("\n")
 
 
 def newPositiveMetaVariable(tag, Metacontext(positives, negatives))

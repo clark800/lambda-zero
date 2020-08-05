@@ -14,8 +14,8 @@ def evaluate(metacontext, stack, closure @ Closure(term, environment))
             closure
         case MetaVariable(tag, index)
             if index is +_ n
-                if metacontext.getMetaValue(n) is Just(value)
-                    evaluate(stack, enclose(value))
+                if metacontext.getMetaValue(n) is Just(closure')
+                    evaluate(stack, closure')
                 pass
             enclose(if isNil(stack) then term else Unknown(tag))
         case Type(tag, index)

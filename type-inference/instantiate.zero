@@ -41,7 +41,7 @@ def instantiateAll(term)
 
 
 def instantiateClosure(closure)
-    term <- instantiateAll(resolve(closure))
-    lift resolve(evaluateClosure(enclose(term)))
+    term <- instantiateAll(resolveClosure(closure))
+    lift resolveClosure(evaluateClosure(enclose(term)))
 
 #*

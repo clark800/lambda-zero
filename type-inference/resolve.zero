@@ -4,32 +4,57 @@ def pushUnknown(tag, environment)
     environment.push(enclose(Unknown(tag)))
 
 
+def recursionError(metavariable, metacontext)
+    abort("Type error: recursion in " ++
+        showTermAndLocation(metavariable) ++ ":\n\n" ++
+        showMetacontext(metacontext))
+
+
 # for any variable in term that has a value in the environment, replace
 # the variable with the value from the environment recursively
-def resolve(Closure(term, environment))
-    resolve'(t) := resolve(Closure(t, environment))
-    resolve''(tag, t) := resolve(Closure(t, pushUnknown(tag, environment)))
+def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
+    resolve''(t) := resolve'(metacontext, metaindices, Closure(t, environment))
+    resolve'''(t) := resolve'(metacontext, metaindices,
+        Closure(t, pushUnknown(getTermTag(term), environment)))
+
     match term
-        Unknown(tag) -> term
-        MetaVariable(tag, index) -> term
-        Type(tag, index) -> term
-        Variable(tag, index) -> (
-            if environment.seek(index) is Just(closure)
-                if isUnknown(getTerm(closure)) then term else resolve(closure)
+        case Unknown(tag) -> term
+        case MetaVariable(tag, index)
+            if index is +_ index'
+                if metacontext.getMetaValue(index') is Just(closure')
+                    if metaindices.contains((= index'))
+                        recursionError(term, metacontext)
+                    # todo: setLocation of term in closure' to tag
+                    resolve'(metacontext, index' :: metaindices, closure')
+                term
             term
-        )
-        Function(tag, domain, body) ->
-            Function(tag, domain.mapDomain(resolve'), resolve''(tag, body))
-        Implication(tag, domain, body) ->
-            Implication(tag, resolve'(domain), resolve''(tag, body))
-        Intersection(tag, domain, body) ->
-            Intersection(tag, resolve'(domain), resolve''(tag, body))
-        Application(tag, left, right) ->
-            Application(tag, resolve'(left), resolve'(right))
-        Construction(tag, domain, parameters, body) ->
-            Construction(tag, resolve'(domain), parameters.map(resolve'),
-                resolve''(tag, body))
-        Numeral(_, _, _) -> term
-        Operation(_, _, _) -> term
+        case Type(tag, index) -> term
+        case Variable(tag, index)
+            if environment.seek(index) is Just(closure')
+                if isUnknown(getTerm(closure'))
+                    term
+                resolve'(metacontext, metaindices, closure')
+            term
+        case Function(tag, domain, body)
+            Function(tag, domain.mapDomain(resolve''), resolve'''(body))
+        case Implication(tag, domain, body)
+            Implication(tag, resolve''(domain), resolve'''(body))
+        case Intersection(tag, domain, body)
+            Intersection(tag, resolve''(domain), resolve'''(body))
+        case Application(tag, left, right)
+            Application(tag, resolve''(left), resolve''(right))
+        case Construction(tag, domain, parameters, body)
+            Construction(tag, resolve''(domain), parameters.map(resolve''),
+                resolve'''(body))
+        case Numeral(_, _, _) -> term
+        case Operation(_, _, _) -> term
+
+
+def resolve(metacontext, closure)
+    resolve'(metacontext, [], closure)
+
+
+def resolveClosure(closure)
+    closure.resolve(emptyMetacontext)
 
 #*
