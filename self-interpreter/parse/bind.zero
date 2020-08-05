@@ -13,15 +13,17 @@ GlobalT ::= {Global(
 
 BindingT ::= {Binding(
     tag : TagT,
-    closure : ClosureT(Term)
+    closure : ClosureT(Term),
+    ascription : (ClosureT(Term))?
 )}
 
 getGlobalAST(Global(ast, _, _)) := ast
 getGlobalTerm(Global(_, term, _)) := term
 getGlobalConstant(Global(_, _, constant)) := constant
 
-getBindingTag(Binding(tag, _)) := tag
-getBindingClosure(Binding(_, closure)) := closure
+getBindingTag(Binding(tag, _, _)) := tag
+getBindingClosure(Binding(_, closure, _)) := closure
+getBindingAscription(Binding(_, _, ascription)) := ascription
 
 def bindLocal((level, table), tag)
     maybe item := table.lookup(getTagLexeme(tag))
@@ -131,9 +133,8 @@ def bind(getBuiltin, globals, index, locals, node)
 
             bodyTerm := body.bind'(locals')
             if isNil(constructorNames)
-                domain := annotation.mapJust(bind'(locals))
-                type := domain.mapJust(Domain) ?? Inferred
-                Function(getTag(parameter), type, bodyTerm)
+                domain := annotation.mapJust(bind'(locals)).mapJust(Annotation)
+                Function(getTag(parameter), domain ?? Inferred, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
@@ -170,16 +171,11 @@ def bind(getBuiltin, globals, index, locals, node)
             domain := Type(tag, -_ index)
             Construction(tag, domain, parameterTerms, body)
         case Constructor(tag, type, adtType, function, count, index)
-            type' := type.bind'(locals)
             if function is Number(_, value)
-                Numeral(tag, type', value)
-            if function.bind'(locals) is Function(tag, _, body)
-                Function(tag, Opaque(type'), body)
-            astSyntaxError("constructor must be a function", node)
-        case TypedNode(tag, type, node)
-            if node.bind'(locals) is Function(tag, _, body)
-                Function(tag, Opaque(type.bind'(locals)), body)
-            astSyntaxError("typed node must be a function", node)
+                Numeral(tag, type.bind'(locals), value)
+            function.bind'(locals)
+        case TypedNode(tag, type, function)
+            function.bind'(locals)
 
 
 def bindGlobal(getBuiltin, globals, index, node)
@@ -187,16 +183,26 @@ def bindGlobal(getBuiltin, globals, index, node)
     bind(getBuiltin, globals, index, locals, node)
 
 
+def getAscription
+    case Constructor(_, type, _, _, _, _) -> Just(type)
+    case TypedNode(_, type, _) -> Just(type)
+    case _ -> Void
+
+
 def bindDefinition(getBuiltin, state, (tag, node))
     (bindings, globals, environment) := state
-    term := bindGlobal(getBuiltin, globals, getSize(environment), node)
+    bindGlobal' := bindGlobal(getBuiltin, globals, getSize(environment))
+    term := bindGlobal'(node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, globals, tag, term) ?? term
     closure := Closure(definiens, environment)
+    ascription := getAscription(node).mapJust(type ->
+        Closure(bindGlobal'(type), environment))
+
     (index, environment') := environment.append(closure)
     global := Global(node, definiens, Variable(tag, +_ index))
     globals' := globals.insert(getTagLexeme(tag), global)
-    (Binding(tag, closure) :: bindings, globals', environment')
+    (Binding(tag, closure, ascription) :: bindings, globals', environment')
 
 
 def getDefinitions(node)

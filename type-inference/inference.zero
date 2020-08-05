@@ -8,7 +8,7 @@ def getDomain(tag, environment)
     case Inferred
         metavariable <- newPositiveMetaVariable(tag)
         lift (metavariable, metavariable)
-    case Domain(domain)
+    case Annotation(domain)
         domain := resolveClosure(evaluateClosure(Closure(domain, environment)))
         lift (domain, domain)
     case PatternMatch(domain)
@@ -23,8 +23,6 @@ def getDomain(tag, environment)
                 throwError("invalid domain for construction", tag')
             throwError("invalid domain for construction", tag')
         throwError("expected construction in pattern match annotation", tag)
-    case Opaque(type)
-        throwError("cannot get domain of instance", tag)
 
 
 def infer(context @ (environment, types))
@@ -40,10 +38,8 @@ def infer(context @ (environment, types))
     case Variable(tag, index)
         type := types.seek(index) ?? throwError("unbound variable", tag)
         instantiateAll(type)  # todo: remove this after implementing subtyping
-    case Function(tag, type, body)
-        if type is Opaque(type')
-            instantiateClosure(Closure(type', environment))
-        (outerDomain, innerDomain) <- type.getDomain(tag, environment)
+    case Function(tag, domain, body)
+        (outerDomain, innerDomain) <- domain.getDomain(tag, environment)
         range <- body.infer(context.pushContext(innerDomain, Unknown(tag)))
         lift Implication(tag, outerDomain, range)
     case Implication(tag, domain, body)
@@ -94,9 +90,18 @@ def normalize(term)
     reduceTerm(term).mapComponents(normalize)
 
 
-def inferType(types, Binding(tag, closure @ Closure(term, environment)))
+def renameUniversals(closure)
+    term := closure.resolve(emptyMetacontext)
+    (term', metacontext) := instantiateAll(term, emptyMetacontext)
+    normalize(enclose(term').generalize(metacontext))
+
+
+def inferType(types, Binding(tag, closure, ascription))
     if getTagLexeme(tag) =*= "fix"
         types.push(getFixType(tag))
+    if ascription is Just(closure)
+        types.push(renameUniversals(closure))
+    _ @ Closure(term, environment) := closure
     context := (environment, types)
     (type, metacontext) := infer(context, term, emptyMetacontext)
     type' := Closure(type, environment).generalize(metacontext)

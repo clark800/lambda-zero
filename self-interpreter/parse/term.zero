@@ -16,11 +16,10 @@ OptimizationT(term) ::= {Optimization(
         List(ClosureT(term)) => ClosureT(term)?)
 )}
 
-Annotation(term) ::= {
+Domain(term) ::= {
     Inferred,
-    Domain(_ : term),
-    PatternMatch(_ : term),
-    Opaque(_ : term)
+    Annotation(_ : term),
+    PatternMatch(_ : term)
 }
 
 Term ::= {
@@ -28,7 +27,7 @@ Term ::= {
     MetaVariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
-    Function(tag : TagT, type : Annotation(Term), body : Term),
+    Function(tag : TagT, domain : Domain(Term), body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
@@ -82,7 +81,7 @@ def setTag(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
-    Function(_, type, body) -> Function(tag, type, body)
+    Function(_, domain, body) -> Function(tag, domain, body)
     Implication(_, domain, body) -> Implication(tag, domain, body)
     Intersection(_, domain, body) -> Intersection(tag, domain, body)
     Application(_, left, right) -> Application(tag, left, right)
@@ -133,11 +132,10 @@ def showMetaVariable(index)
         -_ n -> "■" ++ showSubscript(n)
 
 
-def showAnnotation(showTerm)
+def showDomain(showTerm)
     Inferred -> ""
-    Domain(term) -> " : " ++ showTerm(term)
+    Annotation(term) -> " : " ++ showTerm(term)
     PatternMatch(term) -> " : " ++ showTerm(term)
-    Opaque(term) -> ""
 
 
 def showTerm
@@ -145,8 +143,8 @@ def showTerm
     MetaVariable(tag, index) -> showMetaVariable(index)
     Type(_, index) -> "⊤" ++ showIntegerSubscript(index)
     Variable(tag, index) -> showTag(tag) # ++ "#" ++ showInteger(index)
-    Function(tag, type, body) ->
-        "(" ++ showTag(tag) ++ type.showAnnotation(showTerm) ++
+    Function(tag, domain, body) ->
+        "(" ++ showTag(tag) ++ domain.showDomain(showTerm) ++
             " ↦ " ++ showTerm(body) ++ ")"
     Implication(tag, domain, body) ->
         if isImplication(domain) then
