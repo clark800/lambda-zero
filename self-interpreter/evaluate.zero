@@ -9,34 +9,35 @@ def expandNumeral(tag, type, n)
 def evaluate(metacontext, stack, closure @ Closure(term, environment))
     evaluate := evaluate(metacontext)
 
+    def evaluatePrimitive(tag)
+        enclose(if isNil(stack) then term else Unknown(tag))
+
+    def evaluateBinder(body)
+        if stack is argument :: stack'
+            evaluate(stack', Closure(body, environment.push(argument)))
+        closure
+
     match term
-        case Unknown(tag)
-            closure
+        case Unknown(tag) -> closure
         case MetaVariable(tag, index)
             if index is +_ n
                 if metacontext.getMetaValue(n) is Just(closure')
                     evaluate(stack, closure')
                 pass
-            enclose(if isNil(stack) then term else Unknown(tag))
-        case Type(tag, index)
-            enclose(if isNil(stack) then term else Unknown(tag))
+            evaluatePrimitive(tag)
+        case Type(tag, index) -> evaluatePrimitive(tag)
         case Variable(tag, index)
             evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
-        case Function(tag, domain, body)
-            if stack is argument :: stack'
-                evaluate(stack', Closure(body, environment.push(argument)))
-            closure
-        case Implication(tag, domain, body)
-            if isNil(stack) then closure else enclose(Unknown(tag))
-        case Intersection(tag, domain, body)
-            if isNil(stack) then closure else enclose(Unknown(tag))
+        case Function(tag, domain, body) -> evaluateBinder(body)
+        case Implication(tag, domain, body) -> evaluateBinder(body)
+        case Intersection(tag, domain, body) -> evaluateBinder(body)
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
-        case Construction(tag, domain, parameter, body)
-            if isNil(stack) then closure else enclose(Unknown(tag))
+        case Construction(tag, domain, parameter, body) -> evaluateBinder(body)
         case Numeral(tag, type, n)
-            if isNil(stack) then enclose(term) else
+            if isNil(stack)
+                enclose(term)
             evaluate(stack, Closure(expandNumeral(tag, type, n), environment))
         case Operation(tag, term', Optimization(arity, operator))
             if operator(evaluate([]), stack.take(arity)) is Just(closure')
