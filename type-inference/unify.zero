@@ -43,10 +43,7 @@ def isSamePrimitive(term)
         if term is Numeral(_, _, value')
             value = value'
         False
-    case Operation(tag, _, _)
-        if term is Operation(tag', _, _)
-            getTagLexeme(tag) =*= getTagLexeme(tag')
-        False
+    case Operation(_, _, _) -> False # evaluate will never return an Operation
 
 
 def tryEvaluate(metacontext, closure)
