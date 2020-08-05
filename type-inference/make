@@ -36,6 +36,7 @@ cat "$LIB/operators.zero" \
     "$PARSER/parse/parse.zero" \
     "$PARSER/serialize.zero" \
     "$PARSER/builtins.zero" \
+    "$PARSER/metacontext.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/components.zero" \
     "$DIR/resolve.zero" \

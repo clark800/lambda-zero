@@ -57,9 +57,8 @@ def substituteAndEvaluate(metacontext, term)
             term
         term
     if isApplication(term)
-        term' := term.substitute(metacontext)
-        value := resolve(evaluateClosure(enclose(term')))
-        if isUnknown(value) then term' else value
+        value := resolve(evaluate(metacontext, [], enclose(term)))
+        if isUnknown(value) then term else value
     term
 
 
