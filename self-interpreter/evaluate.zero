@@ -22,7 +22,7 @@ def evaluate(metacontext, stack, closure @ Closure(term, environment))
             enclose(if isNil(stack) then term else Unknown(tag))
         case Variable(tag, index)
             evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
-        case Function(tag, type, body)
+        case Function(tag, domain, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure

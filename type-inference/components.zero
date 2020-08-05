@@ -1,10 +1,9 @@
 #* components.zero
 
-def getAnnotationComponents
+def getDomainComponents
     Inferred -> []
-    Domain(term) -> [term]
+    Annotation(term) -> [term]
     PatternMatch(term) -> []
-    Opaque(term) -> []
 
 
 def getComponents
@@ -12,7 +11,7 @@ def getComponents
     MetaVariable(_, _) -> []
     Type(_, _) -> []
     Variable(_, _) -> []
-    Function(_, type, body) -> getAnnotationComponents(type) ++ [body]
+    Function(_, domain, body) -> getDomainComponents(domain) ++ [body]
     Implication(_, domain, body) -> [domain, body]
     Intersection(_, domain, body) -> [domain, body]
     Application(_, left, right) -> [left, right]
@@ -21,13 +20,12 @@ def getComponents
     Operation(_, _, _) -> []
 
 
-# PatternMatch and Opaque will never contain metavariables or unbound
+# PatternMatch will never contain metavariables or unbound
 # Variables, so we can skip them here
 def mapDomain(f)
     Inferred -> Inferred
-    Domain(domain) -> Domain(f(domain))
+    Annotation(domain) -> Annotation(f(domain))
     PatternMatch(domain) -> PatternMatch(domain)
-    Opaque(type) -> Opaque(type)
 
 
 def mapComponentsWithDepth(f, depth, term)
@@ -36,8 +34,8 @@ def mapComponentsWithDepth(f, depth, term)
         MetaVariable(_, _) -> term
         Type(_, _) -> term
         Variable(_, _) -> term
-        Function(tag, type, body) ->
-            Function(tag, type.mapDomain(f(depth)), body.f(up depth))
+        Function(tag, domain, body) ->
+            Function(tag, domain.mapDomain(f(depth)), body.f(up depth))
         Implication(tag, domain, body) ->
             Implication(tag, domain.f(depth), body.f(up depth))
         Intersection(tag, domain, body) ->
