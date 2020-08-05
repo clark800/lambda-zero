@@ -10,8 +10,8 @@ def unificationError(originals, left, right)
 
 
 def unifyFailure(originals, metacontext, (left, right))
-    unificationError(originals.mapPair(substitute(metacontext)),
-        left.substitute(metacontext), right.substitute(metacontext))
+    unificationError(originals.mapPair(resolve(metacontext)),
+        left.resolve(metacontext), right.resolve(metacontext))
 
 
 def isNegativeMetaVariable(term)
@@ -49,17 +49,9 @@ def isSamePrimitive(term)
         False
 
 
-def substituteAndEvaluate(metacontext, term)
-    if term is MetaVariable(_, index)
-        if index is +_ n
-            if metacontext.getMetaValue(n) is Just(value)
-                substituteAndEvaluate(metacontext, value)
-            term
-        term
-    if isApplication(term)
-        value := resolve(evaluate(metacontext, [], enclose(term)))
-        if isUnknown(value) then term else value
-    term
+def tryEvaluate(metacontext, closure)
+    closure' := evaluate(metacontext, [], closure)
+    if isUnknown(getTerm(closure')) then closure else closure'
 
 
 # Robinson's Unification Algorithm
@@ -68,57 +60,72 @@ def substituteAndEvaluate(metacontext, term)
 # unify' enforces that left <: right
 def unify'(fail, metacontext, (left, right))
     fail' := fail(metacontext, (left, right))
-    left := substituteAndEvaluate(metacontext, left)
-    right := substituteAndEvaluate(metacontext, right)
+    left := left.tryEvaluate(metacontext)
+    right := right.tryEvaluate(metacontext)
+    _ @ Closure(leftTerm, leftEnv) := left
+    _ @ Closure(rightTerm, rightEnv) := right
 
-    if isUnknown(left) or isUnknown(right)
+    if isUnknown(leftTerm) or isUnknown(rightTerm)
         fail'
 
-    if isSamePrimitive(left, right)
+    if isSamePrimitive(leftTerm, rightTerm)
         metacontext
 
-    if isNegativeMetaVariable(left) or isNegativeMetaVariable(right)
+    if isNegativeMetaVariable(leftTerm) or isNegativeMetaVariable(rightTerm)
         fail'
 
-    if right is MetaVariable(_, index)
+    if rightTerm is MetaVariable(_, index)
         metacontext.setMetaValue(abs(index), left)
 
-    match left
+    def unifyBinder(tag, leftDomain, rightDomain, leftBody, rightBody)
+        metacontext' := unify'(fail, metacontext,
+            (Closure(rightDomain, rightEnv),
+             Closure(leftDomain, leftEnv)))
+        (m, metacontext'') := metacontext'.newNegativeMetaVariable(tag)
+        unify'(fail, metacontext'',
+            (Closure(leftBody, leftEnv.push(enclose(m))),
+             Closure(rightBody, rightEnv.push(enclose(m)))))
+
+    def unifyApplication(leftLeft, rightLeft, leftRight, rightRight)
+        metacontext' := unify'(fail, metacontext,
+            (Closure(leftLeft, leftEnv), Closure(rightLeft, rightEnv)))
+        unify'(fail, metacontext',
+            (Closure(leftRight, leftEnv), Closure(rightRight, rightEnv)))
+
+    match leftTerm
         case Unknown(tag) -> fail'
         case MetaVariable(tag, index)
             metacontext.setMetaValue(abs(index), right)
         case Type(tag, index) -> fail'
-        case Variable(tag, index) -> fail'
+        case Variable(tag, index) -> fail'  # should already be evaluated
         case Function(tag, domain, body) -> fail'
         case Implication(tag, domain, body)
-            if right is Implication(tag', domain', body')
-                metacontext' := unify'(fail, metacontext, (domain', domain))
-                unify'(fail, metacontext', (body, body'))
+            if rightTerm is Implication(tag', domain', body')
+                unifyBinder(tag, domain, domain', body, body')
             fail'
         case Intersection(tag, domain, body)
-            if right is Intersection(tag', domain', body')
-                metacontext' := unify'(fail, metacontext, (domain', domain))
-                unify'(fail, metacontext', (body, body'))
+            if rightTerm is Intersection(tag', domain', body')
+                unifyBinder(tag, domain, domain', body, body')
             fail'
         case Application(tag, left', right')
-            if right is Application(tag', left'', right'')
-                metacontext' := unify'(fail, metacontext, (left', left''))
-                unify'(fail, metacontext', (right', right''))
+            if rightTerm is Application(tag', left'', right'')
+                unifyApplication(left', left'', right', right'')
             fail'
         case Construction(tag, domain, parameters, body)
-            if right is Construction(tag', domain', parameters', body')
+            if rightTerm is Construction(tag', domain', parameters', body')
                 if not isSamePrimitive(domain, domain')
                     fail'
-                #unify'(fail, metacontext, (body, body'))
-                zip(parameters, parameters').cascade(unify'(fail), metacontext)
+                lefts := parameters.map(`Closure(leftEnv))
+                rights := parameters'.map(`Closure(rightEnv))
+                zip(lefts, rights).cascade(unify'(fail), metacontext)
             fail'
         case Numeral(tag, type, value) -> fail'
         case Operation(tag, term, optimization) -> fail'
 
 
 def unify(left, right, metacontext)
-    types := (left, right)
-    metacontext' := unify'(unifyFailure(types), metacontext, types)
+    originals := (left, right)
+    metacontext' := unify'(unifyFailure(originals), metacontext, originals)
     _ @ Metacontext(positives, negatives) := metacontext'
     if getSize(positives) < 0  # todo: remove this and use either type
         abort("force unification errors")

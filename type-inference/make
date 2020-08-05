@@ -40,7 +40,6 @@ cat "$LIB/operators.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/components.zero" \
     "$DIR/resolve.zero" \
-    "$DIR/substitute.zero" \
     "$DIR/generalize.zero" \
     "$DIR/instantiate.zero" \
     "$DIR/unify.zero" \
