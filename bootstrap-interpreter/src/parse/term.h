@@ -57,5 +57,5 @@ static inline unsigned long long getGlobalIndex(Term* t) {
 static inline Term* getParameter(Term* t) {return getLeft(t);}
 static inline Term* getBody(Term* t) {return getRight(t);}
 static inline OperationCode getOperationCode(Term* t) {
-  return isLeaf(t) ? getValue(t) : getVariety(t);
+  return isLeaf(t) ? (OperationCode)getValue(t) : (OperationCode)getVariety(t);
 }

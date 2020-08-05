@@ -33,7 +33,7 @@ void deletePool(Pool* pool) {
 
 void* acquire(Pool* pool) {
     if (pool->pageUsage == pool->pageCapacity)
-       appendPage(pool);
+        appendPage(pool);
     return (void*)(&((char*)(pool->currentPage))
         [pool->itemSize * pool->pageUsage++]);
 }
