@@ -1,44 +1,40 @@
 #* generalize.zero
 
-def substituteVariable(tag, metaIndex, depth, term)
+def substitute(indices, depth, term)
+    # depth should start as the length of indices
+    # we only allow generalizing top-level terms, so we don't have to
+    # adjust any variable indices
+    if term is MetaVariable(tag, index)
+        if indices.findIndex((=:= index)) is Just(depth')
+            tag' := renameTag(tag, showMetaVariable(+_ depth'), NOFIX)
+            Variable(tag', -_(depth -- depth'))
+        term
+    mapComponentsWithDepth(substitute(indices), depth, term)
+
+
+def getMetaVariableIndices'(term)
     if term is MetaVariable(_, index)
-        if index =:= metaIndex then Variable(tag, -_ depth) else term
-    if term is Variable(tag, index)
-        match index
-            +_ n -> term
-            -_ n -> if n >= depth then Variable(tag, -_(up n)) else term
-    mapComponentsWithDepth(substituteVariable(tag, metaIndex), depth, term)
+        if isPositive(index) then [abs(index)] else []
+    join(getComponents(term).map(getMetaVariableIndices'))
 
 
-def generalize(metavariable, term)
-    # todo: pass domain in as a parameter
-    if metavariable is MetaVariable(tag, metaIndex)
-        domain := Type(veil(tag), +_ 0)
-        body := substituteVariable(tag, metaIndex, 1, term)
-        Intersection(tag, domain, body)
-    throwError("generalize expects a metavariable", getTermTag(metavariable))
+def getMetaVariableIndices(term)
+    getMetaVariableIndices'(term).deduplicateBy((=))
 
 
-def getMetaVariables'(term)
-    if term is MetaVariable(_, index)
-        if isPositive(index) then [(abs(index), term)] else []
-    join(getComponents(term).map(getMetaVariables'))
+def wrapIntersection(tag, index, body)
+    domain := Type(veil(tag), +_ 0)
+    tag' := renameTag(tag, showMetaVariable(+_ index), NOFIX)
+    Intersection(tag', domain, body)
 
 
-def getMetaVariables(term)
-    getMetaVariables'(term).deduplicateBy((=).on(first)).map(second)
-
-
-def renameMetavariable(n, metavariable)
-    tag := getTermTag(metavariable)
-    metavariable.setTag(renameTag(tag, showMetaVariable(+_ n), NOFIX))
-
-
-def generalizeAll(metacontext, closure)
+def generalize(metacontext, closure)
     type := closure.resolve(metacontext)
     # after resolve, all metavariables in type are free metavariables
-    universals := getMetaVariables(type)
-    metavariables := zip(0 ..., universals).map(uncurry(renameMetavariable))
-    metavariables.fold(generalize, type)
+    indices := getMetaVariableIndices(type)
+    depth := length(indices)
+    type' := type.substitute(indices.map((+_)), depth)
+    indices' := (0...)[0, depth]
+    indices'.fold(wrapIntersection(getTermTag(type)), type')
 
 #*
