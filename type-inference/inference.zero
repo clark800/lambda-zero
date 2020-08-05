@@ -99,7 +99,7 @@ def inferType(types, Binding(tag, closure @ Closure(term, environment)))
         types.push(getFixType(tag))
     context := (environment, types)
     (type, metacontext) := infer(context, term, emptyMetacontext)
-    type' := Closure(type, environment).generalizeAll(metacontext)
+    type' := Closure(type, environment).generalize(metacontext)
     types.push(normalize(type'))
 
 
