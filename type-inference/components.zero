@@ -1,7 +1,6 @@
 #* components.zero
 
 def getDomainComponents
-    Inferred -> []
     Annotation(term) -> [term]
     PatternMatch(term) -> []
 
@@ -23,7 +22,6 @@ def getComponents
 # PatternMatch will never contain metavariables or unbound
 # Variables, so we can skip them here
 def mapDomain(f)
-    Inferred -> Inferred
     Annotation(domain) -> Annotation(f(domain))
     PatternMatch(domain) -> PatternMatch(domain)
 
