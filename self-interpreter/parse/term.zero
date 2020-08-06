@@ -26,6 +26,7 @@ Term ::= {
     MetaVariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
+    Singleton(tag : TagT, type : Term, index : ℤ),
     Function(tag : TagT, domain : Domain(Term), body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
@@ -42,6 +43,7 @@ def getTermTag
     MetaVariable(tag, _) -> tag
     Type(tag, _) -> tag
     Variable(tag, _) -> tag
+    Singleton(tag, _, _) -> tag
     Function(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
     Intersection(tag, _, _) -> tag
@@ -55,6 +57,7 @@ isUnknown := Unknown(_) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isType := Type(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
+isSingleton := Singleton(_, _, _) -> True; _ -> False
 isFunction := Function(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isIntersection := Intersection(_, _, _) -> True; _ -> False
@@ -80,6 +83,7 @@ def setTag(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
+    Singleton(_, type, index) -> Singleton(tag, type, index)
     Function(_, domain, body) -> Function(tag, domain, body)
     Implication(_, domain, body) -> Implication(tag, domain, body)
     Intersection(_, domain, body) -> Intersection(tag, domain, body)
@@ -141,6 +145,8 @@ def showTerm
     MetaVariable(tag, index) -> showMetaVariable(index)
     Type(_, index) -> "⊤" ++ showIntegerSubscript(index)
     Variable(tag, index) -> showTag(tag) # ++ "#" ++ showInteger(index)
+    Singleton(tag, type, index) ->
+        "(" ++ showTerm(type) ++ ")" ++ showIntegerSubscript(index)
     Function(tag, domain, body) ->
         "(" ++ showTag(tag) ++ domain.showDomain(showTerm) ++
             " ↦ " ++ showTerm(body) ++ ")"
