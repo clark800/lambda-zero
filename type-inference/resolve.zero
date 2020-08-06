@@ -35,6 +35,8 @@ def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
                     term
                 resolve'(metacontext, metaindices, closure')
             term
+        case Singleton(tag, type, index)
+            Singleton(tag, resolve''(type), index)
         case Function(tag, domain, body)
             Function(tag, domain.mapDomain(resolve''), resolve'''(body))
         case Implication(tag, domain, body)

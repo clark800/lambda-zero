@@ -30,10 +30,8 @@ def isSamePrimitive(term)
         if term is Type(_, index')
             index =:= index'
         False
-    case Variable(_, index)
-        if term is Variable(_, index')
-            index =:= index'
-        False
+    case Variable(_, _) -> False
+    case Singleton(_, _, _) -> False
     case Function(_, _, _) -> False
     case Implication(_, _, _) -> False
     case Intersection(_, _, _) -> False
@@ -95,6 +93,13 @@ def unify'(fail, metacontext, (left, right))
             metacontext.setMetaValue(abs(index), right)
         case Type(tag, index) -> fail'
         case Variable(tag, index) -> fail'  # should already be evaluated
+        case Singleton(tag, type, index)
+            if rightTerm is Singleton(tag', type', index')
+                if abs(index) =/= abs(index')
+                    fail'
+                unify'(fail, metacontext,
+                    (Closure(type, leftEnv), Closure(type', rightEnv)))
+            fail'
         case Function(tag, domain, body) -> fail'
         case Implication(tag, domain, body)
             if rightTerm is Implication(tag', domain', body')
@@ -110,11 +115,8 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Construction(tag, domain, parameters, body)
             if rightTerm is Construction(tag', domain', parameters', body')
-                if not isSamePrimitive(domain, domain')
-                    fail'
-                lefts := parameters.map(`Closure(leftEnv))
-                rights := parameters'.map(`Closure(rightEnv))
-                zip(lefts, rights).cascade(unify'(fail), metacontext)
+                unify'(fail, metacontext,
+                    (Closure(domain, leftEnv), Closure(domain', rightEnv)))
             fail'
         case Numeral(tag, type, value) -> fail'
         case Operation(tag, term, optimization) -> fail'

@@ -5,6 +5,7 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
 ArrowType ::= {Simple, Strict, Locked, Double, Tail}
 
 AST ::= {
+    TypeConstant(tag : TagT, index : ℤ),
     Reference(tag : TagT, debruijn : ℕ),
     Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
         parameter : AST, annotation : (AST)?, body : AST),
@@ -18,8 +19,7 @@ AST ::= {
     CommaPair(tag : TagT, left : AST, right : AST),
     ColonPair(tag : TagT, left : AST, right : AST),
     SetBuilder(tag : TagT, forms : List(AST)),
-    ADT(tag : TagT, parameters : List(AST), objectType : AST,
-        signatures : List(AST)),
+    ADT(tag : TagT, parameters : List(AST), constructorType : AST,  body : AST),
     Constructor(tag : TagT, type : AST, adtType : AST, function : AST,
         count : ℕ, index : ℕ),
     TypedNode(tag : TagT, type : AST, node : AST)
@@ -37,6 +37,7 @@ def lockArrow(node)
 
 
 def getTag
+    TypeConstant(tag, _) -> tag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
@@ -57,6 +58,7 @@ def astSyntaxError(message, node)
 
 
 def isPreterm
+    TypeConstant(_, _) -> True
     Reference(_, _) -> True
     Arrow(_, _, _, _, _, _) -> True
     Juxtaposition(_, _, _) -> True
@@ -73,6 +75,7 @@ def isPreterm
 
 
 def containsName(name)
+    TypeConstant(_, _) -> False
     Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
@@ -85,7 +88,7 @@ def containsName(name)
     CommaPair(_, _, _) -> False
     ColonPair(_, _, right) -> containsName(name, right)
     SetBuilder(_, _) -> False
-    ADT(_, _, objectType, _) -> containsName(name, objectType)
+    ADT(_, _, _, body) -> containsName(name, body)
     Constructor(_, _, _, _, _, _) -> False
     TypedNode(_, _, _) -> False
 
@@ -105,6 +108,7 @@ def showAnnotation(showAST, annotation)
 
 
 def showAST
+    TypeConstant(_, index) -> "⊤" ++ showIntegerSubscript(index)
     Reference(tag, _) -> showTag(tag)
     Arrow(tag, arrowType, _, parameter, annotation, body) ->
         "(" ++ showAST(parameter) ++ showAnnotation(showAST, annotation) ++
@@ -124,12 +128,13 @@ def showAST
     ColonPair(tag, left, right) ->
         "(" ++ showAST(left) ++ " : " ++ showAST(right) ++ ")"
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
-    ADT(tag, parameters, objectType, _) ->
+    ADT(tag, parameters, constructorType, body) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
     Constructor(_, _, _, body, _, _) -> showAST(body)
     TypedNode(_, _, node) -> showAST(node)
 
 
+isTypeConstant := TypeConstant(_, _) -> True; _ -> False
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False

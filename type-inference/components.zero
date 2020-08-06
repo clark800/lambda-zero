@@ -2,7 +2,7 @@
 
 def getDomainComponents
     Annotation(term) -> [term]
-    PatternMatch(term) -> []
+    PatternMatch(term) -> [term]
 
 
 def getComponents
@@ -10,6 +10,7 @@ def getComponents
     MetaVariable(_, _) -> []
     Type(_, _) -> []
     Variable(_, _) -> []
+    Singleton(_, type, _) -> [type]
     Function(_, domain, body) -> getDomainComponents(domain) ++ [body]
     Implication(_, domain, body) -> [domain, body]
     Intersection(_, domain, body) -> [domain, body]
@@ -23,7 +24,7 @@ def getComponents
 # Variables, so we can skip them here
 def mapDomain(f)
     Annotation(domain) -> Annotation(f(domain))
-    PatternMatch(domain) -> PatternMatch(domain)
+    PatternMatch(domain) -> PatternMatch(f(domain))
 
 
 def mapComponentsWithDepth(f, depth, term)
@@ -32,6 +33,7 @@ def mapComponentsWithDepth(f, depth, term)
         MetaVariable(_, _) -> term
         Type(_, _) -> term
         Variable(_, _) -> term
+        Singleton(tag, type, index) -> Singleton(tag, type.f(depth), index)
         Function(tag, domain, body) ->
             Function(tag, domain.mapDomain(f(depth)), body.f(up depth))
         Implication(tag, domain, body) ->

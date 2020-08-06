@@ -189,13 +189,13 @@ def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
 
 def newADT(tag, adtType, parameters, forms)
     # todo: change name from "r" so it can't clash with user's names
+    constructorType := parameters.fold(DoubleArrow, TypeConstant(tag, +_ 0))
     returnType := FixedName(tag, "r")
     annotations := forms.map(getArguments).map(map(getParameterType))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))
-    bodyType := argumentTypes.fold(DoubleArrow, returnType)
-    objectType := TailArrow(returnType, bodyType)
+    body := TailArrow(returnType, argumentTypes.fold(DoubleArrow, returnType))
     signatures := forms.map(getConstructorType(adtType))
-    ADT(tag, parameters, objectType, signatures)
+    ADT(tag, parameters, constructorType, body)
 
 
 def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
