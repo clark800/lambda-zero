@@ -69,24 +69,19 @@ def bindName(getBuiltin, globals, locals, tag)
 
 def getADTName(constructor)
     if constructor is Constructor(_, _, adtType, _, _, _)
-        getLexeme(getHead(adtType))
+        getHead(adtType)
     astSyntaxError("invalid constructor", constructor)
 
 
-def getConstructionTypeAST(constructor)
-    if constructor is Constructor(_, _, adtType, _, _, _)
-        getArguments(adtType).fold(TailArrow, adtType)
-    astSyntaxError("invalid constructor", constructor)
-
-
-def constructCaseAnnotation(tag, constructors)
+def getTypeConstructor(tag, constructors)
     if isNil(constructors)
         throwError("Type error: no cases:", tag)
     if not constructors.all(isConstructor)
         throwError("Type error: invalid cases:", tag)
-    adtNames := deduplicateBy((=*=), constructors.map(getADTName))
+    adtNames := constructors.map(getADTName)
+    adtLexemes := adtNames.map(getLexeme).deduplicateBy((=*=))
     counts := deduplicate(constructors.map(maybeCount).prune)
-    if length(adtNames) =/= 1 or length(counts) =/= 1
+    if length(adtLexemes) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
     count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
     indices := deduplicate(constructors.map(maybeConstructorIndex).prune)
@@ -96,18 +91,23 @@ def constructCaseAnnotation(tag, constructors)
         throwError("Type error: too many cases:", tag)
     if not indices =*= sort(indices)
         throwError("Type error: cases out of order:", tag)
-
-    constructor := safeHead(constructors) ??
-        throwError("Type error: invalid cases", tag)
-    getConstructionTypeAST(constructor)
+    safeHead(adtNames) ?? throwError("Type error: invalid cases", tag)
 
 
-def buildCaseAnnotation(tag, constructorNames, globals)
+def getTypeFamily(tag, constructorNames, globals)
     if constructorNames.map(getLexeme).map(`lookup(globals)).sequence is
             Just(constructorGlobals)
         constructors := constructorGlobals.map(getGlobalAST)
-        Just(constructCaseAnnotation(tag, constructors))
-    Void
+        typeConstructor := getTypeConstructor(tag, constructors)
+        tag' := getTag(typeConstructor)
+        if bindGlobal(globals, tag') is Just(constant)
+            if constant is Variable(_, index)
+                if index is +_ n
+                    Type(tag', -_ n)
+                pass
+            pass
+        throwError("Type error: undefined type constructor", tag)
+    throwError("Type error: undefined constructor", tag)
 
 
 def bind(getBuiltin, globals, index, locals, node)
@@ -136,15 +136,14 @@ def bind(getBuiltin, globals, index, locals, node)
             bodyTerm := body.bind'(locals')
             if isNil(constructorNames)
                 domain := annotation.mapJust(bind'(locals)) ?? Unknown(tag)
-                Function(getTag(parameter), Annotation(domain), bodyTerm)
+                Function(getTag(parameter), domain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
-            if buildCaseAnnotation(tag, constructorNames, globals) is
-                    Just(typeAST)
-                domain := typeAST.bind'(locals)
-                Function(getTag(parameter), PatternMatch(domain), bodyTerm)
-            astSyntaxError("invalid constructors", node)
+            typeFamily := getTypeFamily(tag, constructorNames, globals)
+            if isUnknown(typeFamily)   # force errors
+                astSyntaxError("error binding pattern match", node)
+            Function(getTag(parameter), typeFamily, bodyTerm)
         case Juxtaposition(tag, left, right)
             Application(tag, left.bind'(locals), right.bind'(locals))
         case Let(tag, isTypeConstructor, name, value, scope)
@@ -153,8 +152,7 @@ def bind(getBuiltin, globals, index, locals, node)
                     node)
             valueTerm := value.bind'(locals)
             body := scope.bind'(locals.pushParameter(name))
-            domain := Annotation(Unknown(tag))
-            abstraction := Function(getTag(name), domain, body)
+            abstraction := Function(getTag(name), Unknown(tag), body)
             Application(tag, abstraction, valueTerm)
         case Number(tag, value)
             Numeral(tag, getNaturalType(tag, globals), value)

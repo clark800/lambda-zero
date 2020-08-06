@@ -1,17 +1,12 @@
 #* components.zero
 
-def getDomainComponents
-    Annotation(term) -> [term]
-    PatternMatch(term) -> [term]
-
-
 def getComponents
     Unknown(_) -> []
     MetaVariable(_, _) -> []
     Type(_, _) -> []
     Variable(_, _) -> []
     Singleton(_, type, _) -> [type]
-    Function(_, domain, body) -> getDomainComponents(domain) ++ [body]
+    Function(_, domain, body) -> [domain, body]
     Implication(_, domain, body) -> [domain, body]
     Intersection(_, domain, body) ->
         if isSingleton(domain) then [domain] else [domain, body]
@@ -20,22 +15,16 @@ def getComponents
     Operation(_, _, _) -> []
 
 
-# PatternMatch will never contain metavariables or unbound
-# Variables, so we can skip them here
-def mapDomain(f)
-    Annotation(domain) -> Annotation(f(domain))
-    PatternMatch(domain) -> PatternMatch(f(domain))
-
-
 def mapComponentsWithDepth(f, depth, term)
     match term
         Unknown(_) -> term
         MetaVariable(_, _) -> term
         Type(_, _) -> term
         Variable(_, _) -> term
-        Singleton(tag, type, index) -> Singleton(tag, type.f(depth), index)
+        Singleton(tag, type, index) ->
+            Singleton(tag, type.f(depth), index)
         Function(tag, domain, body) ->
-            Function(tag, domain.mapDomain(f(depth)), body.f(up depth))
+            Function(tag, domain.f(depth), body.f(up depth))
         Implication(tag, domain, body) ->
             Implication(tag, domain.f(depth), body.f(up depth))
         Intersection(tag, domain, body) ->
