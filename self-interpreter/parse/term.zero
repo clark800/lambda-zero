@@ -31,8 +31,6 @@ Term ::= {
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
-    Construction(tag : TagT, domain : Term, parameters : List(Term),
-        body : Term),
     Numeral(tag : TagT, type : Term, value : ℕ),
     Operation(tag : TagT, term : Term, optimization : OptimizationT(Term))
 }
@@ -48,7 +46,6 @@ def getTermTag
     Implication(tag, _, _) -> tag
     Intersection(tag, _, _) -> tag
     Application(tag, _, _) -> tag
-    Construction(tag, _, _, _) -> tag
     Numeral(tag, _, _) -> tag
     Operation(tag, _, _) -> tag
 
@@ -62,7 +59,6 @@ isFunction := Function(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isIntersection := Intersection(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
-isConstruction := Construction(_, _, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _) -> True; _ -> False
 
@@ -88,8 +84,6 @@ def setTag(tag)
     Implication(_, domain, body) -> Implication(tag, domain, body)
     Intersection(_, domain, body) -> Intersection(tag, domain, body)
     Application(_, left, right) -> Application(tag, left, right)
-    Construction(_, domain, parameters, body) ->
-        Construction(tag, domain, parameters, body)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, term, op) -> Operation(tag, term, op)
 
@@ -140,6 +134,12 @@ def showDomain(showTerm)
     PatternMatch(term) -> " : " ++ showTerm(term)
 
 
+def getSingletonParameters(type)
+    if type is Implication(_, domain, body)
+        domain :: getSingletonParameters(body)
+    []
+
+
 def showTerm
     Unknown(_) -> "■"
     MetaVariable(tag, index) -> showMetaVariable(index)
@@ -154,12 +154,13 @@ def showTerm
         if isImplication(domain) then
             "(" ++ showTerm(domain) ++ ")" ++ " ⇒ " ++ showTerm(body) else
                 showTerm(domain) ++ " ⇒ " ++ showTerm(body)
-    Intersection(tag, domain, body) ->
+    Intersection(tag, domain, body) -> (
+        if domain is Singleton(_, type, _)
+            showConstruction(showTerm, tag, getSingletonParameters(type))
         showTag(tag) ++ " ↣ " ++ showTerm(body)
+    )
     Application(_, applicand, argument) ->
         showApplication(showTerm, applicand, argument)
-    Construction(tag, _, parameters, _) ->
-        showConstruction(showTerm, tag, parameters)
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _) -> showTag(tag)
 

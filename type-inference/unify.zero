@@ -36,7 +36,6 @@ def isSamePrimitive(term)
     case Implication(_, _, _) -> False
     case Intersection(_, _, _) -> False
     case Application(_, _, _) -> False
-    case Construction(_, _, _, _) -> False
     case Numeral(_, _, value)
         if term is Numeral(_, _, value')
             value = value'
@@ -81,12 +80,6 @@ def unify'(fail, metacontext, (left, right))
             (Closure(leftBody, leftEnv.push(enclose(m))),
              Closure(rightBody, rightEnv.push(enclose(m)))))
 
-    def unifyApplication(leftLeft, rightLeft, leftRight, rightRight)
-        metacontext' := unify'(fail, metacontext,
-            (Closure(leftLeft, leftEnv), Closure(rightLeft, rightEnv)))
-        unify'(fail, metacontext',
-            (Closure(leftRight, leftEnv), Closure(rightRight, rightEnv)))
-
     match leftTerm
         case Unknown(tag) -> fail'
         case MetaVariable(tag, index)
@@ -107,16 +100,19 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Intersection(tag, domain, body)
             if rightTerm is Intersection(tag', domain', body')
+                if isSingleton(domain) and isSingleton(domain')
+                    # we can optimize here by ignoring the body since we ensure
+                    # that if singleton domains match then the bodies match
+                    unify'(fail, metacontext,
+                        (Closure(domain, leftEnv), Closure(domain', rightEnv)))
                 unifyBinder(tag, domain, domain', body, body')
             fail'
         case Application(tag, left', right')
             if rightTerm is Application(tag', left'', right'')
-                unifyApplication(left', left'', right', right'')
-            fail'
-        case Construction(tag, domain, parameters, body)
-            if rightTerm is Construction(tag', domain', parameters', body')
-                unify'(fail, metacontext,
-                    (Closure(domain, leftEnv), Closure(domain', rightEnv)))
+                metacontext' := unify'(fail, metacontext,
+                    (Closure(left', leftEnv), Closure(left'', rightEnv)))
+                unify'(fail, metacontext',
+                    (Closure(right', leftEnv), Closure(right'', rightEnv)))
             fail'
         case Numeral(tag, type, value) -> fail'
         case Operation(tag, term, optimization) -> fail'

@@ -45,9 +45,6 @@ def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
             Intersection(tag, resolve''(domain), resolve'''(body))
         case Application(tag, left, right)
             Application(tag, resolve''(left), resolve''(right))
-        case Construction(tag, domain, parameters, body)
-            Construction(tag, resolve''(domain), parameters.map(resolve''),
-                resolve'''(body))
         case Numeral(_, _, _) -> term
         case Operation(_, _, _) -> term
 

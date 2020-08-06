@@ -13,14 +13,14 @@ def getDomain(tag, environment)
         lift (domain, domain)
     case PatternMatch(domain)
         outerDomain <- instantiateClosure(Closure(domain, environment))
-        if outerDomain is Construction(tag', domain', _, innerDomain)
+        if outerDomain is Intersection(tag', domain', innerDomain)
             if domain' is Singleton(_, _, index)
                 closure := Closure(Variable(tag', +_ abs(index)), environment)
                 closure' := Closure(innerDomain, environment.push(closure))
                 innerDomain' := resolveClosure(closure')
                 lift (outerDomain, innerDomain')
             throwError("invalid domain for construction", tag')
-        throwError("expected construction in pattern match annotation", tag)
+        throwError("expected intersecton in pattern match annotation", tag)
 
 
 def infer(context @ (environment, types))
@@ -59,8 +59,6 @@ def infer(context @ (environment, types))
         _ <- unify(Closure(applicandType, environment),
                   Closure(functionType, environment))
         lift returnType
-    case Construction(tag, domain, parameters, objectType)
-        lift Type(tag, +_ 0)
     case Numeral(tag, type, value)
         lift type
     case Operation(tag, term, _)
@@ -109,7 +107,9 @@ def inferType(types, Binding(tag, closure, ascription))
 
 
 def showType(type)
-    if type is Intersection(tag, _, body)
+    if type is Intersection(tag, domain, body)
+        if isSingleton(domain)
+            showTerm(type)
         "∀" ++ showTag(tag) ++ " " ++ showType(body)
     showTerm(type)
 
