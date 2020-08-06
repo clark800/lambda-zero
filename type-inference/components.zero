@@ -13,9 +13,9 @@ def getComponents
     Singleton(_, type, _) -> [type]
     Function(_, domain, body) -> getDomainComponents(domain) ++ [body]
     Implication(_, domain, body) -> [domain, body]
-    Intersection(_, domain, body) -> [domain, body]
+    Intersection(_, domain, body) ->
+        if isSingleton(domain) then [domain] else [domain, body]
     Application(_, left, right) -> [left, right]
-    Construction(_, domain, parameters, body) -> domain :: parameters
     Numeral(_, _, _) -> []
     Operation(_, _, _) -> []
 
@@ -42,9 +42,6 @@ def mapComponentsWithDepth(f, depth, term)
             Intersection(tag, domain.f(depth), body.f(up depth))
         Application(tag, left, right) ->
             Application(tag, left.f(depth), right.f(depth))
-        Construction(tag, domain, parameters, body) ->
-            Construction(tag, domain.f(depth), parameters.map(f(depth)),
-                body.f(up depth))
         Numeral(_, _, _) -> term
         Operation(_, _, _) -> term
 
