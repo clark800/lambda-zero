@@ -44,7 +44,7 @@ def infer(context @ (environment, types))
             -_ family -> lift Type(tag, +_ 1)
     case Variable(tag, index)
         type := types.seek(index) ?? throwError("unbound variable", tag)
-        instantiateAll(type)  # todo: remove this after implementing subtyping
+        instantiate(type)  # todo: remove this after implementing subtyping
     case Singleton(tag, type, element)
         type.infer(context)   # todo: support unknown type, verify type
     case Function(tag, domain, body)
@@ -65,6 +65,8 @@ def infer(context @ (environment, types))
         argumentType <- argument.infer(context)
         if applicand is Function(tag', domain, body)
             # handle local definitions specially so that we have argument in env
+            if isUnknown(domain)  # avoid creating unnecessary metavariable
+                body.infer(context.pushContext(argumentType, argument))
             (outerDomain, innerDomain) <- domain.getDomain(environment)
             _ <- unify(Closure(argumentType, environment),
                       Closure(outerDomain, environment))
@@ -108,7 +110,7 @@ def normalize(term)
 
 def renameUniversals(closure)
     term := closure.resolve(emptyMetacontext)
-    (term', metacontext) := instantiateAll(term, emptyMetacontext)
+    (term', metacontext) := instantiate(term, emptyMetacontext)
     normalize(enclose(term').generalize(metacontext))
 
 
