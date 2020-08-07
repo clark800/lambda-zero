@@ -126,30 +126,39 @@ def showMetaVariable(index)
         -_ n -> "■" ++ showSubscript(n)
 
 
-def showDomain(showTerm, term)
-    if isUnknown(term) then "" else " : " ++ showTerm(term)
-
-
 def getSingletonParameters(type)
     if type is Implication(_, domain, body)
         domain :: getSingletonParameters(body)
     []
 
 
+def needsParentheses
+    Function(_, _, _) -> True
+    Implication(_, _, _) -> True
+    Intersection(_, domain, _) -> not isSingleton(domain)
+    _ -> False
+
+
+def isTypeFamily(term)
+    if term is Type(_, index)
+        isNegative(index)
+    False
+
+
 def showTerm
     MetaVariable(tag, index) -> showMetaVariable(index)
     Type(_, index) -> "⊤" ++ showIntegerSubscript(index)
-    Variable(tag, index) ->
-        if index =:= -_ 0 then "■" else showTag(tag)
-        # ++ "#" ++ showInteger(index)
+    Variable(tag, index) -> if index =:= -_ 0 then "■" else showTag(tag)
     Singleton(tag, type, index) ->
         "(" ++ showTerm(type) ++ ")" ++ showSubscript(index)
     Function(tag, domain, body) ->
-        "(" ++ showTag(tag) ++ domain.showDomain(showTerm) ++
-            " ↦ " ++ showTerm(body) ++ ")"
+        if isUnknown(domain) or isTypeFamily(domain) then
+            showTag(tag) ++ " ↦ " ++ showTerm(body) else
+            "(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") ↦ " ++
+            showTerm(body)
     Implication(tag, domain, body) ->
-        if isImplication(domain) then
-            "(" ++ showTerm(domain) ++ ")" ++ " ⇒ " ++ showTerm(body) else
+        if needsParentheses(domain) then
+            "(" ++ showTerm(domain) ++ ") ⇒ " ++ showTerm(body) else
                 showTerm(domain) ++ " ⇒ " ++ showTerm(body)
     Intersection(tag, domain, body) -> (
         if domain is Singleton(_, type, _)
@@ -157,7 +166,9 @@ def showTerm
         showTag(tag) ++ " ↣ " ++ showTerm(body)
     )
     Application(_, applicand, argument) ->
-        showApplication(showTerm, applicand, argument)
+        if needsParentheses(applicand) then
+            "(" ++ showTerm(applicand) ++ ")(" ++ showTerm(argument) ++ ")" else
+            showTerm(applicand) ++ "(" ++ showTerm(argument) ++ ")"
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _) -> showTag(tag)
 

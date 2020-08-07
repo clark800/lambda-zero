@@ -1,53 +1,5 @@
 #* serialize.zero
 
-def serialize(closure)
-    def serialize'(Closure(term, environment), depth)
-        match term
-            case MetaVariable(tag, index)
-                showMetaVariable(index)
-            case Type(tag, index)
-                "⊤" ++ showIntegerSubscript(index)
-            case Variable(tag, index)
-                match index
-                    case +_ n
-                        showTag(tag)
-                    case -_ n
-                        if n <= depth
-                            if n = 0 then "■" else showTag(tag)
-                        if environment.peek(n -- depth -- 1) is Just(closure)
-                            serialize'(closure, 0)
-                        showTag(tag)
-            case Singleton(tag, type, index)
-                "(" ++ serialize'(Closure(type, environment), depth) ++ ")" ++
-                    showSubscript(index)
-            case Function(tag, _, body)
-                "(" ++ showTag(tag) ++ " ↦ " ++
-                    serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Implication(tag, domain, body)
-                "(" ++ serialize'(Closure(domain, environment), depth) ++
-                " ⇒ " ++ serialize'(Closure(body, environment), depth + 1) ++
-                ")"
-            case Intersection(tag, domain, body)
-                if domain is Singleton(_, type, _)
-                    parameters := getSingletonParameters(type)
-                    showTag(tag) ++ "(" ++ parameters.map(x -> serialize'(
-                        Closure(x, environment), depth)).joinWith(", ") ++ ")"
-                "(" ++ showTag(tag) ++ " ↣ " ++
-                    serialize'(Closure(body, environment), depth + 1) ++ ")"
-            case Application(_, applicand, argument)
-                "(" ++ serialize'(Closure(applicand, environment), depth) ++
-                " " ++ serialize'(Closure(argument, environment), depth) ++ ")"
-            case Numeral(_, _, n)
-                showNatural(n)
-            case Operation(tag, _, _)
-                showTag(tag)
-
-    result := serialize'(closure, 0)
-    # ensure that full serialization succeeds before returning anything
-    # or else lazy output will show part of the serailization even if
-    # an error occurs during parsing
-    if result.length = 0 then "" else result
-
 
 def maybeDebruijnIndex(term)
     if term is Variable(_, index)

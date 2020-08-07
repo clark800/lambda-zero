@@ -12,9 +12,11 @@ def recursionError(metavariable, metacontext)
 
 # for any variable in term that has a value in the environment, replace
 # the variable with the value from the environment recursively
-def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
-    resolve''(t) := resolve'(metacontext, metaindices, Closure(t, environment))
-    resolve'''(t) := resolve'(metacontext, metaindices,
+def resolve'(keepGlobals, metacontext, metaindices, closure)
+    _ @ Closure(term, environment) := closure
+    resolve''(t) := resolve'(keepGlobals, metacontext, metaindices,
+        Closure(t, environment))
+    resolve'''(t) := resolve'(keepGlobals, metacontext, metaindices,
         Closure(t, pushUnknown(getTermTag(term), environment)))
 
     match term
@@ -24,15 +26,18 @@ def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
                     if metaindices.contains((= index'))
                         recursionError(term, metacontext)
                     # todo: setLocation of term in closure' to tag
-                    resolve'(metacontext, index' :: metaindices, closure')
+                    metaindices' := index' :: metaindices
+                    resolve'(keepGlobals, metacontext, metaindices', closure')
                 term
             term
         case Type(tag, index) -> term
         case Variable(tag, index)
+            if keepGlobals and isPositive(index)
+                term
             if environment.seek(index) is Just(closure')
                 if isUnknown(getTerm(closure'))
                     term
-                resolve'(metacontext, metaindices, closure')
+                resolve'(keepGlobals, metacontext, metaindices, closure')
             term
         case Singleton(tag, type, index)
             Singleton(tag, resolve''(type), index)
@@ -49,10 +54,19 @@ def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
 
 
 def resolve(metacontext, closure)
-    resolve'(metacontext, [], closure)
+    resolve'(False, metacontext, [], closure)
 
 
 def resolveClosure(closure)
     closure.resolve(emptyMetacontext)
+
+
+def resolveLocals(metacontext, closure)
+    resolve'(True, metacontext, [], closure)
+
+
+def showClosure(closure)
+    showTerm(closure.resolveLocals(emptyMetacontext))
+
 
 #*

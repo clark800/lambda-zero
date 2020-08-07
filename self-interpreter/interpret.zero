@@ -57,7 +57,10 @@ def main(input)
         closure := evaluateCheck(Closure(term, environment))
         if isMain(getTerm(closure))
             evaluateMain(closure, input')
-        serialize(closure)
+        serialized := showClosure(closure)
+        if length(serialized) < 0
+            abort("force syntax errors")
+        serialized
     abort("No input")
 
 

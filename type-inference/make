@@ -34,12 +34,12 @@ cat "$LIB/operators.zero" \
     "$PARSER/parse/tokens.zero" \
     "$PARSER/parse/bind.zero" \
     "$PARSER/parse/parse.zero" \
+    "$PARSER/metacontext.zero" \
+    "$PARSER/resolve.zero" \
     "$PARSER/serialize.zero" \
     "$PARSER/builtins.zero" \
-    "$PARSER/metacontext.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/components.zero" \
-    "$DIR/resolve.zero" \
     "$DIR/generalize.zero" \
     "$DIR/instantiate.zero" \
     "$DIR/unify.zero" \
