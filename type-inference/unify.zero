@@ -83,7 +83,7 @@ def unify'(fail, metacontext, (left, right))
         case Variable(tag, index) -> fail'  # should already be evaluated
         case Singleton(tag, type, index)
             if rightTerm is Singleton(tag', type', index')
-                if abs(index) =/= abs(index')
+                if index =/= index'
                     fail'
                 unify'(fail, metacontext,
                     (Closure(type, leftEnv), Closure(type', rightEnv)))

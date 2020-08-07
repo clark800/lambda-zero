@@ -19,7 +19,7 @@ def serialize(closure)
                         showTag(tag)
             case Singleton(tag, type, index)
                 "(" ++ serialize'(Closure(type, environment), depth) ++ ")" ++
-                    showIntegerSubscript(index)
+                    showSubscript(index)
             case Function(tag, _, body)
                 "(" ++ showTag(tag) ++ " ↦ " ++
                     serialize'(Closure(body, environment), depth + 1) ++ ")"
