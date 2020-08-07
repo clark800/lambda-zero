@@ -4,23 +4,36 @@ def pushContext(type, term, context @ (environment, types))
     (environment.push(Closure(term, environment)), types.push(type))
 
 
-def getDomain(tag, environment)
-    case Annotation(domain)
-        if isUnknown(domain)
+def convertFunctionsToIntersections(term)
+    if term is Function(tag, domain, body)
+        Intersection(tag, domain, convertFunctionsToIntersections(body))
+    term
+
+
+def getPatternMatchDomain(closure @ Closure(typeConstructor, environment))
+    term := convertFunctionsToIntersections(typeConstructor)
+    outerDomain <- instantiateClosure(Closure(term, environment))
+    if outerDomain is Intersection(_, _, body)
+        innerDomain := resolveClosure(Closure(body, environment.push(closure)))
+        lift (outerDomain, innerDomain)
+    throwError("invalid type family", getTermTag(typeConstructor))
+
+
+def getDomain(environment, domain)
+    match domain
+        case Unknown(tag)
             metavariable <- newPositiveMetaVariable(tag)
             lift (metavariable, metavariable)
-        domain := resolveClosure(evaluateClosure(Closure(domain, environment)))
-        lift (domain, domain)
-    case PatternMatch(domain)
-        outerDomain <- instantiateClosure(Closure(domain, environment))
-        if outerDomain is Intersection(tag', domain', innerDomain)
-            if domain' is Singleton(_, _, index)
-                closure := Closure(Variable(tag', +_ abs(index)), environment)
-                closure' := Closure(innerDomain, environment.push(closure))
-                innerDomain' := resolveClosure(closure')
-                lift (outerDomain, innerDomain')
-            throwError("invalid domain for construction", tag')
-        throwError("expected intersecton in pattern match annotation", tag)
+        case Type(tag, index)
+            if index is -_ n
+                if environment.get(n) is Just(closure)
+                    getPatternMatchDomain(closure)
+                throwError("undefined type family", tag)
+            lift (domain, domain)
+        case _
+            closure := Closure(domain, environment)
+            domain := resolveClosure(evaluateClosure(closure))
+            lift (domain, domain)
 
 
 def infer(context @ (environment, types))
@@ -39,7 +52,7 @@ def infer(context @ (environment, types))
     case Singleton(tag, type, index)
         lift Type(tag, +_ 0)
     case Function(tag, domain, body)
-        (outerDomain, innerDomain) <- domain.getDomain(tag, environment)
+        (outerDomain, innerDomain) <- domain.getDomain(environment)
         range <- body.infer(context.pushContext(innerDomain, Unknown(tag)))
         lift Implication(tag, outerDomain, range)
     case Implication(tag, domain, body)

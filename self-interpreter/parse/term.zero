@@ -16,18 +16,13 @@ OptimizationT(term) ::= {Optimization(
         List(ClosureT(term)) => ClosureT(term)?)
 )}
 
-Domain(term) ::= {
-    Annotation(_ : term),
-    PatternMatch(_ : term)
-}
-
 Term ::= {
     Unknown(tag : TagT),
     MetaVariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
     Singleton(tag : TagT, type : Term, index : ℤ),
-    Function(tag : TagT, domain : Domain(Term), body : Term),
+    Function(tag : TagT, domain : Term, body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
@@ -64,7 +59,7 @@ isOperation := Operation(_, _, _) -> True; _ -> False
 
 
 def FreeFunction(tag, body)
-    Function(tag, Annotation(Unknown(tag)), body)
+    Function(tag, Unknown(tag), body)
 
 
 def splitSpine(term)
@@ -129,9 +124,8 @@ def showMetaVariable(index)
         -_ n -> "■" ++ showSubscript(n)
 
 
-def showDomain(showTerm)
-    Annotation(term) -> if isUnknown(term) then "" else " : " ++ showTerm(term)
-    PatternMatch(term) -> " : " ++ showTerm(term)
+def showDomain(showTerm, term)
+    if isUnknown(term) then "" else " : " ++ showTerm(term)
 
 
 def getSingletonParameters(type)
