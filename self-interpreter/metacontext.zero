@@ -8,18 +8,18 @@ MetacontextT ::= {Metacontext(
 emptyMetacontext := Metacontext(newArray([]), newArray([]))
 
 
-def showMaybeClosure(maybeClosure)
-    if maybeClosure is Just(closure)
-        serialize(closure)
+def showMetaValue(metaValue)
+    if metaValue is Just(Closure(term, environment))
+        showTerm(term)
     "Free"
 
 
 def showMetacontext(Metacontext(positives, negatives))
     if getSize(positives) = 0
         "Empty"
-    zip((0 ...).map((+_)), positives.toList).map((index, maybeClosure) ->
+    zip((0 ...).map((+_)), positives.toList).map((index, metaValue) ->
         showMetaVariable(index) ++ " := " ++
-        showMaybeClosure(maybeClosure)).joinWith("\n")
+        showMetaValue(metaValue)).joinWith("\n")
 
 
 def newPositiveMetaVariable(tag, Metacontext(positives, negatives))

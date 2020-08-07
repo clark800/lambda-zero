@@ -17,47 +17,64 @@ extern bool isIO;
 static void showTag(Tag tag, FILE* stream) {
     if (getTagFixity(tag) == NOFIX) {
         printString(tag.lexeme, stream);
-        return;
+    } else {
+        fputs("(", stream);
+        printString(tag.lexeme, stream);
+        fputs(")", stream);
     }
-    fputs("(", stream);
-    printString(tag.lexeme, stream);
-    fputs(")", stream);
 }
 
-static void serializeNode(Node* node, Node* locals, unsigned int depth,
-        FILE* stream) {
-    switch (getTermType(node)) {
-        case VARIABLE:
-            if (isGlobal(node) || getDebruijnIndex(node) <= depth) {
-                showTag(getTag(node), stream);
-                break;
-            }
-            unsigned long long debruijn = getDebruijnIndex(node);
-            Closure* next = getListElement(locals, debruijn - depth - 1);
-            serializeNode(getTerm(next), getLocals(next), 0, stream);
-            break;
+static Hold* resolveLocals(Term* term, Node* locals, unsigned int depth) {
+    switch(getTermType(term)) {
+        case VARIABLE: {
+            if (isGlobal(term) || getDebruijnIndex(term) <= depth)
+                return hold(term);
+            Closure* closure = getListElement(locals,
+                getDebruijnIndex(term) - depth - 1);
+            return resolveLocals(getTerm(closure), getLocals(closure), 0);
+        } case APPLICATION: {
+            Hold* left = resolveLocals(getLeft(term), locals, depth);
+            Hold* right = resolveLocals(getRight(term), locals, depth);
+            Term* ap = Application(getTag(term), getNode(left), getNode(right));
+            release(left);
+            release(right);
+            return hold(ap);
+        } case ABSTRACTION: {
+            Hold* body = resolveLocals(getBody(term), locals, depth + 1);
+            Term* abstraction = Abstraction(getTag(term), getNode(body));
+            release(body);
+            return hold(abstraction);
+        } default: return hold(term);
+    }
+}
+
+static void showTerm(Term* term, FILE* stream) {
+    switch (getTermType(term)) {
         case APPLICATION:
+            if (isAbstraction(getLeft(term)))
+                fputs("(", stream);
+            showTerm(getLeft(term), stream);
+            if (isAbstraction(getLeft(term)))
+                fputs(")", stream);
             fputs("(", stream);
-            serializeNode(getLeft(node), locals, depth, stream);
-            fputs(" ", stream);
-            serializeNode(getRight(node), locals, depth, stream);
+            showTerm(getRight(term), stream);
             fputs(")", stream);
             break;
         case ABSTRACTION:
-            fputs("(", stream);
-            showTag(getTag(node), stream);
+            showTag(getTag(term), stream);
             fputs(" \xE2\x86\xA6 ", stream); // u21A6
-            serializeNode(getBody(node), locals, depth + 1, stream);
-            fputs(")", stream);
+            showTerm(getBody(term), stream);
             break;
-        case NUMERAL: fputll(getValue(node), stream); break;
-        case OPERATION: showTag(getTag(node), stream); break;
+        case NUMERAL: fputll(getValue(term), stream); break;
+        default: showTag(getTag(term), stream); break;
     }
 }
 
-static void serialize(Closure* closure) {
-    serializeNode(getTerm(closure), getLocals(closure), 0, stdout);
-    fputs("\n", stdout);
+static void showClosure(Closure* closure, FILE* stream) {
+    Hold* term = resolveLocals(getTerm(closure), getLocals(closure), 0);
+    showTerm(getNode(term), stream);
+    release(term);
+    fputs("\n", stream);
 }
 
 static void print3(const char* a, const char* b, const char* c) {
@@ -96,7 +113,7 @@ static void interpret(const char* sourceCode) {
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     size_t memoryUsageBeforeSerialize = getMemoryUsage();
     if (!isIO)
-        serialize(getNode(valueClosure));
+        showClosure(getNode(valueClosure), stdout);
     checkForMemoryLeak("serialize", memoryUsageBeforeSerialize);
     release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
