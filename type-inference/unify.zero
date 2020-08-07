@@ -21,7 +21,6 @@ def isNegativeMetaVariable(term)
 
 
 def isSamePrimitive(term)
-    case Unknown(_) -> False
     case MetaVariable(_, index)
         if term is MetaVariable(_, index')
             index =:= index'
@@ -59,9 +58,6 @@ def unify'(fail, metacontext, (left, right))
     _ @ Closure(leftTerm, leftEnv) := left
     _ @ Closure(rightTerm, rightEnv) := right
 
-    if isUnknown(leftTerm) or isUnknown(rightTerm)
-        fail'
-
     if isSamePrimitive(leftTerm, rightTerm)
         metacontext
 
@@ -81,7 +77,6 @@ def unify'(fail, metacontext, (left, right))
              Closure(rightBody, rightEnv.push(enclose(m)))))
 
     match leftTerm
-        case Unknown(tag) -> fail'
         case MetaVariable(tag, index)
             metacontext.setMetaValue(abs(index), right)
         case Type(tag, index) -> fail'

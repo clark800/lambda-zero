@@ -18,7 +18,6 @@ def resolve'(metacontext, metaindices, closure @ Closure(term, environment))
         Closure(t, pushUnknown(getTermTag(term), environment)))
 
     match term
-        case Unknown(tag) -> term
         case MetaVariable(tag, index)
             if index is +_ index'
                 if metacontext.getMetaValue(index') is Just(closure')

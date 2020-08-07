@@ -20,25 +20,21 @@ def getPatternMatchDomain(closure @ Closure(typeConstructor, environment))
 
 
 def getDomain(environment, domain)
-    match domain
-        case Unknown(tag)
-            metavariable <- newPositiveMetaVariable(tag)
-            lift (metavariable, metavariable)
-        case Type(tag, index)
-            if index is -_ n
-                if environment.get(n) is Just(closure)
-                    getPatternMatchDomain(closure)
-                throwError("undefined type family", tag)
-            lift (domain, domain)
-        case _
-            closure := Closure(domain, environment)
-            domain := resolveClosure(evaluateClosure(closure))
-            lift (domain, domain)
+    if isUnknown(domain)
+        metavariable <- newPositiveMetaVariable(getTermTag(domain))
+        lift (metavariable, metavariable)
+    if domain is Type(tag, index)
+        if index is -_ n
+            if environment.get(n) is Just(closure)
+                getPatternMatchDomain(closure)
+            throwError("undefined type family", tag)
+        lift (domain, domain)
+    closure := Closure(domain, environment)
+    domain := resolveClosure(evaluateClosure(closure))
+    lift (domain, domain)
 
 
 def infer(context @ (environment, types))
-    case Unknown(tag)
-        lift Unknown(tag)
     case MetaVariable(tag, index)
         # todo: check for annotated type in metacontext
         throwError("not implemented", tag)
