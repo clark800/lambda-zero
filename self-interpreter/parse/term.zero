@@ -17,7 +17,6 @@ OptimizationT(term) ::= {Optimization(
 )}
 
 Term ::= {
-    Unknown(tag : TagT),
     MetaVariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
@@ -30,9 +29,9 @@ Term ::= {
     Operation(tag : TagT, term : Term, optimization : OptimizationT(Term))
 }
 
+Unknown(tag) := Variable(tag, -_ 0)
 
 def getTermTag
-    Unknown(tag) -> tag
     MetaVariable(tag, _) -> tag
     Type(tag, _) -> tag
     Variable(tag, _) -> tag
@@ -45,7 +44,6 @@ def getTermTag
     Operation(tag, _, _) -> tag
 
 
-isUnknown := Unknown(_) -> True; _ -> False
 isMetaVariable := MetaVariable(_, _) -> True; _ -> False
 isType := Type(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
@@ -56,6 +54,11 @@ isIntersection := Intersection(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _) -> True; _ -> False
+
+def isUnknown(term)
+    if term is Variable(_, index)
+        index =:= -_ 0
+    False
 
 
 def FreeFunction(tag, body)
@@ -70,7 +73,6 @@ def splitSpine(term)
 
 
 def setTag(tag)
-    Unknown(_) -> Unknown(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
@@ -135,10 +137,11 @@ def getSingletonParameters(type)
 
 
 def showTerm
-    Unknown(_) -> "■"
     MetaVariable(tag, index) -> showMetaVariable(index)
     Type(_, index) -> "⊤" ++ showIntegerSubscript(index)
-    Variable(tag, index) -> showTag(tag) # ++ "#" ++ showInteger(index)
+    Variable(tag, index) ->
+        if index =:= -_ 0 then "■" else showTag(tag)
+        # ++ "#" ++ showInteger(index)
     Singleton(tag, type, index) ->
         "(" ++ showTerm(type) ++ ")" ++ showIntegerSubscript(index)
     Function(tag, domain, body) ->

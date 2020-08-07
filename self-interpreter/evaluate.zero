@@ -15,7 +15,6 @@ def evaluate(metacontext, stack, closure @ Closure(term, environment))
         closure
 
     match term
-        case Unknown(tag) -> closure
         case MetaVariable(tag, index)
             if index is +_ n
                 if metacontext.getMetaValue(n) is Just(closure')

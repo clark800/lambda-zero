@@ -3,8 +3,6 @@
 def serialize(closure)
     def serialize'(Closure(term, environment), depth)
         match term
-            case Unknown(tag)
-                "■"
             case MetaVariable(tag, index)
                 showMetaVariable(index)
             case Type(tag, index)
@@ -15,7 +13,7 @@ def serialize(closure)
                         showTag(tag)
                     case -_ n
                         if n <= depth
-                            showTag(tag)
+                            if n = 0 then "■" else showTag(tag)
                         if environment.peek(n -- depth -- 1) is Just(closure)
                             serialize'(closure, 0)
                         showTag(tag)
