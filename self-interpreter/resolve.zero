@@ -1,8 +1,5 @@
 #* resolve.zero
 
-def pushUnknown(tag, environment)
-    environment.push(enclose(Unknown(tag)))
-
 
 def recursionError(metavariable, metacontext)
     abort("Type error: recursion in " ++
@@ -12,12 +9,12 @@ def recursionError(metavariable, metacontext)
 
 # for any variable in term that has a value in the environment, replace
 # the variable with the value from the environment recursively
-def resolve'(keepGlobals, metacontext, metaindices, closure)
+def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
     _ @ Closure(term, environment) := closure
-    resolve''(t) := resolve'(keepGlobals, metacontext, metaindices,
-        Closure(t, environment))
-    resolve'''(t) := resolve'(keepGlobals, metacontext, metaindices,
-        Closure(t, pushUnknown(getTermTag(term), environment)))
+    resolveBase := resolve'(keepGlobals, metacontext)
+    resolveClosure(c) := resolveBase(metaindices, 0, c)
+    resolve''(t) := resolveBase(metaindices, depth, Closure(t, environment))
+    resolve'''(t) := resolveBase(metaindices, up depth, Closure(t, environment))
 
     match term
         case MetaVariable(tag, index)
@@ -26,19 +23,20 @@ def resolve'(keepGlobals, metacontext, metaindices, closure)
                     if metaindices.contains((= index'))
                         recursionError(term, metacontext)
                     # todo: setLocation of term in closure' to tag
-                    metaindices' := index' :: metaindices
-                    resolve'(keepGlobals, metacontext, metaindices', closure')
+                    resolveBase(index' :: metaindices, 0, closure')
                 term
             term
         case Type(tag, index) -> term
         case Variable(tag, index)
-            if keepGlobals and isPositive(index)
-                term
-            if environment.seek(index) is Just(closure')
-                if isUnknown(getTerm(closure'))
+            if index is -_ index'
+                if index' <= depth
                     term
-                resolve'(keepGlobals, metacontext, metaindices, closure')
-            term
+                if environment.peek(index' -- depth -- 1) is Just(closure')
+                    resolveClosure(closure')
+                term
+            if keepGlobals
+                term
+            environment.seek(index).mapJust(resolveClosure) ?? term
         case Singleton(tag, type, index)
             Singleton(tag, resolve''(type), index)
         case Function(tag, domain, body)
@@ -54,7 +52,7 @@ def resolve'(keepGlobals, metacontext, metaindices, closure)
 
 
 def resolve(metacontext, closure)
-    resolve'(False, metacontext, [], closure)
+    resolve'(False, metacontext, [], 0, closure)
 
 
 def resolveClosure(closure)
@@ -62,7 +60,7 @@ def resolveClosure(closure)
 
 
 def resolveLocals(metacontext, closure)
-    resolve'(True, metacontext, [], closure)
+    resolve'(True, metacontext, [], 0, closure)
 
 
 def showClosure(closure)
