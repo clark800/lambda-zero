@@ -75,7 +75,7 @@ def getTypeConstructor(tag, constructors)
     safeHead(adtNames) ?? throwError("Type error: invalid cases", tag)
 
 
-def getTypeFamily(tag, constructorNames, globals)
+def getConstructorFamily(tag, constructorNames, globals)
     if constructorNames.map(getLexeme).map(`lookup(globals)).sequence is
             Just(constructorGlobals)
         constructors := constructorGlobals.map(getGlobalAST)
@@ -102,8 +102,8 @@ def getNaturalType(tag, globals)
 def bind(getBuiltin, globals, index, locals, node)
     bind' := bind(getBuiltin, globals, index)
     match node
-        case TypeConstant(tag, index)
-            Type(tag, index)
+        case Family(tag)
+            Type(tag, -_ index)
         case Reference(tag, debruijn)
             if debruijn = 0
                 bindName(getBuiltin, globals, locals, tag)
@@ -129,7 +129,7 @@ def bind(getBuiltin, globals, index, locals, node)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
-            typeFamily := getTypeFamily(tag, constructorNames, globals)
+            typeFamily := getConstructorFamily(tag, constructorNames, globals)
             if isUnknown(typeFamily)   # force errors
                 astSyntaxError("error binding pattern match", node)
             Function(getTag(parameter), typeFamily, bodyTerm)
@@ -157,7 +157,7 @@ def bind(getBuiltin, globals, index, locals, node)
             astSyntaxError("must appear on the right side of '::='", node)
         case ADT(tag, parameters, constructorType, body)
             type := constructorType.bind'(locals)
-            domainTerm := Singleton(tag, type, index)
+            domainTerm := Singleton(tag, type, Unknown(tag))
             bodyTerm := body.bind'(locals.pushParameter(Name(tag)))
             Intersection(tag, domainTerm, bodyTerm)
         case Constructor(tag, type, adtType, function, count, index)

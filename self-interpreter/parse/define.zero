@@ -189,7 +189,7 @@ def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
 
 def newADT(tag, adtType, parameters, forms)
     # todo: change name from "r" so it can't clash with user's names
-    constructorType := parameters.fold(DoubleArrow, TypeConstant(tag, +_ 0))
+    constructorType := parameters.fold(DoubleArrow, Family(tag))
     returnType := FixedName(tag, "r")
     annotations := forms.map(getArguments).map(map(getParameterType))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))

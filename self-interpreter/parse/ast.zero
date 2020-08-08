@@ -5,7 +5,7 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
 ArrowType ::= {Simple, Strict, Locked, Double, Tail}
 
 AST ::= {
-    TypeConstant(tag : TagT, index : ℤ),
+    Family(tag : TagT),
     Reference(tag : TagT, debruijn : ℕ),
     Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
         parameter : AST, annotation : (AST)?, body : AST),
@@ -37,7 +37,7 @@ def lockArrow(node)
 
 
 def getTag
-    TypeConstant(tag, _) -> tag
+    Family(tag) -> tag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
@@ -58,7 +58,7 @@ def astSyntaxError(message, node)
 
 
 def isPreterm
-    TypeConstant(_, _) -> True
+    Family(_) -> True
     Reference(_, _) -> True
     Arrow(_, _, _, _, _, _) -> True
     Juxtaposition(_, _, _) -> True
@@ -75,7 +75,7 @@ def isPreterm
 
 
 def containsName(name)
-    TypeConstant(_, _) -> False
+    Family(_) -> False
     Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
     Arrow(_, _, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
@@ -108,7 +108,7 @@ def showAnnotation(showAST, annotation)
 
 
 def showAST
-    TypeConstant(_, index) -> "⊤" ++ showIntegerSubscript(index)
+    Family(tag) -> "⊤{" ++ showTag(tag) ++ "}"
     Reference(tag, _) -> showTag(tag)
     Arrow(tag, arrowType, _, parameter, annotation, body) ->
         "(" ++ showAST(parameter) ++ showAnnotation(showAST, annotation) ++
@@ -134,7 +134,7 @@ def showAST
     TypedNode(_, _, node) -> showAST(node)
 
 
-isTypeConstant := TypeConstant(_, _) -> True; _ -> False
+isFamily := Family(_) -> True; _ -> False
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
