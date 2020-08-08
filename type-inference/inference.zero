@@ -60,6 +60,12 @@ def infer(context @ (environment, types))
         body.infer(context.pushContext(domain', Unknown(tag)))
     case Application(tag, applicand, argument)
         argumentType <- argument.infer(context)
+        if applicand is Function(tag', domain, body)
+            # handle local definitions specially so that we have argument in env
+            (outerDomain, innerDomain) <- domain.getDomain(environment)
+            _ <- unify(Closure(argumentType, environment),
+                      Closure(outerDomain, environment))
+            body.infer(context.pushContext(innerDomain, argument))
         applicandType <- applicand.infer(context)
         returnType <- newPositiveMetaVariable(tag)
         applicandTag := getTermTag(applicand)
