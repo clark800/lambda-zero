@@ -27,23 +27,23 @@ def substituteArgument(argument, term)
     substituteArgument'(argument, 1, term)
 
 
-def instantiate(term, intersection)
+def instantiateWith(term, intersection)
     if intersection is Intersection(_, _, body)
         substituteArgument(term, body)
     throwError("expected intersection in instantiate", getTermTag(intersection))
 
 
-def instantiateAll(term)
+def instantiate(term)
     if isConstruction(term)
         lift term
     if term is Intersection(tag, domain, body)
         metavariable <- newPositiveMetaVariable(getTermTag(term))
-        instantiateAll(instantiate(metavariable, term))
+        instantiate(term.instantiateWith(metavariable))
     lift term
 
 
 def instantiateClosure(closure)
-    term <- instantiateAll(resolveClosure(closure))
+    term <- instantiate(resolveClosure(closure))
     lift resolveClosure(evaluateClosure(enclose(term)))
 
 #*

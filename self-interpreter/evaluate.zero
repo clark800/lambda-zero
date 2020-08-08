@@ -8,28 +8,25 @@ def expandNumeral(tag, type, n)
 
 def evaluate(metacontext, stack, closure @ Closure(term, environment))
     evaluate := evaluate(metacontext)
-
-    def evaluateBinder(body)
-        if stack is argument :: stack'
-            evaluate(stack', Closure(body, environment.push(argument)))
-        closure
+    done := if isNil(stack) then closure else enclose(Unknown(getTermTag(term)))
 
     match term
         case MetaVariable(tag, index)
             if index is +_ n
                 if metacontext.getMetaValue(n) is Just(closure')
                     evaluate(stack, closure')
-                pass
-            if isNil(stack) then closure else enclose(Unknown(tag))
-        case Type(tag, index)
-            if isNil(stack) then closure else enclose(Unknown(tag))
+                done
+            done
+        case Type(tag, index) -> done
         case Variable(tag, index)
             evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
-        case Singleton(tag, type, element)
-            if isNil(stack) then closure else enclose(Unknown(tag))
-        case Function(tag, domain, body) -> evaluateBinder(body)
-        case Implication(tag, domain, body) -> evaluateBinder(body)
-        case Intersection(tag, domain, body) -> evaluateBinder(body)
+        case Singleton(tag, type, element) -> done
+        case Function(tag, domain, body)
+            if stack is argument :: stack'
+                evaluate(stack', Closure(body, environment.push(argument)))
+            closure
+        case Implication(tag, domain, body) -> done
+        case Intersection(tag, domain, body) -> done
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
