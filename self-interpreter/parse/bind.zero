@@ -1,10 +1,5 @@
 #* bind.zero
 
-Local ::= {
-    Parameter(level : ℕ),
-    Inline(term : Term)
-}
-
 GlobalT ::= {Global(
     ast : AST,
     term : Term,
@@ -25,38 +20,19 @@ getBindingTag(Binding(tag, _, _)) := tag
 getBindingClosure(Binding(_, closure, _)) := closure
 getBindingAscription(Binding(_, _, ascription)) := ascription
 
-def bindLocal((level, table), tag)
-    maybe item := table.lookup(getTagLexeme(tag))
-    match item
-        case Parameter(level')
-            Just(Variable(tag, -_(level -- level')))
-        case Inline(term)
-            Just(term)
-
 
 def pushParameter(parameter, (level, table))
-    (up level, table.insert(getLexeme(parameter), Parameter(level)))
+    (up level, table.insert(getLexeme(parameter), level))
 
 
-def pushInline(parameter, term, (level, table))
-    (level, table.insert(getLexeme(parameter), Inline(term)))
-
-
-def getNaturalType(tag, globals)
-    if globals.lookup("0") is Just(Global(_, term, _))
-        if term is Numeral(_, type, _)
-            type
-        syntaxError("0 must be a numeral to use numerals", tag)
-    syntaxError("must define 0 before using numerals", tag)
-
-
-def bindOperation(getBuiltin, globals, tag, term)
-    maybe (arity, operator) := getBuiltin(tag)
-    Just(Operation(tag, term, Optimization(arity, operator)))
+def bindLocal(locals @ (level, table), tag)
+    table.lookup(getTagLexeme(tag)).mapJust(level' ->
+        Variable(tag, -_(level -- level')))
 
 
 def bindGlobal(globals, tag)
-    globals.lookup(getTagLexeme(tag)).mapJust(getGlobalConstant)
+    globals.lookup(getTagLexeme(tag)).
+        mapJust(getGlobalConstant).mapJust(setTag(tag))
 
 
 def bindName(getBuiltin, globals, locals, tag)
@@ -65,6 +41,11 @@ def bindName(getBuiltin, globals, locals, tag)
     bindLocal(locals, tag) ??
         bindGlobal(globals, tag) ??
         syntaxError("undefined symbol", tag)
+
+
+def bindOperation(getBuiltin, tag, term)
+    maybe (arity, operator) := getBuiltin(tag)
+    Just(Operation(tag, term, Optimization(arity, operator)))
 
 
 def getADTName(constructor)
@@ -108,6 +89,14 @@ def getTypeFamily(tag, constructorNames, globals)
             pass
         throwError("Type error: undefined type constructor", tag)
     throwError("Type error: undefined constructor", tag)
+
+
+def getNaturalType(tag, globals)
+    if globals.lookup("0") is Just(Global(_, term, _))
+        if term is Numeral(_, type, _)
+            type
+        syntaxError("0 must be a numeral to use numerals", tag)
+    syntaxError("must define 0 before using numerals", tag)
 
 
 def bind(getBuiltin, globals, index, locals, node)
@@ -179,11 +168,6 @@ def bind(getBuiltin, globals, index, locals, node)
             function.bind'(locals)
 
 
-def bindGlobal(getBuiltin, globals, index, node)
-    locals := (0, newDictionary([]))
-    bind(getBuiltin, globals, index, locals, node)
-
-
 def getAscription
     case Constructor(_, type, _, _, _, _) -> Just(type)
     case TypedNode(_, type, _) -> Just(type)
@@ -192,13 +176,14 @@ def getAscription
 
 def bindDefinition(getBuiltin, state, (tag, node))
     (bindings, globals, environment) := state
-    bindGlobal' := bindGlobal(getBuiltin, globals, getSize(environment))
-    term := bindGlobal'(node)
+    locals := (0, newDictionary([]))
+    bindNode := bind(getBuiltin, globals, getSize(environment), locals)
+    term := bindNode(node)
     # note: operations can only be defined at the top level
-    definiens := bindOperation(getBuiltin, globals, tag, term) ?? term
+    definiens := bindOperation(getBuiltin, tag, term) ?? term
     closure := Closure(definiens, environment)
     ascription := getAscription(node).mapJust(type ->
-        Closure(bindGlobal'(type), environment))
+        Closure(bindNode(type), environment))
 
     (index, environment') := environment.append(closure)
     global := Global(node, definiens, Variable(tag, +_ index))
