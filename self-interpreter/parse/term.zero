@@ -145,30 +145,27 @@ def isTypeFamily(term)
     False
 
 
-def getTypeFamily'(type)
+def getReturnType(type)
     if type is Implication(_, _, body)
-        getTypeFamily'(body)
-    if type is Type(_, index)
-        if isNegative(index)
-            Just(type)
-        Void
-    Void
+        getReturnType(body)
+    type
 
 
-def getTypeFamily(construction)
-    if construction is Intersection(_, domain, _)
-        if domain is Singleton(_, type, _)
-            getTypeFamily'(type)
+def getConstructionTypeFamily(construction)
+    if construction is Intersection(tag, domain, _)
+        if domain is Singleton(_, type, element)
+            if isUnknown(element)
+                returnType := getReturnType(type)
+                if isTypeFamily(returnType)
+                    Just(returnType)
+                throwError("invalid construction", tag)
+            Void
         Void
     Void
 
 
 def isConstruction(term)
-    if term is Intersection(_, domain, _)
-        if domain is Singleton(_, _, element)
-            isUnknown(element)
-        False
-    False
+    not isVoid(getConstructionTypeFamily(term))
 
 
 def showTerm
@@ -191,7 +188,7 @@ def showTerm
     Intersection(tag, domain, body) -> (
         if domain is Singleton(_, type, _)
             showConstruction(showTerm, tag, getSingletonParameters(type))
-        showTag(tag) ++ " ↣ " ++ showTerm(body)
+        "∀" ++ showTag(tag) ++ " " ++ showTerm(body)
     )
     Application(_, applicand, argument) ->
         if needsParentheses(applicand) then

@@ -6,20 +6,26 @@ def expandNumeral(tag, type, n)
                 Application(tag, Variable(tag, -_ 1), Numeral(tag, type, n'))))
 
 
-def evaluate(metacontext, stack, closure @ Closure(term, environment))
-    evaluate := evaluate(metacontext)
+def evaluate(metacontext, metaindices, stack, closure)
+    evaluate' := evaluate(metacontext)
+    evaluate := evaluate'(metaindices)
+    _ @ Closure(term, environment) := closure
     done := if isNil(stack) then closure else enclose(Unknown(getTermTag(term)))
 
     match term
         case MetaVariable(tag, index)
-            if index is +_ n
-                if metacontext.getMetaValue(n) is Just(closure')
-                    evaluate(stack, closure')
+            if index is +_ index'
+                if metacontext.getMetaValue(index') is Just(closure')
+                    if metaindices.contains((= index'))
+                        recursionError(term, metacontext)
+                    evaluate'(index' :: metaindices, stack, closure')
                 done
             done
         case Type(tag, index) -> done
         case Variable(tag, index)
-            evaluate(stack, environment.seek(index) ?? enclose(Unknown(tag)))
+            if environment.seek(index) is Just(closure')
+                evaluate(stack, closure')
+            closure
         case Singleton(tag, type, element) -> done
         case Function(tag, domain, body)
             if stack is argument :: stack'
@@ -41,7 +47,7 @@ def evaluate(metacontext, stack, closure @ Closure(term, environment))
 
 
 def evaluateClosure(closure)
-    evaluate(emptyMetacontext, [], closure)
+    evaluate(emptyMetacontext, [], [], closure)
 
 
 def evaluateTerm(term)

@@ -4,6 +4,15 @@ def pushContext(type, term, context @ (environment, types))
     (environment.push(Closure(term, environment)), types.push(type))
 
 
+def instantiate(closure @ Closure(term, environment))
+    if term is Intersection(_, _, body)
+        if isConstruction(term)
+            lift closure
+        metavariable <- newPositiveMetaVariable(getTermTag(term))
+        instantiate(Closure(body, environment.push(enclose(metavariable))))
+    lift closure
+
+
 def convertFunctionsToIntersections(term)
     if term is Function(tag, domain, body)
         Intersection(tag, domain, convertFunctionsToIntersections(body))
@@ -12,78 +21,81 @@ def convertFunctionsToIntersections(term)
 
 def getPatternMatchDomain(closure @ Closure(typeConstructor, environment))
     term := convertFunctionsToIntersections(typeConstructor)
-    outerDomain <- instantiateClosure(Closure(term, environment))
-    if outerDomain is Intersection(_, _, body)
-        innerDomain := resolveClosure(Closure(body, environment.push(closure)))
+    closure' <- instantiate(Closure(term, environment))
+    outerDomain @ Closure(term', environment') := evaluateClosure(closure')
+    if term' is Intersection(_, _, body)
+        innerDomain := Closure(body, environment'.push(closure))
         lift (outerDomain, innerDomain)
     throwError("invalid type family", getTermTag(typeConstructor))
 
 
-def getDomain(environment, domain)
-    if isUnknown(domain)
-        metavariable <- newPositiveMetaVariable(getTermTag(domain))
-        lift (metavariable, metavariable)
+def getDomain(closure @ Closure(domain, environment))
     if domain is Type(tag, index)
         if index is -_ n
-            if environment.get(n) is Just(closure)
-                getPatternMatchDomain(closure)
+            if environment.get(n) is Just(closure')
+                getPatternMatchDomain(closure')
             throwError("undefined type family", tag)
-        lift (domain, domain)
-    closure := Closure(domain, environment)
-    domain := resolveClosure(evaluateClosure(closure))
-    lift (domain, domain)
+        lift duplicate(closure)
+    if isUnknown(domain)
+        metavariable <- newPositiveMetaVariable(getTermTag(domain))
+        lift duplicate(enclose(metavariable))
+    lift duplicate(closure)
+
+
+def newFunctionType(tag, domainClosure, body)
+    _ @ Closure(domain, environment) := domainClosure
+    Closure(Implication(tag, domain, body), environment)
 
 
 def infer(context @ (environment, types))
+    enclose'(term) := Closure(term, environment)
+
     case MetaVariable(tag, index)
         # todo: check for annotated type in metacontext
         throwError("not implemented", tag)
     case Type(tag, index)
         match index
-            +_ level -> lift Type(tag, +_(up level))
-            -_ family -> lift Type(tag, +_ 1)
+            +_ level -> lift enclose(Type(tag, +_(up level)))
+            -_ family -> lift enclose(Type(tag, +_ 1))
     case Variable(tag, index)
         type := types.seek(index) ?? throwError("unbound variable", tag)
-        instantiate(type)  # todo: remove this after implementing subtyping
+        instantiate(type)
     case Singleton(tag, type, element)
         type.infer(context)   # todo: support unknown type, verify type
     case Function(tag, domain, body)
-        (outerDomain, innerDomain) <- domain.getDomain(environment)
-        metavariable <- newNegativeMetaVariable(tag)
-        range <- body.infer(context.pushContext(innerDomain, metavariable))
-        lift Implication(tag, outerDomain, range)
+        (outerDomain, innerDomain) <- getDomain(enclose'(domain))
+        argument <- newNegativeMetaVariable(tag)
+        range <- body.infer(context.pushContext(innerDomain, argument))
+        codomain <- addPositiveMetaVariable(tag, range)
+        lift newFunctionType(tag, outerDomain, codomain)
     case Implication(tag, domain, body)
-        domain' := resolveClosure(evaluateClosure(Closure(domain, environment)))
-        metavariable <- newNegativeMetaVariable(tag)
-        _ <- body.infer(context.pushContext(domain', metavariable))
-        lift Type(tag, +_ 0)
+        argument <- newNegativeMetaVariable(tag)
+        _ <- body.infer(context.pushContext(enclose'(domain), argument))
+        lift enclose(Type(tag, +_ 0))
     case Intersection(tag, domain, body)
         this := Intersection(tag, domain, body)
-        if isConstruction(this)
-            lift getTypeFamily(this) ?? throwError("invalid construction", tag)
-        domain' := resolveClosure(evaluateClosure(Closure(domain, environment)))
-        metavariable <- newNegativeMetaVariable(tag)
-        body.infer(context.pushContext(domain', metavariable))
+        if getConstructionTypeFamily(this) is Just(family)
+            lift enclose'(family)
+        argument <- newNegativeMetaVariable(tag)
+        body.infer(context.pushContext(enclose'(domain), argument))
     case Application(tag, applicand, argument)
         argumentType <- argument.infer(context)
         if applicand is Function(tag', domain, body)
             # handle local definitions specially so that we have argument in env
             if isUnknown(domain)  # avoid creating unnecessary metavariable
                 body.infer(context.pushContext(argumentType, argument))
-            (outerDomain, innerDomain) <- domain.getDomain(environment)
-            _ <- unify(Closure(argumentType, environment),
-                      Closure(outerDomain, environment))
+            (outerDomain, innerDomain) <- getDomain(enclose'(domain))
+            _ <- unify(argumentType, outerDomain)
             body.infer(context.pushContext(innerDomain, argument))
         applicandType <- applicand.infer(context)
         returnType <- newPositiveMetaVariable(tag)
-        applicandTag := getTermTag(applicand)
-        functionType := Implication(applicandTag, argumentType, returnType)
+        tag := getTermTag(applicand)
+        functionType := newFunctionType(tag, argumentType, returnType)
         # applicandType <: functionType  =>  argumentType <: parameterType
-        _ <- unify(Closure(applicandType, environment),
-                  Closure(functionType, environment))
-        lift returnType
+        _ <- unify(applicandType, functionType)
+        lift enclose(returnType)
     case Numeral(tag, type, value)
-        lift type
+        lift enclose'(type)
     case Operation(tag, term, _)
         term.infer(context)
 
@@ -97,48 +109,24 @@ def getFixType(tag)
     Intersection(tag, Type(veil(tag), +_ 0), (a1 =>> a2) =>> a2)
 
 
-def reduceTerm(term)
-    if term is Application(tag, left, right)
-        left' := reduceTerm(left)
-        right' := reduceTerm(right)
-        if left' is Function(tag', domain, body)
-            reduceTerm(substituteArgument(right', body))
-        Application(tag, left', right')
-    term
-
-
-def normalize(term)
-    reduceTerm(term).mapComponents(normalize)
-
-
 def renameUniversals(closure)
-    term := closure.resolve(emptyMetacontext)
-    (term', metacontext) := instantiate(term, emptyMetacontext)
-    normalize(enclose(term').generalize(metacontext))
+    (closure', metacontext) := instantiate(closure, emptyMetacontext)
+    closure'.generalize(metacontext)
 
 
 def inferType(types, Binding(tag, closure, ascription))
     if getTagLexeme(tag) =*= "fix"
-        types.push(getFixType(tag))
+        types.push(enclose(getFixType(tag)))
     if ascription is Just(closure)
-        types.push(renameUniversals(closure))
+        types.push(enclose(renameUniversals(closure)))
     _ @ Closure(term, environment) := closure
     context := (environment, types)
     (type, metacontext) := infer(context, term, emptyMetacontext)
-    type' := Closure(type, environment).generalize(metacontext)
-    types.push(normalize(type'))
-
-
-def showType(type)
-    if isConstruction(type)
-        showTerm(type)
-    if type is Intersection(tag, domain, body)
-        "∀" ++ showTag(tag) ++ " " ++ showType(body)
-    showTerm(type)
+    types.push(enclose(type.generalize(metacontext)))
 
 
 def showTyping((tag, type))
-    showTag(tag) ++ " : " ++ showType(type)
+    showTag(tag) ++ " : " ++ showClosure(type)
 
 
 def showTypings(typings)

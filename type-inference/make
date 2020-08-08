@@ -40,8 +40,8 @@ cat "$LIB/operators.zero" \
     "$PARSER/builtins.zero" \
     "$PARSER/evaluate.zero" \
     "$DIR/components.zero" \
+    "$DIR/normalize.zero" \
     "$DIR/generalize.zero" \
-    "$DIR/instantiate.zero" \
     "$DIR/unify.zero" \
     "$DIR/inference.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"

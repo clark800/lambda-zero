@@ -29,7 +29,7 @@ def wrapIntersection(tag, index, body)
 
 
 def generalize(metacontext, closure)
-    type := closure.resolve(metacontext)
+    type := normalize(closure.resolve(metacontext))
     # after resolve, all metavariables in type are free metavariables
     indices := getMetaVariableIndices(type)
     depth := length(indices)

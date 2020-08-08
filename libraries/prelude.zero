@@ -21,6 +21,7 @@ a ⊓ b ⩴ {(_ : a, _ : b)}
 first((a, b)) ≔ a
 second((a, b)) ≔ b
 pair(a, b) ≔ (a, b)
+duplicate(a) ≔ (a, a)
 swap((x, y)) ≔ (y, x)
 mapFirst(f, xy) ≔ (f(first(xy)), second(xy))
 mapSecond(f, xy) ≔ (first(xy), f(second(xy)))
@@ -334,7 +335,8 @@ def showFullBinaryTree(showElement, tree)
 lift value ≔ state ↦ (value, state)
 f ≫ g ≔ state ↦ (g(value, state′) where (value, state′) ≔ f(state))
 getState ≔ state ↦ (state, state)
-setState(newState) ≔ state ↦ ((), newState)
-mapState(f, xs) ≔ state ↦ xs.cascadeMap(f, state)
+setState(state') ≔ state ↦ (state', state')
+alterState(f) ≔ state ↦ duplicate(f(state))
+cascadeMapState(f, xs) ≔ state ↦ xs.cascadeMap(f, state)
 
 #*
