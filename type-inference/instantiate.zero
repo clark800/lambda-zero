@@ -34,9 +34,9 @@ def instantiate(term, intersection)
 
 
 def instantiateAll(term)
+    if isConstruction(term)
+        lift term
     if term is Intersection(tag, domain, body)
-        if isSingleton(domain)
-            lift term    # don't instantiate constructions
         metavariable <- newPositiveMetaVariable(getTermTag(term))
         instantiateAll(instantiate(metavariable, term))
     lift term

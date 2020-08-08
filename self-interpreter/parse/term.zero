@@ -20,7 +20,7 @@ Term ::= {
     MetaVariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
-    Singleton(tag : TagT, type : Term, index : ℕ),
+    Singleton(tag : TagT, type : Term, element : Term),
     Function(tag : TagT, domain : Term, body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
@@ -76,7 +76,7 @@ def setTag(tag)
     MetaVariable(_, index) -> MetaVariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
-    Singleton(_, type, index) -> Singleton(tag, type, index)
+    Singleton(_, type, element) -> Singleton(tag, type, element)
     Function(_, domain, body) -> Function(tag, domain, body)
     Implication(_, domain, body) -> Implication(tag, domain, body)
     Intersection(_, domain, body) -> Intersection(tag, domain, body)
@@ -145,12 +145,40 @@ def isTypeFamily(term)
     False
 
 
+def getTypeFamily'(type)
+    if type is Implication(_, _, body)
+        getTypeFamily'(body)
+    if type is Type(_, index)
+        if isNegative(index)
+            Just(type)
+        Void
+    Void
+
+
+def getTypeFamily(construction)
+    if construction is Intersection(_, domain, _)
+        if domain is Singleton(_, type, _)
+            getTypeFamily'(type)
+        Void
+    Void
+
+
+def isConstruction(term)
+    if term is Intersection(_, domain, _)
+        if domain is Singleton(_, _, element)
+            isUnknown(element)
+        False
+    False
+
+
 def showTerm
     MetaVariable(tag, index) -> showMetaVariable(index)
-    Type(_, index) -> "⊤" ++ showIntegerSubscript(index)
+    Type(tag, index) -> if isPositive(index) then
+        "⊤" ++ showIntegerSubscript(index) else
+        "⊤{" ++ showTag(tag) ++ "}"
     Variable(tag, index) -> if index =:= -_ 0 then "■" else showTag(tag)
-    Singleton(tag, type, index) ->
-        "(" ++ showTerm(type) ++ ")" ++ showSubscript(index)
+    Singleton(tag, type, element) ->
+        "{" ++ showTerm(element) ++ " : " ++ showTerm(type) ++ "}"
     Function(tag, domain, body) ->
         if isUnknown(domain) or isTypeFamily(domain) then
             showTag(tag) ++ " ↦ " ++ showTerm(body) else

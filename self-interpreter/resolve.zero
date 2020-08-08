@@ -37,8 +37,8 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
             if keepGlobals
                 term
             environment.seek(index).mapJust(resolveClosure) ?? term
-        case Singleton(tag, type, index)
-            Singleton(tag, resolve''(type), index)
+        case Singleton(tag, type, element)
+            Singleton(tag, resolve''(type), resolve''(element))
         case Function(tag, domain, body)
             Function(tag, resolve''(domain), resolve'''(body))
         case Implication(tag, domain, body)

@@ -4,11 +4,12 @@ def getComponents
     MetaVariable(_, _) -> []
     Type(_, _) -> []
     Variable(_, _) -> []
-    Singleton(_, type, _) -> [type]
+    Singleton(_, type, element) -> [type, element]
     Function(_, domain, body) -> [domain, body]
     Implication(_, domain, body) -> [domain, body]
-    Intersection(_, domain, body) ->
-        if isSingleton(domain) then [domain] else [domain, body]
+    Intersection(tag, domain, body) ->
+        if isConstruction(Intersection(tag, domain, body)) then
+            [domain] else [domain, body]
     Application(_, left, right) -> [left, right]
     Numeral(_, _, _) -> []
     Operation(_, _, _) -> []
@@ -19,8 +20,8 @@ def mapComponentsWithDepth(f, depth, term)
         MetaVariable(_, _) -> term
         Type(_, _) -> term
         Variable(_, _) -> term
-        Singleton(tag, type, index) ->
-            Singleton(tag, type.f(depth), index)
+        Singleton(tag, type, element) ->
+            Singleton(tag, type.f(depth), element.f(depth))
         Function(tag, domain, body) ->
             Function(tag, domain.f(depth), body.f(up depth))
         Implication(tag, domain, body) ->

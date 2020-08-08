@@ -81,12 +81,14 @@ def unify'(fail, metacontext, (left, right))
             metacontext.setMetaValue(abs(index), right)
         case Type(tag, index) -> fail'
         case Variable(tag, index) -> fail'  # should already be evaluated
-        case Singleton(tag, type, index)
-            if rightTerm is Singleton(tag', type', index')
-                if index =/= index'
-                    fail'
-                unify'(fail, metacontext,
+        case Singleton(tag, type, element)
+            if rightTerm is Singleton(tag', type', element')
+                metacontext' := unify'(fail, metacontext,
                     (Closure(type, leftEnv), Closure(type', rightEnv)))
+                if isUnknown(element) and isUnknown(element')
+                    metacontext'  # only constructions can have unknown element
+                unify'(fail, metacontext',
+                    (Closure(element, leftEnv), Closure(element', rightEnv)))
             fail'
         case Function(tag, domain, body) -> fail'
         case Implication(tag, domain, body)
@@ -95,9 +97,7 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Intersection(tag, domain, body)
             if rightTerm is Intersection(tag', domain', body')
-                if isSingleton(domain) and isSingleton(domain')
-                    # we can optimize here by ignoring the body since we ensure
-                    # that if singleton domains match then the bodies match
+                if isConstruction(leftTerm) and isConstruction(rightTerm)
                     unify'(fail, metacontext,
                         (Closure(domain, leftEnv), Closure(domain', rightEnv)))
                 unifyBinder(tag, domain, domain', body, body')
