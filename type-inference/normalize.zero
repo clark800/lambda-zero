@@ -1,4 +1,4 @@
-#* instantiate.zero
+#* normalize.zero
 
 
 def shiftIndices'(offset, depth, term)
@@ -27,23 +27,18 @@ def substituteArgument(argument, term)
     substituteArgument'(argument, 1, term)
 
 
-def instantiateWith(term, intersection)
-    if intersection is Intersection(_, _, body)
-        substituteArgument(term, body)
-    throwError("expected intersection in instantiate", getTermTag(intersection))
+def reduceTerm(term)
+    if term is Application(tag, left, right)
+        left' := reduceTerm(left)
+        right' := reduceTerm(right)
+        if left' is Function(tag', domain, body)
+            reduceTerm(substituteArgument(right', body))
+        Application(tag, left', right')
+    term
 
 
-def instantiate(term)
-    if isConstruction(term)
-        lift term
-    if term is Intersection(tag, domain, body)
-        metavariable <- newPositiveMetaVariable(getTermTag(term))
-        instantiate(term.instantiateWith(metavariable))
-    lift term
+def normalize(term)
+    reduceTerm(term).mapComponents(normalize)
 
-
-def instantiateClosure(closure)
-    term <- instantiate(resolveClosure(closure))
-    lift resolveClosure(evaluateClosure(enclose(term)))
 
 #*
