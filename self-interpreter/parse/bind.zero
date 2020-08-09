@@ -1,10 +1,6 @@
 #* bind.zero
 
-GlobalT ::= {Global(
-    ast : AST,
-    term : Term,
-    constant : Term
-)}
+GlobalT ::= {Global(index : ℕ, ast : AST, term : Term)}
 
 BindingT ::= {Binding(
     tag : TagT,
@@ -12,9 +8,9 @@ BindingT ::= {Binding(
     ascription : (ClosureT(Term))?
 )}
 
-getGlobalAST(Global(ast, _, _)) := ast
-getGlobalTerm(Global(_, term, _)) := term
-getGlobalConstant(Global(_, _, constant)) := constant
+getGlobalIndex(Global(index, _, _)) := index
+getGlobalAST(Global(_, ast, _)) := ast
+getGlobalTerm(Global(_, _, term)) := term
 
 getBindingTag(Binding(tag, _, _)) := tag
 getBindingClosure(Binding(_, closure, _)) := closure
@@ -25,22 +21,19 @@ def pushParameter(parameter, (level, table))
     (up level, table.insert(getLexeme(parameter), level))
 
 
-def bindLocal(locals @ (level, table), tag)
-    table.lookup(getTagLexeme(tag)).mapJust(level' ->
-        Variable(tag, -_(level -- level')))
+def newVariable(tag, index, level, level')
+    tag' := if level' < index then setGlobal(tag) else tag
+    Variable(tag', -_(level -- level'))
 
 
-def bindGlobal(globals, tag)
-    globals.lookup(getTagLexeme(tag)).
-        mapJust(getGlobalConstant).mapJust(setTag(tag))
+def bindVariable(parameters @ (level, table), index, tag)
+    table.lookup(getTagLexeme(tag)).mapJust(newVariable(tag, index, level))
 
 
-def bindName(getBuiltin, globals, locals, tag)
+def bindName(getBuiltin, parameters, index, tag)
     if isUnused(tag)
         syntaxError("cannot reference a symbol starting with underscore", tag)
-    bindLocal(locals, tag) ??
-        bindGlobal(globals, tag) ??
-        syntaxError("undefined symbol", tag)
+    bindVariable(parameters, index, tag) ?? syntaxError("undefined symbol", tag)
 
 
 def bindOperation(getBuiltin, tag, term)
@@ -80,51 +73,45 @@ def getConstructorFamily(tag, constructorNames, globals)
             Just(constructorGlobals)
         constructors := constructorGlobals.map(getGlobalAST)
         typeConstructor := getTypeConstructor(tag, constructors)
-        tag' := getTag(typeConstructor)
-        if bindGlobal(globals, tag') is Just(constant)
-            if constant is Variable(_, index)
-                if index is +_ n
-                    Type(tag', -_ n)
-                pass
-            pass
+        adtLexeme := getTagLexeme(getTag(typeConstructor))
+        if globals.lookup(adtLexeme) is Just(Global(index, _, _))
+            Type(getTag(typeConstructor), -_ index)
         throwError("Type error: undefined type constructor", tag)
     throwError("Type error: undefined constructor", tag)
 
 
-def getNaturalType(tag, globals)
-    if globals.lookup("0") is Just(Global(_, term, _))
+def getNaturalName(tag, globals)
+    if globals.lookup("0") is Just(Global(_, _, term))
         if term is Numeral(_, type, _)
-            type
+            Name(getTermTag(type))
         syntaxError("0 must be a numeral to use numerals", tag)
     syntaxError("must define 0 before using numerals", tag)
 
 
-def bind(getBuiltin, globals, index, locals, node)
-    bind' := bind(getBuiltin, globals, index)
+def bind(getBuiltin, globals, index, parameters, node)
+    bind' := bind(getBuiltin, globals, index, parameters)
+    bind''(p) := bind(getBuiltin, globals, index, parameters.pushParameter(p))
+
     match node
         case Family(tag)
             Type(tag, -_ index)
         case Reference(tag, debruijn)
             if debruijn = 0
-                bindName(getBuiltin, globals, locals, tag)
+                bindName(getBuiltin, parameters, index, tag)
             Variable(tag, -_ debruijn)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
             if arrowType is Double
-                parameterTerm := parameter.bind'(locals)
                 # todo: add support for names on left side of double arrows
-                bodyTerm := body.bind'(locals.pushParameter(Name(veil(tag))))
-                Implication(tag, parameterTerm, bodyTerm)
-
-            locals' := locals.pushParameter(parameter)
+                Implication(tag, bind'(parameter), body.bind''(Name(veil(tag))))
 
             if arrowType is Tail
-                domain := annotation.mapJust(bind'(locals)) ?? Type(tag, +_ 0)
-                Intersection(getTag(parameter), domain, body.bind'(locals'))
+                domain := annotation.mapJust(bind') ?? Type(tag, +_ 0)
+                Intersection(getTag(parameter), domain, body.bind''(parameter))
 
-            bodyTerm := body.bind'(locals')
+            bodyTerm := body.bind''(parameter)
             if isNil(constructorNames)
-                domain := annotation.mapJust(bind'(locals)) ?? Unknown(tag)
+                domain := annotation.mapJust(bind') ?? Unknown(tag)
                 Function(getTag(parameter), domain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
@@ -134,17 +121,16 @@ def bind(getBuiltin, globals, index, locals, node)
                 astSyntaxError("error binding pattern match", node)
             Function(getTag(parameter), typeFamily, bodyTerm)
         case Juxtaposition(tag, left, right)
-            Application(tag, left.bind'(locals), right.bind'(locals))
+            Application(tag, bind'(left), bind'(right))
         case Let(tag, isTypeConstructor, name, value, scope)
             if isTypeConstructor
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            valueTerm := value.bind'(locals)
-            body := scope.bind'(locals.pushParameter(name))
-            abstraction := Function(getTag(name), Unknown(tag), body)
-            Application(tag, abstraction, valueTerm)
+            abstraction := FreeFunction(getTag(name), scope.bind''(name))
+            Application(tag, abstraction, bind'(value))
         case Number(tag, value)
-            Numeral(tag, getNaturalType(tag, globals), value)
+            type := bind'(getNaturalName(tag, globals))
+            Numeral(tag, type, value)
         case Definition(_, _, _, _)
             astSyntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)
@@ -155,17 +141,15 @@ def bind(getBuiltin, globals, index, locals, node)
             astSyntaxError("colon not in valid location", node)
         case SetBuilder(_, _)
             astSyntaxError("must appear on the right side of '::='", node)
-        case ADT(tag, parameters, constructorType, body)
-            type := constructorType.bind'(locals)
-            domainTerm := Singleton(tag, type, Unknown(tag))
-            bodyTerm := body.bind'(locals.pushParameter(Name(tag)))
-            Intersection(tag, domainTerm, bodyTerm)
+        case ADT(tag, adtParameters, constructorType, body)
+            domainTerm := Singleton(tag, bind'(constructorType), Unknown(tag))
+            Intersection(tag, domainTerm, body.bind''(Name(tag)))
         case Constructor(tag, type, adtType, function, count, index)
             if function is Number(_, value)
-                Numeral(tag, type.bind'(locals), value)
-            function.bind'(locals)
+                Numeral(tag, bind'(type), value)
+            bind'(function)
         case TypedNode(tag, type, function)
-            function.bind'(locals)
+            bind'(function)
 
 
 def getAscription
@@ -175,20 +159,21 @@ def getAscription
 
 
 def bindDefinition(getBuiltin, state, (tag, node))
-    (bindings, globals, environment) := state
-    locals := (0, newDictionary([]))
-    bindNode := bind(getBuiltin, globals, getSize(environment), locals)
+    (bindings, parameters, globals, environment) := state
+    bindNode := bind(getBuiltin, globals, getSize(environment), parameters)
     term := bindNode(node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, tag, term) ?? term
     closure := Closure(definiens, environment)
     ascription := getAscription(node).mapJust(type ->
         Closure(bindNode(type), environment))
+    bindings' := Binding(tag, closure, ascription) :: bindings
 
+    parameters' := parameters.pushParameter(Name(tag))
     (index, environment') := environment.append(closure)
-    global := Global(node, definiens, Variable(tag, +_ index))
+    global := Global(index, node, definiens)
     globals' := globals.insert(getTagLexeme(tag), global)
-    (Binding(tag, closure, ascription) :: bindings, globals', environment')
+    (bindings', parameters', globals', environment')
 
 
 def getDefinitions(node)
@@ -199,9 +184,10 @@ def getDefinitions(node)
 
 def bindAST(getBuiltin, node)
     # TODO: make state a parameter so we can bind with an existing state
-    state := ([], newDictionary([]), newArray([]))
+    parameters := (0, newDictionary([]))
+    state := ([], parameters, newDictionary([]), newArray([]))
     state' := getDefinitions(node).cascade(bindDefinition(getBuiltin), state)
-    (bindings, _globals, _environment) := state'
+    (bindings, _parameters, _globals, _environment) := state'
     bindings  # top level bindings in reverse order
 
 #*

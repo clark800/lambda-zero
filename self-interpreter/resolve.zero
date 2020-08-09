@@ -28,13 +28,13 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
             term
         case Type(tag, index) -> term
         case Variable(tag, index)
+            if keepGlobals and isGlobal(tag)
+                term
             if index is -_ index'
                 if index' <= depth
                     term
                 if environment.peek(index' -- depth -- 1) is Just(closure')
                     resolveClosure(closure')
-                term
-            if keepGlobals
                 term
             environment.seek(index).mapJust(resolveClosure) ?? term
         case Singleton(tag, type, element)

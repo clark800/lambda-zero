@@ -9,18 +9,22 @@ CLOSEFIX := 5
 
 LocationT ::= {Location(file : List(ℕ), line : ℕ, column : ℕ)}
 
-TagT ::= {Tag(lexeme : List(ℕ), fixity : ℕ, location : LocationT)}
+TagT ::= {Tag(lexeme : List(ℕ), fixity : ℕ, location : LocationT, global : 𝔹)}
 
-getTagLexeme(Tag(lexeme, _, _)) := lexeme
-getTagFixity(Tag(_, fixity, _)) := fixity
-getTagLocation(Tag(_, _, location)) := location
+getTagLexeme(Tag(lexeme, _, _, _)) := lexeme
+getTagFixity(Tag(_, fixity, _, _)) := fixity
+getTagLocation(Tag(_, _, location, _)) := location
+isGlobal(Tag(_, _, _, global)) := global
 
-renameTag(Tag(_, _, location), lexeme, fixity) := Tag(lexeme, fixity, location)
+renameTag(Tag(_, _, location, global), lexeme, fixity) :=
+    Tag(lexeme, fixity, location, global)
 veil(tag) := renameTag(tag, "_", NOFIX)
-setTagLocation(location, Tag(lexeme, fixity, _)) :=
-    Tag(lexeme, fixity, location)
-addPrefix(Tag(lexeme, fixity, location), prefix) :=
-    Tag(prefix :: lexeme, fixity, location)
+setGlobal(Tag(lexeme, fixity, location, _)) :=
+    Tag(lexeme, fixity, location, True)
+setTagLocation(location, Tag(lexeme, fixity, _, global)) :=
+    Tag(lexeme, fixity, location, global)
+addPrefix(Tag(lexeme, fixity, location, global), prefix) :=
+    Tag(prefix :: lexeme, fixity, location, global)
 isSameLocation(Location(file1, line1, col1), Location(file2, line2, col2)) :=
     file1 =*= file2 and line1 = line2 and col1 = col2
 isSameTag(tag1, tag2) :=
@@ -113,7 +117,7 @@ def splitLexemes(splitter, location, string)
         []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
-    Tag(lexeme, NOFIX, location) ::
+    Tag(lexeme, NOFIX, location, False) ::
         remaining.splitLexemes(splitter, nextLocation)
 
 
@@ -126,7 +130,7 @@ def showLocation(Location(file, line, column))
         "line " ++ showNatural(line) ++ " column " ++ showNatural(column)
 
 
-def showTag(Tag(lexeme, fixity, _))
+def showTag(Tag(lexeme, fixity, _, _))
     if lexeme is c :: _
         if c = 0 then "\\0"
         if c = '\n' then "\\n"
@@ -141,7 +145,7 @@ def showQuotedLexeme(lexeme)
     "'" ++ lexeme ++ "'"
 
 
-def showTagWithLocation(Tag(lexeme, _, location))
+def showTagWithLocation(Tag(lexeme, _, location, _))
     showQuotedLexeme(lexeme) ++ " at " ++ showLocation(location)
 
 
@@ -164,7 +168,7 @@ getTokenTag(Token(tag, _)) := tag
 getTokenCode(Token(_, code)) := code
 
 
-def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
+def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _, _))
     if nextLexeme is c :: _
         if isLineFeed(c) or isComment(c)
             Token(tag, VSpace)
@@ -172,7 +176,7 @@ def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _))
     Token(tag, VSpace)
 
 
-def createToken(tag @ Tag(lexeme, _, _), nextTag)
+def createToken(tag @ Tag(lexeme, _, _, _), nextTag)
     if lexeme is c :: _
         if c = ' ' then Token(tag, Space)
         if c = '\n' then createLineFeedToken(tag, nextTag)
@@ -198,11 +202,11 @@ def showToken(token)
 
 
 def noTag
-    Tag("", NOFIX, Location("", 0, 0))
+    Tag("", NOFIX, Location("", 0, 0), False)
 
 
 def START
-    Token(Tag("", NOFIX, Location("", 0, 0)), Symbolic)
+    Token(noTag, Symbolic)
 
 
 def lex(string)
