@@ -19,27 +19,42 @@ def convertFunctionsToIntersections(term)
     term
 
 
-def getPatternMatchDomain(closure @ Closure(typeConstructor, environment))
+def getPatternMatchDomain(Closure(typeConstructor, environment))
     term := convertFunctionsToIntersections(typeConstructor)
-    closure' <- instantiate(Closure(term, environment))
-    outerDomain @ Closure(term', environment') := evaluateClosure(closure')
-    if term' is Intersection(_, _, body)
-        innerDomain := Closure(body, environment'.push(closure))
-        lift (outerDomain, innerDomain)
-    throwError("invalid type family", getTermTag(typeConstructor))
+    closure <- instantiate(Closure(term, environment))
+    lift evaluateClosure(closure)  # evaluate application of type constructor
+
+
+def getTypeConstructor(construction, environment)
+    if getConstructionTypeFamily(construction) is Just(family)
+        if family is Type(tag, index)
+            if index is -_ n
+                environment.get(n)
+            Void
+        Void
+    Void
+
+
+def instantiateConstruction(closure, environment)
+    _ @ Closure(construction, environment') := evaluateClosure(closure)
+    if getTypeConstructor(construction, environment) is Just(typeConstructor)
+        if construction is Intersection(_, _, body)
+            instantiate(Closure(body, environment'.push(typeConstructor)))
+        throwError("expected intersection", getTermTag(construction))
+    throwError("expected construction", getTermTag(construction))
 
 
 def getDomain(closure @ Closure(domain, environment))
     if domain is Type(tag, index)
         if index is -_ n
-            if environment.get(n) is Just(closure')
-                getPatternMatchDomain(closure')
+            if environment.get(n) is Just(typeConstructor)
+                getPatternMatchDomain(typeConstructor)
             throwError("undefined type family", tag)
-        lift duplicate(closure)
+        lift closure
     if isUnknown(domain)
         metavariable <- newPositiveMetaVariable(getTermTag(domain))
-        lift duplicate(enclose(metavariable))
-    lift duplicate(closure)
+        lift enclose(metavariable)
+    lift closure
 
 
 def newFunctionType(tag, domainClosure, body)
@@ -59,21 +74,22 @@ def infer(context @ (environment, types))
             -_ family -> lift enclose(Type(tag, +_ 1))
     case Variable(tag, index)
         type := types.seek(-_ abs(index)) ?? throwError("unbound variable", tag)
+        if isNegative(index)
+            instantiateConstruction(type, environment)
         instantiate(type)
     case Singleton(tag, type, element)
         type.infer(context)   # todo: support unknown type, verify type
     case Function(tag, domain, body)
-        (outerDomain, innerDomain) <- getDomain(enclose'(domain))
+        domainClosure <- getDomain(enclose'(domain))
         argument <- newNegativeMetaVariable(tag)
-        range <- body.infer(context.pushContext(innerDomain, argument))
+        range <- body.infer(context.pushContext(domainClosure, argument))
         codomain <- addPositiveMetaVariable(tag, range)
-        lift newFunctionType(tag, outerDomain, codomain)
+        lift newFunctionType(tag, domainClosure, codomain)
     case Implication(tag, domain, body)
         argument <- newNegativeMetaVariable(tag)
         _ <- body.infer(context.pushContext(enclose'(domain), argument))
         lift enclose(Type(tag, +_ 0))
     case Intersection(tag, domain, body)
-        this := Intersection(tag, domain, body)
         if getConstructionTypeFamily(this) is Just(family)
             lift enclose'(family)
         argument <- newNegativeMetaVariable(tag)
@@ -84,9 +100,9 @@ def infer(context @ (environment, types))
             # handle local definitions specially so that we have argument in env
             if isUnknown(domain)  # avoid creating unnecessary metavariable
                 body.infer(context.pushContext(argumentType, argument))
-            (outerDomain, innerDomain) <- getDomain(enclose'(domain))
-            _ <- unify(argumentType, outerDomain)
-            body.infer(context.pushContext(innerDomain, argument))
+            domainClosure <- getDomain(enclose'(domain))
+            _ <- unify(argumentType, domainClosure)
+            body.infer(context.pushContext(domainClosure, argument))
         applicandType <- applicand.infer(context)
         returnType <- newPositiveMetaVariable(tag)
         tag := getTermTag(applicand)

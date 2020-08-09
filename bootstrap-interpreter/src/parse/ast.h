@@ -70,9 +70,10 @@ static inline Node* SimpleArrow(Node* parameter, Node* body) {
     return newBranch(getTag(parameter), ARROW, SIMPLEARROW, parameter, body);
 }
 
-static inline Node* StrictArrow(Tag constructorTag, Node* body) {
-    Node* parameter = FixedName(constructorTag, "_");
-    return newBranch(constructorTag, ARROW, STRICTARROW, parameter, body);
+static inline Node* StrictArrow(Tag tag, Node* parameter, Node* body) {
+    // tag is the constructor name
+    assert(isThisName(parameter, "this"));
+    return newBranch(tag, ARROW, STRICTARROW, parameter, body);
 }
 
 static inline Node* LockedArrow(Node* parameter, Node* body) {
@@ -118,7 +119,7 @@ static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
-    return LockedArrow(FixedName(tag, "_"), body);
+    return LockedArrow(Underscore(tag, 0), body);
 }
 
 static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}

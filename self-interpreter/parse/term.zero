@@ -173,7 +173,9 @@ def showTerm
     Type(tag, index) -> if isPositive(index) then
         "⊤" ++ showIntegerSubscript(index) else
         "⊤{" ++ showTag(tag) ++ "}"
-    Variable(tag, index) -> if abs(index) = 0 then "■" else showTag(tag)
+    Variable(tag, index) ->
+        if abs(index) = 0 then "■" else
+            showTag(tag) # ++ showIntegerSubscript(index)
     Singleton(tag, type, element) ->
         "{" ++ showTerm(element) ++ " : " ++ showTerm(type) ++ "}"
     Function(tag, domain, body) ->

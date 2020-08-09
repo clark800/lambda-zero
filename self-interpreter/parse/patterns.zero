@@ -29,11 +29,11 @@ def newPatternArrow(pattern, body)
         tag := getTag(constructor)
         arguments := getArguments(pattern)
         size := length(arguments)
-        underscore := Underscore(tag, 1)
+        underscore := NegativeUnderscore(tag)
         function := arguments.fold(newPatternArrow, body)
         projectors := (0 .. size -- 1).map(newProjector(tag, size))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        lockArrow(StrictArrow(tag, [constructor],
+        lockArrow(StrictArrow(tag, [constructor], Underscore(tag, 0),
             projections.cascade(Juxtaposition(tag), function)))
     astSyntaxError("invalid parameter", pattern)
 
@@ -49,19 +49,14 @@ def getNameAndValue(f, left, right)
 def newCaseArrow(left, right)
     if isUnderscore(left)
         SimpleArrow(left, right)
-    pattern := if left is AsPattern(_, _, pattern'); pattern' <| left
-    (name, reconstructor) :=
-        getNameAndValue(newPatternArrow, pattern, right)
-    constructor := Name(getTag(name))  # name could be a number
-    tag := getTag(constructor)
-    underscore := Underscore(tag, 1)
-    if left is AsPattern(tag, asLeft, _)
-        wrapper := newPatternArrow(asLeft, reconstructor)
-        argument := Juxtaposition(tag, wrapper, underscore)
-        StrictArrow(tag, [constructor],
-            Juxtaposition(tag, underscore, argument))
-    StrictArrow(tag, [constructor],
-        Juxtaposition(tag, underscore, reconstructor))
+    if isAsPattern(left)
+        astSyntaxError("invalid '@' in case", left)
+    (name, reconstructor) := getNameAndValue(newPatternArrow, left, right)
+    tag := getTag(name)
+    constructor := Name(tag)  # name could be a number
+    thisName := This(tag)
+    body := Juxtaposition(tag, thisName, reconstructor)
+    StrictArrow(tag, [constructor], thisName, body)
 
 
 def addCases(tag, base, extension)
@@ -70,10 +65,9 @@ def addCases(tag, base, extension)
     base
 
 
-def newCaseBody(tag, left, right)
+def newCaseBody(tag, thisName, left, right)
     if left is Arrow(_, type, _, _, _, body)
-        base := if type is Simple;
-            Juxtaposition(tag, Underscore(tag, 1), body) <| body
+        base := if type is Simple; Juxtaposition(tag, thisName, body) <| body
         if right is Arrow(_, type', _, _, _, body')
             if type' is Simple
                 Juxtaposition(tag, base, body')
@@ -93,33 +87,39 @@ def getCaseConstructors(arrow)
 def isDefaultCase(arrow)
     if arrow is Arrow(_, type, _, parameter, _, _)
         if type is Simple
-            isUnderscore(parameter)
+            isUnderscore(parameter) or isThisName(parameter, "this")
         False
     False
 
 
-def getReconstructor(arrow)
-    if arrow is Arrow(_, type, _, _, _, body)
+def getReconstructor(caseArrow)
+    if caseArrow is Arrow(_, type, _, _, _, body)
         if type is Simple
             body
         if body is Juxtaposition(_, _, right)
             right
-        astSyntaxError("internal error", arrow)
-    astSyntaxError("internal error", arrow)
+        pass
+    astSyntaxError("Internal error: expected case arrow", caseArrow)
 
 
-def chainCases(tag, arrow, fallback)
-    deconstructor := Name(addPrefix(getTag(arrow), '@'))
-    reconstructor := getReconstructor(arrow)
+def attachDefaultCase(tag, caseArrow, fallback)
+    constructorTag := getTag(caseArrow)
+    deconstructor := Name(addPrefix(constructorTag, '@'))
+    reconstructor := getReconstructor(caseArrow)
+    # note: "this" is a positive variable here because we aren't using it
+    # as a function as we are in the strict case
+    thisName := FixedName(tag, "this")
     body := Juxtaposition(tag, Juxtaposition(tag, Juxtaposition(tag,
-        deconstructor, reconstructor), fallback), Underscore(tag, 1))
-    SimpleArrow(Name(veil(tag)), body)
+        deconstructor, reconstructor), fallback), thisName)
+    SimpleArrow(thisName, body)
 
 
 def combineCases(tag, left, right)
     if isDefaultCase(right)
-        chainCases(tag, left, right)
+        attachDefaultCase(tag, left, right)
+    thisName := This(tag)
     constructors := getCaseConstructors(left) ++ getCaseConstructors(right)
-    StrictArrow(tag, constructors, newCaseBody(tag, left, right))
+    body := newCaseBody(tag, thisName, left, right)
+    StrictArrow(tag, constructors, thisName, body)
 
 #*

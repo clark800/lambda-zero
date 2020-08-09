@@ -15,7 +15,7 @@ def reduceInfix(tag, left, right)
 def reduceArrow(_tag, left, right)
     if isName(left)
         SimpleArrow(left, right)  # might be a case or might not be a case
-    if isColonPair(left)
+    if isColonPair(left) or isAsPattern(left)
         newPatternArrow(left, right)
     if left is Juxtaposition(_, left', right')
         if isThisName(left', "case")
@@ -95,6 +95,8 @@ def reduceNewline(tag, left, right)
         applyDefinition(left, right)
     if isCase(left) and isCase(right)
         combineCases(tag, left, right)
+    if isArrow(left) and isArrow(right)
+        syntaxError("consecutive functions must be cases", tag)
     reduceApply(tag, left, right)
 
 
