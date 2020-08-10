@@ -7,7 +7,7 @@ def substitute(indices, depth, term)
     if term is MetaVariable(tag, index)
         if indices.findIndex((=:= index)) is Just(depth')
             tag' := renameTag(tag, showMetaVariable(+_ depth'), NOFIX)
-            Variable(tag', -_(depth -- depth'))
+            Variable(tag', +_(depth -- depth'))
         term
     mapComponentsWithDepth(substitute(indices), depth, term)
 

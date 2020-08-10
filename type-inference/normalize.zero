@@ -1,11 +1,16 @@
 #* normalize.zero
 
 
+def setAbsoluteValue(n)
+    +_ _ -> +_ n
+    -_ _ -> -_ n
+
+
 def shiftIndices'(offset, depth, term)
     if term is Variable(tag, index)
-        match index
-            +_ n -> term
-            -_ n -> if n > depth then Variable(tag, -_(n + offset)) else term
+        if abs(index) > depth
+            Variable(tag, index.setAbsoluteValue(abs(index) + offset))
+        term
     mapComponentsWithDepth(shiftIndices'(offset), depth, term)
 
 
@@ -15,11 +20,11 @@ def shiftIndices(offset, term)
 
 def substituteArgument'(argument, depth, term)
     if term is Variable(tag, index)
-        match index
-            +_ n -> term
-            -_ n -> if n > depth then Variable(tag, -_(down n)) else
-                  (if n = depth then
-                   shiftIndices(down depth, argument) else term)
+        if abs(index) > depth
+            Variable(tag, index.setAbsoluteValue(down abs(index)))
+        if abs(index) = depth
+            shiftIndices(down depth, argument)
+        term
     mapComponentsWithDepth(substituteArgument'(argument), depth, term)
 
 

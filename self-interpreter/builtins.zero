@@ -4,7 +4,7 @@ maxInteger := 9223372036854775807
 
 
 def newBoolean(tag, numeralType, b)
-    FreeFunction(tag, FreeFunction(tag, Variable(tag, -_(if b then 1 else 2))))
+    FreeFunction(tag, FreeFunction(tag, Variable(tag, +_(if b then 1 else 2))))
 
 
 def makeUnaryBuiltin(f, evaluate, arguments)

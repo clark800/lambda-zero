@@ -15,7 +15,7 @@ def isMain(term)
 
 
 def newNilTerm(tag)
-    FreeFunction(tag, FreeFunction(tag, Variable(tag, -_ 2)))
+    FreeFunction(tag, FreeFunction(tag, Variable(tag, +_ 2)))
 
 
 def constructString(tag, string)

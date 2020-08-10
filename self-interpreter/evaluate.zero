@@ -23,7 +23,7 @@ def evaluate(metacontext, metaindices, stack, closure)
             done
         case Type(tag, index) -> done
         case Variable(tag, index)
-            if environment.seek(index) is Just(closure')
+            if environment.seek(-_ abs(index)) is Just(closure')
                 evaluate(stack, closure')
             closure
         case Singleton(tag, type, element) -> done
