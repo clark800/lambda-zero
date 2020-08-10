@@ -29,7 +29,7 @@ Term ::= {
     Operation(tag : TagT, term : Term, optimization : OptimizationT(Term))
 }
 
-Unknown(tag) := Variable(tag, -_ 0)
+Unknown(tag) := Variable(tag, +_ 0)
 
 def getTermTag
     MetaVariable(tag, _) -> tag
@@ -57,7 +57,7 @@ isOperation := Operation(_, _, _) -> True; _ -> False
 
 def isUnknown(term)
     if term is Variable(_, index)
-        index =:= -_ 0
+        abs(index) = 0
     False
 
 
@@ -173,7 +173,7 @@ def showTerm
     Type(tag, index) -> if isPositive(index) then
         "⊤" ++ showIntegerSubscript(index) else
         "⊤{" ++ showTag(tag) ++ "}"
-    Variable(tag, index) -> if index =:= -_ 0 then "■" else showTag(tag)
+    Variable(tag, index) -> if abs(index) = 0 then "■" else showTag(tag)
     Singleton(tag, type, element) ->
         "{" ++ showTerm(element) ++ " : " ++ showTerm(type) ++ "}"
     Function(tag, domain, body) ->

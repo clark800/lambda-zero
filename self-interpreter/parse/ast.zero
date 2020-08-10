@@ -6,7 +6,7 @@ ArrowType ::= {Simple, Strict, Locked, Double, Tail}
 
 AST ::= {
     Family(tag : TagT),
-    Reference(tag : TagT, debruijn : ℕ),
+    Reference(tag : TagT, index : ℤ),
     Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
         parameter : AST, annotation : (AST)?, body : AST),
     Juxtaposition(tag : TagT, left : AST, right : AST),
@@ -152,9 +152,9 @@ isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 isCase(node) := if node is Arrow(_, type, _, _, _, _);
     (type |> Locked -> False; _ -> True) <| False
 
-Name(tag) := Reference(tag, 0)
+Name(tag) := Reference(tag, +_ 0)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
-isName(node) := if node is Reference(_, debruijn); debruijn = 0 <| False
+isName(node) := if node is Reference(_, index); abs(index) = 0 <| False
 
 def TypedArrow(arrowType, parameter, body)
     if parameter is ColonPair(_, name, type)
@@ -183,7 +183,7 @@ isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
 isUnderscore(node) := isThisName(node, "_")
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
-Underscore(tag, debruijn) := Reference(veil(tag), debruijn)
+Underscore(tag, debruijn) := Reference(veil(tag), +_ debruijn)
 newNil(tag) := FixedName(tag, "[]")
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)

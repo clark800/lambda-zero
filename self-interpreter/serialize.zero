@@ -3,9 +3,7 @@
 
 def maybeDebruijnIndex(term)
     if term is Variable(_, index)
-        if index is -_ n
-            Just(n)
-        Void
+        Just(abs(index))
     Void
 
 

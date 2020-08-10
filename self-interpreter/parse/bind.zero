@@ -21,19 +21,22 @@ def pushParameter(parameter, (level, table))
     (up level, table.insert(getLexeme(parameter), level))
 
 
-def newVariable(tag, index, level, level')
+def newVariable(tag, negative, index, level, level')
     tag' := if level' < index then setGlobal(tag) else tag
-    Variable(tag', -_(level -- level'))
+    debruijn := level -- level'
+    Variable(tag', if negative then -_ debruijn else +_ debruijn)
 
 
-def bindVariable(parameters @ (level, table), index, tag)
-    table.lookup(getTagLexeme(tag)).mapJust(newVariable(tag, index, level))
+def bindVariable(parameters @ (level, table), index, negative, tag)
+    table.lookup(getTagLexeme(tag)).mapJust(
+        newVariable(tag, negative, index, level))
 
 
-def bindName(getBuiltin, parameters, index, tag)
+def bindName(getBuiltin, parameters, index, negative, tag)
     if isUnused(tag)
         syntaxError("cannot reference a symbol starting with underscore", tag)
-    bindVariable(parameters, index, tag) ?? syntaxError("undefined symbol", tag)
+    bindVariable(parameters, index, negative, tag) ??
+        syntaxError("undefined symbol", tag)
 
 
 def bindOperation(getBuiltin, tag, term)
@@ -96,9 +99,9 @@ def bind(getBuiltin, globals, index, parameters, node)
         case Family(tag)
             Type(tag, -_ index)
         case Reference(tag, debruijn)
-            if debruijn = 0
-                bindName(getBuiltin, parameters, index, tag)
-            Variable(tag, -_ debruijn)
+            if abs(debruijn) > 0
+                Variable(tag, debruijn)
+            bindName(getBuiltin, parameters, index, isNegative(debruijn), tag)
         case Arrow(tag, arrowType, constructorNames,
                    parameter, annotation, body)
             if arrowType is Double
