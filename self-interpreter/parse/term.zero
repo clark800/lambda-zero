@@ -85,8 +85,8 @@ def setTag(tag)
     Operation(_, term, op) -> Operation(tag, term, op)
 
 
-def setLocation(Tag(_, _, location), term)
-    term.setTag(getTermTag(term).setTagLocation(location))
+def setLocation(tag, term)
+    term.setTag(getTermTag(term).setTagLocation(getTagLocation(tag)))
 
 
 def showConstruction(showTerm, headTag, arguments)
