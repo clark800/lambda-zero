@@ -130,12 +130,11 @@ filter(p, xs) ≔ xs.fold(x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [
 xs ¦ p ≔ filter(p, xs)
 map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 (⬫) ≔ map
-filterMap(f, xs) ≔ xs ⦊ [] ↦ []; x ∷ xs′ ↦
-    (f(x) ⦊ Void ↦ xs″; Just(x′) ↦ x′ ∷ xs″ where xs″ ≔ filterMap(f, xs′))
-prune(mxs) ≔ filterMap(id, mxs)
-sequence(mxs) ≔ mxs ⦊ [] ↦ Just([]); mx ∷ mxs′ ↦
+sift(mxs) ≔ mxs ⦊ [] ↦ []; mx ∷ mxs′ ↦
+    (mx ⦊ Void ↦ sift(mxs′); Just(x) ↦ x ∷ sift(mxs′))
+collect(mxs) ≔ mxs ⦊ [] ↦ Just([]); mx ∷ mxs′ ↦
     (mx ⦊ Void ↦ Void; Just(x) ↦
-        (sequence(mxs′) ⦊ Void ↦ Void; Just(xs) ↦ Just(x ∷ xs)))
+        (collect(mxs′) ⦊ Void ↦ Void; Just(xs) ↦ Just(x ∷ xs)))
 zipWith(f, xs, ys) ≔ xs ⦊
     [] ↦ []; x ∷ xs′ ↦ (ys ⦊ [] ↦ []; y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
@@ -272,11 +271,11 @@ showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 def showSubscript(n)
     subscripts ≔ ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(n).map((∸ '0')).map(`at(subscripts)).prune.join
+    showNatural(n).map((∸ '0')).map(`at(subscripts)).sift.join
 
 def showSuperscript(n)
     superscripts ≔ ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
-    showNatural(n).map((∸ '0')).map(`at(superscripts)).prune.join
+    showNatural(n).map((∸ '0')).map(`at(superscripts)).sift.join
 
 showSubscriptSign ≔ ᐩ _ ↦ ""; ᐨ _ ↦ "₋"
 showIntegerSubscript(z) ≔ showSubscriptSign(z) ⧺ showSubscript(abs(z))
