@@ -66,14 +66,13 @@ def maybeIsNil(term)
 
 
 def serializeString(evaluateClosure, closure)
-    closure' := evaluateClosure(closure)
-    term := getTerm(closure')
+    _ @ Closure(term, environment) := evaluateClosure(closure)
     maybe nil := maybeIsNil(term)
     if nil
         Just([])
 
     unknown := enclose(Unknown(getTermTag(term)))
-    environment' := getEnvironment(closure').push(unknown).push(unknown)
+    environment' := environment.push(unknown).push(unknown)
 
     maybe headTerm := maybeHead(term)
     closure' := Closure(headTerm, environment')

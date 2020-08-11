@@ -14,12 +14,12 @@ def substitute(indices, depth, term)
 
 def getMetaVariableIndices'(term)
     if term is MetaVariable(_, index)
-        if isPositive(index) then [abs(index)] else []
-    join(getComponents(term).map(getMetaVariableIndices'))
+        [index]
+    getComponents(term).map(getMetaVariableIndices').join
 
 
 def getMetaVariableIndices(term)
-    getMetaVariableIndices'(term).deduplicateBy((=))
+    getMetaVariableIndices'(term).deduplicateBy((=:=))
 
 
 def wrapIntersection(tag, index, body)
@@ -30,11 +30,12 @@ def wrapIntersection(tag, index, body)
 
 def generalize(metacontext, closure)
     type := normalize(closure.resolve(metacontext))
-    # after resolve, all metavariables in type are free metavariables
+    # after resolve, all positive metavariables in type are free
     indices := getMetaVariableIndices(type)
-    depth := length(indices)
-    type' := type.substitute(indices.map((+_)), depth)
-    indices' := (0...)[0, depth]
+    if indices.any(isNegative)
+        abort("Type error: type depends on variable: " ++ showTerm(type))
+    type' := type.substitute(indices, length(indices))
+    indices' := zip(0..., indices).map(first)
     indices'.fold(wrapIntersection(getTermTag(type)), type')
 
 #*
