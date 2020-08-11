@@ -57,11 +57,11 @@ def getTypeConstructor(tag, constructors)
         throwError("Type error: invalid cases:", tag)
     adtNames := constructors.map(getADTName)
     adtLexemes := adtNames.map(getLexeme).deduplicateBy((=*=))
-    counts := deduplicate(constructors.map(maybeCount).prune)
+    counts := deduplicate(constructors.map(maybeCount).sift)
     if length(adtLexemes) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
     count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
-    indices := deduplicate(constructors.map(maybeConstructorIndex).prune)
+    indices := deduplicate(constructors.map(maybeConstructorIndex).sift)
     if length(indices) < count
         throwError("Type error: missing case:", tag)
     if length(indices) > count
@@ -72,7 +72,7 @@ def getTypeConstructor(tag, constructors)
 
 
 def getConstructorFamily(tag, constructorNames, globals)
-    if constructorNames.map(getLexeme).map(`lookup(globals)).sequence is
+    if constructorNames.map(getLexeme).map(`lookup(globals)).collect is
             Just(constructorGlobals)
         constructors := constructorGlobals.map(getGlobalAST)
         typeConstructor := getTypeConstructor(tag, constructors)
