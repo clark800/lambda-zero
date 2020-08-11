@@ -10,7 +10,7 @@ static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     (void)operator;
     if (isName(left))
         return SimpleArrow(left, right);
-    if (isColonPair(left))
+    if (isColonPair(left) || isAsPattern(left))
         return newLazyArrow(left, right);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
@@ -80,6 +80,8 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
         return reduceDefine(operator, getRight(left), right);
     if (isCase(left) && isCase(right))
         return combineCases(getTag(operator), left, right);
+    if (isArrow(left) && isArrow(right))
+        syntaxError("consecutive functions must be cases", operator);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
     if (isKeyphrase(left, "if is"))

@@ -48,21 +48,15 @@ Node* newLazyArrow(Node* left, Node* right) {
 }
 
 Node* newCaseArrow(Node* left, Node* right) {
+    syntaxErrorIf(isAsPattern(left), "invalid '@' in case", left);
     if (isUnderscore(left))
         return SimpleArrow(left, right);
-    // example: (x, y) -> B ---> (,)(x)(y) -> B ---> _ -> _ (x -> y -> B)
-    Node* body = right;
-    Node* items = isAsPattern(left) ? getRight(left) : left;
-    for (; isJuxtaposition(items); items = getLeft(items))
-        body = newLazyArrow(getRight(items), body);
-    Node* constructor = items;
-    Tag tag = getTag(constructor);
-    if (isAsPattern(left))
-        // example: p@(x, y) -> body  ~>  p -> (((x, y) -> body) p)
-        body = Juxtaposition(tag, newLazyArrow(getLeft(left), body),
-            Underscore(tag, 1));
-    body = Juxtaposition(tag, Underscore(tag, 1), body);
-    return StrictArrow(tag, body);
+    // example: (x, y) -> B ---> (,)(x)(y) -> B ---> this -> this(x -> y -> B)
+    for (; isJuxtaposition(left); left = getLeft(left))
+        right = newLazyArrow(getRight(left), right);
+    Tag tag = getTag(left);
+    Node* this = FixedName(tag, "this");
+    return StrictArrow(tag, this, Juxtaposition(tag, this, right));
 }
 
 static Node* addCases(Tag tag, Node* base, Node* extension) {
@@ -72,36 +66,42 @@ static Node* addCases(Tag tag, Node* base, Node* extension) {
     return Juxtaposition(tag, merged, getRight(extension));
 }
 
-static Node* newCaseBody(Tag tag, Node* left, Node* right) {
+static Node* newCaseBody(Tag tag, Node* this, Node* left, Node* right) {
     // left and right are either simple arrows or strict arrows
-    // left == c1(a1) -> b1     -->   _ -> _ (a1 -> b1)
-    // right == c2(a2) -> b2    -->   _ -> _ (a2 -> b2)
-    // result == _ -> _ (a1 -> b1) (a2 -> b2)
+    // left == c1(a1) -> b1     -->   this -> this(a1 -> b1)
+    // right == c2(a2) -> b2    -->   this -> this(a2 -> b2)
+    // result == this(a1 -> b1)(a2 -> b2)
     Node* base = isSimpleArrow(left) ?
-        Juxtaposition(tag, Underscore(tag, 1), getRight(left)) : getRight(left);
+        Juxtaposition(tag, this, getRight(left)) : getRight(left);
     return isSimpleArrow(right) ? Juxtaposition(tag, base, getRight(right)) :
         addCases(tag, base, getRight(right));
 }
 
 static bool isDefaultCase(Node* node) {
-    return isSimpleArrow(node) && isUnderscore(getLeft(node));
+    return isSimpleArrow(node) &&
+        (isUnderscore(getLeft(node)) || isThisName(getLeft(node), "this"));
 }
 
 static Node* getReconstructor(Node* arrow) {
     return isSimpleArrow(arrow) ? getRight(arrow) : getRight(getRight(arrow));
 }
 
-static Node* chainCases(Tag tag, Node* caseArrow, Node* fallback) {
-    // Constructor(a) -> b; _ -> c  ~>  _ -> @Constructor(a -> b, _ -> c, _#1)
+static Node* attachDefaultCase(Tag tag, Node* caseArrow, Node* fallback) {
+    // Constructor(a) -> b; _ -> c  ~>
+    //   this -> @Constructor(a -> b, _ -> c, this)
     // we wrap it in a lambda so that transformRecursion knows it's a function
-    Node* deconstructor = Name(addPrefix(getTag(caseArrow), '@'));
+    Tag constructorTag = getTag(caseArrow);
+    Node* deconstructor = Name(addPrefix(constructorTag, '@'));
     Node* reconstructor = getReconstructor(caseArrow);
+    Node* this = FixedName(tag, "this");
     Node* body = Juxtaposition(tag, Juxtaposition(tag, Juxtaposition(tag,
-        deconstructor, reconstructor), fallback), Underscore(tag, 1));
-    return SimpleArrow(FixedName(tag, "_"), body);
+        deconstructor, reconstructor), fallback), this);
+    return SimpleArrow(this, body);
 }
 
 Node* combineCases(Tag tag, Node* left, Node* right) {
-    return isDefaultCase(right) ? chainCases(tag, left, right) :
-        StrictArrow(tag, newCaseBody(tag, left, right));
+    if (isDefaultCase(right))
+        return attachDefaultCase(tag, left, right);
+    Node* this = FixedName(tag, "this");
+    return StrictArrow(tag, this, newCaseBody(tag, this, left, right));
 }

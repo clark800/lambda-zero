@@ -272,10 +272,17 @@ showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 def showSubscript(n)
     subscripts ≔ ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(n).map((-- '0')).map(`at(subscripts)).prune.join
+    showNatural(n).map((∸ '0')).map(`at(subscripts)).prune.join
+
+def showSuperscript(n)
+    superscripts ≔ ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
+    showNatural(n).map((∸ '0')).map(`at(superscripts)).prune.join
 
 showSubscriptSign ≔ ᐩ _ ↦ ""; ᐨ _ ↦ "₋"
 showIntegerSubscript(z) ≔ showSubscriptSign(z) ⧺ showSubscript(abs(z))
+
+showSuperscriptSign ≔ ᐩ _ ↦ ""; ᐨ _ ↦ "⁻"
+showIntegerSuperscript(z) ≔ showSuperscriptSign(z) ⧺ showSuperscript(abs(z))
 
 # parsing
 parseDigit(digit) ≔ if isDigit(digit) then Just(digit ∸ '0') else Void

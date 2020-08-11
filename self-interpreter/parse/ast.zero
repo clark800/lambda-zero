@@ -149,10 +149,15 @@ isADT := ADT(_, _, _, _) -> True; _ -> False
 isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 
-isCase(node) := if node is Arrow(_, type, _, _, _, _);
-    (type |> Locked -> False; _ -> True) <| False
+def isCase(node)
+    if node is Arrow(_, type, _, _, _, _)
+        type |> Simple -> True; Strict -> True; _ -> False
+    False
 
 Name(tag) := Reference(tag, +_ 0)
+This(tag) := Reference(renameTag(tag, "this", NOFIX), -_ 1)
+Underscore(tag, debruijn) := Reference(veil(tag), +_ debruijn)
+NegativeUnderscore(tag) := Reference(veil(tag), -_ 1)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
 isName(node) := if node is Reference(_, index); abs(index) = 0 <| False
 
@@ -165,8 +170,8 @@ SimpleArrow := TypedArrow(Simple)
 LockedArrow := TypedArrow(Locked)
 DoubleArrow := TypedArrow(Double)
 TailArrow := TypedArrow(Tail)
-StrictArrow(tag, constructors, body) :=
-    Arrow(tag, Strict, constructors, Name(veil(tag)), Void, body)
+StrictArrow(tag, constructors, parameter, body) :=
+    Arrow(tag, Strict, constructors, parameter, Void, body)
 
 
 def setAnnotation(annotation, node)
@@ -183,7 +188,6 @@ isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
 isUnderscore(node) := isThisName(node, "_")
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
-Underscore(tag, debruijn) := Reference(veil(tag), +_ debruijn)
 newNil(tag) := FixedName(tag, "[]")
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)
