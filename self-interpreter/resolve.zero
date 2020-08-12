@@ -17,7 +17,7 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
     resolve'''(t) := resolveBase(metaindices, up depth, Closure(t, environment))
 
     match term
-        case MetaVariable(tag, index)
+        case Metavariable(tag, index)
             if index is +_ index'
                 if metacontext.getMetaValue(index') is Just(closure')
                     if metaindices.contains((= index'))

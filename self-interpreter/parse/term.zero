@@ -17,7 +17,7 @@ OptimizationT(term) ::= {Optimization(
 )}
 
 Term ::= {
-    MetaVariable(tag : TagT, index : ℤ),
+    Metavariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
     Singleton(tag : TagT, type : Term, element : Term),
@@ -32,7 +32,7 @@ Term ::= {
 Unknown(tag) := Variable(tag, +_ 0)
 
 def getTermTag
-    MetaVariable(tag, _) -> tag
+    Metavariable(tag, _) -> tag
     Type(tag, _) -> tag
     Variable(tag, _) -> tag
     Singleton(tag, _, _) -> tag
@@ -44,7 +44,7 @@ def getTermTag
     Operation(tag, _, _) -> tag
 
 
-isMetaVariable := MetaVariable(_, _) -> True; _ -> False
+isMetavariable := Metavariable(_, _) -> True; _ -> False
 isType := Type(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
 isSingleton := Singleton(_, _, _) -> True; _ -> False
@@ -73,7 +73,7 @@ def splitSpine(term)
 
 
 def setTag(tag)
-    MetaVariable(_, index) -> MetaVariable(tag, index)
+    Metavariable(_, index) -> Metavariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
     Singleton(_, type, element) -> Singleton(tag, type, element)
@@ -105,16 +105,16 @@ def showConstruction(showTerm, headTag, arguments)
     showTag(headTag)
 
 
-def showPositiveMetaVariable(n)
+def showPositiveMetavariable(n)
     characters := ['a', 'b', 'c', 'd']
     if n < 4
         [characters.at(n) ?? '#']
-    showPositiveMetaVariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
+    showPositiveMetavariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
 
 
-def showMetaVariable(index)
+def showMetavariable(index)
     match index
-        +_ n -> showPositiveMetaVariable(n)
+        +_ n -> showPositiveMetavariable(n)
         -_ n -> "■" ++ showSubscript(n)
 
 
@@ -161,7 +161,7 @@ def isConstruction(term)
 
 
 def showTerm
-    MetaVariable(tag, index) -> showMetaVariable(index)
+    Metavariable(tag, index) -> showMetavariable(index)
     Type(tag, index) -> if isPositive(index) then
         "⊤" ++ showIntegerSubscript(index) else
         "⊤{" ++ showTag(tag) ++ "}"

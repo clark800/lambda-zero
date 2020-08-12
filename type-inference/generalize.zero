@@ -4,34 +4,34 @@ def substitute(indices, depth, term)
     # depth should start as the length of indices
     # we only allow generalizing top-level terms, so we don't have to
     # adjust any variable indices
-    if term is MetaVariable(tag, index)
+    if term is Metavariable(tag, index)
         if indices.findIndex((=:= index)) is Just(depth')
-            tag' := renameTag(tag, showMetaVariable(+_ depth'), NOFIX)
+            tag' := renameTag(tag, showMetavariable(+_ depth'), NOFIX)
             Variable(tag', +_(depth -- depth'))
         term
     mapComponentsWithDepth(substitute(indices), depth, term)
 
 
-def getMetaVariableIndices'(term)
-    if term is MetaVariable(_, index)
+def getMetavariableIndices'(term)
+    if term is Metavariable(_, index)
         [index]
-    getComponents(term).map(getMetaVariableIndices').join
+    getComponents(term).map(getMetavariableIndices').join
 
 
-def getMetaVariableIndices(term)
-    getMetaVariableIndices'(term).deduplicateBy((=:=))
+def getMetavariableIndices(term)
+    getMetavariableIndices'(term).deduplicateBy((=:=))
 
 
 def wrapIntersection(tag, index, body)
     domain := Type(veil(tag), +_ 0)
-    tag' := renameTag(tag, showMetaVariable(+_ index), NOFIX)
+    tag' := renameTag(tag, showMetavariable(+_ index), NOFIX)
     Intersection(tag', domain, body)
 
 
 def generalize(metacontext, closure)
     type := normalize(closure.resolve(metacontext))
     # after resolve, all positive metavariables in type are free
-    indices := getMetaVariableIndices(type)
+    indices := getMetavariableIndices(type)
     if indices.any(isNegative)
         abort("Type error: type depends on variable: " ++ showTerm(type))
     type' := type.substitute(indices, length(indices))

@@ -15,8 +15,8 @@ def unifyFailure(originals, metacontext, (left, right))
 
 
 def isSamePrimitive(term)
-    case MetaVariable(_, index)
-        if term is MetaVariable(_, index')
+    case Metavariable(_, index)
+        if term is Metavariable(_, index')
             index =:= index'
         False
     case Type(_, index)
@@ -39,7 +39,7 @@ def isSamePrimitive(term)
 def tryEvaluate(metacontext, closure)
     closure' := evaluate(metacontext, [], [], closure)
     term := getTerm(closure')
-    if isDeterminedMetaVariable(term, metacontext)
+    if isDeterminedMetavariable(term, metacontext)
         recursionError(term, metacontext)
     if isUnknown(term) then closure else closure'
 
@@ -58,23 +58,23 @@ def unify'(fail, metacontext, (left, right))
     if isSamePrimitive(leftTerm, rightTerm)
         metacontext
 
-    if isNegativeMetaVariable(leftTerm) or isNegativeMetaVariable(rightTerm)
+    if isNegativeMetavariable(leftTerm) or isNegativeMetavariable(rightTerm)
         fail'
 
-    if rightTerm is MetaVariable(_, index)
+    if rightTerm is Metavariable(_, index)
         metacontext.setMetaValue(abs(index), left)
 
     def unifyBinder(tag, leftDomain, rightDomain, leftBody, rightBody)
         metacontext' := unify'(fail, metacontext,
             (Closure(rightDomain, rightEnv),
              Closure(leftDomain, leftEnv)))
-        (m, metacontext'') := metacontext'.newNegativeMetaVariable(tag)
+        (m, metacontext'') := metacontext'.newNegativeMetavariable(tag)
         unify'(fail, metacontext'',
             (Closure(leftBody, leftEnv.push(enclose(m))),
              Closure(rightBody, rightEnv.push(enclose(m)))))
 
     match leftTerm
-        case MetaVariable(tag, index)
+        case Metavariable(tag, index)
             metacontext.setMetaValue(abs(index), right)
         case Type(tag, index) -> fail'
         case Variable(tag, index) -> fail'  # should already be evaluated
