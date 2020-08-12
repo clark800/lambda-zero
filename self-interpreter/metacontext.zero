@@ -44,4 +44,18 @@ def getMetaValue(index, Metacontext(positives, negatives))
 def setMetaValue(index, value, Metacontext(positives, negatives))
     Metacontext(positives.set(index, Just(value)), negatives)
 
+
+def isNegativeMetaVariable(term)
+    if term is MetaVariable(_, index)
+        isNegative(index)
+    False
+
+
+def isDeterminedMetaVariable(metavariable, metacontext)
+    if metavariable is MetaVariable(_, index)
+        if index is +_ index'
+            not isVoid(metacontext.getMetaValue(index'))
+        False
+    False
+
 #*
