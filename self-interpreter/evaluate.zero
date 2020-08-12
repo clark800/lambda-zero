@@ -10,7 +10,7 @@ def evaluate(metacontext, metaindices, stack, closure)
     evaluate' := evaluate(metacontext)
     evaluate := evaluate'(metaindices)
     _ @ Closure(term, environment) := closure
-    done := if isNil(stack) then closure else enclose(Unknown(getTermTag(term)))
+    done(tag) := if isNil(stack) then closure else enclose(Unknown(tag))
 
     match term
         case MetaVariable(tag, index)
@@ -19,20 +19,20 @@ def evaluate(metacontext, metaindices, stack, closure)
                     if metaindices.contains((= index'))
                         recursionError(term, metacontext)
                     evaluate'(index' :: metaindices, stack, closure')
-                done
-            done
-        case Type(tag, index) -> done
+                done(tag)
+            done(tag)
+        case Type(tag, index) -> done(tag)
         case Variable(tag, index)
             if environment.seek(-_ abs(index)) is Just(closure')
                 evaluate(stack, closure')
             closure
-        case Singleton(tag, type, element) -> done
+        case Singleton(tag, type, element) -> done(tag)
         case Function(tag, domain, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
             closure
-        case Implication(tag, domain, body) -> done
-        case Intersection(tag, domain, body) -> done
+        case Implication(tag, domain, body) -> done(tag)
+        case Intersection(tag, domain, body) -> done(tag)
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))

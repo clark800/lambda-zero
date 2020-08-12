@@ -5,10 +5,10 @@ def pushContext(type, term, context @ (environment, types))
 
 
 def instantiate(closure @ Closure(term, environment))
-    if term is Intersection(_, _, body)
+    if term is Intersection(tag, _, body)
         if isConstruction(term)
             lift closure
-        metavariable <- newPositiveMetaVariable(getTermTag(term))
+        metavariable <- newPositiveMetaVariable(tag)
         instantiate(Closure(body, environment.push(enclose(metavariable))))
     lift closure
 

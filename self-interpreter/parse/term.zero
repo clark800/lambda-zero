@@ -105,14 +105,6 @@ def showConstruction(showTerm, headTag, arguments)
     showTag(headTag)
 
 
-def showApplication(showTerm, applicand, argument)
-    (headTerm, applicandArguments) := splitSpine(applicand)
-    arguments := applicandArguments ++ [argument]
-    if isVariable(headTerm)
-        showConstruction(showTerm, getTermTag(headTerm), arguments)
-    showTerm(headTerm) ++ "(" ++ arguments.map(showTerm).joinWith(", ") ++ ")"
-
-
 def showPositiveMetaVariable(n)
     characters := ['a', 'b', 'c', 'd']
     if n < 4
