@@ -12,8 +12,12 @@ def isTuple(node)
 
 def applyPlainDefinition(tag, name, value, scope)
     if isName(name)
-        Let(tag, False, name, value, scope)
+        Let(tag, False, Void, name, value, scope)
     Juxtaposition(tag, newPatternArrow(name, scope), value)
+
+
+def newConstructDefinition(tag, type, name, value, scope)
+    Let(tag, True, type, name, value, scope)
 
 
 def applyMaybeDefinition(tag, name, value, scope)
@@ -142,9 +146,9 @@ def newConstructorDefinition(tag, adtType, n, (form, j), scope)
     parameterTypes := parameters.map(getParameterType)
     type := getMetaConstructorType(adtType, form)
     arity := length(parameters)
-    constructor := Constructor(getTag(name), type, adtType, body,
-        n, j + 1, arity)
-    applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
+    constructor := Constructor(getTag(name), adtType, body, n, j + 1, arity)
+    name' := Name(getTag(name))
+    newConstructDefinition(tag, Just(type), name', constructor, scope)
 
 
 def newFallbackCase(tag, m)
@@ -171,15 +175,14 @@ def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
     arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
         newFallbackCase(tag, ms.at(k -- 1) ?? 0))
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
-    function := UnderscoreArrow(tag, UnderscoreArrow(tag,
+    deconstructor := UnderscoreArrow(tag, UnderscoreArrow(tag,
         UnderscoreArrow(tag, body)))
     form' := removeAnnotation(form)
     parameters := getArguments(form')
     parameterTypes := parameters.map(getParameterType)
     name := Name(addPrefix(getTag(getHead(form')), '@'))
     type := newDeconstructorType(getTag(name), parameterTypes, adtType)
-    deconstructor := TypedNode(getTag(name), type, function)
-    applyPlainDefinition(tag, name, deconstructor, scope)
+    newConstructDefinition(tag, Just(type), name, deconstructor, scope)
 
 
 def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
@@ -218,7 +221,7 @@ def applyADTDefinition(tag, left, right, scope)
             astSyntaxError("parameters to type constructor must be names", name)
         adt := newADT(getTag(name), left, parameters, forms)
         value := parameters.fold(LockedArrow, adt)
-        Let(tag, True, name, value, scope')
+        newConstructDefinition(tag, Void, name, value, scope')
     astSyntaxError("internal error", left)
 
 

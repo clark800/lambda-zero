@@ -82,10 +82,20 @@ def reduceIfIs(tag, asPattern, thenBlock)
     syntaxError("expected as pattern to right of", tag)
 
 
+def addSignature(tag, signature, let)
+    if let is Let(tag, isConstruct, annotation, name, value, scope)
+        if isVoid(annotation) and not isConstruct
+            Let(tag, isConstruct, Just(signature), name, value, scope)
+        syntaxError("duplicate signature", tag)
+    syntaxError("expected definition after", tag)
+
+
 def reduceNewline(tag, left, right)
     if left is Juxtaposition(_, left', right')
         if isThisName(left', "def")
             reduceDefine(tag, right', right)
+        if isThisName(left', "sig")
+            addSignature(getTag(left'), right', right)
         if isThisName(left', "case")
             newCaseArrow(right', right)
         if isThisName(left', "if is")
@@ -214,6 +224,7 @@ OPERATORS := [newDictionary([
     coreSyntax("\n", 3, 3, RA, Infix(reduceNewline)),
     coreSyntax(";;", 4, 4, RA, Infix(reduceNewline)),
     coreSyntax("def", 5, 5, LA, Prefix(reduceAdfix)),
+    coreSyntax("sig", 5, 5, LA, Prefix(reduceAdfix)),
     coreSyntax(":=", 5, 5, RA, Infix(reduceDefine)),
     coreAlias("≔", ":=", 5, 5, RA, Infix(reduceDefine)),
     coreSyntax("::=", 5, 5, RA, Infix(reduceADTDefine)),

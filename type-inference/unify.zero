@@ -10,8 +10,9 @@ def unificationError(originals, left, right)
 
 
 def unifyFailure(originals, metacontext, (left, right))
-    unificationError(originals.mapPair(resolve(metacontext)),
-        left.resolve(metacontext), right.resolve(metacontext))
+    unificationError(originals.mapPair(normalize <> resolve(metacontext)),
+        normalize(left.resolve(metacontext)),
+        normalize(right.resolve(metacontext)))
 
 
 def isSamePrimitive(term)

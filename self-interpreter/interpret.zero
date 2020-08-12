@@ -50,7 +50,7 @@ def showDefinitions(tags, environment)
 def main(input)
     (code, input') := splitCodeAndInput(input)
     bindings := parse(getBuiltin, code)
-    if bindings is Binding(_, Closure(term, environment), _) :: _
+    if bindings is Binding(_, Closure(term, environment), _, _) :: _
         if code.startsWith("#% dump")
             tags := reverse(bindings.map(getBindingTag))
             showDefinitions(tags, environment)

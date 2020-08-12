@@ -131,14 +131,19 @@ def renameUniversals(closure)
     closure'.generalize(metacontext)
 
 
-def inferType(types, Binding(tag, closure, ascription))
+def inferType(types, Binding(tag, closure, annotation, isConstruct))
     if getTagLexeme(tag) =*= "fix"
         types.push(enclose(getFixType(tag)))
-    if ascription is Just(closure)
-        types.push(enclose(renameUniversals(closure)))
+    if annotation is Just(type)
+        if isConstruct  # skip inference for constructors and deconstructors
+            types.push(enclose(renameUniversals(type)))
+        pass
     _ @ Closure(term, environment) := closure
     context := (environment, types)
     (type, metacontext) := infer(context, term, emptyMetacontext)
+    if annotation is Just(type')
+        (_, metacontext') := unify(type, type', metacontext)
+        types.push(enclose(type.generalize(metacontext')))
     types.push(enclose(type.generalize(metacontext)))
 
 

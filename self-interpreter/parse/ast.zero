@@ -10,7 +10,7 @@ AST ::= {
     Arrow(tag : TagT, type : ArrowType, cases : List(AST && ℕ),
         parameter : AST, annotation : (AST)?, body : AST),
     Juxtaposition(tag : TagT, left : AST, right : AST),
-    Let(tag : TagT, isTypeConstructor : 𝔹,
+    Let(tag : TagT, isConstruct : 𝔹, annotation : (AST)?,
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
     Definition(tag : TagT, type : DefinitionType,
@@ -20,9 +20,8 @@ AST ::= {
     ColonPair(tag : TagT, left : AST, right : AST),
     SetBuilder(tag : TagT, forms : List(AST)),
     ADT(tag : TagT, parameters : List(AST), constructorType : AST,  body : AST),
-    Constructor(tag : TagT, type : AST, adtType : AST, function : AST,
-        count : ℕ, index : ℕ, arity : ℕ),
-    TypedNode(tag : TagT, type : AST, node : AST)
+    Constructor(tag : TagT, adtType : AST, function : AST,
+        count : ℕ, index : ℕ, arity : ℕ)
 }
 
 
@@ -41,7 +40,7 @@ def getTag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
-    Let(tag, _, _, _, _) -> tag
+    Let(tag, _, _, _, _, _) -> tag
     Number(tag, _) -> tag
     Definition(tag, _, _, _) -> tag
     AsPattern(tag, _, _) -> tag
@@ -49,8 +48,7 @@ def getTag
     ColonPair(tag, _, _) -> tag
     SetBuilder(tag, _) -> tag
     ADT(tag, _, _, _) -> tag
-    Constructor(tag, _, _, _, _, _, _) -> tag
-    TypedNode(tag, _, _) -> tag
+    Constructor(tag, _, _, _, _, _) -> tag
 
 
 def astSyntaxError(message, node)
@@ -62,7 +60,7 @@ def isPreterm
     Reference(_, _) -> True
     Arrow(_, _, _, _, _, _) -> True
     Juxtaposition(_, _, _) -> True
-    Let(_, _, _, _, _) -> True
+    Let(_, _, _, _, _, _) -> True
     Number(_, _) -> True
     Definition(_, _, _, _) -> False
     AsPattern(_, _, _) -> False
@@ -70,8 +68,7 @@ def isPreterm
     ColonPair(_, _, _) -> False
     SetBuilder(_, _) -> False
     ADT(_, _, _, _) -> True
-    Constructor(_, _, _, _, _, _, _) -> True
-    TypedNode(_, _, _) -> True
+    Constructor(_, _, _, _, _, _) -> True
 
 
 def containsName(name)
@@ -80,7 +77,7 @@ def containsName(name)
     Arrow(_, _, _, _, _, body) -> containsName(name, body)
     Juxtaposition(_, left, right) ->
         containsName(name, left) or containsName(name, right)
-    Let(_, _, _, value, scope) ->
+    Let(_, _, _, _, value, scope) ->
         containsName(name, value) or containsName(name, scope)
     Number(_, _) -> False
     Definition(_, _, _, _) -> False
@@ -89,8 +86,7 @@ def containsName(name)
     ColonPair(_, _, right) -> containsName(name, right)
     SetBuilder(_, _) -> False
     ADT(_, _, _, body) -> containsName(name, body)
-    Constructor(_, _, _, _, _, _, _) -> False
-    TypedNode(_, _, _) -> False
+    Constructor(_, _, _, _, _, _) -> False
 
 
 def showArrow
@@ -115,7 +111,7 @@ def showAST
             showArrow(arrowType) ++ showAST(body) ++ ")"
     Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
-    Let(tag, _, name, value, scope) ->
+    Let(tag, _, _, name, value, scope) ->
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
             ";;" ++ showAST(scope) ++ ")"
     Number(tag, value) -> showNatural(value)
@@ -130,15 +126,14 @@ def showAST
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
     ADT(tag, parameters, constructorType, body) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
-    Constructor(_, _, _, body, _, _, _) -> showAST(body)
-    TypedNode(_, _, node) -> showAST(node)
+    Constructor(_, _, body, _, _, _) -> showAST(body)
 
 
 isFamily := Family(_) -> True; _ -> False
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
-isLet := Let(_, _, _, _, _) -> True; _ -> False
+isLet := Let(_, _, _, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
 isAsPattern := AsPattern(_, _, _) -> True; _ -> False
@@ -146,8 +141,7 @@ isCommaPair := CommaPair(_, _, _) -> True; _ -> False
 isColonPair := ColonPair(_, _, _) -> True; _ -> False
 isSetBuilder := SetBuilder(_, _) -> True; _ -> False
 isADT := ADT(_, _, _, _) -> True; _ -> False
-isConstructor := Constructor(_, _, _, _, _, _, _) -> True; _ -> False
-isTypedNode := TypedNode(_, _, _) -> True; _ -> False
+isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
 
 def isCase(node)
     if node is Arrow(_, type, _, _, _, _)
@@ -203,21 +197,20 @@ def getFixityCode(fixity)
 
 
 def maybeConstructorCount(node)
-    if node is Constructor(_, _, _, _, count, _, _)
+    if node is Constructor(_, _, _, count, _, _)
         Just(count)
     Void
 
 
 def maybeConstructorIndex(node)
-    if node is Constructor(_, _, _, _, _, index, _)
+    if node is Constructor(_, _, _, _, index, _)
         Just(index)
     Void
 
 
 def maybeConstructorArity(node)
-    if node is Constructor(_, _, _, _, _, _, arity)
+    if node is Constructor(_, _, _, _, _, arity)
         Just(arity)
     Void
-
 
 #*
