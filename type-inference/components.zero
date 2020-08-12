@@ -1,7 +1,7 @@
 #* components.zero
 
 def getComponents
-    MetaVariable(_, _) -> []
+    Metavariable(_, _) -> []
     Type(_, _) -> []
     Variable(_, _) -> []
     Singleton(_, type, element) -> [type, element]
@@ -17,7 +17,7 @@ def getComponents
 
 def mapComponentsWithDepth(f, depth, term)
     match term
-        MetaVariable(_, _) -> term
+        Metavariable(_, _) -> term
         Type(_, _) -> term
         Variable(_, _) -> term
         Singleton(tag, type, element) ->
