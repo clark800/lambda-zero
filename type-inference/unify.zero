@@ -14,12 +14,6 @@ def unifyFailure(originals, metacontext, (left, right))
         left.resolve(metacontext), right.resolve(metacontext))
 
 
-def isNegativeMetaVariable(term)
-    if term is MetaVariable(_, index)
-        isNegative(index)
-    False
-
-
 def isSamePrimitive(term)
     case MetaVariable(_, index)
         if term is MetaVariable(_, index')
@@ -44,7 +38,10 @@ def isSamePrimitive(term)
 
 def tryEvaluate(metacontext, closure)
     closure' := evaluate(metacontext, [], [], closure)
-    if isUnknown(getTerm(closure')) then closure else closure'
+    term := getTerm(closure')
+    if isDeterminedMetaVariable(term, metacontext)
+        recursionError(term, metacontext)
+    if isUnknown(term) then closure else closure'
 
 
 # Robinson's Unification Algorithm
