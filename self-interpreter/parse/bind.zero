@@ -5,16 +5,17 @@ GlobalT ::= {Global(index : ℕ, ast : AST, term : Term)}
 BindingT ::= {Binding(
     tag : TagT,
     closure : ClosureT(Term),
-    ascription : (ClosureT(Term))?
+    annotation : (ClosureT(Term))?,
+    isConstruct : 𝔹
 )}
 
 getGlobalIndex(Global(index, _, _)) := index
 getGlobalAST(Global(_, ast, _)) := ast
 getGlobalTerm(Global(_, _, term)) := term
 
-getBindingTag(Binding(tag, _, _)) := tag
-getBindingClosure(Binding(_, closure, _)) := closure
-getBindingAscription(Binding(_, _, ascription)) := ascription
+getBindingTag(Binding(tag, _, _, _)) := tag
+getBindingClosure(Binding(_, closure, _, _)) := closure
+getBindingAnnotation(Binding(_, _, annotation, _)) := annotation
 
 
 def pushParameter(parameter, (level, table))
@@ -45,7 +46,7 @@ def bindOperation(getBuiltin, tag, term)
 
 
 def getADTName(constructor)
-    if constructor is Constructor(_, _, adtType, _, _, _, _)
+    if constructor is Constructor(_, adtType, _, _, _, _)
         getHead(adtType)
     astSyntaxError("invalid constructor", constructor)
 
@@ -135,11 +136,12 @@ def bind(getBuiltin, globals, index, parameters, node)
             Function(getTag(parameter), typeFamily, bodyTerm)
         case Juxtaposition(tag, left, right)
             Application(tag, bind'(left), bind'(right))
-        case Let(tag, isTypeConstructor, name, value, scope)
-            if isTypeConstructor
+        case Let(tag, isConstruct, annotation, name, value, scope)
+            if isConstruct
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            abstraction := FreeFunction(getTag(name), scope.bind''(name))
+            domain := (if annotation is Just(type); bind'(type);; Unknown(tag))
+            abstraction := Function(getTag(name), domain, scope.bind''(name))
             Application(tag, abstraction, bind'(value))
         case Number(tag, value)
             type := bind'(getNaturalName(tag, globals))
@@ -157,30 +159,21 @@ def bind(getBuiltin, globals, index, parameters, node)
         case ADT(tag, adtParameters, constructorType, body)
             domainTerm := Singleton(tag, bind'(constructorType), Unknown(tag))
             Intersection(tag, domainTerm, body.bind''(Name(tag)))
-        case Constructor(tag, type, adtType, function, count, index, arity)
+        case Constructor(tag, adtType, function, count, index, arity)
             if function is Number(_, value)
-                Numeral(tag, bind'(type), value)
-            bind'(function)
-        case TypedNode(tag, type, function)
+                Numeral(tag, bind'(adtType), value)
             bind'(function)
 
 
-def getAscription
-    case Constructor(_, type, _, _, _, _, _) -> Just(type)
-    case TypedNode(_, type, _) -> Just(type)
-    case _ -> Void
-
-
-def bindDefinition(getBuiltin, state, (tag, node))
+def bindDefinition(getBuiltin, state, (tag, node, annotation, isConstruct))
     (bindings, parameters, globals, environment) := state
     bindNode := bind(getBuiltin, globals, getSize(environment), parameters)
     term := bindNode(node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, tag, term) ?? term
     closure := Closure(definiens, environment)
-    ascription := getAscription(node).mapJust(type ->
-        Closure(bindNode(type), environment))
-    bindings' := Binding(tag, closure, ascription) :: bindings
+    annotation' := annotation.mapJust(bindNode).mapJust(`Closure(environment))
+    bindings' := Binding(tag, closure, annotation', isConstruct) :: bindings
 
     parameters' := parameters.pushParameter(Name(tag))
     (index, environment') := environment.append(closure)
@@ -190,9 +183,9 @@ def bindDefinition(getBuiltin, state, (tag, node))
 
 
 def getDefinitions(node)
-    if node is Let(tag, isTypeConstructor, name, value, scope)
-        (getTag(name), value) :: getDefinitions(scope)
-    [(veil(getTag(node)), node)]
+    if node is Let(tag, isConstruct, annotation, name, value, scope)
+        (getTag(name), value, annotation, isConstruct) :: getDefinitions(scope)
+    [(veil(getTag(node)), node, Void, False)]
 
 
 def bindAST(getBuiltin, node)
