@@ -28,6 +28,10 @@ def reduceDoubleArrow(tag, left, right)
     Arrow(tag, Double, [], left, Void, right)
 
 
+def reduceTailArrow(tag, left, right)
+    Arrow(tag, Tail, [], left, Void, right)
+
+
 def reduceReverseArrow(tag, left, right)
     Definition(tag, BindDefinition, left, right)
 
@@ -242,6 +246,8 @@ OPERATORS := [newDictionary([
     coreAlias("↤", "<-", 10, 10, RA, Infix(reduceReverseArrow)),
     coreSyntax("=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreAlias("⇒", "=>", 10, 10, RA, Infix(reduceDoubleArrow)),
+    coreSyntax(">->", 10, 10, RA, Infix(reduceTailArrow)),
+    coreAlias("↣", ">->", 10, 10, RA, Infix(reduceTailArrow)),
     coreSyntax("case", 11, 11, NA, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
     coreSyntax("is", 13, 13, LA, Infix(reduceIs)),

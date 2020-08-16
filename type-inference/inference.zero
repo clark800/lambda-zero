@@ -141,10 +141,13 @@ def inferType(types, Binding(tag, closure, annotation, isConstruct))
     _ @ Closure(term, environment) := closure
     context := (environment, types)
     (type, metacontext) := infer(context, term, emptyMetacontext)
+    generalized := enclose(type.generalize(metacontext))
     if annotation is Just(type')
-        (_, metacontext') := unify(type, type', metacontext)
-        types.push(enclose(type.generalize(metacontext')))
-    types.push(enclose(type.generalize(metacontext)))
+        (_, metacontext') := unify(generalized, type', metacontext)
+        if getSize(getPositives(metacontext')) < 0
+            abort("force unification errors")
+        types.push(generalized)
+    types.push(generalized)
 
 
 def showTyping((tag, type))
