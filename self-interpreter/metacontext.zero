@@ -8,6 +8,14 @@ MetacontextT ::= {Metacontext(
 emptyMetacontext := Metacontext(newArray([]), newArray([]))
 
 
+def getPositives(Metacontext(positives, negatives))
+    positives
+
+
+def getNegatives(Metacontext(positives, negatives))
+    negatives
+
+
 def showMetaValue(metaValue)
     if metaValue is Just(Closure(term, environment))
         showTerm(term)

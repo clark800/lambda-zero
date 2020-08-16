@@ -105,6 +105,13 @@ static Node* reduceReserved(Node* operator, Node* left, Node* right) {
     return NULL;
 }
 
+static Node* reduceErased(Node* operator, Node* left, Node* right) {
+    (void)left, (void)right;
+    // convert to a name that cannot be defined so it will cause an error
+    // in bind unless it is erased
+    return FixedName(getTag(operator), "(_)");
+}
+
 static Node* reduceClose(Node* operator, Node* left, Node* right) {
     (void)operator, (void)left;
     return right;
@@ -178,7 +185,8 @@ void initSymbols(void) {
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
     addCoreSyntax("<-", 10, INFIX, R, reduceReverseArrow);
-    addCoreSyntax("=>", 10, INFIX, R, reduceInfix);
+    addCoreSyntax("=>", 10, INFIX, R, reduceErased);
+    addCoreSyntax(">->", 10, INFIX, R, reduceErased);
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
     addCoreSyntax("is", 13, INFIX, L, reduceIs);
