@@ -45,22 +45,30 @@ def bindOperation(getBuiltin, tag, term)
 
 
 def getADTName(constructor)
-    if constructor is Constructor(_, _, adtType, _, _, _)
+    if constructor is Constructor(_, _, adtType, _, _, _, _)
         getHead(adtType)
     astSyntaxError("invalid constructor", constructor)
 
 
-def getTypeConstructor(tag, constructors)
+def findIncorrectArityConstructor(constructors, arities)
+    zip(constructors, arities).find((constructor, arity) -> (
+        if maybeConstructorArity(constructor) is Just(arity')
+            arity =/= arity'
+        True
+    )).mapJust(first)
+
+
+def getTypeConstructor(tag, constructors, arities)
     if isNil(constructors)
         throwError("Type error: no cases:", tag)
     if not constructors.all(isConstructor)
         throwError("Type error: invalid cases:", tag)
     adtNames := constructors.map(getADTName)
     adtLexemes := adtNames.map(getLexeme).deduplicateBy((=*=))
-    counts := deduplicate(constructors.map(maybeCount).sift)
+    counts := deduplicate(constructors.map(maybeConstructorCount).sift)
     if length(adtLexemes) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
-    count := safeHead(counts) ?? throwError("Type error: invalid cases", tag)
+    count := safeHead(counts) ?? throwError("Type error: invalid cases:", tag)
     indices := deduplicate(constructors.map(maybeConstructorIndex).sift)
     if length(indices) < count
         throwError("Type error: missing case:", tag)
@@ -68,14 +76,17 @@ def getTypeConstructor(tag, constructors)
         throwError("Type error: too many cases:", tag)
     if not indices =*= sort(indices)
         throwError("Type error: cases out of order:", tag)
+    if findIncorrectArityConstructor(constructors, arities) is Just(constructor)
+        throwError("Type error: incorrect arity for:", getTag(constructor))
     safeHead(adtNames) ?? throwError("Type error: invalid cases", tag)
 
 
-def getConstructorFamily(tag, constructorNames, globals)
+def getConstructorFamily(tag, cases, globals)
+    (constructorNames, arities) := unzip(cases)
     if constructorNames.map(getLexeme).map(`lookup(globals)).collect is
             Just(constructorGlobals)
         constructors := constructorGlobals.map(getGlobalAST)
-        typeConstructor := getTypeConstructor(tag, constructors)
+        typeConstructor := getTypeConstructor(tag, constructors, arities)
         adtLexeme := getTagLexeme(getTag(typeConstructor))
         if globals.lookup(adtLexeme) is Just(Global(index, _, _))
             Type(getTag(typeConstructor), -_ index)
@@ -102,8 +113,7 @@ def bind(getBuiltin, globals, index, parameters, node)
             if abs(debruijn) > 0
                 Variable(tag, debruijn)
             bindName(getBuiltin, parameters, index, isNegative(debruijn), tag)
-        case Arrow(tag, arrowType, constructorNames,
-                   parameter, annotation, body)
+        case Arrow(tag, arrowType, cases, parameter, annotation, body)
             if arrowType is Double
                 # todo: add support for names on left side of double arrows
                 Implication(tag, bind'(parameter), body.bind''(Name(veil(tag))))
@@ -113,13 +123,13 @@ def bind(getBuiltin, globals, index, parameters, node)
                 Intersection(getTag(parameter), domain, body.bind''(parameter))
 
             bodyTerm := body.bind''(parameter)
-            if isNil(constructorNames)
+            if isNil(cases)
                 domain := annotation.mapJust(bind') ?? Unknown(tag)
                 Function(getTag(parameter), domain, bodyTerm)
             if not isVoid(annotation)
                 astSyntaxError("parameter annotation not permitted on case",
                     node)
-            typeFamily := getConstructorFamily(tag, constructorNames, globals)
+            typeFamily := getConstructorFamily(tag, cases, globals)
             if isUnknown(typeFamily)   # force errors
                 astSyntaxError("error binding pattern match", node)
             Function(getTag(parameter), typeFamily, bodyTerm)
@@ -147,7 +157,7 @@ def bind(getBuiltin, globals, index, parameters, node)
         case ADT(tag, adtParameters, constructorType, body)
             domainTerm := Singleton(tag, bind'(constructorType), Unknown(tag))
             Intersection(tag, domainTerm, body.bind''(Name(tag)))
-        case Constructor(tag, type, adtType, function, count, index)
+        case Constructor(tag, type, adtType, function, count, index, arity)
             if function is Number(_, value)
                 Numeral(tag, bind'(type), value)
             bind'(function)
@@ -156,7 +166,7 @@ def bind(getBuiltin, globals, index, parameters, node)
 
 
 def getAscription
-    case Constructor(_, type, _, _, _, _) -> Just(type)
+    case Constructor(_, type, _, _, _, _, _) -> Just(type)
     case TypedNode(_, type, _) -> Just(type)
     case _ -> Void
 

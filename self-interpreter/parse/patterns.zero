@@ -12,8 +12,8 @@ def getArguments(pattern)
     []
 
 
-def newProjector(tag, size, index)
-    (UnderscoreArrow(tag)^<>(size))(Underscore(tag, size -- index))
+def newProjector(tag, arity, index)
+    (UnderscoreArrow(tag)^<>(arity))(Underscore(tag, arity -- index))
 
 
 def newPatternArrow(pattern, body)
@@ -28,12 +28,12 @@ def newPatternArrow(pattern, body)
         constructor := getHead(pattern)
         tag := getTag(constructor)
         arguments := getArguments(pattern)
-        size := length(arguments)
+        arity := length(arguments)
         underscore := NegativeUnderscore(tag)
         function := arguments.fold(newPatternArrow, body)
-        projectors := (0 .. size -- 1).map(newProjector(tag, size))
+        projectors := (0 .. arity -- 1).map(newProjector(tag, arity))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        lockArrow(StrictArrow(tag, [constructor], Underscore(tag, 0),
+        lockArrow(StrictArrow(tag, [(constructor, arity)], Underscore(tag, 0),
             projections.cascade(Juxtaposition(tag), function)))
     astSyntaxError("invalid parameter", pattern)
 
@@ -51,12 +51,13 @@ def newCaseArrow(left, right)
         SimpleArrow(left, right)
     if isAsPattern(left)
         astSyntaxError("invalid '@' in case", left)
+    arity := length(getArguments(left))
     (name, reconstructor) := getNameAndValue(newPatternArrow, left, right)
     tag := getTag(name)
     constructor := Name(tag)  # name could be a number
     thisName := This(tag)
     body := Juxtaposition(tag, thisName, reconstructor)
-    StrictArrow(tag, [constructor], thisName, body)
+    StrictArrow(tag, [(constructor, arity)], thisName, body)
 
 
 def addCases(tag, base, extension)
@@ -76,11 +77,11 @@ def newCaseBody(tag, thisName, left, right)
     astSyntaxError("internal error", left)
 
 
-def getCaseConstructors(arrow)
-    if arrow is Arrow(_, type, constructors, parameter, _, _)
+def getCases(arrow)
+    if arrow is Arrow(_, type, cases, parameter, _, _)
         if type is Simple
-            [parameter]
-        constructors
+            [(parameter, 0)]
+        cases
     []
 
 
@@ -118,8 +119,8 @@ def combineCases(tag, left, right)
     if isDefaultCase(right)
         attachDefaultCase(tag, left, right)
     thisName := This(tag)
-    constructors := getCaseConstructors(left) ++ getCaseConstructors(right)
+    cases := getCases(left) ++ getCases(right)
     body := newCaseBody(tag, thisName, left, right)
-    StrictArrow(tag, constructors, thisName, body)
+    StrictArrow(tag, cases, thisName, body)
 
 #*
