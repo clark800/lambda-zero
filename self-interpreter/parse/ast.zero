@@ -7,7 +7,7 @@ ArrowType ::= {Simple, Strict, Locked, Double, Tail}
 AST ::= {
     Family(tag : TagT),
     Reference(tag : TagT, index : ℤ),
-    Arrow(tag : TagT, type : ArrowType, constructors : List(AST),
+    Arrow(tag : TagT, type : ArrowType, cases : List(AST && ℕ),
         parameter : AST, annotation : (AST)?, body : AST),
     Juxtaposition(tag : TagT, left : AST, right : AST),
     Let(tag : TagT, isTypeConstructor : 𝔹,
@@ -21,17 +21,17 @@ AST ::= {
     SetBuilder(tag : TagT, forms : List(AST)),
     ADT(tag : TagT, parameters : List(AST), constructorType : AST,  body : AST),
     Constructor(tag : TagT, type : AST, adtType : AST, function : AST,
-        count : ℕ, index : ℕ),
+        count : ℕ, index : ℕ, arity : ℕ),
     TypedNode(tag : TagT, type : AST, node : AST)
 }
 
 
 def lockArrow(node)
-    if node is Arrow(tag, arrowType, constructors, left, annotation, right)
+    if node is Arrow(tag, arrowType, cases, left, annotation, right)
         if arrowType is Simple
-            Arrow(tag, Locked, constructors, left, annotation, right)
+            Arrow(tag, Locked, cases, left, annotation, right)
         if arrowType is Strict
-            Arrow(tag, Locked, constructors, left, annotation, right)
+            Arrow(tag, Locked, cases, left, annotation, right)
         node
     node
 
@@ -49,7 +49,7 @@ def getTag
     ColonPair(tag, _, _) -> tag
     SetBuilder(tag, _) -> tag
     ADT(tag, _, _, _) -> tag
-    Constructor(tag, _, _, _, _, _) -> tag
+    Constructor(tag, _, _, _, _, _, _) -> tag
     TypedNode(tag, _, _) -> tag
 
 
@@ -70,7 +70,7 @@ def isPreterm
     ColonPair(_, _, _) -> False
     SetBuilder(_, _) -> False
     ADT(_, _, _, _) -> True
-    Constructor(_, _, _, _, _, _) -> True
+    Constructor(_, _, _, _, _, _, _) -> True
     TypedNode(_, _, _) -> True
 
 
@@ -89,7 +89,7 @@ def containsName(name)
     ColonPair(_, _, right) -> containsName(name, right)
     SetBuilder(_, _) -> False
     ADT(_, _, _, body) -> containsName(name, body)
-    Constructor(_, _, _, _, _, _) -> False
+    Constructor(_, _, _, _, _, _, _) -> False
     TypedNode(_, _, _) -> False
 
 
@@ -130,7 +130,7 @@ def showAST
     SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
     ADT(tag, parameters, constructorType, body) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
-    Constructor(_, _, _, body, _, _) -> showAST(body)
+    Constructor(_, _, _, body, _, _, _) -> showAST(body)
     TypedNode(_, _, node) -> showAST(node)
 
 
@@ -146,7 +146,7 @@ isCommaPair := CommaPair(_, _, _) -> True; _ -> False
 isColonPair := ColonPair(_, _, _) -> True; _ -> False
 isSetBuilder := SetBuilder(_, _) -> True; _ -> False
 isADT := ADT(_, _, _, _) -> True; _ -> False
-isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
+isConstructor := Constructor(_, _, _, _, _, _, _) -> True; _ -> False
 isTypedNode := TypedNode(_, _, _) -> True; _ -> False
 
 def isCase(node)
@@ -170,13 +170,13 @@ SimpleArrow := TypedArrow(Simple)
 LockedArrow := TypedArrow(Locked)
 DoubleArrow := TypedArrow(Double)
 TailArrow := TypedArrow(Tail)
-StrictArrow(tag, constructors, parameter, body) :=
-    Arrow(tag, Strict, constructors, parameter, Void, body)
+StrictArrow(tag, cases, parameter, body) :=
+    Arrow(tag, Strict, cases, parameter, Void, body)
 
 
 def setAnnotation(annotation, node)
-    if node is Arrow(tag, arrowType, constructors, parameter, _, body)
-        Arrow(tag, arrowType, constructors, parameter, Just(annotation), body)
+    if node is Arrow(tag, arrowType, cases, parameter, _, body)
+        Arrow(tag, arrowType, cases, parameter, Just(annotation), body)
     abort("can only set annotation on arrow nodes")
 
 
@@ -202,15 +202,22 @@ def getFixityCode(fixity)
         Closefix(_) -> CLOSEFIX
 
 
-def maybeCount(node)
-    if node is Constructor(_, _, _, _, count, _)
+def maybeConstructorCount(node)
+    if node is Constructor(_, _, _, _, count, _, _)
         Just(count)
     Void
 
 
 def maybeConstructorIndex(node)
-    if node is Constructor(_, _, _, _, _, index)
+    if node is Constructor(_, _, _, _, _, index, _)
         Just(index)
     Void
+
+
+def maybeConstructorArity(node)
+    if node is Constructor(_, _, _, _, _, _, arity)
+        Just(arity)
+    Void
+
 
 #*

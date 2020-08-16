@@ -141,7 +141,9 @@ def newConstructorDefinition(tag, adtType, n, (form, j), scope)
         astSyntaxError("invalid constructor", name)   # force errors
     parameterTypes := parameters.map(getParameterType)
     type := getMetaConstructorType(adtType, form)
-    constructor := Constructor(getTag(name), type, adtType, body, n, j + 1)
+    arity := length(parameters)
+    constructor := Constructor(getTag(name), type, adtType, body,
+        n, j + 1, arity)
     applyPlainDefinition(tag, Name(getTag(name)), constructor, scope)
 
 
