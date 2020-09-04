@@ -19,9 +19,13 @@ vector := 1 ::: Nil
 
 vector' := 2 ::: vector
 
+def vlength
+    case Nil -> 0
+    case x ::: xs' -> up vlength(xs')
+
 def concatenate(xs, ys)
     match xs
         Nil -> ys
         x ::: xs' -> x ::: concatenate(xs', ys)
 
-0
+vlength
