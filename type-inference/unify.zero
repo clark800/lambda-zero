@@ -34,7 +34,10 @@ def isSamePrimitive(term)
         if term is Numeral(_, _, value')
             value = value'
         False
-    case Operation(_, _, _) -> False # evaluate will never return an Operation
+    case Operation(tag, _, _)
+        if term is Operation(tag', _, _)
+            getTagLexeme(tag) =*= getTagLexeme(tag')
+        False
 
 
 def tryEvaluate(metacontext, closure)
@@ -51,6 +54,9 @@ def tryEvaluate(metacontext, closure)
 # unify' enforces that left <: right
 def unify'(fail, metacontext, (left, right))
     fail' := fail(metacontext, (left, right))
+    if isSamePrimitive(getTerm(left), getTerm(right))
+        metacontext
+
     left := left.tryEvaluate(metacontext)
     right := right.tryEvaluate(metacontext)
     _ @ Closure(leftTerm, leftEnv) := left

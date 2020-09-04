@@ -105,6 +105,12 @@ def infer(context @ (environment, types))
             _ <- unify(argumentType, domainClosure)
             body.infer(context.pushContext(domainClosure, argument))
         applicandType <- applicand.infer(context)
+        metacontext <- getState
+        _ @ Closure(term', environment') :=
+            tryEvaluate(metacontext, applicandType)
+        if term' is Implication(tag, domain, body)
+            _ <- unify(argumentType, Closure(domain, environment'))
+            lift Closure(body, environment'.push(argumentType))
         returnType <- newPositiveMetavariable(tag)
         tag := getTermTag(applicand)
         functionType := newFunctionType(tag, argumentType, returnType)
