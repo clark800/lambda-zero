@@ -15,29 +15,11 @@ def unifyFailure(originals, metacontext, (left, right))
         normalize(right.resolve(metacontext)))
 
 
-def isSamePrimitive(term)
+def isSameMetavariable
     case Metavariable(_, index)
-        if term is Metavariable(_, index')
-            index =:= index'
-        False
-    case Type(_, index)
-        if term is Type(_, index')
-            index =:= index'
-        False
-    case Variable(_, _) -> False
-    case Singleton(_, _, _) -> False
-    case Function(_, _, _) -> False
-    case Implication(_, _, _) -> False
-    case Intersection(_, _, _) -> False
-    case Application(_, _, _) -> False
-    case Numeral(_, _, value)
-        if term is Numeral(_, _, value')
-            value = value'
-        False
-    case Operation(tag, _, _)
-        if term is Operation(tag', _, _)
-            getTagLexeme(tag) =*= getTagLexeme(tag')
-        False
+        case Metavariable(_, index') -> index =:= index'
+        case _ -> False
+    case _ -> _ -> False
 
 
 def tryEvaluate(metacontext, closure)
@@ -48,21 +30,14 @@ def tryEvaluate(metacontext, closure)
     if isUnknown(term) then closure else closure'
 
 
-# Robinson's Unification Algorithm
-# see Comparing Unification Algorithms in First-Order Theorem Proving
-# by Krystof Hoder and Andrei Voronkov
-# unify' enforces that left <: right
 def unify'(fail, metacontext, (left, right))
     fail' := fail(metacontext, (left, right))
-    if isSamePrimitive(getTerm(left), getTerm(right))
-        metacontext
-
     left := left.tryEvaluate(metacontext)
     right := right.tryEvaluate(metacontext)
     _ @ Closure(leftTerm, leftEnv) := left
     _ @ Closure(rightTerm, rightEnv) := right
 
-    if isSamePrimitive(leftTerm, rightTerm)
+    if isSameMetavariable(leftTerm, rightTerm)
         metacontext
 
     if isNegativeMetavariable(leftTerm) or isNegativeMetavariable(rightTerm)
@@ -83,8 +58,12 @@ def unify'(fail, metacontext, (left, right))
     match leftTerm
         case Metavariable(tag, index)
             metacontext.setMetaValue(abs(index), right)
-        case Type(tag, index) -> fail'
-        case Variable(tag, index) -> fail'  # should already be evaluated
+        case Type(tag, index)
+            if rightTerm is Type(_, index')
+                if index =:= index' then metacontext else fail'
+            fail'
+        case Variable(tag, index)
+            fail'  # evaluate should never return a Variable
         case Singleton(tag, type, element)
             if rightTerm is Singleton(tag', type', element')
                 metacontext' := unify'(fail, metacontext,
@@ -94,7 +73,10 @@ def unify'(fail, metacontext, (left, right))
                 unify'(fail, metacontext',
                     (Closure(element, leftEnv), Closure(element', rightEnv)))
             fail'
-        case Function(tag, domain, body) -> fail'
+        case Function(tag, domain, body)
+            if rightTerm is Function(tag', domain', body')
+                unifyBinder(tag, domain, domain', body, body')
+            fail'
         case Implication(tag, domain, body)
             if rightTerm is Implication(tag', domain', body')
                 unifyBinder(tag, domain, domain', body, body')
@@ -113,8 +95,12 @@ def unify'(fail, metacontext, (left, right))
                 unify'(fail, metacontext',
                     (Closure(right', leftEnv), Closure(right'', rightEnv)))
             fail'
-        case Numeral(tag, type, value) -> fail'
-        case Operation(tag, term, optimization) -> fail'
+        case Numeral(tag, type, value)
+            if rightTerm is Numeral(_, _, value')
+                if value = value' then metacontext else fail'
+            fail'
+        case Operation(tag, term, optimization)
+            fail'    # evaluate should never return an Operation
 
 
 def unify(left, right, metacontext)
