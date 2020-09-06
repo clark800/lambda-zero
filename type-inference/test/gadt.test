@@ -3,26 +3,31 @@ syntax(:::) := infixR(40)
 syntax(up) := prefix(90)
 syntax(<>) := infixR(70)
 syntax(match) := prefix(7)
+syntax(+) ≔ infixL(50)
 
 f <> g ≔ x ↦ f(g(x))
 fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
 (match x)(f) := f(x)
 
 Nat ::= {0, up(n : Nat)}
+(+) := 0 -> m -> m; up n -> m -> up(n + m)
 
 Vector(n, a) ::= {
     Nil : Vector(0, a),
     (_ : a) ::: (_ : Vector(n, a)) : Vector(up n, a)
+    #(_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a) for n' : Nat
 }
 
 vector := 1 ::: Nil
 
 vector' := 2 ::: vector
 
+sig n >-> a >-> Vector(n, a) => Nat
 def vlength
     case Nil -> 0
     case x ::: xs' -> up vlength(xs')
 
+sig n >-> m >-> a >-> Vector(n, a) => Vector(m, a) => Vector(n + m, a)
 def concatenate(xs, ys)
     match xs
         Nil -> ys

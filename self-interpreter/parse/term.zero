@@ -160,8 +160,13 @@ def isConstruction(term)
     not isVoid(getConstructionTypeFamily(term))
 
 
+def showTagBracket(tag)
+    "⸨" ++ showTag(tag) ++ "@" ++
+        showShortLocation(getTagLocation(tag)) ++ "⸩"
+
+
 def showTerm
-    Metavariable(tag, index) -> showMetavariable(index)
+    Metavariable(tag, index) -> showMetavariable(index) ++ showTagBracket(tag)
     Type(tag, index) -> if isPositive(index) then
         "⊤" ++ showIntegerSubscript(index) else
         "⊤{" ++ showTag(tag) ++ "}"
