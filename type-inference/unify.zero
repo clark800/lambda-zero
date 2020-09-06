@@ -37,6 +37,9 @@ def unify'(fail, metacontext, (left, right))
     _ @ Closure(leftTerm, leftEnv) := left
     _ @ Closure(rightTerm, rightEnv) := right
 
+    unify''(metacontext', left', right') := unify'(fail, metacontext',
+        (Closure(left', leftEnv), Closure(right', rightEnv)))
+
     if isSameMetavariable(leftTerm, rightTerm)
         metacontext
 
@@ -46,14 +49,17 @@ def unify'(fail, metacontext, (left, right))
     if rightTerm is Metavariable(_, index)
         metacontext.setMetaValue(abs(index), left)
 
-    def unifyBinder(tag, leftDomain, rightDomain, leftBody, rightBody)
-        metacontext' := unify'(fail, metacontext,
-            (Closure(rightDomain, rightEnv),
-             Closure(leftDomain, leftEnv)))
+    def unifyBodies(tag, metacontext', leftBody, rightBody)
         (m, metacontext'') := metacontext'.newNegativeMetavariable(tag)
         unify'(fail, metacontext'',
             (Closure(leftBody, leftEnv.push(enclose(m))),
              Closure(rightBody, rightEnv.push(enclose(m)))))
+
+    def unifyBinder(tag, leftDomain, rightDomain, leftBody, rightBody)
+        metacontext' := unify'(fail, metacontext,
+            (Closure(rightDomain, rightEnv),
+             Closure(leftDomain, leftEnv)))
+        unifyBodies(tag, metacontext', leftBody, rightBody)
 
     match leftTerm
         case Metavariable(tag, index)
@@ -66,15 +72,15 @@ def unify'(fail, metacontext, (left, right))
             fail'  # evaluate should never return a Variable
         case Singleton(tag, type, element)
             if rightTerm is Singleton(tag', type', element')
-                metacontext' := unify'(fail, metacontext,
-                    (Closure(type, leftEnv), Closure(type', rightEnv)))
+                metacontext' := unify''(metacontext, type, type')
                 if isUnknown(element) and isUnknown(element')
                     metacontext'  # only constructions can have unknown element
-                unify'(fail, metacontext',
-                    (Closure(element, leftEnv), Closure(element', rightEnv)))
+                unify''(metacontext', element, element')
             fail'
         case Function(tag, domain, body)
             if rightTerm is Function(tag', domain', body')
+                if isUnknown(domain) and isUnknown(domain')
+                    unifyBodies(tag, metacontext, body, body')
                 unifyBinder(tag, domain, domain', body, body')
             fail'
         case Implication(tag, domain, body)
@@ -84,16 +90,13 @@ def unify'(fail, metacontext, (left, right))
         case Intersection(tag, domain, body)
             if rightTerm is Intersection(tag', domain', body')
                 if isConstruction(leftTerm) and isConstruction(rightTerm)
-                    unify'(fail, metacontext,
-                        (Closure(domain, leftEnv), Closure(domain', rightEnv)))
+                    unify''(metacontext, domain, domain')
                 unifyBinder(tag, domain, domain', body, body')
             fail'
         case Application(tag, left', right')
             if rightTerm is Application(tag', left'', right'')
-                metacontext' := unify'(fail, metacontext,
-                    (Closure(left', leftEnv), Closure(left'', rightEnv)))
-                unify'(fail, metacontext',
-                    (Closure(right', leftEnv), Closure(right'', rightEnv)))
+                metacontext' := unify''(metacontext, left', left'')
+                unify''(metacontext', right', right'')
             fail'
         case Numeral(tag, type, value)
             if rightTerm is Numeral(_, _, value')
