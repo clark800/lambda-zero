@@ -181,6 +181,7 @@ void initSymbols(void) {
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
     addCoreSyntax("<|", 6, INFIX, R, reduceApply);
+    addCoreSyntax("forall", 8, INFIX, L, reduceErased);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
@@ -202,4 +203,5 @@ void initSymbols(void) {
     addCoreAlias("\xE2\x87\x92", "=>"); // u21D2
     addCoreAlias("\xE2\xA6\x8A", "|>"); // u298A
     addCoreAlias("\xE2\xA6\x89", "<|"); // u2989
+    addCoreAlias("\xE2\x88\x80", "forall"); // u2200
 }

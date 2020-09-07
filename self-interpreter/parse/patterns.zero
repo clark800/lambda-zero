@@ -33,7 +33,7 @@ def newPatternArrow(pattern, body)
         function := arguments.fold(newPatternArrow, body)
         projectors := (0 .. arity -- 1).map(newProjector(tag, arity))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        lockArrow(StrictArrow(tag, [(constructor, arity)], Underscore(tag, 0),
+        lockArrow(StrictArrow([(constructor, arity)], Underscore(tag, 0),
             projections.cascade(Juxtaposition(tag), function)))
     astSyntaxError("invalid parameter", pattern)
 
@@ -57,7 +57,7 @@ def newCaseArrow(left, right)
     constructor := Name(tag)  # name could be a number
     thisName := This(tag)
     body := Juxtaposition(tag, thisName, reconstructor)
-    StrictArrow(tag, [(constructor, arity)], thisName, body)
+    StrictArrow([(constructor, arity)], thisName, body)
 
 
 def addCases(tag, base, extension)
@@ -103,8 +103,22 @@ def getReconstructor(caseArrow)
     astSyntaxError("Internal error: expected case arrow", caseArrow)
 
 
+def getConstructorTag(caseArrow)
+    if caseArrow is Arrow(_, type, cases, parameter, _, _)
+        if type is Simple
+            getTag(parameter)
+        if type is Strict
+            if cases is (constructor, _) :: cases'
+                if isNil(cases')
+                    getTag(constructor)
+                astSyntaxError("Internal error: multiple cases", caseArrow)
+            astSyntaxError("Internal error: missing case", caseArrow)
+        astSyntaxError("Internal error: invalid case arrow type", caseArrow)
+    astSyntaxError("Internal error: expected case arrow", caseArrow)
+
+
 def attachDefaultCase(tag, caseArrow, fallback)
-    constructorTag := getTag(caseArrow)
+    constructorTag := getConstructorTag(caseArrow)
     deconstructor := Name(addPrefix(constructorTag, '@'))
     reconstructor := getReconstructor(caseArrow)
     # note: "this" is a positive variable here because we aren't using it
@@ -121,6 +135,6 @@ def combineCases(tag, left, right)
     thisName := This(tag)
     cases := getCases(left) ++ getCases(right)
     body := newCaseBody(tag, thisName, left, right)
-    StrictArrow(tag, cases, thisName, body)
+    StrictArrow(cases, thisName, body)
 
 #*
