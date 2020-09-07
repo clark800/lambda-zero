@@ -155,17 +155,22 @@ NegativeUnderscore(tag) := Reference(veil(tag), -_ 1)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
 isName(node) := if node is Reference(_, index); abs(index) = 0 <| False
 
-def TypedArrow(arrowType, parameter, body)
-    if parameter is ColonPair(_, name, type)
-        Arrow(getTag(name), arrowType, [], name, Just(type), body)
-    Arrow(getTag(parameter), arrowType, [], parameter, Void, body)
+def TypedArrow(arrowType, left, body)
+    if left is ColonPair(_, parameter, type)
+        Arrow(getTag(parameter), arrowType, [], parameter, Just(type), body)
+    Arrow(getTag(left), arrowType, [], left, Void, body)
+
+def DoubleArrow(left, body)
+    if left is ColonPair(_, parameter, type)
+        Arrow(getTag(parameter), Double, [], parameter, Just(type), body)
+    parameter := Name(veil(getTag(left)))
+    Arrow(getTag(parameter), Double, [], parameter, Just(left), body)
 
 SimpleArrow := TypedArrow(Simple)
 LockedArrow := TypedArrow(Locked)
-DoubleArrow := TypedArrow(Double)
 TailArrow := TypedArrow(Tail)
-StrictArrow(tag, cases, parameter, body) :=
-    Arrow(tag, Strict, cases, parameter, Void, body)
+StrictArrow(cases, parameter, body) :=
+    Arrow(getTag(parameter), Strict, cases, parameter, Void, body)
 
 
 def setAnnotation(annotation, node)

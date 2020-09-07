@@ -15,14 +15,14 @@ Nat ::= {0, up(n : Nat)}
 Vector(n, a) ::= {
     Nil : Vector(0, a),
     (_ : a) ::: (_ : Vector(n, a)) : Vector(up n, a)
-    #(_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a) for n' : Nat
+    #(_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a) forall(n' : Nat)
 }
 
 vector := 1 ::: Nil
 
 vector' := 2 ::: vector
 
-sig n >-> a >-> Vector(n, a) => Nat
+sig Vector(n, a) => Nat forall(n : Nat) forall(a)
 def vlength
     case Nil -> 0
     case x ::: xs' -> up vlength(xs')

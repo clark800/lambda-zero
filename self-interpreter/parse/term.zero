@@ -187,7 +187,9 @@ def showTerm
     Intersection(tag, domain, body) -> (
         if domain is Singleton(_, type, _)
             showConstruction(showTerm, tag, getSingletonParameters(type))
-        "∀" ++ showTag(tag) ++ " " ++ showTerm(body)
+        showTerm(body) ++ " ∀(" ++
+            (if isType(domain) then showTag(tag) else
+            showTag(tag) ++ " : " ++ showTerm(domain)) ++ ")"
     )
     Application(_, applicand, argument) ->
         if needsParentheses(applicand) then

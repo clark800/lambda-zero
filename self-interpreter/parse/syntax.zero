@@ -25,11 +25,15 @@ def reduceArrow(_tag, left, right)
 
 
 def reduceDoubleArrow(tag, left, right)
-    Arrow(tag, Double, [], left, Void, right)
+    DoubleArrow(left, right)
 
 
 def reduceTailArrow(tag, left, right)
-    Arrow(tag, Tail, [], left, Void, right)
+    TailArrow(left, right)
+
+
+def reduceForAll(tag, left, right)
+    TailArrow(right, left)
 
 
 def reduceReverseArrow(tag, left, right)
@@ -238,6 +242,8 @@ OPERATORS := [newDictionary([
     coreAlias("⦊", "|>", 6, 6, LA, Infix(reducePipeline)),
     coreSyntax("<|", 6, 6, RA, Infix(reduceApply)),
     coreAlias("⦉","<|", 6, 6, RA, Infix(reduceApply)),
+    coreSyntax("forall", 8, 8, LA, Infix(reduceForAll)),
+    coreAlias("∀", "forall", 8, 8, LA, Infix(reduceForAll)),
     coreSyntax(";", 8, 8, RA, Infix(reduceNewline)),
     coreSyntax(":", 9, 9, NA, Infix(reduceColonPair)),
     coreSyntax("->", 10, 10, RA, Infix(reduceArrow)),
