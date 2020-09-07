@@ -130,6 +130,11 @@ def showLocation(Location(file, line, column))
         "line " ++ showNatural(line) ++ " column " ++ showNatural(column)
 
 
+def showShortLocation(Location(file, line, column))
+    (if isNil(file) then "" else file ++ ":") ++
+        showNatural(line) ++ ":" ++ showNatural(column)
+
+
 def showTag(Tag(lexeme, fixity, _, _))
     if lexeme is c :: _
         if c = 0 then "\\0"

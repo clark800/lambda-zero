@@ -196,7 +196,8 @@ def newADT(tag, adtType, parameters, forms)
     # todo: change name from "r" so it can't clash with user's names
     constructorType := parameters.fold(DoubleArrow, Family(tag))
     returnType := FixedName(tag, "r")
-    annotations := forms.map(getArguments).map(map(getParameterType))
+    forms' := forms.map(removeAnnotation) # remove GADT return type annotations
+    annotations := forms'.map(getArguments).map(map(getParameterType))
     argumentTypes := annotations.map(fold(DoubleArrow, returnType))
     body := TailArrow(returnType, argumentTypes.fold(DoubleArrow, returnType))
     signatures := forms.map(getConstructorType(adtType))

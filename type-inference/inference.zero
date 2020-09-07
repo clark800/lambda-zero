@@ -4,13 +4,18 @@ def pushContext(type, term, context @ (environment, types))
     (environment.push(Closure(term, environment)), types.push(type))
 
 
-def instantiate(closure @ Closure(term, environment))
+def instantiateWith(newMetavariable, closure @ Closure(term, environment))
     if term is Intersection(tag, _, body)
         if isConstruction(term)
             lift closure
-        metavariable <- newPositiveMetavariable(tag)
-        instantiate(Closure(body, environment.push(enclose(metavariable))))
+        metavariable <- newMetavariable(tag)
+        closure' := Closure(body, environment.push(enclose(metavariable)))
+        closure'.instantiateWith(newMetavariable)
     lift closure
+
+
+def instantiate(closure)
+    instantiateWith(newPositiveMetavariable, closure)
 
 
 def convertFunctionsToIntersections(term)
@@ -137,23 +142,49 @@ def renameUniversals(closure)
     closure'.generalize(metacontext)
 
 
-def inferType(types, Binding(tag, closure, annotation, isConstruct))
-    if getTagLexeme(tag) =*= "fix"
-        types.push(enclose(getFixType(tag)))
-    if annotation is Just(type)
-        if isConstruct  # skip inference for constructors and deconstructors
-            types.push(enclose(renameUniversals(type)))
+def inferType(context, term)
+    type <- term.infer(context)
+    metacontext <- getState
+    lift enclose(type.generalize(metacontext))
+
+
+def checkType'(context, term, type @ Closure(typeTerm, typeEnv))
+    if typeTerm is Implication(tag, domain, body)
+        if term is Function(tag', domain', body')
+            if not isUnknown(domain')
+                abort("Redundant annotation")
+            argument <- newNegativeMetavariable(tag)
+            context' := context.pushContext(Closure(domain, typeEnv), argument)
+            type' := Closure(body, typeEnv.push(enclose(argument)))
+            checkType'(context', body', type')
         pass
+    inferredType <- inferType(context, term)
+    unify(inferredType, type)
+
+
+def checkType(context, term, type)
+    type' <- type.instantiateWith(newNegativeMetavariable)
+    _ <- checkType'(context, term, type')
+    lift type
+
+
+def getType(types, Binding(tag, closure, annotation, isConstruct))
+    if getTagLexeme(tag) =*= "fix"
+        lift enclose(getFixType(tag))
     _ @ Closure(term, environment) := closure
     context := (environment, types)
-    (type, metacontext) := infer(context, term, emptyMetacontext)
-    generalized := enclose(type.generalize(metacontext))
-    if annotation is Just(type')
-        (_, metacontext') := unify(generalized, type', metacontext)
-        if getSize(getPositives(metacontext')) < 0
-            abort("force unification errors")
-        types.push(generalized)
-    types.push(generalized)
+    if annotation is Just(type)
+        if isConstruct  # skip inference for constructors and deconstructors
+            lift enclose(renameUniversals(type))
+        checkType(context, term, type)
+    inferType(context, term)
+
+
+def pushType(types, binding)
+    (type, metacontext) := getType(types, binding, emptyMetacontext)
+    if getSize(getPositives(metacontext)) < 0
+        abort("force unification errors")
+    types.push(type)
 
 
 def showTyping((tag, type))
@@ -166,7 +197,7 @@ def showTypings(typings)
 
 def main(input)
     bindings := reverse(parse(getBuiltin, input))
-    types := bindings.cascade(inferType, newArray([]))
+    types := bindings.cascade(pushType, newArray([]))
     tags := bindings.map(getBindingTag)
     showTypings(zip(tags, types.toList))
 
