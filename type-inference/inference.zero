@@ -40,11 +40,34 @@ def getTypeConstructor(construction, environment)
     Void
 
 
+def instantiateDomain(closure @ Closure(domain, _))
+    if isIntersection(domain)
+        closure' <- instantiate(closure)
+        addPositiveMetavariable(getTermTag(domain), closure')
+    lift domain
+
+
+def instantiateDomains(type @ Closure(term, environment))
+    # implication domains inside construction types can have intersection
+    # binders that we want to instantiate. to avoid shifting debruijn indices,
+    # whenever we encounter one, we create a new metavariable to store the
+    # instantiated type
+    if term is Implication(tag, domain, body)
+        domain' <- instantiateDomain(Closure(domain, environment))
+        unknown := enclose(Unknown(tag))
+        bodyClosure := Closure(body, environment.push(unknown))
+        _ @ Closure(body', _) <- instantiateDomains(bodyClosure)
+        lift Closure(Implication(tag, domain', body'), environment)
+    lift type
+
+
 def instantiateConstruction(closure, environment)
     _ @ Closure(construction, environment') := evaluateClosure(closure)
     if getTypeConstructor(construction, environment) is Just(typeConstructor)
-        if construction is Intersection(_, _, body)
-            instantiate(Closure(body, environment'.push(typeConstructor)))
+        if construction is Intersection(tag, _, body)
+            closure' := Closure(body, environment'.push(typeConstructor))
+            closure'' <- instantiate(closure')
+            instantiateDomains(closure'')
         throwError("expected intersection", getTermTag(construction))
     throwError("expected construction", getTermTag(construction))
 
@@ -67,6 +90,10 @@ def newFunctionType(tag, domainClosure, body)
     Closure(Implication(tag, domain, body), environment)
 
 
+def getVariableType(context @ (_, types), tag, index)
+    types.seek(-_ abs(index)) ?? throwError("unbound variable", tag)
+
+
 def infer(context @ (environment, types))
     enclose'(term) := Closure(term, environment)
 
@@ -78,7 +105,7 @@ def infer(context @ (environment, types))
             +_ level -> lift enclose(Type(tag, +_(up level)))
             -_ family -> lift enclose(Type(tag, +_ 1))
     case Variable(tag, index)
-        type := types.seek(-_ abs(index)) ?? throwError("unbound variable", tag)
+        type := getVariableType(context, tag, index)
         if isNegative(index)
             instantiateConstruction(type, environment)
         instantiate(type)
@@ -143,6 +170,9 @@ def renameUniversals(closure)
 
 
 def inferType(context, term)
+    if term is Variable(tag, index)
+        # prevent re-generalization, which could change forall names
+        lift getVariableType(context, tag, index)
     type <- term.infer(context)
     metacontext <- getState
     lift enclose(type.generalize(metacontext))
@@ -158,7 +188,7 @@ def checkType'(context, term, type @ Closure(typeTerm, typeEnv))
             type' := Closure(body, typeEnv.push(enclose(argument)))
             checkType'(context', body', type')
         pass
-    inferredType <- inferType(context, term)
+    inferredType <- term.infer(context)
     unify(inferredType, type)
 
 

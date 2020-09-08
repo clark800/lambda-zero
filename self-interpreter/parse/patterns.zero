@@ -1,15 +1,18 @@
 #* patterns.zero
 
+def splitArguments(node)
+    if node is Juxtaposition(_, left, right)
+        (head, arguments) := splitArguments(left)
+        (head, arguments ++ [right])
+    (node, [])
+
+
 def getHead(node)
-    if node is Juxtaposition(_, left, _)
-        getHead(left)
-    node
+    first(splitArguments(node))
 
 
-def getArguments(pattern)
-    if pattern is Juxtaposition(_, left, right)
-        getArguments(left) ++ [right]
-    []
+def getArguments(node)
+    second(splitArguments(node))
 
 
 def newProjector(tag, arity, index)
@@ -25,9 +28,8 @@ def newPatternArrow(pattern, body)
         newPatternArrow(left, Juxtaposition(tag,
             newPatternArrow(right, body), Underscore(tag, 1)))
     if isJuxtaposition(pattern)
-        constructor := getHead(pattern)
+        (constructor, arguments) := splitArguments(pattern)
         tag := getTag(constructor)
-        arguments := getArguments(pattern)
         arity := length(arguments)
         underscore := NegativeUnderscore(tag)
         function := arguments.fold(newPatternArrow, body)
@@ -38,21 +40,14 @@ def newPatternArrow(pattern, body)
     astSyntaxError("invalid parameter", pattern)
 
 
-def getNameAndValue(f, left, right)
-    if not isPreterm(right)
-        astSyntaxError("invalid parameter", right)  # force syntax errors
-    if left is Juxtaposition(_, left', right')
-        getNameAndValue(f, left', f(right', right))
-    (left, right)
-
-
 def newCaseArrow(left, right)
     if isUnderscore(left)
         SimpleArrow(left, right)
     if isAsPattern(left)
         astSyntaxError("invalid '@' in case", left)
-    arity := length(getArguments(left))
-    (name, reconstructor) := getNameAndValue(newPatternArrow, left, right)
+    (name, parameters) := splitArguments(left)
+    arity := length(parameters)
+    reconstructor := parameters.fold(newPatternArrow, right)
     tag := getTag(name)
     constructor := Name(tag)  # name could be a number
     thisName := This(tag)

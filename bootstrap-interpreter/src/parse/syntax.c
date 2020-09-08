@@ -99,7 +99,7 @@ static Node* reduceErased(Tag tag, Node* left, Node* right) {
     return FixedName(tag, "(_)");
 }
 
-static Node* reduceClose(Tag tag, Node* left, Node* right) {
+static Node* reduceIdentity(Tag tag, Node* left, Node* right) {
     (void)tag, (void)left;
     return right;
 }
@@ -145,15 +145,15 @@ static Node* reduceReverseArrow(Tag tag, Node* left, Node* right) {
 void initSymbols(void) {
     initSyntax();
     addBracketSyntax("", '\0', 0, OPENFIX, reduceOpenFile);
-    addBracketSyntax("\0", '\0', 0, CLOSEFIX, reduceClose);
+    addBracketSyntax("\0", '\0', 0, CLOSEFIX, reduceIdentity);
     addBracketSyntax("(", '(', 95, OPENFIX, reduceOpenParenthesis);
-    addBracketSyntax(")", '(', 95, CLOSEFIX, reduceClose);
+    addBracketSyntax(")", '(', 95, CLOSEFIX, reduceIdentity);
     addBracketSyntax("( ", '(', 95, OPENFIX, reduceOpenSection);
     addBracketSyntax(" )", '(', 95, CLOSEFIX, reduceCloseSection);
     addBracketSyntax("[", '[', 95, OPENFIX, reduceOpenSquareBracket);
-    addBracketSyntax("]", '[', 95, CLOSEFIX, reduceClose);
+    addBracketSyntax("]", '[', 95, CLOSEFIX, reduceIdentity);
     addBracketSyntax("{", '{', 95, OPENFIX, reduceOpenBrace);
-    addBracketSyntax("}", '{', 95, CLOSEFIX, reduceClose);
+    addBracketSyntax("}", '{', 95, CLOSEFIX, reduceIdentity);
     addCoreSyntax("\n", 1, INFIX, R, reduceNewline);
     addCoreSyntax(";;", 2, INFIX, R, reduceNewline);
     addCoreSyntax("|", 3, INFIX, N, reduceReserved);
@@ -165,7 +165,7 @@ void initSymbols(void) {
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
     addCoreSyntax("<|", 6, INFIX, R, Juxtaposition);
-    addBinaryPrefixSyntax("forall", 8, reduceErased);
+    addBinaryPrefixSyntax("forall", 8, reduceIdentity);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
