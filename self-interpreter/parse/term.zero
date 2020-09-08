@@ -165,6 +165,12 @@ def showTagBracket(tag)
         showShortLocation(getTagLocation(tag)) ++ "⸩"
 
 
+def isTypeZero(term)
+    if term is Type(_, index)
+        index =:= +_ 0
+    False
+
+
 def showTerm
     Metavariable(tag, index) -> showMetavariable(index) ++ showTagBracket(tag)
     Type(tag, index) -> if isPositive(index) then
@@ -187,9 +193,10 @@ def showTerm
     Intersection(tag, domain, body) -> (
         if domain is Singleton(_, type, _)
             showConstruction(showTerm, tag, getSingletonParameters(type))
-        showTerm(body) ++ " ∀(" ++
-            (if isType(domain) then showTag(tag) else
-            showTag(tag) ++ " : " ++ showTerm(domain)) ++ ")"
+        if isTypeZero(domain)
+            "∀(" ++ showTag(tag) ++ ") " ++ showTerm(body)
+        "∀(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") " ++
+            showTerm(body)
     )
     Application(_, applicand, argument) ->
         if needsParentheses(applicand) then

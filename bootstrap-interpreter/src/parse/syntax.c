@@ -170,10 +170,10 @@ void initSymbols(void) {
     addBracketSyntax("]", '[', 95, CLOSEFIX, reduceClose);
     addBracketSyntax("{", '{', 95, OPENFIX, reduceOpenBrace);
     addBracketSyntax("}", '{', 95, CLOSEFIX, reduceClose);
-    addCoreSyntax("|", 1, INFIX, N, reduceReserved);
-    addCoreSyntax(",", 2, INFIX, L, reduceCommaPair);
-    addCoreSyntax("\n", 3, INFIX, R, reduceNewline);
-    addCoreSyntax(";;", 4, INFIX, R, reduceNewline);
+    addCoreSyntax("\n", 1, INFIX, R, reduceNewline);
+    addCoreSyntax(";;", 2, INFIX, R, reduceNewline);
+    addCoreSyntax("|", 3, INFIX, N, reduceReserved);
+    addCoreSyntax(",", 4, INFIX, L, reduceCommaPair);
     addCoreSyntax("def", 5, PREFIX, L, reducePrefix);
     addCoreSyntax("sig", 5, PREFIX, L, reducePrefix);
     addCoreSyntax(":=", 5, INFIX, R, reduceDefine);
@@ -181,7 +181,7 @@ void initSymbols(void) {
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
     addCoreSyntax("<|", 6, INFIX, R, reduceApply);
-    addCoreSyntax("forall", 8, INFIX, L, reduceErased);
+    addBinaryPrefixSyntax("forall", 8, reduceErased);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);

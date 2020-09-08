@@ -28,12 +28,8 @@ def reduceDoubleArrow(tag, left, right)
     DoubleArrow(left, right)
 
 
-def reduceTailArrow(tag, left, right)
-    TailArrow(left, right)
-
-
 def reduceForAll(tag, left, right)
-    TailArrow(right, left)
+    TailArrow(left, right)
 
 
 def reduceReverseArrow(tag, left, right)
@@ -133,7 +129,7 @@ def reduceClose(_tag, _left, right)
 def newSyntax'(tag, prior, precedence, associativity, fixity)
     special := not isNil(prior)
     Syntax(getTagLexeme(tag), precedence, precedence,
-        associativity, special, '_', prior, fixity)
+        associativity, special, '_', prior, fixity, Void)
 
 
 def newSyntax(tag, precedence, fixity, prior)
@@ -162,7 +158,8 @@ def getAliasSyntax(state, name)
 def copySyntax(state, tag, name)
     lexeme := getTagLexeme(tag)
     match getAliasSyntax(state, name)
-        Syntax(_, l, r, a, s, b, p, f) -> Syntax(lexeme, l, r, a, s, b, p, f)
+        Syntax(_, l, r, a, s, b, p, f, x) ->
+            Syntax(lexeme, l, r, a, s, b, p, f, x)
 
 
 def findPrecedence(state, node)
@@ -200,7 +197,7 @@ def defineSyntax(state, definition, name, right)
 def coreAlias(lexeme, aliasName, leftPrecedence, rightPrecedence,
         associativity, fixity)
     (lexeme, Syntax(aliasName, leftPrecedence, rightPrecedence,
-        associativity, True, '_', "", fixity))
+        associativity, True, '_', "", fixity, Void))
 
 
 def coreSyntax(lexeme, leftPrecedence, rightPrecedence, associativity, fixity)
@@ -208,12 +205,24 @@ def coreSyntax(lexeme, leftPrecedence, rightPrecedence, associativity, fixity)
         associativity, fixity)
 
 
+def reduceBinaryPrefix(tag, operand)
+    syntaxError("Internal error: reduce binary prefix", tag)
+
+
+def binaryPrefixSyntax(lexeme, precedence, reducer)
+    infixSyntax := Syntax(lexeme, 99, precedence, RA,
+        True, '_', "", Infix(reducer), Void)
+    prefixSyntax := Syntax(lexeme, 99, 99, LA,
+        True, '_', "", Prefix(reduceBinaryPrefix), Just(infixSyntax))
+    (lexeme, prefixSyntax)
+
+
 def bracketSyntax(lexeme, bracketType, outerPrecedence, fixity)
     fixityCode := getFixityCode(fixity)
     leftPrecedence := if fixityCode = OPENFIX then outerPrecedence else 0
     rightPrecedence := if fixityCode = OPENFIX then 0 else outerPrecedence
     (lexeme, Syntax(lexeme, leftPrecedence, rightPrecedence,
-        RA, True, bracketType, "", fixity))
+        RA, True, bracketType, "", fixity, Void))
 
 
 OPERATORS := [newDictionary([
@@ -227,10 +236,10 @@ OPERATORS := [newDictionary([
     bracketSyntax("]", '[', 95, Closefix(reduceClose)),
     bracketSyntax("{", '{', 95, Openfix(reduceCurly)),
     bracketSyntax("}", '{', 95, Closefix(reduceClose)),
-    coreSyntax("|", 1, 1, NA, Infix(reduceReserved)),
-    coreSyntax(",", 2, 2, LA, Infix(reduceCommaPair)),
-    coreSyntax("\n", 3, 3, RA, Infix(reduceNewline)),
-    coreSyntax(";;", 4, 4, RA, Infix(reduceNewline)),
+    coreSyntax("\n", 1, 1, RA, Infix(reduceNewline)),
+    coreSyntax(";;", 2, 2, RA, Infix(reduceNewline)),
+    coreSyntax("|", 3, 3, NA, Infix(reduceReserved)),
+    coreSyntax(",", 4, 4, LA, Infix(reduceCommaPair)),
     coreSyntax("def", 5, 5, LA, Prefix(reduceAdfix)),
     coreSyntax("sig", 5, 5, LA, Prefix(reduceAdfix)),
     coreSyntax(":=", 5, 5, RA, Infix(reduceDefine)),
@@ -242,8 +251,8 @@ OPERATORS := [newDictionary([
     coreAlias("⦊", "|>", 6, 6, LA, Infix(reducePipeline)),
     coreSyntax("<|", 6, 6, RA, Infix(reduceApply)),
     coreAlias("⦉","<|", 6, 6, RA, Infix(reduceApply)),
-    coreSyntax("forall", 8, 8, LA, Infix(reduceForAll)),
-    coreAlias("∀", "forall", 8, 8, LA, Infix(reduceForAll)),
+    binaryPrefixSyntax("forall", 8, reduceForAll),
+    binaryPrefixSyntax("∀", 8, reduceForAll),
     coreSyntax(";", 8, 8, RA, Infix(reduceNewline)),
     coreSyntax(":", 9, 9, NA, Infix(reduceColonPair)),
     coreSyntax("->", 10, 10, RA, Infix(reduceArrow)),
@@ -252,8 +261,8 @@ OPERATORS := [newDictionary([
     coreAlias("↤", "<-", 10, 10, RA, Infix(reduceReverseArrow)),
     coreSyntax("=>", 10, 10, RA, Infix(reduceDoubleArrow)),
     coreAlias("⇒", "=>", 10, 10, RA, Infix(reduceDoubleArrow)),
-    coreSyntax(">->", 10, 10, RA, Infix(reduceTailArrow)),
-    coreAlias("↣", ">->", 10, 10, RA, Infix(reduceTailArrow)),
+    coreSyntax(">->", 10, 10, RA, Infix(reduceForAll)),
+    coreAlias("↣", ">->", 10, 10, RA, Infix(reduceForAll)),
     coreSyntax("case", 11, 11, NA, Prefix(reduceAdfix)),
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
     coreSyntax("is", 13, 13, LA, Infix(reduceIs)),

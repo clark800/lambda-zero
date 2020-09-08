@@ -2,7 +2,7 @@
 
 def unificationError(originals, left, right)
     abort("Type error: Can't unify\n" ++
-        showTerm(left) ++ "\nwith\n" ++ showTerm(right) ++
+        showTermAndLocation(left) ++ "\nwith\n" ++ showTermAndLocation(right) ++
         "\nwhile trying to unify\n" ++
         showTermAndLocation(first(originals)) ++
         "\nwith\n" ++

@@ -24,17 +24,19 @@ SyntaxT(operand) ::= {Syntax(
     special : 𝔹,
     bracketType : ℕ,
     prior : List(ℕ),
-    fixity : Fixity(operand)
+    fixity : Fixity(operand),
+    infixSyntax : (SyntaxT(operand))?  # for binary prefix operators
 )}
 
-getAlias(Syntax(aliasName, _, _, _, _, _, _, _)) := aliasName
-getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _)) := leftP
-getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _)) := rightP
-getAssociativity(Syntax(_, _, _, assoc, _, _, _, _)) := assoc
-isSpecial(Syntax(_, _, _, _, special, _, _, _)) := special
-getBracketType(Syntax(_, _, _, _, _, bracketType, _, _)) := bracketType
-getPrior(Syntax(_, _, _, _, _, _, prior, _)) := prior
-getFixity(Syntax(_, _, _, _, _, _, _, fixity)) := fixity
+getAlias(Syntax(aliasName, _, _, _, _, _, _, _, _)) := aliasName
+getLeftPrecedence(Syntax(_, leftP, _, _, _, _, _, _, _)) := leftP
+getRightPrecedence(Syntax(_, _, rightP, _, _, _, _, _, _)) := rightP
+getAssociativity(Syntax(_, _, _, assoc, _, _, _, _, _)) := assoc
+isSpecial(Syntax(_, _, _, _, special, _, _, _, _)) := special
+getBracketType(Syntax(_, _, _, _, _, bracketType, _, _, _)) := bracketType
+getPrior(Syntax(_, _, _, _, _, _, prior, _, _)) := prior
+getFixity(Syntax(_, _, _, _, _, _, _, fixity, _)) := fixity
+getInfixSyntax(Syntax(_, _, _, _, _, _, _, _, infixSyntax)) := infixSyntax
 
 OperatorT(operand) ::= {Operator(
     tag : TagT,
@@ -45,6 +47,14 @@ OperatorT(operand) ::= {Operator(
 getOperatorTag(Operator(tag, _, _)) := tag
 getSubprecedence(Operator(_, subprecedence, _)) := subprecedence
 getSyntax(Operator(_, _, syntax')) := syntax'
+
+
+def getBinaryPrefixInfixOperator(Operator(tag, subprecedence, syntax'))
+    if getInfixSyntax(syntax') is Just(syntax'')
+        if getFixity(syntax') is Prefix(_)
+            Just(Operator(tag, subprecedence, syntax''))
+        syntaxError("infix syntax on non-prefix operator", tag)
+    Void
 
 
 def opSyntaxError(message, Operator(tag, _, _))

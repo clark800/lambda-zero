@@ -4,11 +4,25 @@
 #include "operator.h"
 #include "shift.h"
 
+void shiftOperand(Stack* stack, Node* operand) {
+    if (!isEmpty(stack)) {
+        Node* top = peek(stack, 0);
+        if (isOperator(top)) {
+            Node* operator = getBinaryPrefixInfixOperator(top);
+            if (operator != NULL) {
+                release(pop(stack));
+                push(stack, operand);
+                push(stack, operator);
+            } else push(stack, operand);
+        } else syntaxError("missing operator before", operand);
+    } else push(stack, operand);
+}
+
 void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxError("missing left operand for", operator);
     Hold* operand = pop(stack);
-    push(stack, reduce(operator, getNode(operand), VOID));
+    shiftOperand(stack, reduce(operator, getNode(operand), VOID));
     release(operand);
 }
 
@@ -20,10 +34,11 @@ void shiftInfix(Stack* stack, Node* operator) {
 
 void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents) {
     if (isEmpty(stack) || isOperator(peek(stack, 0))) {
-        push(stack, reduceBracket(open, close, NULL, contents));
+        shiftOperand(stack, reduceBracket(open, close, NULL, contents));
     } else {
         Hold* before = pop(stack);
-        push(stack, reduceBracket(open, close, getNode(before), contents));
+        shiftOperand(stack,
+            reduceBracket(open, close, getNode(before), contents));
         release(before);
     }
 }
@@ -48,7 +63,8 @@ static void reduceTop(Stack* stack) {
     Hold* operator = pop(stack);
     Fixity fixity = getFixity(getNode(operator));
     Hold* left = fixity == INFIX ? pop(stack) : hold(VOID);
-    shift(stack, reduce(getNode(operator), getNode(left), getNode(right)));
+    Node* operand = reduce(getNode(operator), getNode(left), getNode(right));
+    shiftOperand(stack, operand);
     release(right);
     release(operator);
     release(left);
@@ -60,18 +76,18 @@ void reduceLeft(Stack* stack, Node* operator) {
         reduceTop(stack);
 }
 
-void shift(Stack* stack, Node* node) {
-    if (isOperator(node)) {
-        reduceLeft(stack, node);
-        switch(getFixity(node)) {
-            case INFIX: shiftInfix(stack, node); break;
-            case POSTFIX: shiftPostfix(stack, node); break;
-            case CLOSEFIX: shiftClose(stack, node); break;
-            default: push(stack, node); break;
-        }
-    } else {
-        if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
-            syntaxError("missing operator before", node);
-        push(stack, node);
+void shiftOperator(Stack* stack, Node* operator) {
+    reduceLeft(stack, operator);
+    switch(getFixity(operator)) {
+        case INFIX: shiftInfix(stack, operator); break;
+        case POSTFIX: shiftPostfix(stack, operator); break;
+        case CLOSEFIX: shiftClose(stack, operator); break;
+        default: push(stack, operator); break;
     }
+}
+
+void shift(Stack* stack, Node* node) {
+    if (isOperator(node))
+        shiftOperator(stack, node);
+    else shiftOperand(stack, node);
 }
