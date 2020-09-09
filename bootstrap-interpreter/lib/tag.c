@@ -3,6 +3,8 @@
 #include "util.h"
 #include "tag.h"
 
+const String EMPTY = {"", 0, '\0', 0};
+
 String newString(const char* start, unsigned int length) {
     return (String){start, length, '\0', 0};
 }

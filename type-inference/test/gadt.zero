@@ -22,7 +22,7 @@ vector := 1 ::: Nil
 
 vector' := 2 ::: vector
 
-sig Vector(n, a) => Nat forall(n : Nat) forall(a)
+sig ∀(n : Nat) forall(a) Vector(n, a) => Nat
 def vlength
     case Nil -> 0
     case x ::: xs' -> up vlength(xs')

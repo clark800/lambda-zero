@@ -17,6 +17,8 @@ typedef struct {
     Location location;
 } Tag;
 
+extern const String EMPTY;
+
 String newString(const char* start, unsigned int length);
 String toString(const char* start);
 Location newLocation(const char* file, unsigned int line, unsigned int column);
