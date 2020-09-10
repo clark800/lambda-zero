@@ -20,6 +20,10 @@ static inline bool isApplication(Term* t) {return getType(t) == APPLICATION;}
 static inline bool isNumeral(Term* t) {return getType(t) == NUMERAL;}
 static inline bool isOperation(Term* t) {return getType(t) == OPERATION;}
 static inline bool isGlobal(Term* t) {return isVariable(t) && getValue(t) < 0;}
+static inline bool isValueType(TermType t) {
+    return t == ABSTRACTION || t == NUMERAL;
+}
+static inline bool isValue(Term* t) {return isValueType(getTermType(t));}
 
 static inline Term* Variable(Tag tag, long long debruijn) {
     return newLeaf(tag, VARIABLE, 0, (void*)debruijn);

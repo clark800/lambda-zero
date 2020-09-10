@@ -70,10 +70,6 @@ static void evaluateLambda(Closure* closure, Stack* stack) {
     setTerm(closure, getBody(getTerm(closure)));
 }
 
-static bool isValue(Term* term) {
-    return isAbstraction(term) || isNumeral(term) || isOperation(term);
-}
-
 static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
     Term* reference = getTerm(closure);
     if (isGlobal(reference)) {
@@ -153,29 +149,27 @@ static Term* expandNumeral(Term* numeral) {
     return Abstraction(tag, Abstraction(tag, body));
 }
 
-static void interrupt(int parameter) {(void)parameter, INTERRUPT = true;}
+static void evaluateNumeral(Closure* closure) {
+    setLocals(closure, VOID);
+    setTerm(closure, expandNumeral(getTerm(closure)));
+}
 
 static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     while (true) {
         if (INTERRUPT)
             runtimeError("interrupted", closure);
-        switch (getTermType(getTerm(closure))) {
-            case APPLICATION: evaluateApplication(closure, stack); break;
+        TermType type = getTermType(getTerm(closure));
+        if (isValueType(type)) {
+            applyUpdates(closure, stack);
+            if (isEmpty(stack))
+                return closure;
+        }
+        switch (type) {
             case VARIABLE: evaluateReference(closure, stack, globals); break;
+            case ABSTRACTION: evaluateLambda(closure, stack); break;
+            case APPLICATION: evaluateApplication(closure, stack); break;
+            case NUMERAL: evaluateNumeral(closure); break;
             case OPERATION: evaluateOperation(closure, stack, globals); break;
-            case NUMERAL:
-                setLocals(closure, VOID);
-                applyUpdates(closure, stack);
-                if (isEmpty(stack))
-                    return closure;
-                setTerm(closure, expandNumeral(getTerm(closure))); break;
-            case ABSTRACTION:
-                applyUpdates(closure, stack);
-                if (isEmpty(stack))
-                    return closure;
-                evaluateLambda(closure, stack); break;
-            default:
-                assert(false); break;
         }
     }
 }
@@ -188,6 +182,8 @@ static Closure* evaluateClosure(Closure* closure, Globals* globals) {
     deleteStack(stack);
     return result;
 }
+
+static void interrupt(int parameter) {(void)parameter, INTERRUPT = true;}
 
 Hold* evaluateTerm(Term* term, Globals* globals) {
     INPUT_STACK = newStack();
