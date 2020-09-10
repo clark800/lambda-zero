@@ -1,20 +1,32 @@
 #include <stdbool.h>
+#include <stdlib.h>  // exit
 #include <string.h>
 #include "util.h"
 #include "tag.h"
 
 const String EMPTY = {"", 0, '\0', 0};
+const char* FILENAMES[2048] = {0};
+const unsigned int MAX_FILENAMES = sizeof(FILENAMES) / sizeof(const char*);
+unsigned short FILE_COUNT = 0;
 
-String newString(const char* start, unsigned int length) {
+String newString(const char* start, unsigned char length) {
     return (String){start, length, '\0', 0};
 }
 
 String toString(const char* start) {
-    return newString(start, (unsigned int)strlen(start));
+    return newString(start, (unsigned char)strlen(start));
 }
 
-Location newLocation(const char* file, unsigned int line, unsigned int column) {
-    return (Location){file, line, column};
+unsigned short newFilename(const char* filename) {
+    if (FILE_COUNT >= MAX_FILENAMES - 1)
+        return 0;
+    FILENAMES[++FILE_COUNT] = filename;
+    return FILE_COUNT;
+}
+
+Location newLocation(unsigned short file,
+        unsigned int line, unsigned short column) {
+    return (Location){line, column, file};
 }
 
 Tag newTag(String lexeme, Location location) {
@@ -22,7 +34,7 @@ Tag newTag(String lexeme, Location location) {
 }
 
 Tag renameTag(Tag tag, const char* name) {
-    return newTag(newString(name, (unsigned int)strlen(name)), tag.location);
+    return newTag(newString(name, (unsigned char)strlen(name)), tag.location);
 }
 
 Tag addPrefix(Tag tag, char prefix) {
@@ -68,12 +80,21 @@ void printTag(Tag tag, const char* quote, FILE* stream) {
         fputs(quote, stream);
     }
     fputs(" at ", stream);
-    if (tag.location.file != NULL) {
-        printLine(tag.location.file, stream);
+    if (tag.location.file != 0) {
+        printLine(FILENAMES[tag.location.file], stream);
         fputs(" " , stream);
     }
     fputs("line ", stream);
     fputll((long long)tag.location.line, stream);
     fputs(" column ", stream);
     fputll((long long)tag.location.column, stream);
+}
+
+void throwError(const char* message, Tag tag) {
+    fputs("Syntax error: ", stderr);
+    fputs(message, stderr);
+    fputs(" ", stderr);
+    printTag(tag, "\'", stderr);
+    fputs("\n", stderr);
+    exit(1);
 }

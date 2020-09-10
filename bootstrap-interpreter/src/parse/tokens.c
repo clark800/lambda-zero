@@ -16,11 +16,12 @@ static bool isNumberLexeme(String lexeme) {
 }
 
 static Node* parseNumber(Tag tag) {
-    tokenErrorIf(!isNumberLexeme(tag.lexeme), "invalid token", tag);
+    if (!isNumberLexeme(tag.lexeme))
+        throwError("invalid token", tag);
     errno = 0;
     long long value = strtoll(tag.lexeme.start, NULL, 10);
-    tokenErrorIf((value == LLONG_MIN || value == LLONG_MAX) &&
-        errno == ERANGE, "magnitude of numeral is too large", tag);
+    if ((value == LLONG_MIN || value == LLONG_MAX) && errno == ERANGE)
+       throwError("magnitude of numeral is too large", tag);
     return Number(tag, value);
 }
 
@@ -40,7 +41,7 @@ static unsigned char decodeCharacter(const char* start, Tag tag) {
         case '\\': return '\\';
         case '\"': return '\"';
         case '\'': return '\'';
-        default: tokenErrorIf(true, "invalid escape sequence in", tag);
+        default: throwError("invalid escape sequence in", tag);
     }
     return '\0';
 }
@@ -48,15 +49,18 @@ static unsigned char decodeCharacter(const char* start, Tag tag) {
 static Node* parseCharacterLiteral(Tag tag) {
     char quote = tag.lexeme.start[0];
     const char* end = tag.lexeme.start + tag.lexeme.length - 1;
-    tokenErrorIf(end[0] != quote, "missing end quote for", tag);
+    if (end[0] != quote)
+        throwError("missing end quote for", tag);
     const char* skip = skipQuoteCharacter(tag.lexeme.start + 1);
-    tokenErrorIf(skip != end, "invalid character literal", tag);
+    if (skip != end)
+        throwError("invalid character literal", tag);
     return Number(tag, decodeCharacter(tag.lexeme.start + 1, tag));
 }
 
 static Node* buildStringLiteral(Tag tag, const char* start) {
     char c = start[0];
-    tokenErrorIf(c == '\n' || c == '\0', "missing end quote for", tag);
+    if (c == '\n' || c == '\0')
+        throwError("missing end quote for", tag);
     return c == tag.lexeme.start[0] ? Nil(tag) :
         prepend(tag, Number(tag, decodeCharacter(start, tag)),
         buildStringLiteral(tag, skipQuoteCharacter(start)));
@@ -79,7 +83,7 @@ Node* parseToken(Token token) {
         case NEWLINE: return parseSymbol(renameTag(token.tag, "\n"),
             (long long)(token.tag.lexeme.length - 1));
         case INVALID:
-            tokenErrorIf(true, "invalid character", token.tag);
+            throwError("invalid character", token.tag);
             return NULL;
         default: return parseSymbol(token.tag, 0);
     }

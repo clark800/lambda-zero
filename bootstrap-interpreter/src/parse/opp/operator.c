@@ -21,7 +21,8 @@ struct Syntax {
 };
 
 static inline Node* Operator(Tag tag, long long subprecedence, void* syntax) {
-    tokenErrorIf(subprecedence >= 256, "indent too big", tag);
+    if (subprecedence >= 256)
+        throwError("indent too big", tag);
     return newLeaf(tag, 0, (char)subprecedence, syntax);
 }
 
@@ -156,7 +157,7 @@ void addCoreSyntax(const char* symbol, Precedence precedence,
 void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
         Fixity fixity, Reducer reducer) {
     size_t length = symbol[0] == 0 && fixity == CLOSEFIX ? 1 : strlen(symbol);
-    String lexeme = newString(symbol, (unsigned int)length);
+    String lexeme = newString(symbol, (unsigned char)length);
     Precedence leftPrecedence = fixity == OPENFIX ? outerPrecedence : 0;
     Precedence rightPrecedence = fixity == OPENFIX ? 0 : outerPrecedence;
     appendSyntax((Syntax){lexeme, lexeme, EMPTY, type,
