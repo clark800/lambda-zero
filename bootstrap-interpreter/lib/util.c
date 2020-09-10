@@ -52,4 +52,3 @@ void fputll(long long n, FILE* stream) {
     char buffer[3 * sizeof(long long)];
     fputs(lltoa(n, buffer, 10), stream);
 }
-

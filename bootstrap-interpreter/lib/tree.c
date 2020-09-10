@@ -17,7 +17,7 @@ struct Node {
 };
 
 Node VOID_NODE = {.referenceCount=1, .type=0, .variety=0, .tag={.lexeme={
-    .start="VOID", .length=4}, .location={.file=NULL, .line=0, .column=0}},
+    .start="VOID", .length=4}, .location={.line=0, .column=0, .file=0}},
     .left={.value=0}, .right={.value=0}};
 Node *const VOID = &VOID_NODE;
 
@@ -50,7 +50,7 @@ Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right) {
 }
 
 Node* newPair(Node* left, Node* right) {
-    Tag tag = newTag(newString(NULL, 0), newLocation(NULL, 0, 0));
+    Tag tag = newTag(newString(NULL, 0), newLocation(0, 0, 0));
     return newBranch(tag, -1, 0, left, right);
 }
 
