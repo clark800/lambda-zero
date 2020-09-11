@@ -91,7 +91,7 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
         return applyPlainDefinition(tag, zero, form, scope);
     }
 
-    syntaxErrorIf(!isName(name), "invalid constructor name", name);
+    syntaxErrorNodeIf(!isName(name), "invalid constructor name", name);
 
     // let p_* be constructor parameters (m total)
     // let c_* be constructor names (n total)
@@ -106,7 +106,7 @@ static Node* newConstructorDefinition(Tag tag, Node* form, Node* scope,
     Node* node = form;
     for (unsigned int k = 0; k < m; ++k, node = getLeft(node))
         if (!isValidConstructorParameter(getRight(node)))
-            syntaxError("invalid constructor parameter", getRight(node));
+            syntaxErrorNode("invalid constructor parameter", getRight(node));
     return applyPlainDefinition(tag, name, constructor, scope);
 }
 
@@ -189,48 +189,45 @@ Node* applyDefinition(Node* definition, Node* scope) {
     return NULL;
 }
 
-Node* reduceApply(Node* operator, Node* left, Node* right) {
-    return Juxtaposition(getTag(operator), left, right);
+static Node* reduceAdfix(Tag tag, Node* argument) {
+    return Juxtaposition(tag, Name(tag), argument);
 }
 
-static Node* reduceAdfix(Node* operator, Node* argument) {
-    return reduceApply(operator, Name(getTag(operator)), argument);
-}
-
-Node* reducePrefix(Node* operator, Node* left, Node* right) {
+Node* reducePrefix(Tag tag, Node* left, Node* right) {
     (void)left;
-    return reduceAdfix(operator, right);
+    return reduceAdfix(tag, right);
 }
 
-static Node* reducePostfix(Node* operator, Node* left, Node* right) {
+static Node* reducePostfix(Tag tag, Node* left, Node* right) {
     (void)right;
-    return reduceAdfix(operator, left);
+    return reduceAdfix(tag, left);
 }
 
-Node* reduceInfix(Node* operator, Node* left, Node* right) {
-    return reduceApply(operator, reduceAdfix(operator, left), right);
+Node* reduceInfix(Tag tag, Node* left, Node* right) {
+    return Juxtaposition(tag, reduceAdfix(tag, left), right);
 }
 
-static void defineSyntax(Node* definition, Node* left, Node* right) {
-    syntaxErrorIf(!isJuxtaposition(left), "invalid left operand", left);
+static void defineSyntax(Tag definitionTag, Node* left, Node* right) {
+    syntaxErrorNodeIf(!isJuxtaposition(left), "invalid left operand", left);
     Node* name = getRight(left);
-    syntaxErrorIf(!isName(name), "expected symbol operand to", getLeft(left));
+    syntaxErrorNodeIf(!isName(name), "expected name operand to", getLeft(left));
     if (!isJuxtaposition(right))
-        syntaxError("invalid syntax definition", definition);
+        syntaxError("invalid syntax definition", definitionTag);
 
     Tag tag = getTag(name);
     Node* fixity = getLeft(right);
     Node* argument = getRight(right);
 
     if (isThisName(fixity, "alias") || isThisName(fixity, "syntax")) {
-        syntaxErrorIf(!isName(argument), "expected operator name", argument);
+        if (!isName(argument))
+            syntaxErrorNode("expected operator name", argument);
         addSyntaxCopy(getLexeme(name), argument, isThisName(fixity, "alias"));
         return;
     }
 
     Precedence precedence = isNumber(argument) ?
         (Precedence)getValue(argument) : 0;
-    syntaxErrorIf(precedence > 99, "invalid precedence", argument);
+    syntaxErrorNodeIf(precedence > 99, "invalid precedence", argument);
 
     Node* prior = isNumber(argument) ? NULL : argument;
 
@@ -241,16 +238,15 @@ static void defineSyntax(Node* definition, Node* left, Node* right) {
     else if (isThisName(fixity, "infixR"))
         addSyntax(tag, prior, precedence, INFIX, R, reduceInfix);
     else if (isThisName(fixity, "interfix"))
-        addSyntax(tag, prior, precedence, INFIX, L, reduceApply);
+        addSyntax(tag, prior, precedence, INFIX, L, Juxtaposition);
     else if (isThisName(fixity, "prefix"))
         addSyntax(tag, prior, precedence, PREFIX, L, reducePrefix);
     else if (isThisName(fixity, "postfix"))
         addSyntax(tag, prior, precedence, POSTFIX, L, reducePostfix);
-    else syntaxError("invalid fixity", fixity);
+    else syntaxErrorNode("invalid fixity", fixity);
 }
 
-Node* reduceDefine(Node* operator, Node* left, Node* right) {
-    Tag tag = getTag(operator);
+Node* reduceDefine(Tag tag, Node* left, Node* right) {
     DefinitionVariety variety = PLAINDEFINITION;
     if (isKeyphrase(left, "maybe")) {
         variety = MAYBEDEFINITION;
@@ -259,7 +255,7 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
         variety = TRYDEFINITION;
         left = getRight(left);
     } else if (isKeyphrase(left, "syntax")) {
-        defineSyntax(operator, left, right);
+        defineSyntax(tag, left, right);
         return Definition(tag, SYNTAXDEFINITION, left, right);
     }
 
@@ -267,14 +263,14 @@ Node* reduceDefine(Node* operator, Node* left, Node* right) {
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))
         right = newLazyArrow(getRight(left), right);
-    syntaxErrorIf(!isName(left), "invalid left hand side", operator);
+    syntaxErrorIf(!isName(left), "invalid left hand side", tag);
     if (isThisName(left, "main"))
         return applyPlainDefinition(tag, left, right, newMainCall(left));
     return Definition(tag, variety, left, transformRecursion(left, right));
 }
 
-Node* reduceADTDefinition(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isValidPattern(left), "invalid left hand side", operator);
-    syntaxErrorIf(!isSetBuilder(right), "ADT required to right of", operator);
-    return Definition(getTag(operator), ADTDEFINITION, left, right);
+Node* reduceADTDefinition(Tag tag, Node* left, Node* right) {
+    syntaxErrorIf(!isValidPattern(left), "invalid left hand side", tag);
+    syntaxErrorIf(!isSetBuilder(right), "ADT required to right of", tag);
+    return Definition(tag, ADTDEFINITION, left, right);
 }

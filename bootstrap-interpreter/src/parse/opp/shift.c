@@ -14,13 +14,13 @@ void shiftOperand(Stack* stack, Node* operand) {
                 push(stack, operand);
                 push(stack, operator);
             } else push(stack, operand);
-        } else syntaxError("missing operator before", operand);
+        } else syntaxErrorNode("missing operator before", operand);
     } else push(stack, operand);
 }
 
 void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
-        syntaxError("missing left operand for", operator);
+        syntaxErrorNode("missing left operand for", operator);
     Hold* operand = pop(stack);
     shiftOperand(stack, reduce(operator, getNode(operand), VOID));
     release(operand);
@@ -28,7 +28,7 @@ void shiftPostfix(Stack* stack, Node* operator) {
 
 void shiftInfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
-        syntaxError("missing left operand for", operator);
+        syntaxErrorNode("missing left operand for", operator);
     push(stack, operator);
 }
 
@@ -49,7 +49,7 @@ void shiftClose(Stack* stack, Node* close) {
     if (isOperator(contents)) {
         if (getFixity(contents) == OPENFIX)
             shiftBracket(stack, contents, close, NULL);
-        else syntaxError("missing right operand for", contents);
+        else syntaxErrorNode("missing right operand for", contents);
     } else {
         Hold* open = pop(stack);
         shiftBracket(stack, getNode(open), close, contents);

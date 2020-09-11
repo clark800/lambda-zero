@@ -90,11 +90,16 @@ void printTag(Tag tag, const char* quote, FILE* stream) {
     fputll((long long)tag.location.column, stream);
 }
 
-void throwError(const char* message, Tag tag) {
+void syntaxError(const char* message, Tag tag) {
     fputs("Syntax error: ", stderr);
     fputs(message, stderr);
     fputs(" ", stderr);
     printTag(tag, "\'", stderr);
     fputs("\n", stderr);
     exit(1);
+}
+
+void syntaxErrorIf(bool condition, const char* message, Tag tag) {
+    if (condition)
+        syntaxError(message, tag);
 }

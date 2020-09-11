@@ -15,30 +15,29 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
         getLeft(arguments)), getRight(arguments));
 }
 
-static Node* newSpineName(Node* node, const char* name, unsigned int length) {
-    syntaxErrorIf(length > strlen(name), "too many arguments", node);
+static Node* newSpineName(Tag tag, const char* name, unsigned int length) {
+    syntaxErrorIf(length > strlen(name), "too many arguments", tag);
     String lexeme = newString(name, (unsigned char)length);
-    return Name(newTag(lexeme, getTag(node).location));
+    return Name(newTag(lexeme, tag.location));
 }
 
-static Node* newTuple(Node* open, Node* commaList) {
+static Node* newTuple(Tag tag, Node* commaList) {
     const char* lexeme = ",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,";
-    Node* name = newSpineName(open, lexeme, getCommaListLength(commaList) - 1);
-    return applyToCommaList(getTag(open), name, commaList);
+    Node* name = newSpineName(tag, lexeme, getCommaListLength(commaList) - 1);
+    return applyToCommaList(tag, name, commaList);
 }
 
-Node* reduceOpenParenthesis(Node* open, Node* before, Node* contents) {
-    Tag tag = getTag(open);
+Node* reduceOpenParenthesis(Tag tag, Node* before, Node* contents) {
     if (contents == NULL) {
         Node* unit = FixedName(tag, "()");
         return before == NULL ? unit : Juxtaposition(tag, before, unit);
     }
     if (isDefinition(contents))
-        syntaxError("missing scope for definition", contents);
+        syntaxErrorNode("missing scope for definition", contents);
     if (before != NULL)
         return applyToCommaList(tag, before, contents);
     if (isCommaPair(contents))
-        return newTuple(open, contents);
+        return newTuple(tag, contents);
     if (isArrow(contents))
         setVariety(contents, LOCKEDARROW);
     if (isJuxtaposition(contents))
@@ -46,15 +45,14 @@ Node* reduceOpenParenthesis(Node* open, Node* before, Node* contents) {
     return contents;
 }
 
-Node* reduceOpenSquareBracket(Node* open, Node* before, Node* contents) {
-    Tag tag = getTag(open);
+Node* reduceOpenSquareBracket(Tag tag, Node* before, Node* contents) {
     if (contents == NULL) {
-        syntaxErrorIf(before != NULL, "missing argument to", open);
+        syntaxErrorIf(before != NULL, "missing argument to", tag);
         return Nil(tag);
     }
     if (before != NULL) {
         const char* lexeme = "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[";
-        Node* name = newSpineName(open, lexeme, getCommaListLength(contents));
+        Node* name = newSpineName(tag, lexeme, getCommaListLength(contents));
         Node* base = Juxtaposition(tag, name, before);
         return applyToCommaList(tag, base, contents);
     }
@@ -66,15 +64,14 @@ Node* reduceOpenSquareBracket(Node* open, Node* before, Node* contents) {
     return prepend(tag, contents, list);
 }
 
-Node* reduceOpenBrace(Node* open, Node* before, Node* patterns) {
-    syntaxErrorIf(before != NULL, "invalid operand before", open);
+Node* reduceOpenBrace(Tag tag, Node* before, Node* patterns) {
+    syntaxErrorIf(before != NULL, "invalid operand before", tag);
     if (patterns == NULL)
-        return SetBuilder(setTagFixity(
-            renameTag(getTag(open), "{}"), NOFIX), VOID);
-    return SetBuilder(getTag(open), newTuple(open, patterns));
+        return SetBuilder(setTagFixity(renameTag(tag, "{}"), NOFIX), VOID);
+    return SetBuilder(tag, newTuple(tag, patterns));
 }
 
-Node* reduceOpenFile(Node* open, Node* before, Node* contents) {
-    syntaxErrorIf(before != NULL, "invalid operand before", open);
+Node* reduceOpenFile(Tag tag, Node* before, Node* contents) {
+    syntaxErrorIf(before != NULL, "invalid operand before", tag);
     return contents;
 }
