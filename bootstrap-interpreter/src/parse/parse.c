@@ -54,10 +54,10 @@ static void shiftNode(Stack* stack, Node* node) {
         Node* top = getTop(stack);
         if (isOperator(top)) {
             if (getFixity(top) == PREFIX)
-                syntaxError("missing operand after", top);
+                syntaxErrorNode("missing operand after", top);
         } else {
             if (getSubprecedence(node) % 2 != 0)
-                syntaxError("odd-width indent after", node);
+                syntaxErrorNode("odd-width indent after", node);
             shift(stack, node);
         }
     } else if (isOperator(node)) {
@@ -95,7 +95,7 @@ static Hold* synthesize(Token (*lexer)(Token), Token start) {
                 && token.type != SPACE)
             shiftNode(stack, parseToken(token));
     Hold* ast = hold(getTop(stack));
-    syntaxErrorIf(getNode(ast) == startNode, "no input", getNode(ast));
+    syntaxErrorNodeIf(getNode(ast) == startNode, "no input", getNode(ast));
     deleteStack(stack);
     return ast;
 }

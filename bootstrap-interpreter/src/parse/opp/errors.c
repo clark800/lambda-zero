@@ -1,10 +1,10 @@
 #include "tree.h"
 
-void syntaxError(const char* message, Node* node) {
-    throwError(message, getTag(node));
+void syntaxErrorNode(const char* message, Node* node) {
+    syntaxError(message, getTag(node));
 }
 
-void syntaxErrorIf(bool condition, const char* message, Node* node) {
+void syntaxErrorNodeIf(bool condition, const char* message, Node* node) {
     if (condition)
-        syntaxError(message, node);
+        syntaxErrorNode(message, node);
 }

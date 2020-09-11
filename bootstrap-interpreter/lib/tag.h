@@ -37,4 +37,5 @@ bool isThisString(String a, const char* b);
 bool isSameString(String a, String b);
 void printString(String string, FILE* stream);
 void printTag(Tag tag, const char* quote, FILE* stream);
-void throwError(const char* message, Tag tag);
+void syntaxError(const char* message, Tag tag);
+void syntaxErrorIf(bool condition, const char* message, Tag tag);

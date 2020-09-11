@@ -16,13 +16,12 @@ struct Syntax {
     Fixity fixity;
     Associativity associativity;
     bool special;
-    Node* (*reduce)(Node* operator, Node* left, Node* right);
+    Reducer reduce;
     Syntax* infixSyntax;        // for binary prefix operators
 };
 
 static inline Node* Operator(Tag tag, long long subprecedence, void* syntax) {
-    if (subprecedence >= 256)
-        throwError("indent too big", tag);
+    syntaxErrorIf(subprecedence >= 256, "indent too big", tag);
     return newLeaf(tag, 0, (char)subprecedence, syntax);
 }
 
@@ -59,18 +58,19 @@ Node* reduce(Node* operator, Node* left, Node* right) {
     Syntax* syntax = getSyntax(operator);
     if (syntax->prior.length > 0) {
         Node* node = getPriorNode(operator, left, right);
-        syntaxErrorIf(node == NULL, "invalid operator with prior", operator);
+        if (node == NULL)
+            syntaxErrorNode("invalid operator with prior", operator);
         if (isLeaf(node) || !isSameString(getLexeme(node), syntax->prior))
-            syntaxError("invalid prior for", operator);
+            syntaxErrorNode("invalid prior for", operator);
     }
-    return syntax->reduce(operator, left, right);
+    return syntax->reduce(getTag(operator), left, right);
 }
 
 Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
     if (getBracketType(open) != getBracketType(close)) {
         if (getBracketType(close) == '\0')
-            syntaxError("missing close for", open);
-        else syntaxError("missing open for", close);
+            syntaxErrorNode("missing close for", open);
+        else syntaxErrorNode("missing open for", close);
     }
 
     return reduce(close, before, reduce(open, before, contents));
@@ -84,9 +84,9 @@ bool isHigherPrecedence(Node* left, Node* right) {
 
     if (leftSyntax->rightPrecedence == rightSyntax->leftPrecedence) {
         if (leftSyntax->associativity != rightSyntax->associativity)
-            syntaxError("incompatible associativity", right);
+            syntaxErrorNode("incompatible associativity", right);
         if (rightSyntax->associativity == N)
-            syntaxError("operator is non-associative", right);
+            syntaxErrorNode("operator is non-associative", right);
 
         if (leftSyntax->associativity == R)
             return getSubprecedence(left) > getSubprecedence(right);
@@ -131,9 +131,9 @@ void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
     if (prior != NULL) {
         // if special, override precedence with precedence of prior
         Syntax* syntax = findSyntax(getLexeme(prior));
-        syntaxErrorIf(syntax == NULL, "syntax not defined", prior);
+        syntaxErrorNodeIf(syntax == NULL, "syntax not defined", prior);
         if (syntax->associativity != associativity || associativity == N)
-            syntaxError("invalid associativity for prior", prior);
+            syntaxErrorNode("invalid associativity for prior", prior);
         precedence = syntax->associativity == L ?
             syntax->rightPrecedence : syntax->leftPrecedence;
     }
@@ -164,9 +164,9 @@ void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
         leftPrecedence, rightPrecedence, fixity, R, true, reducer, NULL});
 }
 
-Node* reduceBinaryPrefix(Node* operator, Node* left, Node* right) {
+Node* reduceBinaryPrefix(Tag tag, Node* left, Node* right) {
     (void)left, (void)right;
-    syntaxError("Internal error: reduce binary prefix", operator);
+    syntaxError("Internal error: reduce binary prefix", tag);
     return NULL;
 }
 
@@ -185,7 +185,7 @@ Node* getBinaryPrefixInfixOperator(Node* operator) {
     if (infixSyntax == NULL)
         return NULL;
     if (getFixity(operator) != PREFIX)
-        syntaxError("infix syntax on non-prefix operator", operator);
+        syntaxErrorNode("infix syntax on non-prefix operator", operator);
     return Operator(getTag(operator), getSubprecedence(operator), infixSyntax);
 }
 
@@ -196,6 +196,6 @@ void addCoreAlias(const char* alias, const char* name) {
 
 void addSyntaxCopy(String lexeme, Node* name, bool alias) {
     Syntax* syntax = findSyntax(getLexeme(name));
-    syntaxErrorIf(syntax == NULL, "syntax not defined", name);
+    syntaxErrorNodeIf(syntax == NULL, "syntax not defined", name);
     appendSyntaxCopy(syntax, lexeme, alias ? syntax->alias : lexeme);
 }

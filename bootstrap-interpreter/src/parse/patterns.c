@@ -35,7 +35,7 @@ Node* newLazyArrow(Node* left, Node* right) {
             newLazyArrow(getRight(left), right), Underscore(getTag(left), 1)));
 
     // example: (x, y) -> body  ~>  _ -> (x -> y -> body) first(_) second(_)
-    syntaxErrorIf(!isJuxtaposition(left), "invalid parameter", left);
+    syntaxErrorNodeIf(!isJuxtaposition(left), "invalid parameter", left);
     Node* node = left;
     Node* body = right;
     for (; isJuxtaposition(node); node = getLeft(node))
@@ -48,7 +48,7 @@ Node* newLazyArrow(Node* left, Node* right) {
 }
 
 Node* newCaseArrow(Node* left, Node* right) {
-    syntaxErrorIf(isAsPattern(left), "invalid '@' in case", left);
+    syntaxErrorNodeIf(isAsPattern(left), "invalid '@' in case", left);
     if (isUnderscore(left))
         return SimpleArrow(left, right);
     // example: (x, y) -> B ---> (,)(x)(y) -> B ---> this -> this(x -> y -> B)

@@ -6,8 +6,8 @@
 #include "define.h"
 #include "brackets.h"
 
-static Node* reduceArrow(Node* operator, Node* left, Node* right) {
-    (void)operator;
+static Node* reduceArrow(Tag tag, Node* left, Node* right) {
+    (void)tag;
     if (isName(left))
         return SimpleArrow(left, right);
     if (isColonPair(left) || isAsPattern(left))
@@ -17,46 +17,34 @@ static Node* reduceArrow(Node* operator, Node* left, Node* right) {
     return newCaseArrow(left, right);
 }
 
-static Node* reducePipeline(Node* operator, Node* left, Node* right) {
-    return reduceApply(operator, right, left);
+static Node* reducePipeline(Tag tag, Node* left, Node* right) {
+    return Juxtaposition(tag, right, left);
 }
 
-static Node* reduceCommaPair(Node* operator, Node* left, Node* right) {
-    return CommaPair(getTag(operator), left, right);
-}
-
-static Node* reduceColonPair(Node* operator, Node* left, Node* right) {
+static Node* reduceColonPair(Tag tag, Node* left, Node* right) {
     if (isColonPair(left) || !isValidPattern(left))
-        syntaxError("invalid left side of colon", operator);
-    if (isColonPair(right))
-        syntaxError("invalid right side of colon", operator);
-    return ColonPair(getTag(operator), left, right);
+        syntaxError("invalid left side of colon", tag);
+    syntaxErrorIf(isColonPair(right), "invalid right side of colon", tag);
+    return ColonPair(tag, left, right);
 }
 
-static Node* reduceAsPattern(Node* operator, Node* left, Node* right) {
-    return AsPattern(getTag(operator), left, right);
-}
-
-static Node* reduceWhere(Node* operator, Node* left, Node* right) {
-    if (!isDefinition(right))
-        syntaxError("expected definition to right of", operator);
+static Node* reduceWhere(Tag tag, Node* left, Node* right) {
+    syntaxErrorIf(!isDefinition(right), "expected definition to right of", tag);
     if (isSyntaxDefinition(right))
-        syntaxError("invalid definition to right of", operator);
+        syntaxError("invalid definition to right of", tag);
     return applyDefinition(right, left);
 }
 
-static Node* reduceIs(Node* operator, Node* left, Node* right) {
-    syntaxErrorIf(!isKeyphrase(left, "if"), "expected 'if' before", operator);
-    syntaxErrorIf(!isValidPattern(right), "expected pattern after", operator);
-    Tag tag = getTag(operator);
+static Node* reduceIs(Tag tag, Node* left, Node* right) {
+    syntaxErrorIf(!isKeyphrase(left, "if"), "expected 'if' before", tag);
+    syntaxErrorIf(!isValidPattern(right), "expected pattern after", tag);
     Node* asPattern = AsPattern(tag, getRight(left), right);
     return Juxtaposition(tag, FixedName(tag, "if is"), asPattern);
 }
 
-static Node* reduceIfIs(Node* operator, Node* asPattern, Node* thenBlock) {
+static Node* reduceIfIs(Tag tag, Node* asPattern, Node* thenBlock) {
     if (!isAsPattern(asPattern))
-        syntaxError("expected as pattern to right of", operator);
-    Tag tag = getTag(operator);
+        syntaxError("expected as pattern to right of", tag);
     Node* expression = getLeft(asPattern);
     Node* pattern = getRight(asPattern);
     Node* elseBlock = Underscore(tag, 3);
@@ -68,7 +56,7 @@ static Node* reduceIfIs(Node* operator, Node* asPattern, Node* thenBlock) {
         Juxtaposition(tag, function, expression));
 }
 
-static Node* reduceNewline(Node* operator, Node* left, Node* right) {
+static Node* reduceNewline(Tag tag, Node* left, Node* right) {
     // if left is a syntax definition then right is the scope of the definition
     // which has already been parsed, so the scope of the definition is over
     if (isSyntaxDefinition(left))
@@ -77,43 +65,42 @@ static Node* reduceNewline(Node* operator, Node* left, Node* right) {
     if (isDefinition(left))
         return applyDefinition(left, right);
     if (isKeyphrase(left, "def"))
-        return reduceDefine(operator, getRight(left), right);
+        return reduceDefine(tag, getRight(left), right);
     if (isKeyphrase(left, "sig"))
         return right; // ignore sig
     if (isCase(left) && isCase(right))
-        return combineCases(getTag(operator), left, right);
+        return combineCases(tag, left, right);
     if (isArrow(left) && isArrow(right))
-        syntaxError("consecutive functions must be cases", operator);
+        syntaxError("consecutive functions must be cases", tag);
     if (isKeyphrase(left, "case"))
         return newCaseArrow(getRight(left), right);
     if (isKeyphrase(left, "if is"))
-        return reduceIfIs(operator, getRight(left), right);
-    return reduceApply(operator, left, right);
+        return reduceIfIs(tag, getRight(left), right);
+    return Juxtaposition(tag, left, right);
 }
 
-static Node* reduceAbort(Node* operator, Node* left, Node* right) {
+static Node* reduceAbort(Tag tag, Node* left, Node* right) {
     (void)left;
-    Tag tag = getTag(operator);
     Node* exit = FixedName(tag, "(exit)");
     return Juxtaposition(tag, exit, Juxtaposition(tag, Printer(tag),
         Juxtaposition(tag, FixedName(tag, "abort"), right)));
 }
 
-static Node* reduceReserved(Node* operator, Node* left, Node* right) {
+static Node* reduceReserved(Tag tag, Node* left, Node* right) {
     (void)left, (void)right;
-    syntaxError("reserved operator", operator);
+    syntaxError("reserved operator", tag);
     return NULL;
 }
 
-static Node* reduceErased(Node* operator, Node* left, Node* right) {
+static Node* reduceErased(Tag tag, Node* left, Node* right) {
     (void)left, (void)right;
     // convert to a name that cannot be defined so it will cause an error
     // in bind unless it is erased
-    return FixedName(getTag(operator), "(_)");
+    return FixedName(tag, "(_)");
 }
 
-static Node* reduceClose(Node* operator, Node* left, Node* right) {
-    (void)operator, (void)left;
+static Node* reduceClose(Tag tag, Node* left, Node* right) {
+    (void)tag, (void)left;
     return right;
 }
 
@@ -128,34 +115,31 @@ static bool isParenthesizedInfixOperator(Node* node) {
         ".*") && isName(getLeft(getLeft(node)));
 }
 
-static Node* reduceOpenSection(Node* open, Node* before, Node* contents) {
-    syntaxErrorIf(before != NULL, "invalid operand before section", open);
-    if (isCommaPair(contents))
-        syntaxError("comma invalid in section", open);
-    if (!isJuxtaposition(contents))
-        syntaxError("invalid section", open);
+static Node* reduceOpenSection(Tag tag, Node* before, Node* contents) {
+    syntaxErrorIf(before != NULL, "invalid operand before section", tag);
+    syntaxErrorIf(isCommaPair(contents), "comma invalid in section", tag);
+    syntaxErrorIf(!isJuxtaposition(contents), "invalid section", tag);
     if (isParenthesizedAdfixOperator(contents))
         return getLeft(contents);
     if (isParenthesizedInfixOperator(contents))
         return getLeft(getLeft(contents));
-    return LockedArrow(FixedName(getTag(open), ".*"), contents);
+    return LockedArrow(FixedName(tag, ".*"), contents);
 }
 
-static Node* reduceCloseSection(Node* close, Node* before, Node* contents) {
-    syntaxErrorIf(before != NULL, "invalid operand before section", close);
-    if (isTuple(contents))
-        syntaxError("comma invalid in section", close);
+static Node* reduceCloseSection(Tag tag, Node* before, Node* contents) {
+    syntaxErrorIf(before != NULL, "invalid operand before section", tag);
+    syntaxErrorIf(isTuple(contents), "comma invalid in section", tag);
     if (!isJuxtaposition(contents) && !isName(contents))
-        syntaxError("invalid section", close);
+        syntaxError("invalid section", tag);
     if (isParenthesizedAdfixOperator(contents))
         return getLeft(contents);
     if (isName(contents))
         return contents;    // parenthesized operator
-    return LockedArrow(FixedName(getTag(close), "*."), contents);
+    return LockedArrow(FixedName(tag, "*."), contents);
 }
 
-static Node* reduceReverseArrow(Node* operator, Node* left, Node* right) {
-    return Definition(getTag(operator), BINDDEFINITION, left, right);
+static Node* reduceReverseArrow(Tag tag, Node* left, Node* right) {
+    return Definition(tag, BINDDEFINITION, left, right);
 }
 
 void initSymbols(void) {
@@ -173,14 +157,14 @@ void initSymbols(void) {
     addCoreSyntax("\n", 1, INFIX, R, reduceNewline);
     addCoreSyntax(";;", 2, INFIX, R, reduceNewline);
     addCoreSyntax("|", 3, INFIX, N, reduceReserved);
-    addCoreSyntax(",", 4, INFIX, L, reduceCommaPair);
+    addCoreSyntax(",", 4, INFIX, L, CommaPair);
     addCoreSyntax("def", 5, PREFIX, L, reducePrefix);
     addCoreSyntax("sig", 5, PREFIX, L, reducePrefix);
     addCoreSyntax(":=", 5, INFIX, R, reduceDefine);
     addCoreSyntax("::=", 5, INFIX, R, reduceADTDefinition);
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
-    addCoreSyntax("<|", 6, INFIX, R, reduceApply);
+    addCoreSyntax("<|", 6, INFIX, R, Juxtaposition);
     addBinaryPrefixSyntax("forall", 8, reduceErased);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
@@ -189,7 +173,7 @@ void initSymbols(void) {
     addCoreSyntax("=>", 10, INFIX, R, reduceErased);
     addCoreSyntax(">->", 10, INFIX, R, reduceErased);
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
-    addCoreSyntax("@", 12, INFIX, N, reduceAsPattern);
+    addCoreSyntax("@", 12, INFIX, N, AsPattern);
     addCoreSyntax("is", 13, INFIX, L, reduceIs);
     addCoreSyntax("abort", 14, PREFIX, L, reduceAbort);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);

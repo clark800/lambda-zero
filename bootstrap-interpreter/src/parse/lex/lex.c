@@ -56,8 +56,7 @@ static const char* skipLexeme(const char* s) {
 static String getNextLexeme(Tag tag) {
     const char* start = tag.lexeme.start + tag.lexeme.length;
     long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
-    if (length > MAX_LEXEME_LENGTH)
-        throwError("lexeme too long", tag);
+    syntaxErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", tag);
     return newString(start, (unsigned char)length);
 }
 
@@ -67,16 +66,14 @@ static Location advanceLocation(Tag tag) {
         if (isLineFeed(filename[0]) || filename[0] == '\0')
             return newLocation(0, 0, 0);
         unsigned short file = newFilename(filename);
-        if (file == 0)
-            throwError("too many files", tag);
+        syntaxErrorIf(file == 0, "too many files", tag);
         return newLocation(file, 1, 0);
     }
     Location loc = tag.location;
     if (isLineFeed(tag.lexeme.start[0]))
         return newLocation(loc.file, loc.line + 1, tag.lexeme.length);
     unsigned int column = (unsigned int)(loc.column + tag.lexeme.length);
-    if (column > MAX_COLUMN)
-        throwError("column too wide", tag);
+    syntaxErrorIf(column > MAX_COLUMN, "column too wide", tag);
     return newLocation(loc.file, loc.line, (unsigned short)column);
 }
 

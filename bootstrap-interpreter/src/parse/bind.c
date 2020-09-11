@@ -5,12 +5,12 @@
 #include "term.h"
 
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
-    if (isUnused(name))
-       syntaxError("cannot reference a symbol starting with underscore", name);
+    syntaxErrorNodeIf(isUnused(name),
+        "cannot reference a symbol starting with underscore", name);
     for (size_t i = 1; i <= length(parameters); ++i) {
         Node* parameter = elementAt(parameters, length(parameters) - i);
         if (isSameLexeme(parameter, name)) {
-            syntaxErrorIf(isForbidden(name), "cannot reference", name);
+            syntaxErrorNodeIf(isForbidden(name), "cannot reference", name);
             return (unsigned long long)i;
         }
     }
@@ -33,7 +33,7 @@ static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
     }
     unsigned long long i = (unsigned long long)getValue(node);
     unsigned long long index = i > 0 ? i : findDebruijnIndex(node, parameters);
-    syntaxErrorIf(index == 0, "undefined symbol", node);
+    syntaxErrorNodeIf(index == 0, "undefined symbol", node);
     unsigned long long localDepth = length(parameters) - globalDepth;
     long long debruijn = (long long)(index <= localDepth ? index :
         index - length(parameters) - 1);
@@ -59,15 +59,15 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
             break;
         case NUMBER: setType(node, NUMERAL); break;
         case DEFINITION:
-            syntaxError("missing scope for definition", node); break;
+            syntaxErrorNode("missing scope for definition", node); break;
         case ASPATTERN:
-            syntaxError("as pattern not in parameter position", node); break;
+            syntaxErrorNode("as pattern not in valid location", node); break;
         case COMMAPAIR:
-            syntaxError("comma not inside brackets", node); break;
+            syntaxErrorNode("comma not inside brackets", node); break;
         case COLONPAIR:
-            syntaxError("colon not in valid location", node); break;
+            syntaxErrorNode("colon not in valid location", node); break;
         case SETBUILDER:
-            syntaxError("must appear on the right side of '::='", node); break;
+            syntaxErrorNode("bracket not in valid location", node); break;
         case OPERATOR:
             assert(false); break;
     }

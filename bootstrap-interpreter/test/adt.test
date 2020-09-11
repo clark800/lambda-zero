@@ -1,6 +1,6 @@
 ===============================================================================
 x ↦ {2}
-Syntax error: must appear on the right side of '::=' '{' at line 1 column 7
+Syntax error: bracket not in valid location '{' at line 1 column 7
 ===============================================================================
 1,2 ::= {()}
 Syntax error: invalid left hand side '::=' at line 1 column 5
