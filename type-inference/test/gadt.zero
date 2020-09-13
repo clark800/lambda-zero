@@ -3,7 +3,8 @@ syntax(:::) := infixR(40)
 syntax(up) := prefix(90)
 syntax(<>) := infixR(70)
 syntax(match) := prefix(7)
-syntax(+) ≔ infixL(50)
+syntax(if) := prefix(13)
+syntax(+) := infixL(50)
 
 f <> g ≔ x ↦ f(g(x))
 fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
@@ -14,23 +15,23 @@ Nat ::= {0, up(n : Nat)}
 
 Vector(n, a) ::= {
     Nil : Vector(0, a),
-    (_ : a) ::: (_ : Vector(n, a)) : Vector(up n, a)
-    #(_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a) forall(n' : Nat)
+    forall(n' : Nat) (_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a)
 }
 
 vector := 1 ::: Nil
 
 vector' := 2 ::: vector
 
-sig ∀(n : Nat) forall(a) Vector(n, a) => Nat
+sig forall(n : Nat) forall(a) Vector(n, a) => Nat
 def vlength
     case Nil -> 0
     case x ::: xs' -> up vlength(xs')
 
-sig n >-> m >-> a >-> Vector(n, a) => Vector(m, a) => Vector(n + m, a)
-def concatenate(xs, ys)
-    match xs
-        Nil -> ys
-        x ::: xs' -> x ::: concatenate(xs', ys)
+#sig forall(n : Nat) forall(m : Nat) forall(a) Vector(n, a) =>
+#    Vector(m, a) => Vector(n + m, a)
+#def concatenate(xs, ys)
+#    match xs
+#        Nil -> ys
+#        x ::: xs' -> x ::: concatenate(xs', ys)
 
 vlength

@@ -19,7 +19,7 @@ AST ::= {
     CommaPair(tag : TagT, left : AST, right : AST),
     ColonPair(tag : TagT, left : AST, right : AST),
     SetBuilder(tag : TagT, forms : List(AST)),
-    ADT(tag : TagT, parameters : List(AST), constructorType : AST,  body : AST),
+    ADT(tag : TagT, parameters : List(AST), constructorType : AST, body : AST),
     Constructor(tag : TagT, adtType : AST, function : AST,
         count : ℕ, index : ℕ, arity : ℕ)
 }
@@ -171,6 +171,12 @@ LockedArrow := TypedArrow(Locked)
 TailArrow := TypedArrow(Tail)
 StrictArrow(cases, parameter, body) :=
     Arrow(getTag(parameter), Strict, cases, parameter, Void, body)
+
+
+def mapArrowBody(f, node)
+    if node is Arrow(tag, type, cases, parameter, annotation, body)
+        Arrow(tag, type, cases, parameter, annotation, f(body))
+    node
 
 
 def setAnnotation(annotation, node)

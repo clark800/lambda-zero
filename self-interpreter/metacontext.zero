@@ -53,12 +53,6 @@ def setMetaValue(index, value, Metacontext(positives, negatives))
     Metacontext(positives.set(index, Just(value)), negatives)
 
 
-def isNegativeMetavariable(term)
-    if term is Metavariable(_, index)
-        isNegative(index)
-    False
-
-
 def isDeterminedMetavariable(metavariable, metacontext)
     if metavariable is Metavariable(_, index)
         if index is +_ index'

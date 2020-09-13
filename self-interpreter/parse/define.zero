@@ -87,11 +87,15 @@ def newReconstructorType(parameterTypeASTs, returnTypeAST)
 
 
 def isValidConstructorAnnotation(dataType, annotation)
-    length(getArguments(annotation)) = length(getArguments(dataType)) and
-        isThisName(getHead(annotation), getLexeme(getHead(dataType)))
+    (adtName, parameters) := splitArguments(dataType)
+    (name, arguments) := splitArguments(annotation)
+    length(arguments) = length(parameters) and
+        isThisName(name, getLexeme(adtName))
 
 
-def getConstructorType(adtType, form)
+def getConstructorType'(adtType, form)
+    if isArrow(form)    # only forall arrows can make it here
+        form.mapArrowBody(getConstructorType'(adtType))
     # check for GADT annotation of constructor return type
     if form is ColonPair(_, form', dataType)
         if not isValidConstructorAnnotation(adtType, dataType)
@@ -102,13 +106,12 @@ def getConstructorType(adtType, form)
     newReconstructorType(parameterTypes, adtType)
 
 
-def getMetaConstructorType(adtType, form)
-    type := getConstructorType(adtType, form)
-    parameters := getArguments(adtType)
-    parameters.fold(TailArrow, type)
+def getConstructorType(adtType, form)
+    type := getConstructorType'(adtType, form)
+    getArguments(adtType).fold(TailArrow, type)
 
 
-def getConstructorBody(name, parameters, n, j)
+def getConstructorFunction(name, parameters, n, j)
     # n is the number of forms and j is the index of this form in 0..n
     tag := getTag(name)
     if name is Number(tag, value)
@@ -127,10 +130,16 @@ def getConstructorBody(name, parameters, n, j)
     parameters.fold(LockedArrow, construct)
 
 
+def peelTailArrows(form)
+    if form is Arrow(_, type, _, _, _, body)
+        if type is Tail
+            peelTailArrows(body)
+        form
+    form
+
+
 def newConstructorDefinition(tag, adtType, n, (form, j), scope)
-    form' := removeAnnotation(form)
-    name := getHead(form')
-    parameters := getArguments(form')
+    (name, parameters) := splitArguments(removeAnnotation(peelTailArrows(form)))
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     if invalidParameters is parameter :: _
         astSyntaxError("invalid constructor parameter", parameter)
@@ -140,13 +149,12 @@ def newConstructorDefinition(tag, adtType, n, (form, j), scope)
     # at the type level, not the term level. we erase the annotations to avoid
     # undefined symbols errors during bind.
     parameters' := parameters.map(removeAnnotation)
-    body := getConstructorBody(name, parameters', n, j)
-    if not isPreterm(body)
+    function := getConstructorFunction(name, parameters', n, j)
+    if not isPreterm(function)
         astSyntaxError("invalid constructor", name)   # force errors
-    parameterTypes := parameters.map(getParameterType)
-    type := getMetaConstructorType(adtType, form)
+    type := getConstructorType(adtType, form)
     arity := length(parameters)
-    constructor := Constructor(getTag(name), adtType, body, n, j + 1, arity)
+    constructor := Constructor(getTag(name), adtType, function, n, j + 1, arity)
     name' := Name(getTag(name))
     newConstructDefinition(tag, Just(type), name', constructor, scope)
 
@@ -170,18 +178,27 @@ def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
     TailArrow(returnType, parameters.fold(TailArrow, typeAST))
 
 
-def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
+def getDeconstructorType(tag, adtType, form)
+    if isArrow(form)    # only forall arrows can make it here
+        form.mapArrowBody(getDeconstructorType(tag, adtType))
+    parameters := getArguments(removeAnnotation(form))
+    parameterTypes := parameters.map(getParameterType)
+    newDeconstructorType(tag, parameterTypes, adtType)
+
+
+def newDeconstructorFunction(tag, n, ms, j)
     reconstructor := Underscore(tag, 3)
     arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
         newFallbackCase(tag, ms.at(k -- 1) ?? 0))
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
-    deconstructor := UnderscoreArrow(tag, UnderscoreArrow(tag,
-        UnderscoreArrow(tag, body)))
-    form' := removeAnnotation(form)
-    parameters := getArguments(form')
-    parameterTypes := parameters.map(getParameterType)
-    name := Name(addPrefix(getTag(getHead(form')), '@'))
-    type := newDeconstructorType(getTag(name), parameterTypes, adtType)
+    UnderscoreArrow(tag, UnderscoreArrow(tag, UnderscoreArrow(tag, body)))
+
+
+def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
+    constructorTag := getTag(getHead(removeAnnotation(peelTailArrows(form))))
+    name := Name(addPrefix(constructorTag, '@'))
+    deconstructor := newDeconstructorFunction(constructorTag, n, ms, j)
+    type := getDeconstructorType(constructorTag, adtType, form)
     newConstructDefinition(tag, Just(type), name, deconstructor, scope)
 
 
@@ -192,16 +209,24 @@ def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
     newDeconstructorDefinition(tag, adtType, n, ms, formj, scope')
 
 
-def newADT(tag, adtType, parameters, forms)
+def getCaseType(returnType, form)
+    if isArrow(form)    # only forall arrows can make it here
+        form.mapArrowBody(getCaseType(returnType))
+    annotations := getArguments(removeAnnotation(form)).map(getParameterType)
+    annotations.fold(DoubleArrow, returnType)
+
+
+def getObjectType(tag, forms)
     # todo: change name from "r" so it can't clash with user's names
-    constructorType := parameters.fold(DoubleArrow, Family(tag))
     returnType := FixedName(tag, "r")
-    forms' := forms.map(removeAnnotation) # remove GADT return type annotations
-    annotations := forms'.map(getArguments).map(map(getParameterType))
-    argumentTypes := annotations.map(fold(DoubleArrow, returnType))
-    body := TailArrow(returnType, argumentTypes.fold(DoubleArrow, returnType))
-    signatures := forms.map(getConstructorType(adtType))
-    ADT(tag, parameters, constructorType, body)
+    caseTypes := forms.map(getCaseType(returnType))
+    TailArrow(returnType, caseTypes.fold(DoubleArrow, returnType))
+
+
+def newADT(tag, parameters, forms)
+    type := parameters.fold(DoubleArrow, Family(tag))
+    body := getObjectType(tag, forms)
+    ADT(tag, parameters, type, body)
 
 
 def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
@@ -212,15 +237,14 @@ def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
 
 def applyADTDefinition(tag, left, right, scope)
     if right is SetBuilder(_, forms)
-        name := getHead(left)
+        (name, parameters) := splitArguments(left)
         scope' := defineConstructorsAndDeconstructors(tag, left, forms, scope)
         if not isName(name)
             astSyntaxError("expected name", name)
-        parameters := getArguments(left)
         # todo: use the same method for parameters as with normal functions
         if not parameters.all(isName)
             astSyntaxError("parameters to type constructor must be names", name)
-        adt := newADT(getTag(name), left, parameters, forms)
+        adt := newADT(getTag(name), parameters, forms)
         value := parameters.fold(LockedArrow, adt)
         newConstructDefinition(tag, Void, name, value, scope')
     astSyntaxError("internal error", left)
@@ -241,7 +265,8 @@ def applyDefinition(definition, scope)
 def reduceDefine'(tag, definitionType, left, right)
     if isTuple(left) or isAsPattern(left)
         Definition(tag, definitionType, left, right)
-    (name, value) := getNameAndValue(newPatternArrow, left, right)
+    (name, parameters) := splitArguments(left)
+    value := parameters.fold(newPatternArrow, right)
     if not isName(name)
         syntaxError("invalid left hand side", tag)
     if isThisName(name, "main")

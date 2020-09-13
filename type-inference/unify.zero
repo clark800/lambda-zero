@@ -43,11 +43,19 @@ def unify'(fail, metacontext, (left, right))
     if isSameMetavariable(leftTerm, rightTerm)
         metacontext
 
-    if isNegativeMetavariable(leftTerm) or isNegativeMetavariable(rightTerm)
+    if leftTerm is Metavariable(_, index)
+        if index is +_ index'
+            metacontext.setMetaValue(index', right)
+        if rightTerm is Metavariable(_, index')
+            if index' is +_ index''
+                metacontext.setMetaValue(index'', left)
+            fail'
         fail'
 
     if rightTerm is Metavariable(_, index)
-        metacontext.setMetaValue(abs(index), left)
+        if index is +_ index'
+            metacontext.setMetaValue(index', left)
+        fail'
 
     def unifyBodies(tag, metacontext', leftBody, rightBody)
         (m, metacontext'') := metacontext'.newNegativeMetavariable(tag)
@@ -63,7 +71,7 @@ def unify'(fail, metacontext, (left, right))
 
     match leftTerm
         case Metavariable(tag, index)
-            metacontext.setMetaValue(abs(index), right)
+            fail'  # already handled above
         case Type(tag, index)
             if rightTerm is Type(_, index')
                 if index =:= index' then metacontext else fail'
