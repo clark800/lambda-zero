@@ -154,9 +154,11 @@ replicate(n, x) ≔ ((x ∷) ° n)([])
 cycle(xs) ≔ xs ⧺ cycle(xs)
 n ‥ m ≔ if n > m then [] else n ∷ (↑ n ‥ m)
 (…) ≔ iterate((↑))
+upto(n) ≔ (0 …).take(n)
+enumerate(xs) ≔ zip(0 …, xs)
 find(p, xs) ≔ safeHead(xs ¦ p)
 contains(p, xs) ≔ not isVoid(xs.find(p))
-findIndices(p, xs) ≔ (zip(0 …, xs) ¦ p ∘ second).map(first)
+findIndices(p, xs) ≔ (enumerate(xs) ¦ p ∘ second).map(first)
 findIndex(p, xs) ≔ safeHead(findIndices(p, xs))
 
 cascadeMaybe(f, z, xs) ≔ xs ⦊ [] ↦ Just(z); x ∷ xs′ ↦

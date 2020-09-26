@@ -33,7 +33,7 @@ def newPatternArrow(pattern, body)
         arity := length(arguments)
         underscore := NegativeUnderscore(tag)
         function := arguments.fold(newPatternArrow, body)
-        projectors := (0 .. arity -- 1).map(newProjector(tag, arity))
+        projectors := upto(arity).map(newProjector(tag, arity))
         projections := projectors.map(Juxtaposition(tag, underscore))
         lockArrow(StrictArrow([(constructor, arity)], Underscore(tag, 0),
             projections.cascade(Juxtaposition(tag), function)))

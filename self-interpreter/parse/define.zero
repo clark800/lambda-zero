@@ -112,7 +112,7 @@ def getConstructorType(adtType, form)
 
 
 def getConstructorFunction(name, parameters, n, j)
-    # n is the number of forms and j is the index of this form in 0..n
+    # n is the number of forms and j is the index of this form in upto(n)
     tag := getTag(name)
     if name is Number(tag, value)
         if value =/= 0
@@ -138,7 +138,7 @@ def peelTailArrows(form)
     form
 
 
-def newConstructorDefinition(tag, adtType, n, (form, j), scope)
+def newConstructorDefinition(tag, adtType, n, (j, form), scope)
     (name, parameters) := splitArguments(removeAnnotation(peelTailArrows(form)))
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     if invalidParameters is parameter :: _
@@ -188,13 +188,13 @@ def getDeconstructorType(tag, adtType, form)
 
 def newDeconstructorFunction(tag, n, ms, j)
     reconstructor := Underscore(tag, 3)
-    arguments := (1 .. n).map(k -> if k -- 1 = j then reconstructor else
-        newFallbackCase(tag, ms.at(k -- 1) ?? 0))
+    arguments := upto(n).map(k -> if k = j then reconstructor else
+        newFallbackCase(tag, ms.at(k) ?? 0))
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
     UnderscoreArrow(tag, UnderscoreArrow(tag, UnderscoreArrow(tag, body)))
 
 
-def newDeconstructorDefinition(tag, adtType, n, ms, (form, j), scope)
+def newDeconstructorDefinition(tag, adtType, n, ms, (j, form), scope)
     constructorTag := getTag(getHead(removeAnnotation(peelTailArrows(form))))
     name := Name(addPrefix(constructorTag, '@'))
     deconstructor := newDeconstructorFunction(constructorTag, n, ms, j)
@@ -224,6 +224,9 @@ def getObjectType(tag, forms)
 
 
 def newADT(tag, parameters, forms)
+    # note: this is not the actual type of the type constructor because the
+    # parameters are the values passed as arguments, not the types of the
+    # arguments. Maybe we should wrap in singletons?
     type := parameters.fold(DoubleArrow, Family(tag))
     body := getObjectType(tag, forms)
     ADT(tag, parameters, type, body)
@@ -232,7 +235,7 @@ def newADT(tag, parameters, forms)
 def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
     n := length(forms)
     ms := forms.map(length <> getArguments)
-    zip(forms, 0...).fold(newConstructorDefinitions(tag, adtType, n, ms), scope)
+    enumerate(forms).fold(newConstructorDefinitions(tag, adtType, n, ms), scope)
 
 
 def applyADTDefinition(tag, left, right, scope)
