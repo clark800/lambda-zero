@@ -25,8 +25,8 @@ def showMetaValue(metaValue)
 def showMetacontext(Metacontext(positives, negatives))
     if getSize(positives) = 0
         "Empty"
-    zip((0 ...).map((+_)), positives.toList).map((index, metaValue) ->
-        showMetavariable(index) ++ " := " ++
+    enumerate(positives.toList).map((index, metaValue) ->
+        showMetavariable(+_ index) ++ " := " ++
         showMetaValue(metaValue)).joinWith("\n")
 
 

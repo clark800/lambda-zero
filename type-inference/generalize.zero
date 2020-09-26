@@ -35,7 +35,7 @@ def generalize(metacontext, closure)
     if indices.any(isNegative)
         abort("Type error: type depends on variable: " ++ showTerm(type))
     type' := type.substitute(indices, length(indices))
-    indices' := zip(0..., indices).map(first)
+    indices' := enumerate(indices).map(first)
     indices'.fold(wrapIntersection(getTermTag(type)), type')
 
 #*
