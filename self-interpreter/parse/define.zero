@@ -41,8 +41,31 @@ def applyFix(name, value)
     Juxtaposition(tag, FixedName(tag, "fix"), LockedArrow(name, value))
 
 
+# only works on preterms
+def containsFreeName(name)
+    Family(_) -> False
+    Reference(tag, _) -> isThisLexeme(name, getTagLexeme(tag))
+    Arrow(_, _, _, parameter, _, body) ->
+        not isSameLexeme(parameter, name) and body.containsFreeName(name)
+    Juxtaposition(_, left, right) ->
+        left.containsFreeName(name) or right.containsFreeName(name)
+    Let(_, _, _, name', value, scope) ->
+        not isSameLexeme(name', name) and
+            (value.containsFreeName(name) or scope.containsFreeName(name))
+    Number(_, _) -> False
+    Definition(_, _, _, _) -> False
+    AsPattern(_, _, _) -> False
+    CommaPair(_, left, right) ->
+        left.containsFreeName(name) or right.containsFreeName(name)
+    ColonPair(_, _, right) -> right.containsFreeName(name)
+    SetBuilder(_, forms) -> False
+    ADT(_, _, _, body) -> body.containsFreeName(name)
+    Constructor(_, _, _, _, _, _) -> False
+
+
 def transformRecursion(name, value)
-    if not isName(name) or not isArrow(value) or not containsName(name, value)
+    if not isName(name) or not isArrow(value) or
+            not containsFreeName(name, value)
         value
     applyFix(name, value)
 

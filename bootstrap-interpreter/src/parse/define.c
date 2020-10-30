@@ -55,15 +55,18 @@ static Node* newMainCall(Node* name) {
     return Juxtaposition(tag, print, Juxtaposition(tag, name, input));
 }
 
-static bool hasRecursiveCalls(Node* node, Node* name) {
+static bool containsFreeName(Node* node, Node* name) {
+    if (isArrow(node))
+        return !isSameLexeme(getLeft(node), name)
+            && containsFreeName(getRight(node), name);
     if (!isLeaf(node))
-        return hasRecursiveCalls(getLeft(node), name)
-            || hasRecursiveCalls(getRight(node), name);
+        return containsFreeName(getLeft(node), name)
+            || containsFreeName(getRight(node), name);
     return isName(node) ? isSameLexeme(node, name) : false;
 }
 
 static Node* transformRecursion(Node* name, Node* value) {
-    if (!isName(name) || !isArrow(value) || !hasRecursiveCalls(value, name))
+    if (!isName(name) || !isArrow(value) || !containsFreeName(value, name))
         return value;
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);

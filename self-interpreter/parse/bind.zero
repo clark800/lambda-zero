@@ -138,6 +138,8 @@ def bind(getBuiltin, globals, index, parameters, node)
         case Juxtaposition(tag, left, right)
             Application(tag, bind'(left), bind'(right))
         case Let(tag, isConstruct, annotation, name, value, scope)
+            if not isName(name)
+                throwError("Internal error: non-name in let", getTag(node))
             if isConstruct
                 astSyntaxError("type constructors must be at the top level",
                     node)
