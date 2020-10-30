@@ -71,24 +71,6 @@ def isPreterm
     Constructor(_, _, _, _, _, _) -> True
 
 
-def containsName(name)
-    Family(_) -> False
-    Reference(tag, _) -> getTagLexeme(tag) =*= getTagLexeme(getTag(name))
-    Arrow(_, _, _, _, _, body) -> containsName(name, body)
-    Juxtaposition(_, left, right) ->
-        containsName(name, left) or containsName(name, right)
-    Let(_, _, _, _, value, scope) ->
-        containsName(name, value) or containsName(name, scope)
-    Number(_, _) -> False
-    Definition(_, _, _, _) -> False
-    AsPattern(_, _, _) -> False
-    CommaPair(_, _, _) -> False
-    ColonPair(_, _, right) -> containsName(name, right)
-    SetBuilder(_, _) -> False
-    ADT(_, _, _, body) -> containsName(name, body)
-    Constructor(_, _, _, _, _, _) -> False
-
-
 def showArrow
     Simple -> " -> "
     Strict -> " -> "
@@ -189,7 +171,9 @@ isSyntaxDefinition(node) := if node is Definition(_, type, _, _);
     (if type is SyntaxDefinition; True <| False) <| False
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
-isThisName(node, lexeme) := isName(node) and getLexeme(node) =*= lexeme
+isThisLexeme(node, lexeme) := getLexeme(node) =*= lexeme
+isSameLexeme(node, node') := getLexeme(node) =*= getLexeme(node')
+isThisName(node, lexeme) := isName(node) and isThisLexeme(node, lexeme)
 isUnderscore(node) := isThisName(node, "_")
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
 UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
