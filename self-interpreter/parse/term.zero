@@ -20,11 +20,12 @@ Term ::= {
     Metavariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
-    Singleton(tag : TagT, type : Term, element : Term),
+    Singleton(tag : TagT, type : Term, index : ℕ),
     Function(tag : TagT, domain : Term, body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
+    Construction(tag : TagT, index : ℕ, arguments : List(Term), term : Term),
     Numeral(tag : TagT, type : Term, value : ℕ),
     Operation(tag : TagT, term : Term, optimization : OptimizationT(Term))
 }
@@ -40,6 +41,7 @@ def getTermTag
     Implication(tag, _, _) -> tag
     Intersection(tag, _, _) -> tag
     Application(tag, _, _) -> tag
+    Construction(tag, _, _, _) -> tag
     Numeral(tag, _, _) -> tag
     Operation(tag, _, _) -> tag
 
@@ -52,6 +54,7 @@ isFunction := Function(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
 isIntersection := Intersection(_, _, _) -> True; _ -> False
 isApplication := Application(_, _, _) -> True; _ -> False
+isConstruction := Construction(_, _, _, _) -> True; _ -> False
 isNumeral := Numeral(_, _, _) -> True; _ -> False
 isOperation := Operation(_, _, _) -> True; _ -> False
 
@@ -76,11 +79,13 @@ def setTag(tag)
     Metavariable(_, index) -> Metavariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
-    Singleton(_, type, element) -> Singleton(tag, type, element)
+    Singleton(_, type, index) -> Singleton(tag, type, index)
     Function(_, domain, body) -> Function(tag, domain, body)
     Implication(_, domain, body) -> Implication(tag, domain, body)
     Intersection(_, domain, body) -> Intersection(tag, domain, body)
     Application(_, left, right) -> Application(tag, left, right)
+    Construction(_, index, arguments, term) ->
+        Construction(tag, index, arguments, term)
     Numeral(_, type, value) -> Numeral(tag, type, value)
     Operation(_, term, op) -> Operation(tag, term, op)
 
@@ -118,46 +123,11 @@ def showMetavariable(index)
         -_ n -> "■" ++ showSubscript(n)
 
 
-def getSingletonParameters(type)
-    if type is Implication(_, domain, body)
-        domain :: getSingletonParameters(body)
-    []
-
-
 def needsParentheses
     Function(_, _, _) -> True
     Implication(_, _, _) -> True
     Intersection(_, domain, _) -> not isSingleton(domain)
     _ -> False
-
-
-def isTypeFamily(term)
-    if term is Type(_, index)
-        isNegative(index)
-    False
-
-
-def getReturnType(type)
-    if type is Implication(_, _, body)
-        getReturnType(body)
-    type
-
-
-def getConstructionTypeFamily(construction)
-    if construction is Intersection(tag, domain, _)
-        if domain is Singleton(_, type, element)
-            if isUnknown(element)
-                returnType := getReturnType(type)
-                if isTypeFamily(returnType)
-                    Just(returnType)
-                throwError("invalid construction", tag)
-            Void
-        Void
-    Void
-
-
-def isConstruction(term)
-    not isVoid(getConstructionTypeFamily(term))
 
 
 def showTagBracket(tag)
@@ -171,6 +141,12 @@ def isTypeZero(term)
     False
 
 
+def isTypeFamily(term)
+    if term is Type(_, index)
+        isNegative(index)
+    False
+
+
 def showTerm
     Metavariable(tag, index) -> showMetavariable(index) ++ showTagBracket(tag)
     Type(tag, index) -> if isPositive(index) then
@@ -179,8 +155,7 @@ def showTerm
     Variable(tag, index) ->
         if abs(index) = 0 then "■" else
             showTag(tag) # ++ showIntegerSubscript(index)
-    Singleton(tag, type, element) ->
-        "{" ++ showTerm(element) ++ " : " ++ showTerm(type) ++ "}"
+    Singleton(tag, type, index) -> "{" ++ showTag(tag) ++ "}"
     Function(tag, domain, body) ->
         if isUnknown(domain) or isTypeFamily(domain) then
             showTag(tag) ++ " ↦ " ++ showTerm(body) else
@@ -191,8 +166,6 @@ def showTerm
             "(" ++ showTerm(domain) ++ ") ⇒ " ++ showTerm(body) else
                 showTerm(domain) ++ " ⇒ " ++ showTerm(body)
     Intersection(tag, domain, body) -> (
-        if domain is Singleton(_, type, _)
-            showConstruction(showTerm, tag, getSingletonParameters(type))
         if isTypeZero(domain)
             "∀(" ++ showTag(tag) ++ ") " ++ showTerm(body)
         "∀(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") " ++
@@ -202,6 +175,8 @@ def showTerm
         if needsParentheses(applicand) then
             "(" ++ showTerm(applicand) ++ ")(" ++ showTerm(argument) ++ ")" else
             showTerm(applicand) ++ "(" ++ showTerm(argument) ++ ")"
+    Construction(tag, index, arguments, term) ->
+        showConstruction(showTerm, tag, arguments)
     Numeral(_, _, n) -> showNatural(n)
     Operation(tag, _, _) -> showTag(tag)
 

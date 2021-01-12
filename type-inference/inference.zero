@@ -6,8 +6,6 @@ def pushContext(type, term, context @ (environment, types))
 
 def instantiateWith(newMetavariable, closure @ Closure(term, environment))
     if term is Intersection(tag, _, body)
-        if isConstruction(term)
-            lift closure
         metavariable <- newMetavariable(tag)
         closure' := Closure(body, environment.push(enclose(metavariable)))
         closure'.instantiateWith(newMetavariable)
@@ -28,16 +26,6 @@ def getPatternMatchDomain(Closure(typeConstructor, environment))
     term := convertFunctionsToIntersections(typeConstructor)
     closure <- instantiate(Closure(term, environment))
     lift evaluateClosure(closure)  # evaluate application of type constructor
-
-
-def getTypeConstructor(construction, environment)
-    if getConstructionTypeFamily(construction) is Just(family)
-        if family is Type(tag, index)
-            if index is -_ n
-                environment.get(n)
-            Void
-        Void
-    Void
 
 
 def instantiateDomain(closure @ Closure(domain, _))
@@ -63,12 +51,14 @@ def instantiateDomains(type @ Closure(term, environment))
 
 def instantiateConstruction(closure, environment)
     _ @ Closure(construction, environment') := evaluateClosure(closure)
-    if getTypeConstructor(construction, environment) is Just(typeConstructor)
-        if construction is Intersection(tag, _, body)
-            closure' := Closure(body, environment'.push(typeConstructor))
-            closure'' <- instantiate(closure')
-            instantiateDomains(closure'')
-        throwError("expected intersection", getTermTag(construction))
+    if construction is Construction(tag, index, arguments, term)
+        if environment.get(index) is Just(typeConstructor)
+            if term is Intersection(tag, domain, body)
+                closure' := Closure(body, environment'.push(typeConstructor))
+                closure'' <- instantiate(closure')  # instantiate "r"
+                instantiateDomains(closure'')
+            throwError("expected intersection", getTermTag(term))
+        throwError("invalid construction", getTermTag(construction))
     throwError("expected construction", getTermTag(construction))
 
 
@@ -109,8 +99,8 @@ def infer(context @ (environment, types))
         if isNegative(index)
             instantiateConstruction(type, environment)
         instantiate(type)
-    case Singleton(tag, type, element)
-        type.infer(context)   # todo: support unknown type, verify type
+    case Singleton(tag, type, index)
+        lift enclose(Type(tag, +_ 0))
     case Function(tag, domain, body)
         domainClosure <- getDomain(enclose'(domain))
         argument <- newNegativeMetavariable(tag)
@@ -122,8 +112,6 @@ def infer(context @ (environment, types))
         _ <- body.infer(context.pushContext(enclose'(domain), argument))
         lift enclose(Type(tag, +_ 0))
     case Intersection(tag, domain, body)
-        if getConstructionTypeFamily(this) is Just(family)
-            lift enclose'(family)
         argument <- newNegativeMetavariable(tag)
         _ <- body.infer(context.pushContext(enclose'(domain), argument))
         lift enclose(Type(tag, +_ 0))
@@ -149,6 +137,8 @@ def infer(context @ (environment, types))
         # applicandType <: functionType  =>  argumentType <: parameterType
         _ <- unify(applicandType, functionType)
         lift enclose(returnType)
+    case Construction(tag, index, arguments, term)
+        lift enclose(Type(tag, +_ 0))
     case Numeral(tag, type, value)
         lift enclose'(type)
     case Operation(tag, term, _)
