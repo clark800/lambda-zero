@@ -36,8 +36,8 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
             if environment.peek(index' -- depth -- 1) is Just(closure')
                 resolveClosure(closure')
             term
-        case Singleton(tag, type, element)
-            Singleton(tag, resolve''(type), resolve''(element))
+        case Singleton(tag, type, index)
+            Singleton(tag, resolve''(type), index)
         case Function(tag, domain, body)
             Function(tag, resolve''(domain), resolve'''(body))
         case Implication(tag, domain, body)
@@ -46,6 +46,8 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
             Intersection(tag, resolve''(domain), resolve'''(body))
         case Application(tag, left, right)
             Application(tag, resolve''(left), resolve''(right))
+        case Construction(tag, index, arguments, term)
+            Construction(tag, index, arguments.map(resolve''), resolve''(term))
         case Numeral(_, _, _) -> term
         case Operation(_, _, _) -> term
 

@@ -39,6 +39,8 @@ def unify'(fail, metacontext, (left, right))
 
     unify''(metacontext', left', right') := unify'(fail, metacontext',
         (Closure(left', leftEnv), Closure(right', rightEnv)))
+    unify'''(metacontext', (left', right')) :=
+        unify''(metacontext', left', right')
 
     if isSameMetavariable(leftTerm, rightTerm)
         metacontext
@@ -78,12 +80,9 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Variable(tag, index)
             fail'  # evaluate should never return a Variable
-        case Singleton(tag, type, element)
-            if rightTerm is Singleton(tag', type', element')
-                metacontext' := unify''(metacontext, type, type')
-                if isUnknown(element) and isUnknown(element')
-                    metacontext'  # only constructions can have unknown element
-                unify''(metacontext', element, element')
+        case Singleton(tag, type, index)
+            if rightTerm is Singleton(tag', type', index')
+                if index = index' then metacontext else fail'
             fail'
         case Function(tag, domain, body)
             if rightTerm is Function(tag', domain', body')
@@ -97,14 +96,18 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Intersection(tag, domain, body)
             if rightTerm is Intersection(tag', domain', body')
-                if isConstruction(leftTerm) and isConstruction(rightTerm)
-                    unify''(metacontext, domain, domain')
                 unifyBinder(tag, domain, domain', body, body')
             fail'
         case Application(tag, left', right')
             if rightTerm is Application(tag', left'', right'')
                 metacontext' := unify''(metacontext, left', left'')
                 unify''(metacontext', right', right'')
+            fail'
+        case Construction(tag, index, arguments, term)
+            if rightTerm is Construction(tag', index', arguments', term')
+                if index = index'
+                    zip(arguments, arguments').cascade(unify''', metacontext)
+                fail'
             fail'
         case Numeral(tag, type, value)
             if rightTerm is Numeral(_, _, value')

@@ -26,7 +26,7 @@ def evaluate(metacontext, metaindices, stack, closure)
             if environment.seek(-_ abs(index)) is Just(closure')
                 evaluate(stack, closure')
             closure
-        case Singleton(tag, type, element) -> done(tag)
+        case Singleton(tag, type, index) -> done(tag)
         case Function(tag, domain, body)
             if stack is argument :: stack'
                 evaluate(stack', Closure(body, environment.push(argument)))
@@ -36,6 +36,7 @@ def evaluate(metacontext, metaindices, stack, closure)
         case Application(tag, applicand, argument)
             evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
+        case Construction(tag, index, arguments, term') -> done(tag)
         case Numeral(tag, type, n)
             if isNil(stack)
                 enclose(term)
