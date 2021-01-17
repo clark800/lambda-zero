@@ -46,6 +46,8 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
             Intersection(tag, resolve''(domain), resolve'''(body))
         case Application(tag, left, right)
             Application(tag, resolve''(left), resolve''(right))
+        case Equation(tag, left, right)
+            Equation(tag, resolve''(left), resolve''(right))
         case Construction(tag, index, arguments, term)
             Construction(tag, index, arguments.map(resolve''), resolve''(term))
         case Numeral(_, _, _) -> term

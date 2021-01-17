@@ -4,16 +4,27 @@ def pushContext(type, term, context @ (environment, types))
     (environment.push(Closure(term, environment)), types.push(type))
 
 
+def newInstantiationMetavariable(tag, domainClosure)
+    _ @ Closure(domain, environment) := evaluateClosure(domainClosure)
+    if isType(domain) or isSingleton(domain) or isConstruction(domain)
+        # TODO: verify construction is non-empty
+        newPositiveMetavariable(tag)
+    if domain is Equation(_, left, right)
+        _ <- unify(Closure(left, environment), Closure(right, environment))
+        newPositiveMetavariable(tag)
+    throwError("cannot determine that domain is nonempty", getTermTag(domain))
+
+
 def instantiateWith(newMetavariable, closure @ Closure(term, environment))
-    if term is Intersection(tag, _, body)
-        metavariable <- newMetavariable(tag)
+    if term is Intersection(tag, domain, body)
+        metavariable <- newMetavariable(tag, Closure(domain, environment))
         closure' := Closure(body, environment.push(enclose(metavariable)))
         closure'.instantiateWith(newMetavariable)
     lift closure
 
 
 def instantiate(closure)
-    instantiateWith(newPositiveMetavariable, closure)
+    instantiateWith(newInstantiationMetavariable, closure)
 
 
 def convertFunctionsToIntersections(term)
@@ -137,6 +148,8 @@ def infer(context @ (environment, types))
         # applicandType <: functionType  =>  argumentType <: parameterType
         _ <- unify(applicandType, functionType)
         lift enclose(returnType)
+    case Equation(tag, left, right)
+        lift enclose(Type(tag, +_ 0))
     case Construction(tag, index, arguments, term)
         lift enclose(Type(tag, +_ 0))
     case Numeral(tag, type, value)
@@ -183,7 +196,8 @@ def checkType'(context, term, type @ Closure(typeTerm, typeEnv))
 
 
 def checkType(context, term, type)
-    type' <- type.instantiateWith(newNegativeMetavariable)
+    type' <- type.instantiateWith(tag -> domain -> metacontext ->
+        newNegativeMetavariable(tag, metacontext))
     _ <- checkType'(context, term, type')
     lift type
 

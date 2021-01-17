@@ -5,6 +5,7 @@ DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
 ArrowType ::= {Simple, Strict, Locked, Double, Tail}
 
 AST ::= {
+    Top(tag : TagT),
     Family(tag : TagT),
     Reference(tag : TagT, index : ℤ),
     Arrow(tag : TagT, type : ArrowType, cases : List(AST && ℕ),
@@ -13,6 +14,7 @@ AST ::= {
     Let(tag : TagT, isConstruct : 𝔹, annotation : (AST)?,
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
+    PreEquation(tag : TagT, left : AST, right : AST),
     Definition(tag : TagT, type : DefinitionType,
         definiendum : AST, definiens : AST),
     AsPattern(tag : TagT, left : AST, pattern : AST),
@@ -36,12 +38,14 @@ def lockArrow(node)
 
 
 def getTag
+    Top(tag) -> tag
     Family(tag) -> tag
     Reference(tag, _) -> tag
     Arrow(tag, _, _, _, _, _) -> tag
     Juxtaposition(tag, _, _) -> tag
     Let(tag, _, _, _, _, _) -> tag
     Number(tag, _) -> tag
+    PreEquation(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
     AsPattern(tag, _, _) -> tag
     CommaPair(tag, _, _) -> tag
@@ -56,12 +60,14 @@ def astSyntaxError(message, node)
 
 
 def isPreterm
+    Top(_) -> True
     Family(_) -> True
     Reference(_, _) -> True
     Arrow(_, _, _, _, _, _) -> True
     Juxtaposition(_, _, _) -> True
     Let(_, _, _, _, _, _) -> True
     Number(_, _) -> True
+    PreEquation(_, _, _) -> True
     Definition(_, _, _, _) -> False
     AsPattern(_, _, _) -> False
     CommaPair(_, _, _) -> False
@@ -86,6 +92,7 @@ def showAnnotation(showAST, annotation)
 
 
 def showAST
+    Top(tag) -> "⊤"
     Family(tag) -> "⊤{" ++ showTag(tag) ++ "}"
     Reference(tag, _) -> showTag(tag)
     Arrow(tag, arrowType, _, parameter, annotation, body) ->
@@ -97,6 +104,8 @@ def showAST
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
             ";;" ++ showAST(scope) ++ ")"
     Number(tag, value) -> showNatural(value)
+    PreEquation(tag, left, right) ->
+        "((" ++ showAST(left) ++ ") == (" ++ showAST(right) ++ "))"
     Definition(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
     AsPattern(tag, name, pattern) ->
@@ -111,12 +120,14 @@ def showAST
     Constructor(_, _, body, _, _, _) -> showAST(body)
 
 
+isTop := Top(_) -> True; _ -> False
 isFamily := Family(_) -> True; _ -> False
 isReference := Reference(_, _) -> True; _ -> False
 isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
 isLet := Let(_, _, _, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
+isPreEquation := PreEquation(_, _, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
 isAsPattern := AsPattern(_, _, _) -> True; _ -> False
 isCommaPair := CommaPair(_, _, _) -> True; _ -> False
@@ -137,10 +148,10 @@ NegativeUnderscore(tag) := Reference(veil(tag), -_ 1)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
 isName(node) := if node is Reference(_, index); abs(index) = 0 <| False
 
-def TypedArrow(arrowType, left, body)
+def TypedArrow(arrowType, defaultAnnotation, left, body)
     if left is ColonPair(_, parameter, type)
         Arrow(getTag(parameter), arrowType, [], parameter, Just(type), body)
-    Arrow(getTag(left), arrowType, [], left, Void, body)
+    Arrow(getTag(left), arrowType, [], left, defaultAnnotation, body)
 
 def DoubleArrow(left, body)
     if left is ColonPair(_, parameter, type)
@@ -148,9 +159,10 @@ def DoubleArrow(left, body)
     parameter := Name(veil(getTag(left)))
     Arrow(getTag(parameter), Double, [], parameter, Just(left), body)
 
-SimpleArrow := TypedArrow(Simple)
-LockedArrow := TypedArrow(Locked)
-TailArrow := TypedArrow(Tail)
+SimpleArrow := TypedArrow(Simple, Void)
+LockedArrow := TypedArrow(Locked, Void)
+TailArrow := TypedArrow(Tail, Void)
+LockedArrowDefault(annotation) := TypedArrow(Locked, Just(annotation))
 StrictArrow(cases, parameter, body) :=
     Arrow(getTag(parameter), Strict, cases, parameter, Void, body)
 

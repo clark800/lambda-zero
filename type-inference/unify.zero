@@ -103,6 +103,11 @@ def unify'(fail, metacontext, (left, right))
                 metacontext' := unify''(metacontext, left', left'')
                 unify''(metacontext', right', right'')
             fail'
+        case Equation(tag, left', right')
+            if rightTerm is Equation(tag', left'', right'')
+                metacontext' := unify''(metacontext, left', left'')
+                unify''(metacontext', right', right'')
+            fail'
         case Construction(tag, index, arguments, term)
             if rightTerm is Construction(tag', index', arguments', term')
                 if index = index'
