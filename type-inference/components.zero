@@ -7,11 +7,10 @@ def getComponents
     Singleton(_, type, index) -> [type]
     Function(_, domain, body) -> [domain, body]
     Implication(_, domain, body) -> [domain, body]
-    Intersection(tag, domain, body) ->
-        if isConstruction(Intersection(tag, domain, body)) then
-            [domain] else [domain, body]
+    Intersection(tag, domain, body) -> [domain, body]
     Application(_, left, right) -> [left, right]
-    Construction(tag, index, arguments, term) -> arguments
+    Equation(_, left, right) -> [left, right]
+    Construction(_, _, arguments, _) -> arguments
     Numeral(_, _, _) -> []
     Operation(_, _, _) -> []
 
@@ -31,6 +30,8 @@ def mapComponentsWithDepth(f, depth, term)
             Intersection(tag, domain.f(depth), body.f(up depth))
         Application(tag, left, right) ->
             Application(tag, left.f(depth), right.f(depth))
+        Equation(tag, left, right) ->
+            Equation(tag, left.f(depth), right.f(depth))
         Construction(tag, index, arguments, term) ->
             Construction(tag, index, arguments.map(f(depth)), term.f(depth))
         Numeral(_, _, _) -> term
