@@ -163,7 +163,7 @@ def bind(getBuiltin, globals, index, parameters, node)
             astSyntaxError("colon not in valid location", node)
         case SetBuilder(_, _)
             astSyntaxError("bracket not in valid location", node)
-        case ADT(tag, adtParameters, constructorType, body)
+        case ADT(tag, adtParameters, body)
             arguments := adtParameters.map(bind')
             type := Variable(tag, +_ 0)  # todo
             domainTerm := Singleton(tag, type, index)
