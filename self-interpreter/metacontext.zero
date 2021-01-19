@@ -49,15 +49,38 @@ def getMetaValue(index, Metacontext(positives, negatives))
     positives.get(index) ?? Void
 
 
+def getMetavariableValue(metavariable, metacontext)
+    if metavariable is Metavariable(tag, index)
+        if index is +_ index'
+            getMetaValue(index', metacontext)
+        Void
+    Void
+
+
+def isDeterminedMetavariable(metavariable, metacontext)
+    if getMetavariableValue(metavariable, metacontext) is Just(Closure(term, _))
+        if isMetavariable(term)
+            isDeterminedMetavariable(term, metacontext)
+        True
+    False
+
+
 def setMetaValue(index, value, Metacontext(positives, negatives))
     Metacontext(positives.set(index, Just(value)), negatives)
 
 
-def isDeterminedMetavariable(metavariable, metacontext)
-    if metavariable is Metavariable(_, index)
-        if index is +_ index'
-            not isVoid(metacontext.getMetaValue(index'))
-        False
-    False
+def clearMetaValue(index, Metacontext(positives, negatives))
+    Metacontext(positives.set(index, Void), negatives)
+
+
+def clearMetaValues(indices, metacontext)
+    indices.fold(clearMetaValue, metacontext)
+
+
+def getMetacontextUpdates(metacontext, metacontext')
+    indices := upto(getSize(getPositives(metacontext)))
+    indices.filter(index ->
+        isVoid(getMetaValue(index, metacontext)) and
+        not isVoid(getMetaValue(index, metacontext')))
 
 #*

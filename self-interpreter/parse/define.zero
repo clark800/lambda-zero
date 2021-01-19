@@ -117,38 +117,29 @@ def newReconstructorType(returnType, form)
     parameterTypes.fold(DoubleArrow, returnType)
 
 
-def getConstructorType'(adtType, returnType, form)
+def getCaseType(adtType, returnType, form)
     # only forall arrows can make it here, todo: change to "for" binder
     if isArrow(form)
-        form.mapArrowBody(getConstructorType'(adtType, returnType))
+        form.mapArrowBody(getCaseType(adtType, returnType))
     # check for GADT annotation of constructor return type
     if form is ColonPair(tag, form', dataType)
         if not isValidConstructorAnnotation(adtType, dataType)
             astSyntaxError("inconsistent annotation form", dataType)
         body := newReconstructorType(returnType, form')
         equation := PreEquation(tag, dataType, adtType)
-        Arrow(tag, Tail, [], Underscore(tag, 0), Just(equation), body)
+        Arrow(veil(tag), Tail, [], Underscore(tag, 0), Just(equation), body)
     newReconstructorType(returnType, form)
 
 
 def getConstructorType(adtType, form)
-    type := getConstructorType'(adtType, adtType, form)
+    type := getCaseType(adtType, adtType, form)
     getArguments(adtType).fold(TailArrow, type)
-
-
-def getCaseType(returnType, form)
-    if isArrow(form)
-        form.mapArrowBody(getCaseType(returnType))
-    # note: ignoring the GADT constructor return type annotation for now
-    # because it causes the GADT parameters to be overconstrained since they
-    # would be unified with all of the constructor return types
-    newReconstructorType(returnType, removeAnnotation(form))
 
 
 def newConstruction(tag, adtType, forms)
     # todo: change name from "r" so it can't clash with user's names
     returnType := FixedName(tag, "r")
-    caseTypes := forms.map(getCaseType(returnType))
+    caseTypes := forms.map(getCaseType(adtType, returnType))
     TailArrow(returnType, caseTypes.fold(DoubleArrow, returnType))
 
 

@@ -43,7 +43,9 @@ cat "$LIB/operators.zero" \
     "$DIR/normalize.zero" \
     "$DIR/generalize.zero" \
     "$DIR/unify.zero" \
-    "$DIR/inference.zero" |
+    "$DIR/inference.zero" \
+    "$DIR/check.zero" \
+    "$DIR/main.zero" |
 sed -e 's/^[ ]*# .*$//' >> "$OUT"
 
 chmod -w "$OUT"

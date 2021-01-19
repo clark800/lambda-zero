@@ -1,0 +1,51 @@
+#* main.zero
+
+def getFixType(tag)
+    syntax(=>>) := syntax(++)
+    tag := renameTag(tag, "a", NOFIX)
+    (=>>) := Implication(veil(tag))
+    a1 := Variable(tag, +_ 1)
+    a2 := Variable(tag, +_ 2)
+    Intersection(tag, Type(veil(tag), +_ 0), (a1 =>> a2) =>> a2)
+
+
+def renameUniversals(closure)
+    (closure', metacontext) := instantiate(closure, emptyMetacontext)
+    closure'.generalize(metacontext)
+
+
+def getType(types, Binding(tag, closure, annotation, isConstruct))
+    if getTagLexeme(tag) =*= "fix"
+        lift enclose(getFixType(tag))
+    _ @ Closure(term, environment) := closure
+    context := (environment, types)
+    if annotation is Just(type)
+        if isConstruct  # skip inference for constructors and deconstructors
+            lift enclose(renameUniversals(type))
+        _ <- check(context, type, term)
+        lift type
+    inferType(context, term)
+
+
+def pushType(types, binding)
+    (type, metacontext) := getType(types, binding, emptyMetacontext)
+    if getSize(getPositives(metacontext)) < 0
+        abort("force unification errors")
+    types.push(type)
+
+
+def showTyping((tag, type))
+    showTag(tag) ++ " : " ++ showClosure(type)
+
+
+def showTypings(typings)
+    typings.map(showTyping).joinWith("\n") ++ "\n"
+
+
+def main(input)
+    bindings := reverse(parse(getBuiltin, input))
+    types := bindings.cascade(pushType, newArray([]))
+    tags := bindings.map(getBindingTag)
+    showTypings(zip(tags, types.toList))
+
+#*
