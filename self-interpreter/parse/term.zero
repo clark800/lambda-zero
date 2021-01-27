@@ -139,6 +139,10 @@ def showTagBracket(tag)
         showShortLocation(getTagLocation(tag)) ++ "⸩"
 
 
+def showMetavariableWithTag(tag, index)
+    showMetavariable(index) ++ showTagBracket(tag)
+
+
 def isTypeZero(term)
     if term is Type(_, index)
         index =:= +_ 0
@@ -152,7 +156,7 @@ def isTypeFamily(term)
 
 
 def showTerm
-    Metavariable(tag, index) -> showMetavariable(index) ++ showTagBracket(tag)
+    Metavariable(tag, index) -> showMetavariableWithTag(tag, index)
     Type(tag, index) -> if isPositive(index) then
         "⊤" ++ showIntegerSubscript(index) else
         "⊤{" ++ showTag(tag) ++ "}"

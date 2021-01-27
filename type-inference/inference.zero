@@ -39,35 +39,13 @@ def getPatternMatchDomain(Closure(typeConstructor, environment))
     lift evaluateClosure(closure)  # evaluate application of type constructor
 
 
-def instantiateDomain(closure @ Closure(domain, _))
-    if isIntersection(domain)
-        closure' <- instantiate(closure)
-        addPositiveMetavariable(getTermTag(domain), closure')
-    lift domain
-
-
-def instantiateDomains(type @ Closure(term, environment))
-    # implication domains inside construction types can have intersection
-    # binders that we want to instantiate. to avoid shifting debruijn indices,
-    # whenever we encounter one, we create a new metavariable to store the
-    # instantiated type
-    if term is Implication(tag, domain, body)
-        domain' <- instantiateDomain(Closure(domain, environment))
-        unknown := enclose(Unknown(tag))
-        bodyClosure := Closure(body, environment.push(unknown))
-        _ @ Closure(body', _) <- instantiateDomains(bodyClosure)
-        lift Closure(Implication(tag, domain', body'), environment)
-    lift type
-
-
 def instantiateConstruction(closure, environment)
     _ @ Closure(construction, environment') := evaluateClosure(closure)
     if construction is Construction(tag, index, arguments, term)
         if environment.get(index) is Just(typeConstructor)
             if term is Intersection(tag, domain, body)
                 closure' := Closure(body, environment'.push(typeConstructor))
-                closure'' <- instantiate(closure')  # instantiate "r"
-                instantiateDomains(closure'')
+                instantiate(closure')  # instantiate "r"
             throwError("expected intersection", getTermTag(term))
         throwError("invalid construction", getTermTag(construction))
     throwError("expected construction", getTermTag(construction))
@@ -158,20 +136,6 @@ def infer(context @ (environment, types))
         term.infer(context)
 
 
-def getFixType(tag)
-    syntax(=>>) := syntax(++)
-    tag := renameTag(tag, "a", NOFIX)
-    (=>>) := Implication(veil(tag))
-    a1 := Variable(tag, +_ 1)
-    a2 := Variable(tag, +_ 2)
-    Intersection(tag, Type(veil(tag), +_ 0), (a1 =>> a2) =>> a2)
-
-
-def renameUniversals(closure)
-    (closure', metacontext) := instantiate(closure, emptyMetacontext)
-    closure'.generalize(metacontext)
-
-
 def inferType(context, term)
     if term is Variable(tag, index)
         # prevent re-generalization, which could change forall names
@@ -179,60 +143,5 @@ def inferType(context, term)
     type <- term.infer(context)
     metacontext <- getState
     lift enclose(type.generalize(metacontext))
-
-
-def checkType'(context, term, type @ Closure(typeTerm, typeEnv))
-    if typeTerm is Implication(tag, domain, body)
-        if term is Function(tag', domain', body')
-            if not isUnknown(domain')
-                abort("Redundant annotation")
-            argument <- newNegativeMetavariable(tag)
-            context' := context.pushContext(Closure(domain, typeEnv), argument)
-            type' := Closure(body, typeEnv.push(enclose(argument)))
-            checkType'(context', body', type')
-        pass
-    inferredType <- term.infer(context)
-    unify(inferredType, type)
-
-
-def checkType(context, term, type)
-    type' <- type.instantiateWith(tag -> domain -> metacontext ->
-        newNegativeMetavariable(tag, metacontext))
-    _ <- checkType'(context, term, type')
-    lift type
-
-
-def getType(types, Binding(tag, closure, annotation, isConstruct))
-    if getTagLexeme(tag) =*= "fix"
-        lift enclose(getFixType(tag))
-    _ @ Closure(term, environment) := closure
-    context := (environment, types)
-    if annotation is Just(type)
-        if isConstruct  # skip inference for constructors and deconstructors
-            lift enclose(renameUniversals(type))
-        checkType(context, term, type)
-    inferType(context, term)
-
-
-def pushType(types, binding)
-    (type, metacontext) := getType(types, binding, emptyMetacontext)
-    if getSize(getPositives(metacontext)) < 0
-        abort("force unification errors")
-    types.push(type)
-
-
-def showTyping((tag, type))
-    showTag(tag) ++ " : " ++ showClosure(type)
-
-
-def showTypings(typings)
-    typings.map(showTyping).joinWith("\n") ++ "\n"
-
-
-def main(input)
-    bindings := reverse(parse(getBuiltin, input))
-    types := bindings.cascade(pushType, newArray([]))
-    tags := bindings.map(getBindingTag)
-    showTypings(zip(tags, types.toList))
 
 #*

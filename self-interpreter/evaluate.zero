@@ -34,8 +34,9 @@ def evaluate(metacontext, metaindices, stack, closure)
         case Implication(tag, domain, body) -> done(tag)
         case Intersection(tag, domain, body) -> done(tag)
         case Application(tag, applicand, argument)
-            evaluate(Closure(argument, environment) :: stack,
+            result := evaluate(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
+            if isUnknown(getTerm(result)) then closure else result
         case Equation(tag, left, right) -> done(tag)
         case Construction(tag, index, arguments, term') -> done(tag)
         case Numeral(tag, type, n)

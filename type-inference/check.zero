@@ -1,0 +1,112 @@
+#* check.zero
+
+
+def checkError(term, type)
+    abort("Type error: \n" ++ showTermAndLocation(term) ++
+        "\ndoes not have type\n" ++ showClosure(type))
+
+
+def ensureFree(metavariable, term, type, metacontext)
+    if isDeterminedMetavariable(metavariable, metacontext)
+        abort("Type error: invalid generalization of " ++
+            showTermAndLocation(metavariable) ++ "\nwhile checking\n" ++
+            showTerm(term) ++ "\nwith tag\n" ++
+            showTagWithLocation(getTermTag(term)) ++ "\nhas type\n" ++
+            showClosure(type) ++ "\n\n" ++
+            showMetacontext(metacontext))
+    ((), metacontext)
+
+
+def instantiateOne(Closure(term, environment))
+    if term is Intersection(tag, domain, body)
+        metavariable <- newPositiveMetavariable(tag)
+        closure := Closure(body, environment.push(enclose(metavariable)))
+        # todo: check for all possible kinds of empty domain
+        if domain is Equation(tag, left, right)
+            metacontext <- getState
+            _ <- unify(Closure(left, environment), Closure(right, environment))
+            metacontext' <- getState
+            updates := getMetacontextUpdates(metacontext, metacontext')
+            lift (metavariable, updates, closure)
+        lift (metavariable, [], closure)
+    throwError("cannot instantiate non-intersection", getTermTag(term))
+
+
+def isFix(term)
+    if term is Variable(tag, index)
+        getTagLexeme(tag) =*= "fix"
+    False
+
+
+def check(context @ (environment, types), type, term)
+    metacontext <- getState
+    type @ Closure(typeTerm, typeEnv) := evaluate(metacontext, [], [], type)
+
+    # we have to handle fix applications specially so that we can retain
+    # the generalized type for the function in the context
+    if term is Application(tag, left, right)
+        if isFix(left)
+            if right is Function(tag', domain, body)
+                context' := context.pushContext(type, term)
+                check(context', type, body)
+            pass
+        pass
+
+    if isIntersection(typeTerm)
+        (metavariable, updates, type') <- instantiateOne(type)
+        _ <- check(context, type', term)
+        _ <- alterState(clearMetaValues(updates))
+        ensureFree(metavariable, term, type)
+
+    match term
+        case Metavariable(tag, index)
+            throwError("metavariable in term being typechecked", tag)
+        case Type(tag, index)
+            if index is +_ level
+                unify(enclose(Type(tag, +_(up level))), type)
+            unify(enclose(Type(tag, +_ 1)), type)
+        case Variable(tag, index)
+            type' <- instantiate(getVariableType(context, tag, index))
+            if isNegative(index)
+                metacontext <- getState
+                type'' := evaluate(metacontext, [], [], type')
+                type''' <- instantiateConstruction(type'', environment)
+                unify(type''', type)
+            unify(type', type)
+        case Singleton(tag, type', index)
+            unify(enclose(Type(tag, +_ 0)), type)
+        case Function(tag, domain, body)
+            if typeTerm is Implication(tag', domain', body')
+                domainClosure <- getDomain(Closure(domain, environment))
+                domainClosure' <- getDomain(Closure(domain', typeEnv))
+                _ <- unify(domainClosure', domainClosure)
+                argument <- newNegativeMetavariable(tag)
+                context' := context.pushContext(domainClosure', argument)
+                type' := Closure(body', typeEnv.push(enclose(argument)))
+                check(context', type', body)
+            checkError(term, type)
+        case Implication(tag, domain, body)
+            unify(enclose(Type(tag, +_ 0)), type)
+        case Intersection(tag, domain, body)
+            # todo: check for empty domain
+            metavariable <- newNegativeMetavariable(tag)
+            domainClosure := Closure(domain, environment)
+            context' := context.pushContext(domainClosure, metavariable)
+            check(context', type, body)
+        case Application(tag, applicand, argument)
+            tag' := getTermTag(applicand)
+            domain <- newPositiveMetavariable(tag')
+            type' <- addPositiveMetavariable(tag, type)
+            applicandType := enclose(Implication(tag', domain, type'))
+            _ <- check(context, applicandType, applicand)
+            check(context, enclose(domain), argument)
+        case Equation(tag, left, right)
+            unify(enclose(Type(tag, +_ 0)), type)
+        case Construction(tag, index, arguments, term)
+            unify(enclose(Type(tag, +_ 0)), type)
+        case Numeral(tag, type', value)
+            unify(Closure(type', environment), type)
+        case Operation(tag, term, optimization)
+            check(context, type, term)
+
+#*

@@ -9,10 +9,17 @@ def unificationError(originals, left, right)
         showTermAndLocation(second(originals)))
 
 
+def recursionError(metavariable, closure, metacontext)
+    abort("Type error: recursion in " ++
+        showTermAndLocation(metavariable) ++ "\n" ++
+        showTerm(metavariable) ++ " = " ++ showClosure(closure) ++ "\n\n" ++
+        showMetacontext(metacontext))
+
+
 def unifyFailure(originals, metacontext, (left, right))
-    unificationError(originals.mapPair(normalize <> resolve(metacontext)),
-        normalize(left.resolve(metacontext)),
-        normalize(right.resolve(metacontext)))
+    unificationError(originals.mapPair(normalize <> resolveLocals(metacontext)),
+        normalize(left.resolveLocals(metacontext)),
+        normalize(right.resolveLocals(metacontext)))
 
 
 def isSameMetavariable
@@ -25,8 +32,8 @@ def isSameMetavariable
 def tryEvaluate(metacontext, closure)
     closure' := evaluate(metacontext, [], [], closure)
     term := getTerm(closure')
-    if isDeterminedMetavariable(term, metacontext)
-        recursionError(term, metacontext)
+    if getMetavariableValue(term, metacontext) is Just(closure')
+        recursionError(term, closure', metacontext)
     if isUnknown(term) then closure else closure'
 
 
@@ -45,7 +52,10 @@ def unify'(fail, metacontext, (left, right))
     if isSameMetavariable(leftTerm, rightTerm)
         metacontext
 
-    if leftTerm is Metavariable(_, index)
+    if leftTerm is Metavariable(tag, index)
+        indices := getMetavariableIndices(right.resolve(metacontext))
+        if indices.contains((=:= index))
+            recursionError(leftTerm, right, metacontext)
         if index is +_ index'
             metacontext.setMetaValue(index', right)
         if rightTerm is Metavariable(_, index')
@@ -54,7 +64,10 @@ def unify'(fail, metacontext, (left, right))
             fail'
         fail'
 
-    if rightTerm is Metavariable(_, index)
+    if rightTerm is Metavariable(tag, index)
+        indices := getMetavariableIndices(left.resolve(metacontext))
+        if indices.contains((=:= index))
+            recursionError(rightTerm, left, metacontext)
         if index is +_ index'
             metacontext.setMetaValue(index', left)
         fail'
