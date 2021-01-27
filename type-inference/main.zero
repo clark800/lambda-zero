@@ -10,28 +10,27 @@ def getFixType(tag)
 
 
 def renameUniversals(closure)
-    (closure', metacontext) := instantiate(closure, emptyMetacontext)
-    closure'.generalize(metacontext)
+    (either, metacontext) := instantiate(closure, emptyMetacontext)
+    try closure' := either
+    return enclose(closure'.generalize(metacontext))
 
 
 def getType(types, Binding(tag, closure, annotation, isConstruct))
     if getTagLexeme(tag) =*= "fix"
-        lift enclose(getFixType(tag))
+        lift return enclose(getFixType(tag))
     _ @ Closure(term, environment) := closure
     context := (environment, types)
     if annotation is Just(type)
         if isConstruct  # skip inference for constructors and deconstructors
-            lift enclose(renameUniversals(type))
-        _ <- check(context, type, term)
-        lift type
+            lift renameUniversals(type)
+        try _ <- check(context, type, term)
+        lift return type
     inferType(context, term)
 
 
 def pushType(types, binding)
-    (type, metacontext) := getType(types, binding, emptyMetacontext)
-    if getSize(getPositives(metacontext)) < 0
-        abort("force unification errors")
-    types.push(type)
+    try type := first(getType(types, binding, emptyMetacontext))
+    return types.push(type)
 
 
 def showTyping((tag, type))
@@ -42,10 +41,23 @@ def showTypings(typings)
     typings.map(showTyping).joinWith("\n") ++ "\n"
 
 
+def checkedCascade(f, z)
+    case [] -> (z, Void)
+    case x :: xs'
+        match f(z, x)
+            case Left(y) -> (z, Just(y))
+            case Right(z') -> xs'.checkedCascade(f, z')
+
+
+def showTypeError
+    case Void -> ""
+    case Just(message) -> "\n\n" ++ message ++ "\n"
+
+
 def main(input)
     bindings := reverse(parse(getBuiltin, input))
-    types := bindings.cascade(pushType, newArray([]))
+    (types, maybeError) := bindings.checkedCascade(pushType, newArray([]))
     tags := bindings.map(getBindingTag)
-    showTypings(zip(tags, types.toList))
+    showTypings(zip(tags, types.toList)) ++ showTypeError(maybeError)
 
 #*

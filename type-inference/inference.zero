@@ -1,26 +1,35 @@
 #* inference.zero
 
+def onTag(tag, message)
+    message ++ " " ++ showTagWithLocation(tag) ++ "\n"
+
+
+def onTerm(term, message)
+    onTag(getTermTag(term), message)
+
+
 def pushContext(type, term, context @ (environment, types))
     (environment.push(Closure(term, environment)), types.push(type))
 
 
 def newInstantiationMetavariable(tag, domainClosure)
     _ @ Closure(domain, environment) := evaluateClosure(domainClosure)
+    metavariable <- newPositiveMetavariable(tag)
     if isType(domain) or isSingleton(domain) or isConstruction(domain)
         # TODO: verify construction is non-empty
-        newPositiveMetavariable(tag)
+        lift return metavariable
     if domain is Equation(_, left, right)
-        _ <- unify(Closure(left, environment), Closure(right, environment))
-        newPositiveMetavariable(tag)
-    throwError("cannot determine that domain is nonempty", getTermTag(domain))
+        try _ <- unify(Closure(left, environment), Closure(right, environment))
+        lift return metavariable
+    lift error "cannot determine that domain is nonempty".onTerm(domain)
 
 
 def instantiateWith(newMetavariable, closure @ Closure(term, environment))
     if term is Intersection(tag, domain, body)
-        metavariable <- newMetavariable(tag, Closure(domain, environment))
+        try metavariable <- newMetavariable(tag, Closure(domain, environment))
         closure' := Closure(body, environment.push(enclose(metavariable)))
         closure'.instantiateWith(newMetavariable)
-    lift closure
+    lift return closure
 
 
 def instantiate(closure)
@@ -35,8 +44,8 @@ def convertFunctionsToIntersections(term)
 
 def getPatternMatchDomain(Closure(typeConstructor, environment))
     term := convertFunctionsToIntersections(typeConstructor)
-    closure <- instantiate(Closure(term, environment))
-    lift evaluateClosure(closure)  # evaluate application of type constructor
+    try closure <- instantiate(Closure(term, environment))
+    lift return evaluateClosure(closure)  # evaluate application of type constructor
 
 
 def instantiateConstruction(closure, environment)
@@ -46,9 +55,9 @@ def instantiateConstruction(closure, environment)
             if term is Intersection(tag, domain, body)
                 closure' := Closure(body, environment'.push(typeConstructor))
                 instantiate(closure')  # instantiate "r"
-            throwError("expected intersection", getTermTag(term))
-        throwError("invalid construction", getTermTag(construction))
-    throwError("expected construction", getTermTag(construction))
+            lift error "expected intersection".onTerm(term)
+        lift error "invalid construction".onTerm(construction)
+    lift error "expected construction".onTerm(construction)
 
 
 def getDomain(closure @ Closure(domain, environment))
@@ -56,12 +65,12 @@ def getDomain(closure @ Closure(domain, environment))
         if index is -_ n
             if environment.get(n) is Just(typeConstructor)
                 getPatternMatchDomain(typeConstructor)
-            throwError("undefined type family", tag)
-        lift closure
+            lift error "undefined type family".onTerm(domain)
+        lift return closure
     if isUnknown(domain)
         metavariable <- newPositiveMetavariable(getTermTag(domain))
-        lift enclose(metavariable)
-    lift closure
+        lift return enclose(metavariable)
+    lift return closure
 
 
 def newFunctionType(tag, domainClosure, body)
@@ -78,60 +87,60 @@ def infer(context @ (environment, types))
 
     case Metavariable(tag, index)
         # todo: check for annotated type in metacontext
-        throwError("not implemented", tag)
+        lift error "not implemented".onTag(tag)
     case Type(tag, index)
         match index
-            +_ level -> lift enclose(Type(tag, +_(up level)))
-            -_ family -> lift enclose(Type(tag, +_ 1))
+            +_ level -> lift return enclose(Type(tag, +_(up level)))
+            -_ family -> lift return enclose(Type(tag, +_ 1))
     case Variable(tag, index)
         type := getVariableType(context, tag, index)
         if isNegative(index)
             instantiateConstruction(type, environment)
         instantiate(type)
     case Singleton(tag, type, index)
-        lift enclose(Type(tag, +_ 0))
+        lift return enclose(Type(tag, +_ 0))
     case Function(tag, domain, body)
-        domainClosure <- getDomain(enclose'(domain))
+        try domainClosure <- getDomain(enclose'(domain))
         argument <- newNegativeMetavariable(tag)
-        range <- body.infer(context.pushContext(domainClosure, argument))
+        try range <- body.infer(context.pushContext(domainClosure, argument))
         codomain <- addPositiveMetavariable(tag, range)
-        lift newFunctionType(tag, domainClosure, codomain)
+        lift return newFunctionType(tag, domainClosure, codomain)
     case Implication(tag, domain, body)
         argument <- newNegativeMetavariable(tag)
-        _ <- body.infer(context.pushContext(enclose'(domain), argument))
-        lift enclose(Type(tag, +_ 0))
+        try _ <- body.infer(context.pushContext(enclose'(domain), argument))
+        lift return enclose(Type(tag, +_ 0))
     case Intersection(tag, domain, body)
         argument <- newNegativeMetavariable(tag)
-        _ <- body.infer(context.pushContext(enclose'(domain), argument))
-        lift enclose(Type(tag, +_ 0))
+        try _ <- body.infer(context.pushContext(enclose'(domain), argument))
+        lift return enclose(Type(tag, +_ 0))
     case Application(tag, applicand, argument)
-        argumentType <- argument.infer(context)
+        try argumentType <- argument.infer(context)
         if applicand is Function(tag', domain, body)
             # handle local definitions specially so that we have argument in env
             if isUnknown(domain)  # avoid creating unnecessary metavariable
                 body.infer(context.pushContext(argumentType, argument))
-            domainClosure <- getDomain(enclose'(domain))
-            _ <- unify(argumentType, domainClosure)
+            try domainClosure <- getDomain(enclose'(domain))
+            try _ <- unify(argumentType, domainClosure)
             body.infer(context.pushContext(domainClosure, argument))
-        applicandType <- applicand.infer(context)
+        try applicandType <- applicand.infer(context)
         metacontext <- getState
-        _ @ Closure(term', environment') :=
-            tryEvaluate(metacontext, applicandType)
+        try closure' <- lift tryEvaluate(metacontext, applicandType)
+        _ @ Closure(term', environment') := closure'
         if term' is Implication(tag, domain, body)
-            _ <- unify(argumentType, Closure(domain, environment'))
-            lift Closure(body, environment'.push(argumentType))
+            try _ <- unify(argumentType, Closure(domain, environment'))
+            lift return Closure(body, environment'.push(argumentType))
         returnType <- newPositiveMetavariable(tag)
         tag := getTermTag(applicand)
         functionType := newFunctionType(tag, argumentType, returnType)
         # applicandType <: functionType  =>  argumentType <: parameterType
-        _ <- unify(applicandType, functionType)
-        lift enclose(returnType)
+        try _ <- unify(applicandType, functionType)
+        lift return enclose(returnType)
     case Equation(tag, left, right)
-        lift enclose(Type(tag, +_ 0))
+        lift return enclose(Type(tag, +_ 0))
     case Construction(tag, index, arguments, term)
-        lift enclose(Type(tag, +_ 0))
+        lift return enclose(Type(tag, +_ 0))
     case Numeral(tag, type, value)
-        lift enclose'(type)
+        lift return enclose'(type)
     case Operation(tag, term, _)
         term.infer(context)
 
@@ -139,9 +148,9 @@ def infer(context @ (environment, types))
 def inferType(context, term)
     if term is Variable(tag, index)
         # prevent re-generalization, which could change forall names
-        lift getVariableType(context, tag, index)
-    type <- term.infer(context)
+        lift return getVariableType(context, tag, index)
+    try type <- term.infer(context)
     metacontext <- getState
-    lift enclose(type.generalize(metacontext))
+    lift return enclose(type.generalize(metacontext))
 
 #*

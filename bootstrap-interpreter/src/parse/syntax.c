@@ -139,6 +139,8 @@ static Node* reduceCloseSection(Tag tag, Node* before, Node* contents) {
 }
 
 static Node* reduceReverseArrow(Tag tag, Node* left, Node* right) {
+    if (isKeyphrase(left, "try"))
+        return Definition(tag, TRYBINDDEFINITION, getRight(left), right);
     return Definition(tag, BINDDEFINITION, left, right);
 }
 

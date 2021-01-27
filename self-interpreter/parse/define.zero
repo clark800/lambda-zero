@@ -36,6 +36,11 @@ def applyBindDefinition(tag, name, value, scope)
         newPatternArrow(name, scope))
 
 
+def applyTryBindDefinition(tag, name, value, scope)
+    Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRightState"),
+        newPatternArrow(name, scope)), value)
+
+
 def applyFix(name, value)
     tag := getTag(name)
     Juxtaposition(tag, FixedName(tag, "fix"), LockedArrow(name, value))
@@ -278,6 +283,7 @@ def applyDefinition(definition, scope)
             SyntaxDefinition -> scope
             ADTDefinition -> applyADTDefinition(tag, name, value, scope)
             BindDefinition -> applyBindDefinition(tag, name, value, scope)
+            TryBindDefinition -> applyTryBindDefinition(tag, name, value, scope)
     astSyntaxError("internal error", definition)
 
 

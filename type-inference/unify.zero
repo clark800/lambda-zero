@@ -1,7 +1,7 @@
 #* unify.zero
 
 def unificationError(originals, left, right)
-    abort("Type error: Can't unify\n" ++
+    error("Type error: Can't unify\n" ++
         showTermAndLocation(left) ++ "\nwith\n" ++ showTermAndLocation(right) ++
         "\nwhile trying to unify\n" ++
         showTermAndLocation(first(originals)) ++
@@ -10,7 +10,7 @@ def unificationError(originals, left, right)
 
 
 def recursionError(metavariable, closure, metacontext)
-    abort("Type error: recursion in " ++
+    error("Type error: recursion in " ++
         showTermAndLocation(metavariable) ++ "\n" ++
         showTerm(metavariable) ++ " = " ++ showClosure(closure) ++ "\n\n" ++
         showMetacontext(metacontext))
@@ -34,13 +34,13 @@ def tryEvaluate(metacontext, closure)
     term := getTerm(closure')
     if getMetavariableValue(term, metacontext) is Just(closure')
         recursionError(term, closure', metacontext)
-    if isUnknown(term) then closure else closure'
+    if isUnknown(term) then return closure else return closure'
 
 
 def unify'(fail, metacontext, (left, right))
     fail' := fail(metacontext, (left, right))
-    left := left.tryEvaluate(metacontext)
-    right := right.tryEvaluate(metacontext)
+    try left := left.tryEvaluate(metacontext)
+    try right := right.tryEvaluate(metacontext)
     _ @ Closure(leftTerm, leftEnv) := left
     _ @ Closure(rightTerm, rightEnv) := right
 
@@ -50,17 +50,17 @@ def unify'(fail, metacontext, (left, right))
         unify''(metacontext', left', right')
 
     if isSameMetavariable(leftTerm, rightTerm)
-        metacontext
+        return metacontext
 
     if leftTerm is Metavariable(tag, index)
         indices := getMetavariableIndices(right.resolve(metacontext))
         if indices.contains((=:= index))
             recursionError(leftTerm, right, metacontext)
         if index is +_ index'
-            metacontext.setMetaValue(index', right)
+            return metacontext.setMetaValue(index', right)
         if rightTerm is Metavariable(_, index')
             if index' is +_ index''
-                metacontext.setMetaValue(index'', left)
+                return metacontext.setMetaValue(index'', left)
             fail'
         fail'
 
@@ -69,7 +69,7 @@ def unify'(fail, metacontext, (left, right))
         if indices.contains((=:= index))
             recursionError(rightTerm, left, metacontext)
         if index is +_ index'
-            metacontext.setMetaValue(index', left)
+            return metacontext.setMetaValue(index', left)
         fail'
 
     def unifyBodies(tag, metacontext', leftBody, rightBody)
@@ -79,7 +79,7 @@ def unify'(fail, metacontext, (left, right))
              Closure(rightBody, rightEnv.push(enclose(m)))))
 
     def unifyBinder(tag, leftDomain, rightDomain, leftBody, rightBody)
-        metacontext' := unify'(fail, metacontext,
+        try metacontext' := unify'(fail, metacontext,
             (Closure(rightDomain, rightEnv),
              Closure(leftDomain, leftEnv)))
         unifyBodies(tag, metacontext', leftBody, rightBody)
@@ -89,13 +89,13 @@ def unify'(fail, metacontext, (left, right))
             fail'  # already handled above
         case Type(tag, index)
             if rightTerm is Type(_, index')
-                if index =:= index' then metacontext else fail'
+                if index =:= index' then return metacontext else fail'
             fail'
         case Variable(tag, index)
             fail'  # evaluate should never return a Variable
         case Singleton(tag, type, index)
             if rightTerm is Singleton(tag', type', index')
-                if index = index' then metacontext else fail'
+                if index = index' then return metacontext else fail'
             fail'
         case Function(tag, domain, body)
             if rightTerm is Function(tag', domain', body')
@@ -113,23 +113,23 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Application(tag, left', right')
             if rightTerm is Application(tag', left'', right'')
-                metacontext' := unify''(metacontext, left', left'')
+                try metacontext' := unify''(metacontext, left', left'')
                 unify''(metacontext', right', right'')
             fail'
         case Equation(tag, left', right')
             if rightTerm is Equation(tag', left'', right'')
-                metacontext' := unify''(metacontext, left', left'')
+                try metacontext' := unify''(metacontext, left', left'')
                 unify''(metacontext', right', right'')
             fail'
         case Construction(tag, index, arguments, term)
             if rightTerm is Construction(tag', index', arguments', term')
                 if index = index'
-                    zip(arguments, arguments').cascade(unify''', metacontext)
+                    zip(arguments, arguments').tryCascade(unify''', metacontext)
                 fail'
             fail'
         case Numeral(tag, type, value)
             if rightTerm is Numeral(_, _, value')
-                if value = value' then metacontext else fail'
+                if value = value' then return metacontext else fail'
             fail'
         case Operation(tag, term, optimization)
             fail'    # evaluate should never return an Operation
@@ -137,10 +137,8 @@ def unify'(fail, metacontext, (left, right))
 
 def unify(left, right, metacontext)
     originals := (left, right)
-    metacontext' := unify'(unifyFailure(originals), metacontext, originals)
-    _ @ Metacontext(positives, negatives) := metacontext'
-    if getSize(positives) < 0  # todo: remove this and use either type
-        abort("force unification errors")
-    ((), metacontext')
+    match unify'(unifyFailure(originals), metacontext, originals)
+        case Left(message) -> (Left(message), metacontext)
+        case Right(metacontext') -> (Right(metacontext'), metacontext')
 
 #*
