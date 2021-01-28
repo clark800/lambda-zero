@@ -52,6 +52,8 @@ mx ⁇ x ≔ mx ⦊ Void ↦ x; Just(x′) ↦ x′
 
 # either
 a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
+(error) := Left
+(return) := Right
 isLeft ≔ Left(_) ↦ True; Right(_) ↦ False
 isRight ≔ Left(_) ↦ False; Right(_) ↦ True
 try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
@@ -163,6 +165,8 @@ findIndex(p, xs) ≔ safeHead(findIndices(p, xs))
 
 cascadeMaybe(f, z, xs) ≔ xs ⦊ [] ↦ Just(z); x ∷ xs′ ↦
     f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′))
+tryCascade(f, z, xs) ≔ xs ⦊ [] ↦ Right(z); x ∷ xs′ ↦
+    f(z, x).onRight(y ↦ tryCascade(f, y, xs′))
 
 # cascadeMap : (a => s => (b && s)) => s => List(a) => (List(b) && s)
 cascadeMap(f, z, xs) ≔ xs.cascade((ys, s) ↦ x ↦
@@ -346,5 +350,8 @@ getState ≔ state ↦ (state, state)
 setState(state') ≔ state ↦ (state', state')
 alterState(f) ≔ state ↦ duplicate(f(state))
 cascadeMapState(f, xs) ≔ state ↦ xs.cascadeMap(f, state)
+def onRightState(f, rhs)
+    exy ↤ rhs
+    exy ⦊ Left(x) ↦ lift Left(x); Right(y) ↦ f(y)
 
 #*

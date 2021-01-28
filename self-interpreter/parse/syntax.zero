@@ -33,6 +33,10 @@ def reduceForAll(tag, left, right)
 
 
 def reduceReverseArrow(tag, left, right)
+    if left is Juxtaposition(_, left', right')
+        if isThisName(left', "try")
+            Definition(tag, TryBindDefinition, right', right)
+        pass
     Definition(tag, BindDefinition, left, right)
 
 

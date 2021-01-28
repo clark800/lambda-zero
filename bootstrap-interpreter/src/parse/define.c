@@ -24,8 +24,21 @@ static Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope)
 }
 
 static Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
-    // try a := b; c --> onRight(b, (a -> c)) --> (((onRight) b) (a -> c))
+    // try a := b; c --> onRight(b, (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
+            newLazyArrow(left, scope)), right);
+}
+
+static Node* applyBindDefinition(Tag tag, Node* left, Node* right, Node* scope){
+    // left <- right;; scope ==> right >> (left -> scope)
+    return Juxtaposition(tag, Juxtaposition(tag,
+        FixedName(tag, ">>"), right), newLazyArrow(left, scope));
+}
+
+static Node* applyTryBindDefinition(Tag tag, Node* left, Node* right,
+        Node* scope) {
+    // try a <- b; c --> onRightState(b, (a -> c))
+    return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRightState"),
             newLazyArrow(left, scope)), right);
 }
 
@@ -164,12 +177,6 @@ static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     return applyPlainDefinition(tag, name, Number(tag, 0), scope);
 }
 
-static Node* applyBindDefinition(Tag tag, Node* left, Node* right, Node* scope){
-    // left <- right;; scope ==> right >> (left -> scope)
-    return Juxtaposition(tag, Juxtaposition(tag,
-        FixedName(tag, ">>"), right), newLazyArrow(left, scope));
-}
-
 Node* applyDefinition(Node* definition, Node* scope) {
     Tag tag = getTag(definition);
     Node* definiendum = getLeft(definition);
@@ -187,6 +194,8 @@ Node* applyDefinition(Node* definition, Node* scope) {
             return applyADTDefinition(tag, definiendum, definiens, scope);
         case BINDDEFINITION:
             return applyBindDefinition(tag, definiendum, definiens, scope);
+        case TRYBINDDEFINITION:
+            return applyTryBindDefinition(tag, definiendum, definiens, scope);
     }
     assert(false);
     return NULL;
