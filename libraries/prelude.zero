@@ -106,6 +106,7 @@ isNil ≔ [] ↦ True; _ ∷ _ ↦ False
 fold(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ f(x, fold(f, z, xs′))
 cascade(f, z, xs) ≔ xs ⦊ [] ↦ z; x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
 abort(message : List(ℕ)) ≔ abort(message)
+impossible := abort("impossible")
 
 xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
