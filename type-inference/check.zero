@@ -39,6 +39,23 @@ def isFix(term)
     False
 
 
+def getFinalBody(term)
+    if term is Function(_, _, body)
+        getFinalBody(body)
+    term
+
+
+def isImpossible(context, term)
+    if term is Variable(tag, index)
+        type := getVariableType(context, tag, index)
+        if getTerm(type) is Intersection(_, _, body)
+            if body is Variable(_, index)
+                index =:= +_ 1
+            False
+        False
+    False
+
+
 def check(context @ (environment, types), type, term)
     metacontext <- getState
     type @ Closure(typeTerm, typeEnv) := evaluate(metacontext, [], [], type)
@@ -54,10 +71,16 @@ def check(context @ (environment, types), type, term)
         pass
 
     if isIntersection(typeTerm)
-        try (metavariable, updates, type') <- instantiateOne(type)
-        try _ <- check(context, type', term)
-        _ <- alterState(clearMetaValues(updates))
-        ensureFree(metavariable, term, type)
+        result <- instantiateOne(type)
+        match result
+            case Left(message)
+                if isImpossible(context, getFinalBody(term))
+                    lift return metacontext
+                lift error "impossible case".onTerm(term) ++ "\n\n" ++ message
+            case Right((metavariable, updates, type'))
+                try _ <- check(context, type', term)
+                _ <- alterState(clearMetaValues(updates))
+                ensureFree(metavariable, term, type)
 
     match term
         case Metavariable(tag, index)

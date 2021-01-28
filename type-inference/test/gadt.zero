@@ -1,17 +1,26 @@
 
+syntax(::) ≔ infixR(40)
 syntax(:::) := infixR(40)
 syntax(up) := prefix(90)
 syntax(<>) := infixR(70)
 syntax(match) := prefix(7)
 syntax(if) := prefix(13)
 syntax(+) := infixL(50)
+syntax(⊓) ≔ infixL(70)
 
 f <> g ≔ x ↦ f(g(x))
 fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
 (match x)(f) := f(x)
 
+a ⊓ b ⩴ {(_ : a, _ : b)}
+
 Nat ::= {0, up(n : Nat)}
 (+) := 0 -> m -> m; up n -> m -> up(n + m)
+
+List(a) ⩴ {[], (head : a) :: (tail : List(a))}
+
+abort(message : List(Nat)) ≔ abort(message)
+impossible := abort("impossible")
 
 Vector(n, a) ::= {
     Nil : Vector(0, a),
@@ -33,5 +42,15 @@ def concatenate(xs, ys)
     match xs
         Nil -> ys
         x ::: xs' -> x ::: concatenate(xs', ys)
+
+sig forall(n : Nat) forall(a) forall(b) Vector(n, a) => Vector(n, b) =>
+    Vector(n, a ⊓ b)
+def vzip(xs, ys)
+    match xs
+        case Nil -> Nil
+        case x ::: xs'
+            match ys
+                case Nil -> impossible
+                case y ::: ys' -> (x, y) ::: vzip(xs', ys')
 
 0
