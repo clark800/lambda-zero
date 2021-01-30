@@ -59,6 +59,7 @@ def containsFreeName(name)
         not isSameLexeme(name', name) and
             (value.containsFreeName(name) or scope.containsFreeName(name))
     Number(_, _) -> False
+    PreInference(_) -> False
     PreEquation(_, left, right) ->
         left.containsFreeName(name) or right.containsFreeName(name)
     Definition(_, _, _, _) -> False

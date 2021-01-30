@@ -9,6 +9,7 @@ def isSameAssociativity(left, right)
 
 
 Fixity(operand) ::= {
+    Nofix(reduce : TagT => operand),
     Prefix(reduce : TagT => operand => operand),
     Infix(reduce : TagT => operand => operand => operand),
     Postfix(reduce : TagT => operand => operand),

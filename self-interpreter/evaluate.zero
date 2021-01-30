@@ -26,6 +26,7 @@ def evaluate(metacontext, metaindices, stack, closure)
             if environment.seek(-_ abs(index)) is Just(closure')
                 evaluate(stack, closure')
             closure
+        case Inference(tag, domain) -> done(tag)
         case Singleton(tag, type, index) -> done(tag)
         case Function(tag, domain, body)
             if stack is argument :: stack'

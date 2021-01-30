@@ -36,6 +36,8 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
             if environment.peek(index' -- depth -- 1) is Just(closure')
                 resolveClosure(closure')
             term
+        case Inference(tag, domain)
+            Inference(tag, domain.mapJust(resolve''))
         case Singleton(tag, type, index)
             Singleton(tag, resolve''(type), index)
         case Function(tag, domain, body)

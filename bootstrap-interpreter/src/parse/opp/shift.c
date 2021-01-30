@@ -79,6 +79,7 @@ void reduceLeft(Stack* stack, Node* operator) {
 void shiftOperator(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     switch(getFixity(operator)) {
+        case NOFIX: push(stack, reduce(operator, NULL, NULL)); break;
         case INFIX: shiftInfix(stack, operator); break;
         case POSTFIX: shiftPostfix(stack, operator); break;
         case CLOSEFIX: shiftClose(stack, operator); break;

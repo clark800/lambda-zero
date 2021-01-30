@@ -20,6 +20,7 @@ Term ::= {
     Metavariable(tag : TagT, index : ℤ),
     Type(tag : TagT, index : ℤ),
     Variable(tag : TagT, index : ℤ),
+    Inference(tag : TagT, domain : (Term)?),
     Singleton(tag : TagT, type : Term, index : ℕ),
     Function(tag : TagT, domain : Term, body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
@@ -37,6 +38,7 @@ def getTermTag
     Metavariable(tag, _) -> tag
     Type(tag, _) -> tag
     Variable(tag, _) -> tag
+    Inference(tag, _) -> tag
     Singleton(tag, _, _) -> tag
     Function(tag, _, _) -> tag
     Implication(tag, _, _) -> tag
@@ -51,6 +53,7 @@ def getTermTag
 isMetavariable := Metavariable(_, _) -> True; _ -> False
 isType := Type(_, _) -> True; _ -> False
 isVariable := Variable(_, _) -> True; _ -> False
+isInference := Inference(_, _) -> True; _ -> False
 isSingleton := Singleton(_, _, _) -> True; _ -> False
 isFunction := Function(_, _, _) -> True; _ -> False
 isImplication := Implication(_, _, _) -> True; _ -> False
@@ -82,6 +85,7 @@ def setTag(tag)
     Metavariable(_, index) -> Metavariable(tag, index)
     Type(_, index) -> Type(tag, index)
     Variable(_, index) -> Variable(tag, index)
+    Inference(_, domain) -> Inference(tag, domain)
     Singleton(_, type, index) -> Singleton(tag, type, index)
     Function(_, domain, body) -> Function(tag, domain, body)
     Implication(_, domain, body) -> Implication(tag, domain, body)
@@ -163,6 +167,7 @@ def showTerm
     Variable(tag, index) ->
         if abs(index) = 0 then "■" else
             showTag(tag) # ++ showIntegerSubscript(index)
+    Inference(tag, domain) -> "infer"
     Singleton(tag, type, index) -> "{" ++ showTag(tag) ++ "}"
     Function(tag, domain, body) ->
         if isUnknown(domain) or isTypeFamily(domain) then

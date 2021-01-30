@@ -25,7 +25,7 @@ def getType(types, Binding(tag, closure, annotation, isConstruct))
             lift renameUniversals(type)
         try _ <- check(context, type, term)
         lift return type
-    inferType(context, term)
+    inferGeneralizedType(context, term)
 
 
 def pushType(types, binding)

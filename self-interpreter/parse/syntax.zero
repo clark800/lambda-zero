@@ -130,6 +130,14 @@ def reduceClose(_tag, _left, right)
     right
 
 
+def reduceInfer(tag)
+    PreInference(tag)
+
+
+def reduceEquation(tag, left, right)
+    PreEquation(tag, left, right)
+
+
 def newSyntax'(tag, prior, precedence, associativity, fixity)
     special := not isNil(prior)
     Syntax(getTagLexeme(tag), precedence, precedence,
@@ -271,6 +279,9 @@ OPERATORS := [newDictionary([
     coreSyntax("@", 12, 12, NA, Infix(reduceAsPattern)),
     coreSyntax("is", 13, 13, LA, Infix(reduceIs)),
     coreSyntax("abort", 14, 14, LA, Prefix(reduceAdfix)),
+    coreSyntax("infer", 14, 14, NA, Nofix(reduceInfer)),
+    coreSyntax("==", 20, 20, NA, Infix(reduceEquation)),
+    coreAlias("≡", "==", 20, 20, NA, Infix(reduceEquation)),
     coreSyntax(".", 92, 92, LA, Infix(reducePipeline)),
     coreSyntax("$", 99, 99, LA, Prefix(reduceReservedAdfix)),
     coreSyntax("syntax", 99, 99, LA, Prefix(reduceAdfix)),

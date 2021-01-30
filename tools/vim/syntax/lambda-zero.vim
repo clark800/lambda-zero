@@ -10,7 +10,7 @@ syntax region lambdaZeroCharacter start=/[ ()\[\]{},;.`@$]'/lc=1 skip=/\\./ end=
 syntax region lambdaZeroCharacter start=/^'/ skip=/\\./ end=/'/ oneline
 syntax match lambdaZeroLineComment "#.*$"
 syntax keyword lambdaZeroConstant True False Void
-syntax keyword lambdaZeroKeyword not and or xor in is if then else sig def match to case abort maybe try catch where of pass this lift error return
+syntax keyword lambdaZeroKeyword not and or xor in is if then else sig def match to case abort maybe try catch where of pass this lift error return infer
 
 highlight link lambdaZeroName Normal
 highlight link lambdaZeroOperator Operator
