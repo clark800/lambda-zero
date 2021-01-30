@@ -86,6 +86,11 @@ static Node* reduceAbort(Tag tag, Node* left, Node* right) {
         Juxtaposition(tag, FixedName(tag, "abort"), right)));
 }
 
+static Node* reduceInfer(Tag tag, Node* left, Node* right) {
+    (void)left, (void)right;
+    return FixedName(tag, "(exit)");
+}
+
 static Node* reduceReserved(Tag tag, Node* left, Node* right) {
     (void)left, (void)right;
     syntaxError("reserved operator", tag);
@@ -178,12 +183,15 @@ void initSymbols(void) {
     addCoreSyntax("@", 12, INFIX, N, AsPattern);
     addCoreSyntax("is", 13, INFIX, L, reduceIs);
     addCoreSyntax("abort", 14, PREFIX, L, reduceAbort);
+    addCoreSyntax("infer", 14, NOFIX, N, reduceInfer);
+    addCoreSyntax("==", 20, INFIX, N, reduceErased);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, PREFIX, L, reduceReserved);
     addCoreSyntax("syntax", 99, PREFIX, L, reducePrefix);
     addCoreSyntax("alias", 99, PREFIX, L, reducePrefix);
     addCoreAlias("\xE2\x89\x94", ":="); // u2254
     addCoreAlias("\xE2\xA9\xB4", "::="); // u2A74
+    addCoreAlias("\xE2\x89\xA1", "=="); // u2261
     addCoreAlias("\xE2\x86\xA6", "->"); // u21A6
     addCoreAlias("\xE2\x86\xA4", "<-"); // u21A4
     addCoreAlias("\xE2\x87\x92", "=>"); // u21D2

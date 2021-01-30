@@ -4,6 +4,7 @@ def getComponents
     Metavariable(_, _) -> []
     Type(_, _) -> []
     Variable(_, _) -> []
+    Inference(_, domain) -> domain.mapJust((:: [])) ?? []
     Singleton(_, type, index) -> [type]
     Function(_, domain, body) -> [domain, body]
     Implication(_, domain, body) -> [domain, body]
@@ -20,6 +21,8 @@ def mapComponentsWithDepth(f, depth, term)
         Metavariable(_, _) -> term
         Type(_, _) -> term
         Variable(_, _) -> term
+        Inference(tag, domain) ->
+            Inference(tag, domain.mapJust(f(depth)))
         Singleton(tag, type, index) ->
             Singleton(tag, type.f(depth), index)
         Function(tag, domain, body) ->

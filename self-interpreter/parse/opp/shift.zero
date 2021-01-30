@@ -50,6 +50,8 @@ def isValidInfixPrior(getTag, operator, left, right)
 def reduceTop'(onReduce, getTag, state, operator, right)
     _ @ State(stack, operators) := state
     match getFixity(getSyntax(operator))
+        case Nofix(reduce)
+            opSyntaxError("internal error: nofix in reduceTop", operator)
         case Prefix(reduce)
             if not isValidAdfixPrior(getTag, operator, right)
                 opSyntaxError("invalid prior for", operator)
@@ -103,6 +105,10 @@ def reduceLeft(onReduce, getTag, state, operator)
 
 def shiftPrefix(State(stack, operators), operator)
     State(OperatorItem(operator) :: stack, operators)
+
+
+def shiftNofix(reduce, State(stack, operators), operator)
+    State(OperandItem(reduce(getOperatorTag(operator))) :: stack, operators)
 
 
 def shiftPostfix(onReduce, getTag, reduce, State(stack, operators), operator)
@@ -185,6 +191,7 @@ def shiftClosefix(onReduce, reduceClose, State(stack, operators), close)
 
 def getShifter(onReduce, getTag, fixity)
     match fixity
+        Nofix(reduce) -> shiftNofix(reduce)
         Prefix(reduce) -> shiftPrefix
         Infix(reduce) -> shiftInfix
         Postfix(reduce) -> shiftPostfix(onReduce, getTag, reduce)

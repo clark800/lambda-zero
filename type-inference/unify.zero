@@ -93,6 +93,16 @@ def unify'(fail, metacontext, (left, right))
             fail'
         case Variable(tag, index)
             fail'  # evaluate should never return a Variable
+        case Inference(tag, maybeDomain)
+            if rightTerm is Inference(tag', maybeDomain')
+                if maybeDomain is Just(domain)
+                    if maybeDomain' is Just(domain')
+                        unify''(metacontext, domain, domain')
+                    fail'
+                if maybeDomain' is Just(domain')
+                    fail'
+                return metacontext
+            fail'
         case Singleton(tag, type, index)
             if rightTerm is Singleton(tag', type', index')
                 if index = index' then return metacontext else fail'

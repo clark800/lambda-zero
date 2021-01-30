@@ -14,6 +14,7 @@ AST ::= {
     Let(tag : TagT, isConstruct : 𝔹, annotation : (AST)?,
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
+    PreInference(tag : TagT),
     PreEquation(tag : TagT, left : AST, right : AST),
     Definition(tag : TagT, type : DefinitionType,
         definiendum : AST, definiens : AST),
@@ -45,6 +46,7 @@ def getTag
     Juxtaposition(tag, _, _) -> tag
     Let(tag, _, _, _, _, _) -> tag
     Number(tag, _) -> tag
+    PreInference(tag) -> tag
     PreEquation(tag, _, _) -> tag
     Definition(tag, _, _, _) -> tag
     AsPattern(tag, _, _) -> tag
@@ -67,6 +69,7 @@ def isPreterm
     Juxtaposition(_, _, _) -> True
     Let(_, _, _, _, _, _) -> True
     Number(_, _) -> True
+    PreInference(_) -> True
     PreEquation(_, _, _) -> True
     Definition(_, _, _, _) -> False
     AsPattern(_, _, _) -> False
@@ -104,6 +107,7 @@ def showAST
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
             ";;" ++ showAST(scope) ++ ")"
     Number(tag, value) -> showNatural(value)
+    PreInference(tag) -> "infer"
     PreEquation(tag, left, right) ->
         "((" ++ showAST(left) ++ ") == (" ++ showAST(right) ++ "))"
     Definition(tag, _, left, right) ->
@@ -127,6 +131,7 @@ isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
 isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
 isLet := Let(_, _, _, _, _, _) -> True; _ -> False
 isNumber := Number(_, _) -> True; _ -> False
+isPreInference := PreInference(_) -> True; _ -> False
 isPreEquation := PreEquation(_, _, _) -> True; _ -> False
 isDefinition := Definition(_, _, _, _) -> True; _ -> False
 isAsPattern := AsPattern(_, _, _) -> True; _ -> False
@@ -196,6 +201,7 @@ prependList(tag, item, list) := Juxtaposition(tag,
 
 def getFixityCode(fixity)
     match fixity
+        Nofix(_) -> NOFIX
         Prefix(_) -> PREFIX
         Infix(_) -> INFIX
         Postfix(_) -> POSTFIX

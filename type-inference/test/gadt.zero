@@ -53,4 +53,8 @@ def vzip(xs, ys)
                 case Nil -> impossible
                 case y ::: ys' -> (x, y) ::: vzip(xs', ys')
 
+sig 1 + 1 == 2
+def proof
+    infer
+
 0
