@@ -121,8 +121,8 @@ def showConstruction(showTerm, headTag, arguments)
 def showPositiveMetavariable(n)
     characters := ['a', 'b', 'c', 'd']
     if n < 4
-        [characters.at(n) ?? '#']
-    showPositiveMetavariable((n // 4) -- 1) ++ [characters.at(n % 4) ?? '#']
+        [characters.pick(n) ?? '#']
+    showPositiveMetavariable((n // 4) -- 1) ++ [characters.pick(n % 4) ?? '#']
 
 
 def showMetavariable(index)

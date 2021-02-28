@@ -69,7 +69,7 @@ def getTypeConstructor(tag, constructors, arities)
     counts := deduplicate(constructors.map(maybeConstructorCount).sift)
     if length(adtLexemes) =/= 1 or length(counts) =/= 1
         throwError("Type error: inconsistent cases:", tag)
-    count := safeHead(counts) ?? throwError("Type error: invalid cases:", tag)
+    count := pop(counts) ?? throwError("Type error: invalid cases:", tag)
     indices := deduplicate(constructors.map(maybeConstructorIndex).sift)
     if length(indices) < count
         throwError("Type error: missing case:", tag)
@@ -79,7 +79,7 @@ def getTypeConstructor(tag, constructors, arities)
         throwError("Type error: cases out of order:", tag)
     if findIncorrectArityConstructor(constructors, arities) is Just(constructor)
         throwError("Type error: incorrect arity for:", getTag(constructor))
-    safeHead(adtNames) ?? throwError("Type error: invalid cases", tag)
+    pop(adtNames) ?? throwError("Type error: invalid cases", tag)
 
 
 def getConstructorFamily(tag, cases, globals)

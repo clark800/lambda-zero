@@ -419,7 +419,7 @@ def parseEvent(keymap, eventBytes)
         state := event.lookup("state") ?? 0
         keysyms := keymap.get(keycode) ?? []
         keysymIndex := if state % 4 > 0 then 1 else 0
-        keysym := keysyms.at(keysymIndex) ?? 0
+        keysym := keysyms.pick(keysymIndex) ?? 0
         event.insert("keysym", keysym)
     if eventCode = BUTTON_PRESS
         parseClick(eventBytes)
