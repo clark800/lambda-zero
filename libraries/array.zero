@@ -11,7 +11,7 @@ Array(size, data).set(n, x) := if n >= size then Array(size, data) else
     Array(size, data.setRAL(size -- n -- 1, x))
 Array(size, data).append(value) := (size, Array(up size, data.pushRAL(value)))
 Array(size, data).push(value) := Array(up size, data.pushRAL(value))
-Array(size, data).pop := Array(down size, data.popRAL)
+Array(size, data).pull := Array(down size, data.pullRAL)
 Array(size, data).peek(n) := data.getRAL(n)
 
 def seek(index, array)

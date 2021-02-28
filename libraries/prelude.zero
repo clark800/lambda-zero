@@ -117,14 +117,10 @@ drop(n, xs) ≔ n ⦊ 0 ↦ xs; ↑ n′ ↦ (xs ⦊ [] ↦ []; _ ∷ xs′ ↦ 
 take(n, xs) ≔ n ⦊ 0 ↦ []; ↑ n′ ↦ (xs ⦊ [] ↦ []; x ∷ xs′ ↦ x ∷ xs′.take(n′))
 xs[n, n′] ≔ xs.drop(n).take(n′ ∸ n)
 slice(n, n′, xs) ≔ xs[n, n′]
+pop(xs) ≔ xs ⦊ [] ↦ Void; x ∷ _ ↦ Just(x)
+pick(n, xs) ≔ pop(xs.drop(n))
 dropLast(xs) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if isNil(xs′) then [] else x ∷ dropLast(xs′)
-safeHead(xs) ≔ xs ⦊ [] ↦ Void; x ∷ _ ↦ Just(x)
-safeTail(xs) ≔ xs ⦊ [] ↦ Void; _ ∷ xs ↦ Just(xs)
-safeLast(xs) ≔ xs ⦊ [] ↦ Void;
-    x ∷ xs′ ↦ (xs′ ⦊ [] ↦ Just(x); _ ∷ _ ↦ safeLast(xs′))
-at(n, xs) ≔ n ⦊ 0 ↦ safeHead(xs);
-    ↑ n′ ↦ (xs′.at(n′) where maybe xs′ ≔ safeTail(xs))
 dropIf(p, ns) ≔ ns ⦊ [] ↦ []; n ∷ ns′ ↦ if p(n) then ns′ else ns
 takeWhile(p, xs) ≔ xs ⦊ [] ↦ [];
     x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(p, xs′) else []
@@ -160,10 +156,10 @@ n ‥ m ≔ if n > m then [] else n ∷ (↑ n ‥ m)
 (…) ≔ iterate((↑))
 upto(n) ≔ (0 …).take(n)
 enumerate(xs) ≔ zip(0 …, xs)
-find(p, xs) ≔ safeHead(xs ¦ p)
+find(p, xs) ≔ pop(xs ¦ p)
 contains(p, xs) ≔ not isVoid(xs.find(p))
 findIndices(p, xs) ≔ (enumerate(xs) ¦ p ∘ second).map(first)
-findIndex(p, xs) ≔ safeHead(findIndices(p, xs))
+findIndex(p, xs) ≔ pop(findIndices(p, xs))
 
 cascadeMaybe(f, z, xs) ≔ xs ⦊ [] ↦ Just(z); x ∷ xs′ ↦
     f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′))
@@ -279,11 +275,11 @@ showList(showElement, xs) ≔ "[" ⧺ xs.map(showElement).joinWith(", ") ⧺ "]"
 
 def showSubscript(n)
     subscripts ≔ ["₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"]
-    showNatural(n).map((∸ '0')).map(`at(subscripts)).sift.join
+    showNatural(n).map((∸ '0')).map(`pick(subscripts)).sift.join
 
 def showSuperscript(n)
     superscripts ≔ ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
-    showNatural(n).map((∸ '0')).map(`at(superscripts)).sift.join
+    showNatural(n).map((∸ '0')).map(`pick(superscripts)).sift.join
 
 showSubscriptSign ≔ ᐩ _ ↦ ""; ᐨ _ ↦ "₋"
 showIntegerSubscript(z) ≔ showSubscriptSign(z) ⧺ showSubscript(abs(z))

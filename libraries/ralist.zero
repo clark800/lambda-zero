@@ -12,7 +12,7 @@ def list.pushRAL(x)
                     (1, Leaf(x)) :: list
 
 
-def list.popRAL
+def list.pullRAL
     match list
         case [] -> []
         case (size, tree) :: rest

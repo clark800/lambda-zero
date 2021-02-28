@@ -227,7 +227,7 @@ def getDeconstructorType(tag, adtType, form)
 def newDeconstructorFunction(tag, n, ms, j)
     reconstructor := Underscore(tag, 3)
     arguments := upto(n).map(k -> if k = j then reconstructor else
-        newFallbackCase(tag, ms.at(k) ?? 0))
+        newFallbackCase(tag, ms.pick(k) ?? 0))
     body := arguments.cascade(Juxtaposition(tag), Underscore(tag, 1))
     UnderscoreArrow(tag, UnderscoreArrow(tag, UnderscoreArrow(tag, body)))
 
