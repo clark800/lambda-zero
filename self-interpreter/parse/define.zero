@@ -251,11 +251,11 @@ def newADT(adtType, forms)
     (name, parameters) := splitArguments(adtType)
     if not isName(name)
         astSyntaxError("expected name", name)
-    # todo: use the same method for parameters as with normal functions
-    if not parameters.all(isName)
+    parameterNames := parameters.map(removeAnnotation)
+    if not parameterNames.all(isName)
         astSyntaxError("parameters to type constructor must be names", name)
     tag := getTag(name)
-    ADT(tag, parameters, newConstruction(tag, adtType, forms))
+    ADT(tag, parameterNames, newConstruction(tag, adtType, forms))
 
 
 def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
@@ -264,15 +264,17 @@ def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
     enumerate(forms).fold(newConstructorDefinitions(tag, adtType, n, ms), scope)
 
 
-def applyADTDefinition(tag, adtType, setbuilder, scope)
-    if setbuilder is SetBuilder(_, forms)
-        (name, parameters) := splitArguments(adtType)
+def applyADTDefinition(tag, left, right, scope)
+    if right is SetBuilder(_, forms)
+        (name, parameters) := splitArguments(left)
+        parameterNames := parameters.map(removeAnnotation)
+        adtType := parameterNames.cascade(Juxtaposition(tag), name)
         scope' := defineConstructorsAndDeconstructors(
             tag, adtType, forms, scope)
         adt := newADT(adtType, forms)
         value := parameters.fold(LockedArrowDefault(Top(tag)), adt)
         newConstructDefinition(tag, Void, name, value, scope')
-    astSyntaxError("internal error", adtType)
+    astSyntaxError("internal error", left)
 
 
 def applyDefinition(definition, scope)
