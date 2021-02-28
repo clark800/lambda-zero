@@ -22,7 +22,7 @@ List(a) ⩴ {[], (head : a) :: (tail : List(a))}
 abort(message : List(Nat)) ≔ abort(message)
 impossible := abort("impossible")
 
-Vector(n, a) ::= {
+Vector(n : Nat, a) ::= {
     Nil : Vector(0, a),
     forall(n' : Nat) (_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a)
 }
@@ -30,6 +30,11 @@ Vector(n, a) ::= {
 vector := 1 ::: Nil
 
 vector' := 2 ::: vector
+
+# overly specific type
+#sig Vector(1, Nat) => Vector(2, Nat)
+#def pushOne(xs)
+#    1 ::: xs
 
 sig forall(n : Nat) forall(a) Vector(n, a) => Nat
 def vlength

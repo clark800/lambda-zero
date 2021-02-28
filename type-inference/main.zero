@@ -23,6 +23,7 @@ def getType(types, Binding(tag, closure, annotation, isConstruct))
     if annotation is Just(type)
         if isConstruct  # skip inference for constructors and deconstructors
             lift renameUniversals(type)
+        try _ <- getTerm(type).inferType(context) # typecheck the type
         try _ <- check(context, type, term)
         lift return type
     inferGeneralizedType(context, term)
