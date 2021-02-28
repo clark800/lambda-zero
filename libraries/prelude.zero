@@ -56,12 +56,13 @@ a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 (return) := Right
 isLeft ≔ Left(_) ↦ True; Right(_) ↦ False
 isRight ≔ Left(_) ↦ False; Right(_) ↦ True
-try exy catch f ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ y
 onLeft(f, exy) ≔ exy ⦊ Left(x) ↦ f(x); Right(y) ↦ Right(y)
 onRight(f, exy) ≔ exy ⦊ Left(x) ↦ Left(x); Right(y) ↦ f(y)
 mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
 mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
 toMaybe ≔ Left(_) ↦ Void; Right(y) ↦ Just(y)
+exy ⁉ y ≔ exy ⦊ Left(_) ↦ y; Right(y′) ↦ y′
+my ⁈ exy ≔ my ⦊ Void ↦ exy; Just(y) ↦ Right(y)
 
 # numbers
 ℕ ⩴ {0, ↑(n : ℕ)}
