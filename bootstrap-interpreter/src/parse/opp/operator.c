@@ -41,9 +41,9 @@ unsigned char getSubprecedence(Node* op) {return (unsigned char)getVariety(op);}
 
 static Node* getPriorNode(Node* operator, Node* left, Node* right) {
     Syntax* syntax = getSyntax(operator);
-    switch(syntax->fixity) {
+    switch (syntax->fixity) {
         case INFIX:
-            switch(syntax->associativity) {
+            switch (syntax->associativity) {
                 case L: return left;
                 case R: return right;
                 default: return NULL;

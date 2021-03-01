@@ -59,7 +59,7 @@ Node* reduceOpenSquareBracket(Tag tag, Node* before, Node* contents) {
     Node* list = Nil(tag);
     if (!isCommaPair(contents))
         return prepend(tag, contents, list);
-    for(; isCommaPair(contents); contents = getLeft(contents))
+    for (; isCommaPair(contents); contents = getLeft(contents))
         list = prepend(tag, getRight(contents), list);
     return prepend(tag, contents, list);
 }

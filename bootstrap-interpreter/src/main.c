@@ -25,7 +25,7 @@ static void showTag(Tag tag, FILE* stream) {
 }
 
 static Hold* resolveLocals(Term* term, Node* locals, unsigned int depth) {
-    switch(getTermType(term)) {
+    switch (getTermType(term)) {
         case VARIABLE: {
             if (isGlobal(term) || getDebruijnIndex(term) <= depth)
                 return hold(term);
