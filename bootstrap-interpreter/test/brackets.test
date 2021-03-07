@@ -32,3 +32,6 @@ Syntax error: missing argument to '[' at line 1 column 8
 f(x, y | z)
 Syntax error: reserved operator '|' at line 1 column 8
 ===============================================================================
+f()
+Syntax error: missing argument to '(' at line 1 column 2
+===============================================================================
