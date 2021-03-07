@@ -29,8 +29,8 @@ static Node* newTuple(Tag tag, Node* commaList) {
 
 Node* reduceOpenParenthesis(Tag tag, Node* before, Node* contents) {
     if (contents == NULL) {
-        Node* unit = FixedName(tag, "()");
-        return before == NULL ? unit : Juxtaposition(tag, before, unit);
+        syntaxErrorIf(before != NULL, "missing argument to", tag);
+        return FixedName(tag, "()");
     }
     if (isDefinition(contents))
         syntaxErrorNode("missing scope for definition", contents);

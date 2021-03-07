@@ -38,10 +38,9 @@ def reduceParentheses(tag, left, right)
         if contents is Juxtaposition(_, left, right)
             Juxtaposition(tag, left, right)
         contents
-    unit := FixedName(tag, "()")
-    if left is Just(function)
-        Juxtaposition(tag, function, unit)
-    unit
+    if left is Void
+        FixedName(tag, "()")
+    syntaxError("missing argument to", tag)
 
 
 def isPlaceholder(node)
@@ -98,7 +97,7 @@ def reduceSquare(tag, left, right)
             base := Juxtaposition(tag, constructor, before)
             applyToCommaList(tag, base, contents)
         createList(tag, contents, newNil(tag))
-    if isVoid(left)
+    if left is Void
         newNil(tag)
     syntaxError("missing argument to", tag)
 
