@@ -47,7 +47,7 @@ def isValidInfixPrior(getTag, operator, left, right)
         NA -> opSyntaxError("invalid operator with prior", operator)
 
 
-def reduceTop'(onReduce, getTag, state, operator, right)
+def reduceTop(onReduce, getTag, state, operator, right)
     _ @ State(stack, operators) := state
     match getFixity(getSyntax(operator))
         case Nofix(reduce)
@@ -71,36 +71,23 @@ def reduceTop'(onReduce, getTag, state, operator, right)
                 pass
             opSyntaxError("missing left operand", operator)
         case _
-            opSyntaxError("internal error: reduceTop'", operator)
+            opSyntaxError("internal error: reduceTop", operator)
 
 
-def reduceTop(onReduce, getTag, state @ State(stack, operators))
+def reduceLeft(onReduce, getTag, state @ State(stack, operators), operator)
     if stack is item :: stack'
         if item is OperandItem(operand)
             if stack' is item' :: stack''
-                if item' is OperatorItem(operator)
-                    state' := State(stack'', operators)
-                    reduceTop'(onReduce, getTag, state', operator, operand)
+                if item' is OperatorItem(operator')
+                    if isHigherPrecedence(operator', operator)
+                        state' := reduceTop(onReduce, getTag,
+                            State(stack'', operators), operator', operand)
+                        reduceLeft(onReduce, getTag, state', operator)
+                    state
                 state
             state
         state
     state
-
-
-def shouldReduceTop(operator, state)
-    if getStack(state) is item :: stack'
-        if isOperator(item)
-            False
-        if stack' is item' :: _
-            if item' is OperatorItem(operator')
-                isHigherPrecedence(operator', operator)
-            False
-        False
-    False
-
-
-def reduceLeft(onReduce, getTag, state, operator)
-    while(shouldReduceTop(operator), reduceTop(onReduce, getTag), state)
 
 
 def shiftPrefix(State(stack, operators), operator)
