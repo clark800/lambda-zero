@@ -42,7 +42,7 @@ And the interpreter is less than 2500 lines of C code.
 
 ### Infinite list of prime numbers
 
-    primes ≔ p(2 …) where case p ≔ [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
+    primes ≔ p(2 …) where p ≔ case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
 
 # Building
 
