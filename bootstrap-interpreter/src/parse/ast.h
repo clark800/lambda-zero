@@ -123,13 +123,6 @@ static inline Node* UnderscoreArrow(Tag tag, Node* body) {
     return LockedArrow(Underscore(tag, 0), body);
 }
 
-static inline Node* Nil(Tag tag) {return FixedName(tag, "[]");}
-
-static inline Node* prepend(Tag tag, Node* item, Node* list) {
-    return Juxtaposition(tag, Juxtaposition(tag,
-        Name(renameTag(tag, "::")), item), list);
-}
-
 static inline bool isTuple(Node* node) {
     // a tuple is a spine of applications headed by a name starting with comma
     return isJuxtaposition(node) ? isTuple(getLeft(node)) :

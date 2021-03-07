@@ -4,6 +4,13 @@
 #include "opp/operator.h"
 #include "ast.h"
 
+Node* Nil(Tag tag) {return FixedName(tag, "[]");}
+
+Node* prepend(Tag tag, Node* item, Node* list) {
+    return Juxtaposition(tag, Juxtaposition(tag,
+        Name(setTagFixity(renameTag(tag, "::"), INFIX)), item), list);
+}
+
 static unsigned int getCommaListLength(Node* node) {
     return !isCommaPair(node) ? 1 : 1 + getCommaListLength(getLeft(node));
 }
