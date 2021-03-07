@@ -7,6 +7,7 @@
 #include "opp/errors.h"
 #include "opp/operator.h"
 #include "ast.h"
+#include "brackets.h"  // Nil and prepend
 
 static bool isNumberLexeme(String lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
