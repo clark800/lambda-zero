@@ -6,8 +6,8 @@ getValueAA(AADatum(_, value)) := value
 
 def getLevelAA(tree)
     match tree
-        Tip -> 0
-        Fork(AADatum(n, _), _, _) -> n
+        case Tip -> 0
+        case Fork(AADatum(n, _), _, _) -> n
 
 
 def skewAA(tree)

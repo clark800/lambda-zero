@@ -2,8 +2,8 @@
 
 
 def setAbsoluteValue(n)
-    +_ _ -> +_ n
-    -_ _ -> -_ n
+    case +_ _ -> +_ n
+    case -_ _ -> -_ n
 
 
 def shiftIndices'(offset, depth, term)

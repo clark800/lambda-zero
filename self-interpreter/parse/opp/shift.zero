@@ -8,8 +8,8 @@ StackItem(operandT) ::= {
 
 def isOperator(item)
     match item
-        OperatorItem(_) -> True
-        OperandItem(_) -> False
+        case OperatorItem(_) -> True
+        case OperandItem(_) -> False
 
 
 StateT(operand) ::= {State(
@@ -42,9 +42,9 @@ def isValidInfixPrior(getTag, operator, left, right)
     if isNil(prior)
         True
     match getAssociativity(getSyntax(operator))
-        LA -> getTagLexeme(getTag(left)) =*= prior
-        RA -> getTagLexeme(getTag(right)) =*= prior
-        NA -> opSyntaxError("invalid operator with prior", operator)
+        case LA -> getTagLexeme(getTag(left)) =*= prior
+        case RA -> getTagLexeme(getTag(right)) =*= prior
+        case NA -> opSyntaxError("invalid operator with prior", operator)
 
 
 def reduceTop(onReduce, getTag, state, operator, right)
@@ -178,12 +178,12 @@ def shiftClosefix(onReduce, reduceClose, State(stack, operators), close)
 
 def getShifter(onReduce, getTag, fixity)
     match fixity
-        Nofix(reduce) -> shiftNofix(reduce)
-        Prefix(reduce) -> shiftPrefix
-        Infix(reduce) -> shiftInfix
-        Postfix(reduce) -> shiftPostfix(onReduce, getTag, reduce)
-        Openfix(reduce) -> shiftOpenfix
-        Closefix(reduce) -> shiftClosefix(onReduce, reduce)
+        case Nofix(reduce) -> shiftNofix(reduce)
+        case Prefix(reduce) -> shiftPrefix
+        case Infix(reduce) -> shiftInfix
+        case Postfix(reduce) -> shiftPostfix(onReduce, getTag, reduce)
+        case Openfix(reduce) -> shiftOpenfix
+        case Closefix(reduce) -> shiftClosefix(onReduce, reduce)
 
 
 def shiftOperator(onReduce, getTag, state, operator)

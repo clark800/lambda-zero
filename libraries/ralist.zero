@@ -28,8 +28,8 @@ def list.peekRAL
         case [] -> Void
         case (size, tree) :: _
             match tree
-                Leaf(x) -> Just(x)
-                Branch(x, _, _) -> Just(x)
+                case Leaf(x) -> Just(x)
+                case Branch(x, _, _) -> Just(x)
 
 
 def seekTree(n, size, tree)

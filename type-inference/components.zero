@@ -1,44 +1,44 @@
 #* components.zero
 
 def getComponents
-    Metavariable(_, _) -> []
-    Type(_, _) -> []
-    Variable(_, _) -> []
-    Inference(_, domain) -> domain.mapJust((:: [])) ?? []
-    Singleton(_, type, index) -> [type]
-    Function(_, domain, body) -> [domain, body]
-    Implication(_, domain, body) -> [domain, body]
-    Intersection(tag, domain, body) -> [domain, body]
-    Application(_, left, right) -> [left, right]
-    Equation(_, left, right) -> [left, right]
-    Construction(_, _, arguments, _) -> arguments
-    Numeral(_, _, _) -> []
-    Operation(_, _, _) -> []
+    case Metavariable(_, _) -> []
+    case Type(_, _) -> []
+    case Variable(_, _) -> []
+    case Inference(_, domain) -> domain.mapJust((:: [])) ?? []
+    case Singleton(_, type, index) -> [type]
+    case Function(_, domain, body) -> [domain, body]
+    case Implication(_, domain, body) -> [domain, body]
+    case Intersection(tag, domain, body) -> [domain, body]
+    case Application(_, left, right) -> [left, right]
+    case Equation(_, left, right) -> [left, right]
+    case Construction(_, _, arguments, _) -> arguments
+    case Numeral(_, _, _) -> []
+    case Operation(_, _, _) -> []
 
 
 def mapComponentsWithDepth(f, depth, term)
     match term
-        Metavariable(_, _) -> term
-        Type(_, _) -> term
-        Variable(_, _) -> term
-        Inference(tag, domain) ->
+        case Metavariable(_, _) -> term
+        case Type(_, _) -> term
+        case Variable(_, _) -> term
+        case Inference(tag, domain) ->
             Inference(tag, domain.mapJust(f(depth)))
-        Singleton(tag, type, index) ->
+        case Singleton(tag, type, index) ->
             Singleton(tag, type.f(depth), index)
-        Function(tag, domain, body) ->
+        case Function(tag, domain, body) ->
             Function(tag, domain.f(depth), body.f(up depth))
-        Implication(tag, domain, body) ->
+        case Implication(tag, domain, body) ->
             Implication(tag, domain.f(depth), body.f(up depth))
-        Intersection(tag, domain, body) ->
+        case Intersection(tag, domain, body) ->
             Intersection(tag, domain.f(depth), body.f(up depth))
-        Application(tag, left, right) ->
+        case Application(tag, left, right) ->
             Application(tag, left.f(depth), right.f(depth))
-        Equation(tag, left, right) ->
+        case Equation(tag, left, right) ->
             Equation(tag, left.f(depth), right.f(depth))
-        Construction(tag, index, arguments, term) ->
+        case Construction(tag, index, arguments, term) ->
             Construction(tag, index, arguments.map(f(depth)), term.f(depth))
-        Numeral(_, _, _) -> term
-        Operation(_, _, _) -> term
+        case Numeral(_, _, _) -> term
+        case Operation(_, _, _) -> term
 
 
 def mapComponents(f, term)

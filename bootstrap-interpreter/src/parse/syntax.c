@@ -8,13 +8,9 @@
 
 static Node* reduceArrow(Tag tag, Node* left, Node* right) {
     (void)tag;
-    if (isName(left))
-        return SimpleArrow(left, right);
-    if (isColonPair(left) || isAsPattern(left))
-        return newLazyArrow(left, right);
     if (isKeyphrase(left, "case"))
-        return newCaseArrow(getRight(left), right);
-    return newCaseArrow(left, right);
+        return newCase(getRight(left), right);
+    return newArrow(left, right);
 }
 
 static Node* reducePipeline(Tag tag, Node* left, Node* right) {
@@ -48,11 +44,13 @@ static Node* reduceIfIs(Tag tag, Node* asPattern, Node* thenBlock) {
     Node* expression = getLeft(asPattern);
     Node* pattern = getRight(asPattern);
     Node* elseBlock = Underscore(tag, 3);
-    Hold* caseArrow = hold(newCaseArrow(pattern, thenBlock));
-    Node* fallback = SimpleArrow(Underscore(tag, 0), elseBlock);
+    Hold* caseArrow = hold(newCase(pattern, thenBlock));
+    Hold* underscore = hold(Underscore(tag, 0));
+    Node* fallback = newCase(getNode(underscore), elseBlock);
     Node* function = combineCases(tag, getNode(caseArrow), fallback);
     release(caseArrow);
-    return LockedArrow(FixedName(tag, "pass"),
+    release(underscore);
+    return SingleArrow(FixedName(tag, "pass"),
         Juxtaposition(tag, function, expression));
 }
 
@@ -73,7 +71,7 @@ static Node* reduceNewline(Tag tag, Node* left, Node* right) {
     if (isArrow(left) && isArrow(right))
         syntaxError("consecutive functions must be cases", tag);
     if (isKeyphrase(left, "case"))
-        return newCaseArrow(getRight(left), right);
+        return newCase(getRight(left), right);
     if (isKeyphrase(left, "if is"))
         return reduceIfIs(tag, getRight(left), right);
     return Juxtaposition(tag, left, right);
@@ -128,7 +126,7 @@ static Node* reduceOpenSection(Tag tag, Node* before, Node* contents) {
         return getLeft(contents);
     if (isParenthesizedInfixOperator(contents))
         return getLeft(getLeft(contents));
-    return LockedArrow(FixedName(tag, ".*"), contents);
+    return SingleArrow(FixedName(tag, ".*"), contents);
 }
 
 static Node* reduceCloseSection(Tag tag, Node* before, Node* contents) {
@@ -140,7 +138,7 @@ static Node* reduceCloseSection(Tag tag, Node* before, Node* contents) {
         return getLeft(contents);
     if (isName(contents))
         return contents;    // parenthesized operator
-    return LockedArrow(FixedName(tag, "*."), contents);
+    return SingleArrow(FixedName(tag, "*."), contents);
 }
 
 static Node* reduceReverseArrow(Tag tag, Node* left, Node* right) {

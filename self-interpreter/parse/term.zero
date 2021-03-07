@@ -35,34 +35,34 @@ Term ::= {
 Unknown(tag) := Variable(tag, +_ 0)
 
 def getTermTag
-    Metavariable(tag, _) -> tag
-    Type(tag, _) -> tag
-    Variable(tag, _) -> tag
-    Inference(tag, _) -> tag
-    Singleton(tag, _, _) -> tag
-    Function(tag, _, _) -> tag
-    Implication(tag, _, _) -> tag
-    Intersection(tag, _, _) -> tag
-    Application(tag, _, _) -> tag
-    Equation(tag, _, _) -> tag
-    Construction(tag, _, _, _) -> tag
-    Numeral(tag, _, _) -> tag
-    Operation(tag, _, _) -> tag
+    case Metavariable(tag, _) -> tag
+    case Type(tag, _) -> tag
+    case Variable(tag, _) -> tag
+    case Inference(tag, _) -> tag
+    case Singleton(tag, _, _) -> tag
+    case Function(tag, _, _) -> tag
+    case Implication(tag, _, _) -> tag
+    case Intersection(tag, _, _) -> tag
+    case Application(tag, _, _) -> tag
+    case Equation(tag, _, _) -> tag
+    case Construction(tag, _, _, _) -> tag
+    case Numeral(tag, _, _) -> tag
+    case Operation(tag, _, _) -> tag
 
 
-isMetavariable := Metavariable(_, _) -> True; _ -> False
-isType := Type(_, _) -> True; _ -> False
-isVariable := Variable(_, _) -> True; _ -> False
-isInference := Inference(_, _) -> True; _ -> False
-isSingleton := Singleton(_, _, _) -> True; _ -> False
-isFunction := Function(_, _, _) -> True; _ -> False
-isImplication := Implication(_, _, _) -> True; _ -> False
-isIntersection := Intersection(_, _, _) -> True; _ -> False
-isApplication := Application(_, _, _) -> True; _ -> False
-isEquation := Equation(_, _, _) -> True; _ -> False
-isConstruction := Construction(_, _, _, _) -> True; _ -> False
-isNumeral := Numeral(_, _, _) -> True; _ -> False
-isOperation := Operation(_, _, _) -> True; _ -> False
+isMetavariable := case Metavariable(_, _) -> True; case _ -> False
+isType := case Type(_, _) -> True; case _ -> False
+isVariable := case Variable(_, _) -> True; case _ -> False
+isInference := case Inference(_, _) -> True; case _ -> False
+isSingleton := case Singleton(_, _, _) -> True; case _ -> False
+isFunction := case Function(_, _, _) -> True; case _ -> False
+isImplication := case Implication(_, _, _) -> True; case _ -> False
+isIntersection := case Intersection(_, _, _) -> True; case _ -> False
+isApplication := case Application(_, _, _) -> True; case _ -> False
+isEquation := case Equation(_, _, _) -> True; case _ -> False
+isConstruction := case Construction(_, _, _, _) -> True; case _ -> False
+isNumeral := case Numeral(_, _, _) -> True; case _ -> False
+isOperation := case Operation(_, _, _) -> True; case _ -> False
 
 def isUnknown(term)
     if term is Variable(_, index)
@@ -82,20 +82,20 @@ def splitSpine(term)
 
 
 def setTag(tag)
-    Metavariable(_, index) -> Metavariable(tag, index)
-    Type(_, index) -> Type(tag, index)
-    Variable(_, index) -> Variable(tag, index)
-    Inference(_, domain) -> Inference(tag, domain)
-    Singleton(_, type, index) -> Singleton(tag, type, index)
-    Function(_, domain, body) -> Function(tag, domain, body)
-    Implication(_, domain, body) -> Implication(tag, domain, body)
-    Intersection(_, domain, body) -> Intersection(tag, domain, body)
-    Application(_, left, right) -> Application(tag, left, right)
-    Equation(_, left, right) -> Equation(tag, left, right)
-    Construction(_, index, arguments, term) ->
+    case Metavariable(_, index) -> Metavariable(tag, index)
+    case Type(_, index) -> Type(tag, index)
+    case Variable(_, index) -> Variable(tag, index)
+    case Inference(_, domain) -> Inference(tag, domain)
+    case Singleton(_, type, index) -> Singleton(tag, type, index)
+    case Function(_, domain, body) -> Function(tag, domain, body)
+    case Implication(_, domain, body) -> Implication(tag, domain, body)
+    case Intersection(_, domain, body) -> Intersection(tag, domain, body)
+    case Application(_, left, right) -> Application(tag, left, right)
+    case Equation(_, left, right) -> Equation(tag, left, right)
+    case Construction(_, index, arguments, term) ->
         Construction(tag, index, arguments, term)
-    Numeral(_, type, value) -> Numeral(tag, type, value)
-    Operation(_, term, op) -> Operation(tag, term, op)
+    case Numeral(_, type, value) -> Numeral(tag, type, value)
+    case Operation(_, term, op) -> Operation(tag, term, op)
 
 
 def setLocation(tag, term)
@@ -127,15 +127,15 @@ def showPositiveMetavariable(n)
 
 def showMetavariable(index)
     match index
-        +_ n -> showPositiveMetavariable(n)
-        -_ n -> "■" ++ showSubscript(n)
+        case +_ n -> showPositiveMetavariable(n)
+        case -_ n -> "■" ++ showSubscript(n)
 
 
 def needsParentheses
-    Function(_, _, _) -> True
-    Implication(_, _, _) -> True
-    Intersection(_, domain, _) -> True
-    _ -> False
+    case Function(_, _, _) -> True
+    case Implication(_, _, _) -> True
+    case Intersection(_, domain, _) -> True
+    case _ -> False
 
 
 def showTagBracket(tag)
@@ -160,40 +160,40 @@ def isTypeFamily(term)
 
 
 def showTerm
-    Metavariable(tag, index) -> showMetavariableWithTag(tag, index)
-    Type(tag, index) -> if isPositive(index) then
+    case Metavariable(tag, index) -> showMetavariableWithTag(tag, index)
+    case Type(tag, index) -> if isPositive(index) then
         "⊤" ++ showIntegerSubscript(index) else
         "⊤{" ++ showTag(tag) ++ "}"
-    Variable(tag, index) ->
+    case Variable(tag, index) ->
         if abs(index) = 0 then "■" else
             showTag(tag) # ++ showIntegerSubscript(index)
-    Inference(tag, domain) -> "infer"
-    Singleton(tag, type, index) -> "{" ++ showTag(tag) ++ "}"
-    Function(tag, domain, body) ->
+    case Inference(tag, domain) -> "infer"
+    case Singleton(tag, type, index) -> "{" ++ showTag(tag) ++ "}"
+    case Function(tag, domain, body) ->
         if isUnknown(domain) or isTypeFamily(domain) then
             showTag(tag) ++ " ↦ " ++ showTerm(body) else
             "(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") ↦ " ++
             showTerm(body)
-    Implication(tag, domain, body) ->
+    case Implication(tag, domain, body) ->
         if needsParentheses(domain) then
             "(" ++ showTerm(domain) ++ ") ⇒ " ++ showTerm(body) else
                 showTerm(domain) ++ " ⇒ " ++ showTerm(body)
-    Intersection(tag, domain, body) -> (
+    case Intersection(tag, domain, body) -> (
         if isTypeZero(domain)
             "∀(" ++ showTag(tag) ++ ") " ++ showTerm(body)
         "∀(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") " ++
             showTerm(body)
     )
-    Application(_, applicand, argument) ->
+    case Application(_, applicand, argument) ->
         if needsParentheses(applicand) then
             "(" ++ showTerm(applicand) ++ ")(" ++ showTerm(argument) ++ ")" else
             showTerm(applicand) ++ "(" ++ showTerm(argument) ++ ")"
-    Equation(_, left, right) ->
+    case Equation(_, left, right) ->
         "((" ++ showTerm(left) ++ ") ≡ (" ++ showTerm(right) ++ "))"
-    Construction(tag, index, arguments, term) ->
+    case Construction(tag, index, arguments, term) ->
         showConstruction(showTerm, tag, arguments)
-    Numeral(_, _, n) -> showNatural(n)
-    Operation(tag, _, _) -> showTag(tag)
+    case Numeral(_, _, n) -> showNatural(n)
+    case Operation(tag, _, _) -> showTag(tag)
 
 
 def showTermLocation(term)

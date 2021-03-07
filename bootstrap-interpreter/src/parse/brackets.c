@@ -46,7 +46,7 @@ Node* reduceOpenParenthesis(Tag tag, Node* before, Node* contents) {
     if (isCommaPair(contents))
         return newTuple(tag, contents);
     if (isArrow(contents))
-        setVariety(contents, LOCKEDARROW);
+        setVariety(contents, SINGLE);
     if (isJuxtaposition(contents))
         setTag(contents, tag);
     return contents;

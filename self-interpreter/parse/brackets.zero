@@ -59,7 +59,7 @@ def reduceOpenSection(tag, left, right)
             if left' is Juxtaposition(_, left'', right'')
                 if isThisName(right', "*.") and isThisName(right'', ".*") and
                     isName(left'') then left'' else pass
-            LockedArrow(FixedName(tag, ".*"), contents)
+            SingleArrow(FixedName(tag, ".*"), contents)
         if isCommaPair(contents)
             syntaxError("comma invalid in section", tag)
         pass
@@ -79,7 +79,7 @@ def reduceCloseSection(tag, left, contents)
         # check for parenthesized adfix operator
         if isName(left') and isPlaceholder(right')
             left'
-        LockedArrow(FixedName(tag, "*."), contents)
+        SingleArrow(FixedName(tag, "*."), contents)
     syntaxError("invalid section", tag)
 
 

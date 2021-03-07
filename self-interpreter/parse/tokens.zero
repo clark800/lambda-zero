@@ -95,15 +95,15 @@ def newOperand(operand)
 def parseToken(state, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
-        Space -> abort "internal error: Space reached parseToken"
-        VSpace -> abort "internal error: VSpace reached parseToken"
-        Newline -> state.parseSymbol(renameTag(tag, "\n", INFIX),
+        case Space -> abort "internal error: Space reached parseToken"
+        case VSpace -> abort "internal error: VSpace reached parseToken"
+        case Newline -> state.parseSymbol(renameTag(tag, "\n", INFIX),
             length(getTagLexeme(tag)) -- 1)
-        Symbolic -> state.parseSymbol(tag, 0)
-        Numeric -> newOperand(parseNumericLiteral(tag))
-        Character -> newOperand(parseCharacterLiteral(tag))
-        String -> newOperand(parseStringLiteral(tag))
-        Comment -> abort "internal error: Comment reached parseToken"
-        Invalid -> syntaxError("invalid character", tag)
+        case Symbolic -> state.parseSymbol(tag, 0)
+        case Numeric -> newOperand(parseNumericLiteral(tag))
+        case Character -> newOperand(parseCharacterLiteral(tag))
+        case String -> newOperand(parseStringLiteral(tag))
+        case Comment -> abort "internal error: Comment reached parseToken"
+        case Invalid -> syntaxError("invalid character", tag)
 
 #*

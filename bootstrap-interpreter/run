@@ -1,9 +1,14 @@
-#!/bin/sh
-DIR=$(dirname "$0")
+#!/bin/bash
+
 #stty -icanon
-cat \
+
+DIR=$(dirname "$0")
+
+CODE=$(cat \
 "$DIR/../libraries/operators.zero" \
 "$DIR/../libraries/prelude.zero" \
 "$DIR/../libraries/aatree.zero" \
 "$DIR/../libraries/table.zero" \
-"${1-"-"}" | "$DIR/main"
+"${1-"-"}")
+
+"$DIR/main" <(echo "$CODE")

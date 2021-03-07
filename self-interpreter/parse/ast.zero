@@ -2,7 +2,7 @@
 
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition, BindDefinition, TryBindDefinition}
-ArrowType ::= {Simple, Strict, Locked, Double, Tail}
+ArrowType ::= {Single, ExplicitCase, DefaultCase, Double, Tail}
 
 AST ::= {
     Top(tag : TagT),
@@ -30,31 +30,31 @@ AST ::= {
 
 def lockArrow(node)
     if node is Arrow(tag, arrowType, cases, left, annotation, right)
-        if arrowType is Simple
-            Arrow(tag, Locked, cases, left, annotation, right)
-        if arrowType is Strict
-            Arrow(tag, Locked, cases, left, annotation, right)
+        if arrowType is ExplicitCase
+            Arrow(tag, Single, cases, left, annotation, right)
+        if arrowType is DefaultCase
+            Arrow(tag, Single, cases, left, annotation, right)
         node
     node
 
 
 def getTag
-    Top(tag) -> tag
-    Family(tag) -> tag
-    Reference(tag, _) -> tag
-    Arrow(tag, _, _, _, _, _) -> tag
-    Juxtaposition(tag, _, _) -> tag
-    Let(tag, _, _, _, _, _) -> tag
-    Number(tag, _) -> tag
-    PreInference(tag) -> tag
-    PreEquation(tag, _, _) -> tag
-    Definition(tag, _, _, _) -> tag
-    AsPattern(tag, _, _) -> tag
-    CommaPair(tag, _, _) -> tag
-    ColonPair(tag, _, _) -> tag
-    SetBuilder(tag, _) -> tag
-    ADT(tag, _, _) -> tag
-    Constructor(tag, _, _, _, _, _) -> tag
+    case Top(tag) -> tag
+    case Family(tag) -> tag
+    case Reference(tag, _) -> tag
+    case Arrow(tag, _, _, _, _, _) -> tag
+    case Juxtaposition(tag, _, _) -> tag
+    case Let(tag, _, _, _, _, _) -> tag
+    case Number(tag, _) -> tag
+    case PreInference(tag) -> tag
+    case PreEquation(tag, _, _) -> tag
+    case Definition(tag, _, _, _) -> tag
+    case AsPattern(tag, _, _) -> tag
+    case CommaPair(tag, _, _) -> tag
+    case ColonPair(tag, _, _) -> tag
+    case SetBuilder(tag, _) -> tag
+    case ADT(tag, _, _) -> tag
+    case Constructor(tag, _, _, _, _, _) -> tag
 
 
 def astSyntaxError(message, node)
@@ -62,30 +62,30 @@ def astSyntaxError(message, node)
 
 
 def isPreterm
-    Top(_) -> True
-    Family(_) -> True
-    Reference(_, _) -> True
-    Arrow(_, _, _, _, _, _) -> True
-    Juxtaposition(_, _, _) -> True
-    Let(_, _, _, _, _, _) -> True
-    Number(_, _) -> True
-    PreInference(_) -> True
-    PreEquation(_, _, _) -> True
-    Definition(_, _, _, _) -> False
-    AsPattern(_, _, _) -> False
-    CommaPair(_, _, _) -> False
-    ColonPair(_, _, _) -> False
-    SetBuilder(_, _) -> False
-    ADT(_, _, _) -> True
-    Constructor(_, _, _, _, _, _) -> True
+    case Top(_) -> True
+    case Family(_) -> True
+    case Reference(_, _) -> True
+    case Arrow(_, _, _, _, _, _) -> True
+    case Juxtaposition(_, _, _) -> True
+    case Let(_, _, _, _, _, _) -> True
+    case Number(_, _) -> True
+    case PreInference(_) -> True
+    case PreEquation(_, _, _) -> True
+    case Definition(_, _, _, _) -> False
+    case AsPattern(_, _, _) -> False
+    case CommaPair(_, _, _) -> False
+    case ColonPair(_, _, _) -> False
+    case SetBuilder(_, _) -> False
+    case ADT(_, _, _) -> True
+    case Constructor(_, _, _, _, _, _) -> True
 
 
 def showArrow
-    Simple -> " -> "
-    Strict -> " -> "
-    Locked -> " -> "
-    Double -> " => "
-    Tail -> " >-> "
+    case Single -> " -> "
+    case ExplicitCase -> " -> "
+    case DefaultCase -> " -> "
+    case Double -> " => "
+    case Tail -> " >-> "
 
 
 def showAnnotation(showAST, annotation)
@@ -95,55 +95,63 @@ def showAnnotation(showAST, annotation)
 
 
 def showAST
-    Top(tag) -> "⊤"
-    Family(tag) -> "⊤{" ++ showTag(tag) ++ "}"
-    Reference(tag, _) -> showTag(tag)
-    Arrow(tag, arrowType, _, parameter, annotation, body) ->
+    case Top(tag) -> "⊤"
+    case Family(tag) -> "⊤{" ++ showTag(tag) ++ "}"
+    case Reference(tag, _) -> showTag(tag)
+    case Arrow(tag, arrowType, _, parameter, annotation, body) ->
         "(" ++ showAST(parameter) ++ showAnnotation(showAST, annotation) ++
             showArrow(arrowType) ++ showAST(body) ++ ")"
-    Juxtaposition(tag, left, right) ->
+    case Juxtaposition(tag, left, right) ->
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
-    Let(tag, _, _, name, value, scope) ->
+    case Let(tag, _, _, name, value, scope) ->
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
             ";;" ++ showAST(scope) ++ ")"
-    Number(tag, value) -> showNatural(value)
-    PreInference(tag) -> "infer"
-    PreEquation(tag, left, right) ->
+    case Number(tag, value) -> showNatural(value)
+    case PreInference(tag) -> "infer"
+    case PreEquation(tag, left, right) ->
         "((" ++ showAST(left) ++ ") == (" ++ showAST(right) ++ "))"
-    Definition(tag, _, left, right) ->
+    case Definition(tag, _, left, right) ->
         "(" ++ showAST(left) ++ " := " ++ showAST(right) ++ ")"
-    AsPattern(tag, name, pattern) ->
+    case AsPattern(tag, name, pattern) ->
         "(" ++ showAST(name) ++ ")@(" ++ showAST(pattern) ++ ")"
-    CommaPair(tag, left, right) ->
+    case CommaPair(tag, left, right) ->
         "(" ++ showAST(left) ++ ", " ++ showAST(right) ++ ")"
-    ColonPair(tag, left, right) ->
+    case ColonPair(tag, left, right) ->
         "(" ++ showAST(left) ++ " : " ++ showAST(right) ++ ")"
-    SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
-    ADT(tag, parameters, body) ->
+    case SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
+    case ADT(tag, parameters, body) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
-    Constructor(_, _, body, _, _, _) -> showAST(body)
+    case Constructor(_, _, body, _, _, _) -> showAST(body)
 
 
-isTop := Top(_) -> True; _ -> False
-isFamily := Family(_) -> True; _ -> False
-isReference := Reference(_, _) -> True; _ -> False
-isArrow := Arrow(_, _, _, _, _, _) -> True; _ -> False
-isJuxtaposition := Juxtaposition(_, _, _) -> True; _ -> False
-isLet := Let(_, _, _, _, _, _) -> True; _ -> False
-isNumber := Number(_, _) -> True; _ -> False
-isPreInference := PreInference(_) -> True; _ -> False
-isPreEquation := PreEquation(_, _, _) -> True; _ -> False
-isDefinition := Definition(_, _, _, _) -> True; _ -> False
-isAsPattern := AsPattern(_, _, _) -> True; _ -> False
-isCommaPair := CommaPair(_, _, _) -> True; _ -> False
-isColonPair := ColonPair(_, _, _) -> True; _ -> False
-isSetBuilder := SetBuilder(_, _) -> True; _ -> False
-isADT := ADT(_, _, _) -> True; _ -> False
-isConstructor := Constructor(_, _, _, _, _, _) -> True; _ -> False
+isTop := case Top(_) -> True; case _ -> False
+isFamily := case Family(_) -> True; case _ -> False
+isReference := case Reference(_, _) -> True; case _ -> False
+isArrow := case Arrow(_, _, _, _, _, _) -> True; case _ -> False
+isJuxtaposition := case Juxtaposition(_, _, _) -> True; case _ -> False
+isLet := case Let(_, _, _, _, _, _) -> True; case _ -> False
+isNumber := case Number(_, _) -> True; case _ -> False
+isPreInference := case PreInference(_) -> True; case _ -> False
+isPreEquation := case PreEquation(_, _, _) -> True; case _ -> False
+isDefinition := case Definition(_, _, _, _) -> True; case _ -> False
+isAsPattern := case AsPattern(_, _, _) -> True; case _ -> False
+isCommaPair := case CommaPair(_, _, _) -> True; case _ -> False
+isColonPair := case ColonPair(_, _, _) -> True; case _ -> False
+isSetBuilder := case SetBuilder(_, _) -> True; case _ -> False
+isADT := case ADT(_, _, _) -> True; case _ -> False
+isConstructor := case Constructor(_, _, _, _, _, _) -> True; case _ -> False
 
 def isCase(node)
     if node is Arrow(_, type, _, _, _, _)
-        type |> Simple -> True; Strict -> True; _ -> False
+        match type
+            case ExplicitCase -> True
+            case DefaultCase -> True
+            case _ -> False
+    False
+
+def isDefaultCase(node)
+    if node is Arrow(_, type, _, _, _, _)
+        type |> case DefaultCase -> True; case _ -> False
     False
 
 Name(tag) := Reference(tag, +_ 0)
@@ -164,12 +172,12 @@ def DoubleArrow(left, body)
     parameter := Name(veil(getTag(left)))
     Arrow(getTag(parameter), Double, [], parameter, Just(left), body)
 
-SimpleArrow := TypedArrow(Simple, Void)
-LockedArrow := TypedArrow(Locked, Void)
+SingleArrow := TypedArrow(Single, Void)
 TailArrow := TypedArrow(Tail, Void)
-LockedArrowDefault(annotation) := TypedArrow(Locked, Just(annotation))
-StrictArrow(cases, parameter, body) :=
-    Arrow(getTag(parameter), Strict, cases, parameter, Void, body)
+SingleArrowDefault(annotation) := TypedArrow(Single, Just(annotation))
+ExplicitCaseArrow(cases, parameter, body) :=
+    Arrow(getTag(parameter), ExplicitCase, cases, parameter, Void, body)
+DefaultCaseArrow := TypedArrow(DefaultCase, Void)
 
 
 def mapArrowBody(f, node)
@@ -193,7 +201,7 @@ isSameLexeme(node, node') := getLexeme(node) =*= getLexeme(node')
 isThisName(node, lexeme) := isName(node) and isThisLexeme(node, lexeme)
 isUnderscore(node) := isThisName(node, "_")
 isUnused(tag) := getTagLexeme(tag).startsWith("_")
-UnderscoreArrow(tag, body) := LockedArrow(Name(veil(tag)), body)
+UnderscoreArrow(tag, body) := SingleArrow(Name(veil(tag)), body)
 newNil(tag) := FixedName(tag, "[]")
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)
@@ -201,12 +209,12 @@ prependList(tag, item, list) := Juxtaposition(tag,
 
 def getFixityCode(fixity)
     match fixity
-        Nofix(_) -> NOFIX
-        Prefix(_) -> PREFIX
-        Infix(_) -> INFIX
-        Postfix(_) -> POSTFIX
-        Openfix(_) -> OPENFIX
-        Closefix(_) -> CLOSEFIX
+        case Nofix(_) -> NOFIX
+        case Prefix(_) -> PREFIX
+        case Infix(_) -> INFIX
+        case Postfix(_) -> POSTFIX
+        case Openfix(_) -> OPENFIX
+        case Closefix(_) -> CLOSEFIX
 
 
 def maybeConstructorCount(node)

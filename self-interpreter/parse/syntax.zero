@@ -13,15 +13,11 @@ def reduceInfix(tag, left, right)
 
 
 def reduceArrow(_tag, left, right)
-    if isName(left)
-        SimpleArrow(left, right)  # might be a case or might not be a case
-    if isColonPair(left) or isAsPattern(left)
-        newPatternArrow(left, right)
     if left is Juxtaposition(_, left', right')
         if isThisName(left', "case")
-            newCaseArrow(right', right)
+            newCase(right', right)
         pass
-    newCaseArrow(left, right)
+    newArrow(left, right)
 
 
 def reduceDoubleArrow(tag, left, right)
@@ -82,10 +78,9 @@ def reduceIs(tag, left, right)
 def reduceIfIs(tag, asPattern, thenBlock)
     if asPattern is AsPattern(_, expression, pattern)
         elseBlock := Underscore(tag, 3)
-        caseArrow := newCaseArrow(pattern, thenBlock)
-        fallback := SimpleArrow(Underscore(tag, 0), elseBlock)
-        function := combineCases(tag, caseArrow, fallback)
-        LockedArrow(FixedName(tag, "pass"),
+        fallback := DefaultCaseArrow(Underscore(tag, 0), elseBlock)
+        function := combineCases(tag, newCase(pattern, thenBlock), fallback)
+        SingleArrow(FixedName(tag, "pass"),
             Juxtaposition(tag, function, expression))
     syntaxError("expected as pattern to right of", tag)
 
@@ -105,7 +100,7 @@ def reduceNewline(tag, left, right)
         if isThisName(left', "sig")
             addSignature(getTag(left'), right', right)
         if isThisName(left', "case")
-            newCaseArrow(right', right)
+            newCase(right', right)
         if isThisName(left', "if is")
             reduceIfIs(tag, right', right)
         reduceApply(tag, left, right)
@@ -170,7 +165,7 @@ def getAliasSyntax(state, name)
 def copySyntax(state, tag, name)
     lexeme := getTagLexeme(tag)
     match getAliasSyntax(state, name)
-        Syntax(_, l, r, a, s, b, p, f, x) ->
+        case Syntax(_, l, r, a, s, b, p, f, x) ->
             Syntax(lexeme, l, r, a, s, b, p, f, x)
 
 
@@ -178,9 +173,9 @@ def findPrecedence(state, node)
     syntax' := state.lookupSyntax(getLexeme(node)) ??
         astSyntaxError("syntax not defined", node)
     match getAssociativity(syntax')
-        LA -> getRightPrecedence(syntax')
-        RA -> getLeftPrecedence(syntax')
-        NA -> astSyntaxError("invalid associativity for prior", node)
+        case LA -> getRightPrecedence(syntax')
+        case RA -> getLeftPrecedence(syntax')
+        case NA -> astSyntaxError("invalid associativity for prior", node)
 
 
 def parsePrecedence(state, node)
