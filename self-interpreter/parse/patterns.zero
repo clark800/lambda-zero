@@ -19,79 +19,64 @@ def newProjector(tag, arity, index)
     (UnderscoreArrow(tag)^<>(arity))(Underscore(tag, arity -- index))
 
 
-def newPatternArrow(pattern, body)
+def newArrow(pattern, body)
     if pattern is ColonPair(tag, left, right)
-        newPatternArrow(left, body).setAnnotation(right)
+        newArrow(left, body).setAnnotation(right)
     if isName(pattern)
-        LockedArrow(pattern, body)
+        SingleArrow(pattern, body)
     if pattern is AsPattern(tag, left, right)
-        newPatternArrow(left, Juxtaposition(tag,
-            newPatternArrow(right, body), Underscore(tag, 1)))
+        newArrow(left, Juxtaposition(tag,
+            newArrow(right, body), Underscore(tag, 1)))
     if isJuxtaposition(pattern)
         (constructor, arguments) := splitArguments(pattern)
         tag := getTag(constructor)
         arity := length(arguments)
         underscore := NegativeUnderscore(tag)
-        function := arguments.fold(newPatternArrow, body)
+        function := arguments.fold(newArrow, body)
         projectors := upto(arity).map(newProjector(tag, arity))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        lockArrow(StrictArrow([(constructor, arity)], Underscore(tag, 0),
+        lockArrow(ExplicitCaseArrow([(constructor, arity)], Underscore(tag, 0),
             projections.cascade(Juxtaposition(tag), function)))
     astSyntaxError("invalid parameter", pattern)
 
 
-def newCaseArrow(left, right)
+def newCase(left, right)
     if isUnderscore(left)
-        SimpleArrow(left, right)
-    if isAsPattern(left)
-        astSyntaxError("invalid '@' in case", left)
+        DefaultCaseArrow(FixedName(getTag(left), "this"), right)
     (name, parameters) := splitArguments(left)
+    if not (isName(name) or isNumber(name))
+        astSyntaxError("invalid case", left)
     arity := length(parameters)
-    reconstructor := parameters.fold(newPatternArrow, right)
+    reconstructor := parameters.fold(newArrow, right)
     tag := getTag(name)
     constructor := Name(tag)  # name could be a number
     thisName := This(tag)
     body := Juxtaposition(tag, thisName, reconstructor)
-    StrictArrow([(constructor, arity)], thisName, body)
+    ExplicitCaseArrow([(constructor, arity)], thisName, body)
 
 
-def addCases(tag, base, extension)
+def combineCaseBodies'(tag, base, extension)
     if extension is Juxtaposition(_, left, right)
-        Juxtaposition(tag, addCases(tag, base, left), right)
+        Juxtaposition(tag, combineCaseBodies'(tag, base, left), right)
     base
 
 
-def newCaseBody(tag, thisName, left, right)
-    if left is Arrow(_, type, _, _, _, body)
-        base := if type is Simple; Juxtaposition(tag, thisName, body) <| body
-        if right is Arrow(_, type', _, _, _, body')
-            if type' is Simple
-                Juxtaposition(tag, base, body')
-            addCases(tag, base, body')
-        astSyntaxError("internal error", left)
-    astSyntaxError("internal error", left)
+def combineCaseBodies(tag, thisName, left, right)
+    if left is Arrow(_, _, _, _, _, body)
+        if right is Arrow(_, _, _, _, _, body')
+            combineCaseBodies'(tag, body, body')
+        astSyntaxError("internal error: expected arrow", right)
+    astSyntaxError("internal error: expected arrow", left)
 
 
 def getCases(arrow)
     if arrow is Arrow(_, type, cases, parameter, _, _)
-        if type is Simple
-            [(parameter, 0)]
         cases
     []
 
 
-def isDefaultCase(arrow)
-    if arrow is Arrow(_, type, _, parameter, _, _)
-        if type is Simple
-            isUnderscore(parameter) or isThisName(parameter, "this")
-        False
-    False
-
-
 def getReconstructor(caseArrow)
     if caseArrow is Arrow(_, type, _, _, _, body)
-        if type is Simple
-            body
         if body is Juxtaposition(_, _, right)
             right
         pass
@@ -100,15 +85,11 @@ def getReconstructor(caseArrow)
 
 def getConstructorTag(caseArrow)
     if caseArrow is Arrow(_, type, cases, parameter, _, _)
-        if type is Simple
-            getTag(parameter)
-        if type is Strict
-            if cases is (constructor, _) :: cases'
-                if isNil(cases')
-                    getTag(constructor)
-                astSyntaxError("Internal error: multiple cases", caseArrow)
-            astSyntaxError("Internal error: missing case", caseArrow)
-        astSyntaxError("Internal error: invalid case arrow type", caseArrow)
+        if cases is (constructor, _) :: cases'
+            if isNil(cases')
+                getTag(constructor)
+            astSyntaxError("Internal error: multiple cases", caseArrow)
+        astSyntaxError("Internal error: missing case", caseArrow)
     astSyntaxError("Internal error: expected case arrow", caseArrow)
 
 
@@ -121,15 +102,17 @@ def attachDefaultCase(tag, caseArrow, fallback)
     thisName := FixedName(tag, "this")
     body := Juxtaposition(tag, Juxtaposition(tag, Juxtaposition(tag,
         deconstructor, reconstructor), fallback), thisName)
-    SimpleArrow(thisName, body)
+    DefaultCaseArrow(thisName, body)
 
 
 def combineCases(tag, left, right)
+    if isDefaultCase(left)
+        astSyntaxError("invalid default case position", left)
     if isDefaultCase(right)
         attachDefaultCase(tag, left, right)
     thisName := This(tag)
     cases := getCases(left) ++ getCases(right)
-    body := newCaseBody(tag, thisName, left, right)
-    StrictArrow(cases, thisName, body)
+    body := combineCaseBodies(tag, thisName, left, right)
+    ExplicitCaseArrow(cases, thisName, body)
 
 #*

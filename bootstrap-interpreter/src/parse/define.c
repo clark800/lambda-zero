@@ -14,32 +14,32 @@ static Node* getHead(Node* node) {
 static Node* applyPlainDefinition(Tag tag, Node* left, Node* right, Node* scope)
 {
     // simple case: ((name = value) scope) ==> ((\name scope) value)
-    return Let(tag, newLazyArrow(left, scope), right);
+    return Let(tag, newArrow(left, scope), right);
 }
 
 static Node* applyMaybeDefinition(Tag tag, Node* left, Node* right, Node* scope)
 {
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
-            newLazyArrow(left, scope)), right);
+            newArrow(left, scope)), right);
 }
 
 static Node* applyTryDefinition(Tag tag, Node* left, Node* right, Node* scope) {
     // try a := b; c --> onRight(b, (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
-            newLazyArrow(left, scope)), right);
+            newArrow(left, scope)), right);
 }
 
 static Node* applyBindDefinition(Tag tag, Node* left, Node* right, Node* scope){
     // left <- right;; scope ==> right >> (left -> scope)
     return Juxtaposition(tag, Juxtaposition(tag,
-        FixedName(tag, ">>"), right), newLazyArrow(left, scope));
+        FixedName(tag, ">>"), right), newArrow(left, scope));
 }
 
 static Node* applyTryBindDefinition(Tag tag, Node* left, Node* right,
         Node* scope) {
     // try a <- b; c --> onRightState(b, (a -> c))
     return Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRightState"),
-            newLazyArrow(left, scope)), right);
+            newArrow(left, scope)), right);
 }
 
 static Node* newChurchPair(Tag tag, Node* left, Node* right) {
@@ -83,7 +83,7 @@ static Node* transformRecursion(Node* name, Node* value) {
         return value;
     // value ==> (fix (name -> value))
     Tag tag = getTag(name);
-    return Juxtaposition(tag, FixedName(tag, "fix"), LockedArrow(name, value));
+    return Juxtaposition(tag, FixedName(tag, "fix"), SingleArrow(name, value));
 }
 
 static bool isValidConstructorParameter(Node* parameter) {
@@ -274,7 +274,7 @@ Node* reduceDefine(Tag tag, Node* left, Node* right) {
     if (isTuple(left) || isAsPattern(left))
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))
-        right = newLazyArrow(getRight(left), right);
+        right = newArrow(getRight(left), right);
     syntaxErrorIf(!isName(left), "invalid left hand side", tag);
     if (isThisName(left, "main"))
         return applyPlainDefinition(tag, left, right, newMainCall(left));

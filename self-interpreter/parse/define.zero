@@ -13,7 +13,7 @@ def isTuple(node)
 def applyPlainDefinition(tag, name, value, scope)
     if isName(name)
         Let(tag, False, Void, name, value, scope)
-    Juxtaposition(tag, newPatternArrow(name, scope), value)
+    Juxtaposition(tag, newArrow(name, scope), value)
 
 
 def newConstructDefinition(tag, type, name, value, scope)
@@ -22,54 +22,54 @@ def newConstructDefinition(tag, type, name, value, scope)
 
 def applyMaybeDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onJust"),
-        newPatternArrow(name, scope)), value)
+        newArrow(name, scope)), value)
 
 
 def applyTryDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRight"),
-        newPatternArrow(name, scope)), value)
+        newArrow(name, scope)), value)
 
 
 def applyBindDefinition(tag, name, value, scope)
     # name <- value;; scope ==> value >> (name -> scope)
     Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, ">>"), value),
-        newPatternArrow(name, scope))
+        newArrow(name, scope))
 
 
 def applyTryBindDefinition(tag, name, value, scope)
     Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, "onRightState"),
-        newPatternArrow(name, scope)), value)
+        newArrow(name, scope)), value)
 
 
 def applyFix(name, value)
     tag := getTag(name)
-    Juxtaposition(tag, FixedName(tag, "fix"), LockedArrow(name, value))
+    Juxtaposition(tag, FixedName(tag, "fix"), SingleArrow(name, value))
 
 
 # only works on preterms
 def containsFreeName(name)
-    Top(_) -> False
-    Family(_) -> False
-    Reference(tag, _) -> isThisLexeme(name, getTagLexeme(tag))
-    Arrow(_, _, _, parameter, _, body) ->
+    case Top(_) -> False
+    case Family(_) -> False
+    case Reference(tag, _) -> isThisLexeme(name, getTagLexeme(tag))
+    case Arrow(_, _, _, parameter, _, body) ->
         not isSameLexeme(parameter, name) and body.containsFreeName(name)
-    Juxtaposition(_, left, right) ->
+    case Juxtaposition(_, left, right) ->
         left.containsFreeName(name) or right.containsFreeName(name)
-    Let(_, _, _, name', value, scope) ->
+    case Let(_, _, _, name', value, scope) ->
         not isSameLexeme(name', name) and
             (value.containsFreeName(name) or scope.containsFreeName(name))
-    Number(_, _) -> False
-    PreInference(_) -> False
-    PreEquation(_, left, right) ->
+    case Number(_, _) -> False
+    case PreInference(_) -> False
+    case PreEquation(_, left, right) ->
         left.containsFreeName(name) or right.containsFreeName(name)
-    Definition(_, _, _, _) -> False
-    AsPattern(_, _, _) -> False
-    CommaPair(_, left, right) ->
+    case Definition(_, _, _, _) -> False
+    case AsPattern(_, _, _) -> False
+    case CommaPair(_, left, right) ->
         left.containsFreeName(name) or right.containsFreeName(name)
-    ColonPair(_, _, right) -> right.containsFreeName(name)
-    SetBuilder(_, forms) -> False
-    ADT(_, _, body) -> body.containsFreeName(name)
-    Constructor(_, _, _, _, _, _) -> False
+    case ColonPair(_, _, right) -> right.containsFreeName(name)
+    case SetBuilder(_, forms) -> False
+    case ADT(_, _, body) -> body.containsFreeName(name)
+    case Constructor(_, _, _, _, _, _) -> False
 
 
 def transformRecursion(name, value)
@@ -165,7 +165,7 @@ def getConstructorFunction(name, parameters, n, j)
     # wrap with arrows for each constructor case
     construct := (UnderscoreArrow(tag)^<>(n))(base)
     # wrap with arrows for each parameter for this constructor
-    parameters.fold(LockedArrow, construct)
+    parameters.fold(SingleArrow, construct)
 
 
 def peelTailArrows(form)
@@ -272,7 +272,7 @@ def applyADTDefinition(tag, left, right, scope)
         scope' := defineConstructorsAndDeconstructors(
             tag, adtType, forms, scope)
         adt := newADT(adtType, forms)
-        value := parameters.fold(LockedArrowDefault(Top(tag)), adt)
+        value := parameters.fold(SingleArrowDefault(Top(tag)), adt)
         newConstructDefinition(tag, Void, name, value, scope')
     astSyntaxError("internal error", left)
 
@@ -280,13 +280,20 @@ def applyADTDefinition(tag, left, right, scope)
 def applyDefinition(definition, scope)
     if definition is Definition(tag, type, name, value)
         match type
-            PlainDefinition -> applyPlainDefinition(tag, name, value, scope)
-            MaybeDefinition -> applyMaybeDefinition(tag, name, value, scope)
-            TryDefinition -> applyTryDefinition(tag, name, value, scope)
-            SyntaxDefinition -> scope
-            ADTDefinition -> applyADTDefinition(tag, name, value, scope)
-            BindDefinition -> applyBindDefinition(tag, name, value, scope)
-            TryBindDefinition -> applyTryBindDefinition(tag, name, value, scope)
+            case PlainDefinition
+                applyPlainDefinition(tag, name, value, scope)
+            case MaybeDefinition
+                applyMaybeDefinition(tag, name, value, scope)
+            case TryDefinition
+                applyTryDefinition(tag, name, value, scope)
+            case SyntaxDefinition
+                scope
+            case ADTDefinition
+                applyADTDefinition(tag, name, value, scope)
+            case BindDefinition
+                applyBindDefinition(tag, name, value, scope)
+            case TryBindDefinition
+                applyTryBindDefinition(tag, name, value, scope)
     astSyntaxError("internal error", definition)
 
 
@@ -294,7 +301,7 @@ def reduceDefine'(tag, definitionType, left, right)
     if isTuple(left) or isAsPattern(left)
         Definition(tag, definitionType, left, right)
     (name, parameters) := splitArguments(left)
-    value := parameters.fold(newPatternArrow, right)
+    value := parameters.fold(newArrow, right)
     if not isName(name)
         syntaxError("invalid left hand side", tag)
     if isThisName(name, "main")

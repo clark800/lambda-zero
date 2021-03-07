@@ -6,7 +6,7 @@ def runtimeError(message, tag)
 
 def splitCodeAndInput(input)
     (code, afterCode) := input.splitOn("\0")
-    afterCode |> [] -> (code, []); _ :: input' -> (code, input')
+    afterCode |> case [] -> (code, []); case _ :: input' -> (code, input')
 
 
 def isMain(term)

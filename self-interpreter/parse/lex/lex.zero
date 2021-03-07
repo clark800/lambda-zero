@@ -59,7 +59,7 @@ def splitQuoteCharacter(quote, ns)
 
 
 def shiftSplit((a, b))
-    b |> [] -> (a, b); n :: ns -> (a ++ [n], ns)
+    b |> case [] -> (a, b); case n :: ns -> (a ++ [n], ns)
 
 
 def splitQuote(ns)
@@ -196,10 +196,10 @@ def createToken(tag @ Tag(lexeme, _, _, _), nextTag)
 
 def isElided(token)
     match getTokenCode(token)
-        Comment -> True
-        Space -> True
-        VSpace -> True
-        _ -> False
+        case Comment -> True
+        case Space -> True
+        case VSpace -> True
+        case _ -> False
 
 
 def showToken(token)

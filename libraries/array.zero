@@ -16,6 +16,6 @@ Array(size, data).peek(n) := data.getRAL(n)
 
 def seek(index, array)
     match index
-        +_ n -> array.get(n)
-        -_ n -> if n = 0 then Void else array.peek(n -- 1)
+        case +_ n -> array.get(n)
+        case -_ n -> if n = 0 then Void else array.peek(n -- 1)
 #*

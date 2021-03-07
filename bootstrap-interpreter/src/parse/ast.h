@@ -1,6 +1,6 @@
 typedef enum {OPERATOR=0, REFERENCE, ARROW, JUXTAPOSITION, NUMBER, LET,
     DEFINITION, ASPATTERN, COMMAPAIR, COLONPAIR, SETBUILDER} ASTType;
-typedef enum {SIMPLEARROW, STRICTARROW, LOCKEDARROW} ArrowVariety;
+typedef enum {SINGLE, EXPLICITCASE, DEFAULTCASE} ArrowVariety;
 typedef enum {PLAINDEFINITION, MAYBEDEFINITION, TRYDEFINITION,
     SYNTAXDEFINITION, ADTDEFINITION, BINDDEFINITION, TRYBINDDEFINITION}
     DefinitionVariety;
@@ -25,13 +25,13 @@ static inline bool isCommaPair(Node* n) {return getASTType(n) == COMMAPAIR;}
 static inline bool isColonPair(Node* n) {return getASTType(n) == COLONPAIR;}
 static inline bool isSetBuilder(Node* n) {return getASTType(n) == SETBUILDER;}
 
-static inline bool isSimpleArrow(Node* n) {
-    return getASTType(n) == ARROW && getVariety(n) == SIMPLEARROW;
+static inline bool isDefaultCase(Node* n) {
+    return getASTType(n) == ARROW && getVariety(n) == DEFAULTCASE;
 }
 
 static inline bool isCase(Node* n) {
     return getASTType(n) == ARROW &&
-        (getVariety(n) == SIMPLEARROW || getVariety(n) == STRICTARROW);
+        (getVariety(n) == DEFAULTCASE || getVariety(n) == EXPLICITCASE);
 }
 
 static inline bool isUnused(Node* n) {return getLexeme(n).start[0] == '_';}
@@ -66,20 +66,20 @@ static inline Node* ForbiddenName(Tag tag) {
 
 static inline bool isForbidden(Node* name) {return getVariety(name) != 0;}
 
-static inline Node* SimpleArrow(Node* parameter, Node* body) {
+static inline Node* DefaultCaseArrow(Node* parameter, Node* body) {
     assert(isName(parameter));
-    return newBranch(getTag(parameter), ARROW, SIMPLEARROW, parameter, body);
+    return newBranch(getTag(parameter), ARROW, DEFAULTCASE, parameter, body);
 }
 
-static inline Node* StrictArrow(Tag tag, Node* parameter, Node* body) {
+static inline Node* ExplicitCaseArrow(Tag tag, Node* parameter, Node* body) {
     // tag is the constructor name
     assert(isThisName(parameter, "this"));
-    return newBranch(tag, ARROW, STRICTARROW, parameter, body);
+    return newBranch(tag, ARROW, EXPLICITCASE, parameter, body);
 }
 
-static inline Node* LockedArrow(Node* parameter, Node* body) {
+static inline Node* SingleArrow(Node* parameter, Node* body) {
     assert(isName(parameter));
-    return newBranch(getTag(parameter), ARROW, LOCKEDARROW, parameter, body);
+    return newBranch(getTag(parameter), ARROW, SINGLE, parameter, body);
 }
 
 static inline Node* Juxtaposition(Tag tag, Node* left, Node* right) {
@@ -120,7 +120,7 @@ static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {
-    return LockedArrow(Underscore(tag, 0), body);
+    return SingleArrow(Underscore(tag, 0), body);
 }
 
 static inline bool isTuple(Node* node) {

@@ -354,14 +354,14 @@ def getKeyboardMapping(firstKeycode, count)
     word(UNUSED)
 
 
-def parseError(error)
+def parseError(event)
     newDictionary([
-        ("code", parseBytes(error[0, 1])),
-        ("error-code", parseBytes(error[1, 2])),
-        ("sequence-number", parseBytes(error[2, 4])),
-        ("bad-id", parseBytes(error[4, 8])),
-        ("minor-opcode", parseBytes(error[8, 10])),
-        ("major-opcode", parseBytes(error[10, 11]))
+        ("code", parseBytes(event[0, 1])),
+        ("error-code", parseBytes(event[1, 2])),
+        ("sequence-number", parseBytes(event[2, 4])),
+        ("bad-id", parseBytes(event[4, 8])),
+        ("minor-opcode", parseBytes(event[8, 10])),
+        ("major-opcode", parseBytes(event[10, 11]))
     ])
 
 

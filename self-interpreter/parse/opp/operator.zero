@@ -4,7 +4,7 @@ Associativity ::= {LA, RA, NA}
 
 
 def isSameAssociativity(left, right)
-    getAssociativityCode := LA -> 0; RA -> 1; NA -> 2
+    getAssociativityCode := case LA -> 0; case RA -> 1; case NA -> 2
     getAssociativityCode(left) = getAssociativityCode(right)
 
 
@@ -72,9 +72,9 @@ def isHigherPrecedence(left, right)
             opSyntaxError("incompatible associativity", right)
 
         match associativity
-            LA -> getSubprecedence(left) >= getSubprecedence(right)
-            RA -> getSubprecedence(left) > getSubprecedence(right)
-            NA -> opSyntaxError("operator is non-associative", right)
+            case LA -> getSubprecedence(left) >= getSubprecedence(right)
+            case RA -> getSubprecedence(left) > getSubprecedence(right)
+            case NA -> opSyntaxError("operator is non-associative", right)
 
     leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 

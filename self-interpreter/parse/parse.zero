@@ -84,8 +84,8 @@ def shiftOperator'(state, operator)
 
 def shiftItem(state, item)
     match item
-        OperatorItem(operator) -> shiftOperator'(state, operator)
-        OperandItem(_) -> shift'(state, item)
+        case OperatorItem(operator) -> shiftOperator'(state, operator)
+        case OperandItem(_) -> shift'(state, item)
 
 
 def shiftToken(state, token)
