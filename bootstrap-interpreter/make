@@ -154,6 +154,11 @@ build_graph() {
     echo "}"
 }
 
+show_floc() {
+    gcc -fpreprocessed -dD -E -P $SOURCES | grep -v assert |
+        ../tools/floc.sh | sort -n | ../tools/hist.sh
+}
+
 case "$1" in
     "") config_fast && build;;
     fast) clean && config_fast && build;;
@@ -168,7 +173,8 @@ case "$1" in
     dot) build_graph;;
     graph) build_graph | dot -o architecture.pdf -T pdf;;
     loc) get_loc;;
+    floc) show_floc;;
     cloc) run_cloc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;
     cloc-all) run_cloc . | tail -n +3 | cut -c -78;;
-    *) echo "usage: $0 [{test|fast|small|unused|clean|graph|loc}]"; exit 1;;
+    *) echo "usage error: unrecognized command \"$1\""; exit 1;;
 esac
