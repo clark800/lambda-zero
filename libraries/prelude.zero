@@ -62,7 +62,7 @@ mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
 mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
 toMaybe ≔ case Left(_) ↦ Void; case Right(y) ↦ Just(y)
 exy ⁉ y ≔ exy ⦊ case Left(_) ↦ y; case Right(y′) ↦ y′
-my ⁈ exy ≔ my ⦊ case Void ↦ exy; case Just(y) ↦ Right(y)
+my ⁈ x ≔ my ⦊ case Void ↦ Left(x); case Just(y) ↦ Right(y)
 
 # numbers
 ℕ ⩴ {0, ↑(n : ℕ)}
