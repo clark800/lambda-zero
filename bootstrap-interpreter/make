@@ -4,6 +4,9 @@
 OUT=${OUT:-"main"}
 CC=${CC:-"cc"}
 
+RED='\033[0;31m'
+NOCOLOR='\033[0m'
+
 # stack-protector should be off by default, but some linux distributions
 # patch gcc to turn it on by default, so we explicitly disable it here; it
 # will cause the nostdlib build to fail if it is enabled
@@ -50,11 +53,42 @@ build_libc() {
     (cd lib/libc && ./make)
 }
 
+showsize() {
+    echo "$1 SIZE: $(du -b "$OUT" | cut -f1) bytes"
+}
+
 finish() {
     rm -f $OBJECTS
     echo
     echo "BUILD SUCCESSFUL"
-    echo "BINARY SIZE: $(du -b "$OUT" | cut -f1) bytes"
+    showsize "BINARY"
+}
+
+xstrip() {
+    # https://github.com/aunali1/super-strip
+    if command -v sstrip > /dev/null; then
+        sstrip "$OUT"
+        showsize "STRIPPED"
+    elif command -v strip > /dev/null; then
+        strip -R .note -R .comment -R .eh_frame -R .eh_frame_hdr -s "$OUT"
+        showsize "STRIPPED"
+    else
+        echo "Note: sstrip/strip not found, skipping strip"
+    fi
+}
+
+compress() {
+    if command -v upx > /dev/null; then
+        upx -q -9 "$OUT" > /dev/null
+        showsize "COMPRESSED"
+    else
+        echo "Note: upx not found, skipping compression"
+    fi
+}
+
+shrink() {
+    xstrip
+    compress
 }
 
 build_one_stage() {
@@ -87,11 +121,6 @@ build() {
     fi
 }
 
-compress() {
-    upx -q -9 "$OUT" > /dev/null
-    echo "COMPRESSED SIZE: $(du -b "$OUT" | cut -f1) bytes"
-}
-
 config_fast() {
     GCC_FLAGS="-DNDEBUG -O3 -flto $GCC_FLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
@@ -104,9 +133,12 @@ config_debug() {
 }
 
 config_custom() {
-    # would like to use -Os optimization level, but there is an issue with
-    # -ftree-slp-vectorize and possibly other optimizations
-    custom="-O0 -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin"
+    printf "%b" "$RED"
+    echo "NOTE: There has been some non-determinism in this build"
+    echo "If the tests fail, try rebuilding and it should fix it,"
+    echo "or you can change the optimization level from -Os to -O1"
+    printf "%b\n" "$NOCOLOR"
+    custom="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -flto"
     GCC_FLAGS="$custom $GCC_FLAGS"
     LINK_FLAGS="-nostdlib -Wl,--strip-all $LINK_FLAGS"
     SOURCES=$(find -L . -name "*.c")
@@ -161,11 +193,11 @@ show_floc() {
 
 case "$1" in
     "") config_fast && build;;
-    fast) clean && config_fast && build;;
-    small) clean && config_fast && build && compress;;
+    fast) clean && config_fast && build && xstrip;;
+    small) clean && config_fast && build && shrink;;
     test) config_fast && build && time test/test.sh;;
     debug) clean && config_debug && build;;
-    custom) clean && config_custom && build_libc && build;;
+    custom) clean && config_custom && build_libc && build && shrink;;
     unused) clean && config_unused && build_libc && build;;
     lint) lint;;
     clean) clean;;
