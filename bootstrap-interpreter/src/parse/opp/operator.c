@@ -36,7 +36,7 @@ static inline Syntax* getSyntax(Node* op) {
 
 Fixity getFixity(Node* op) {return getSyntax(op)->fixity;}
 bool isSpecialOperator(Node* op) {return getSyntax(op)->special;}
-char getBracketType(Node* op) {return getSyntax(op)->bracketType;}
+static char getBracketType(Node* op) {return getSyntax(op)->bracketType;}
 unsigned char getSubprecedence(Node* op) {return (unsigned char)getVariety(op);}
 
 static Node* getPriorNode(Node* operator, Node* left, Node* right) {
@@ -164,7 +164,7 @@ void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
         leftPrecedence, rightPrecedence, fixity, R, true, reducer, NULL});
 }
 
-Node* reduceBinaryPrefix(Tag tag, Node* left, Node* right) {
+static Node* reduceBinaryPrefix(Tag tag, Node* left, Node* right) {
     (void)left, (void)right;
     syntaxError("Internal error: reduce binary prefix", tag);
     return NULL;

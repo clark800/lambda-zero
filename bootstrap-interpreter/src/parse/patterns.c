@@ -1,6 +1,7 @@
 #include "tree.h"
 #include "opp/errors.h"
 #include "ast.h"
+#include "patterns.h"
 
 bool isValidPattern(Node* node) {
     return isName(node) ||

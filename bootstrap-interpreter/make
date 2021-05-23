@@ -21,10 +21,10 @@ NOCOLOR='\033[0m'
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-GCC_FLAGS="-std=c99 -pedantic -pedantic-errors -Ilib \
--Werror -Wfatal-errors -Wall -Wextra -Wshadow -Winit-self -Wwrite-strings \
--Wconversion -Wcast-qual -Wstrict-prototypes -Wredundant-decls \
--fno-ident -fno-stack-protector -fno-asynchronous-unwind-tables"
+GCC_FLAGS="-Ilib -fno-asynchronous-unwind-tables \
+-std=c99 -pedantic -Werror -Wfatal-errors -Wall -Wextra \
+-Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
+-Wnull-dereference -Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
 TCC_FLAGS="-Ilib -Wall -Werror -Wunsupported -Wwrite-strings"
 XCC_FLAGS="-Ilib"  # for unknown C compiler
 

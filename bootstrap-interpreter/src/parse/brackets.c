@@ -3,6 +3,7 @@
 #include "opp/errors.h"
 #include "opp/operator.h"
 #include "ast.h"
+#include "brackets.h"
 
 Node* Nil(Tag tag) {return FixedName(tag, "[]");}
 

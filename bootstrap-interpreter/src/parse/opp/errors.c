@@ -1,4 +1,5 @@
 #include "tree.h"
+#include "errors.h"
 
 void syntaxErrorNode(const char* message, Node* node) {
     syntaxError(message, getTag(node));

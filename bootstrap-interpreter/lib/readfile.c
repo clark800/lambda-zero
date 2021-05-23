@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "util.h"
+#include "readfile.h"
 
 const size_t READ_CHUNK_SIZE = 16384;
 

@@ -3,6 +3,7 @@
 #include "opp/errors.h"
 #include "ast.h"
 #include "term.h"
+#include "bind.h"
 
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     syntaxErrorNodeIf(isUnused(name),

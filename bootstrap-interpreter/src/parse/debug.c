@@ -3,6 +3,7 @@
 #include "stack.h"
 #include "util.h"
 #include "ast.h"
+#include "debug.h"
 
 static void serializeAST(Node* node, FILE* stream) {
     if (!isLeaf(node)) {

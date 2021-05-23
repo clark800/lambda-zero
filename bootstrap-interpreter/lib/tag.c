@@ -65,7 +65,7 @@ void printString(String string, FILE* stream) {
     fwrite(string.start, sizeof(char), string.length, stream);
 }
 
-void printLine(const char* line, FILE* stream) {
+static void printLine(const char* line, FILE* stream) {
     size_t length = 0;
     for (; line[length] != '\0' && line[length] != '\n'; ++length);
     fwrite(line, sizeof(char), length, stream);

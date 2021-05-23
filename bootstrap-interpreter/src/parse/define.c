@@ -3,6 +3,7 @@
 #include "opp/operator.h"
 #include "ast.h"
 #include "patterns.h"
+#include "define.h"
 
 bool isIO = false;
 

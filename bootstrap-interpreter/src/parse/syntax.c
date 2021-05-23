@@ -5,6 +5,7 @@
 #include "patterns.h"
 #include "define.h"
 #include "brackets.h"
+#include "syntax.h"
 
 static Node* reduceArrow(Tag tag, Node* left, Node* right) {
     (void)tag;
