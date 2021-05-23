@@ -9,7 +9,7 @@ struct Pool {
     Array* pages;
 };
 
-void appendPage(Pool* pool) {
+static void appendPage(Pool* pool) {
     pool->currentPage = smalloc(pool->pageCapacity * pool->itemSize);
     append(pool->pages, pool->currentPage);
     pool->pageUsage = 0;

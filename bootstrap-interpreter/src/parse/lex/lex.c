@@ -3,6 +3,7 @@
 #include <string.h>
 #include "tag.h"
 #include "token.h"
+#include "lex.h"
 
 static bool isComment(char c) {return c == '#';}
 static bool isQuote(char c) {return c == '"' || c == '\'';}

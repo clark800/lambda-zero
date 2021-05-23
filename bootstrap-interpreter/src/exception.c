@@ -5,6 +5,7 @@
 #include "stack.h"
 #include "parse/term.h"
 #include "closure.h"
+#include "exception.h"
 
 static void printBacktrace(Closure* closure) {
     fputs("\n\nBacktrace:\n", stderr);

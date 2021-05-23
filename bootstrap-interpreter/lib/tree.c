@@ -36,10 +36,10 @@ Node* getRight(Node* node) {return node->right.child;}
 long long getValue(Node* node) {return node->left.value;}
 void setValue(Node* node, long long value) {node->left.value = value;}
 void* getData(Node* node) {return (void*)node->left.child;}
-Node* copyNode(Node* node, Node* source) {return *node = *source, node;}
-Node* reference(Node* node) {return node->referenceCount += 1, node;}
+static Node* copyNode(Node* node, Node* source) {return *node = *source, node;}
+static Node* reference(Node* node) {return node->referenceCount += 1, node;}
 
-Node* newNode(Tag tag, char type, char variety, Node* left, Node* right) {
+static Node* newNode(Tag tag, char type, char variety, Node* left, Node* right){
     return copyNode((Node*)allocate(), &(Node)
         {.referenceCount=0, .type=type, .variety=variety, .tag=tag,
         .left={.child=left}, .right={.child=right}});
@@ -58,7 +58,7 @@ Node* newLeaf(Tag tag, char type, char variety, void* data) {
     return newNode(tag, type, variety, (Node*)data, NULL);
 }
 
-void releaseNode(Node* node) {
+static void releaseNode(Node* node) {
     assert(node->referenceCount > 0);
     node->referenceCount -= 1;
     if (node->referenceCount == 0) {

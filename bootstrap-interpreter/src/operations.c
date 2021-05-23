@@ -7,6 +7,7 @@
 #include "parse/term.h"
 #include "closure.h"
 #include "exception.h"
+#include "operations.h"
 
 static bool STDERR = false;
 Stack* INPUT_STACK;

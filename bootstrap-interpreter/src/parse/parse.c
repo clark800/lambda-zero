@@ -15,27 +15,27 @@
 
 int DEBUG = 0;
 
-Node* getTop(Stack* stack) {
+static Node* getTop(Stack* stack) {
     return isEmpty(stack) ? NULL : peek(stack, 0);
 }
 
-bool isThisOperator(Node* node, const char* lexeme) {
+static bool isThisOperator(Node* node, const char* lexeme) {
     return isOperator(node) && isThisString(getLexeme(node), lexeme);
 }
 
-void erase(Stack* stack, const char* lexeme) {
+static void erase(Stack* stack, const char* lexeme) {
     if (!isEmpty(stack) && isThisOperator(peek(stack, 0), lexeme))
         release(pop(stack));
 }
 
-bool isLeftSectionOperator(Node* op) {
+static bool isLeftSectionOperator(Node* op) {
     if (!isOperator(op) || isSpecialOperator(op))
         return false;
     Fixity fixity = getFixity(op);
     return fixity == INFIX || fixity == PREFIX;
 }
 
-bool isRightSectionOperator(Node* op) {
+static bool isRightSectionOperator(Node* op) {
     if (!isOperator(op) || isSpecialOperator(op))
         return false;
     Fixity fixity = getFixity(op);

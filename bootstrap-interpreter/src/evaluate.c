@@ -6,6 +6,7 @@
 #include "closure.h"
 #include "exception.h"
 #include "operations.h"
+#include "evaluate.h"
 
 extern bool isIO;
 static volatile bool INTERRUPT = false;

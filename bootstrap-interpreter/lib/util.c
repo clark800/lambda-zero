@@ -1,5 +1,6 @@
 #include <stdlib.h>     // llabs
 #include <stdio.h>
+#include "util.h"
 
 void* error(const char* message) {
     fputs(message, stderr);

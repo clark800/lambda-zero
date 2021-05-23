@@ -4,7 +4,7 @@
 #include "operator.h"
 #include "shift.h"
 
-void shiftOperand(Stack* stack, Node* operand) {
+static void shiftOperand(Stack* stack, Node* operand) {
     if (!isEmpty(stack)) {
         Node* top = peek(stack, 0);
         if (isOperator(top)) {
@@ -18,7 +18,7 @@ void shiftOperand(Stack* stack, Node* operand) {
     } else push(stack, operand);
 }
 
-void shiftPostfix(Stack* stack, Node* operator) {
+static void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxErrorNode("missing left operand for", operator);
     Hold* operand = pop(stack);
@@ -26,13 +26,13 @@ void shiftPostfix(Stack* stack, Node* operator) {
     release(operand);
 }
 
-void shiftInfix(Stack* stack, Node* operator) {
+static void shiftInfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxErrorNode("missing left operand for", operator);
     push(stack, operator);
 }
 
-void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents) {
+static void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents){
     if (isEmpty(stack) || isOperator(peek(stack, 0))) {
         shiftOperand(stack, reduceBracket(open, close, NULL, contents));
     } else {
@@ -43,7 +43,7 @@ void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents) {
     }
 }
 
-void shiftClose(Stack* stack, Node* close) {
+static void shiftClose(Stack* stack, Node* close) {
     Hold* contentsHold = pop(stack);
     Node* contents = getNode(contentsHold);
     if (isOperator(contents)) {
@@ -70,13 +70,13 @@ static void reduceTop(Stack* stack) {
     release(left);
 }
 
-void reduceLeft(Stack* stack, Node* operator) {
+static void reduceLeft(Stack* stack, Node* operator) {
     while (!isEmpty(stack) && !isOperator(peek(stack, 0)) &&
             isHigherPrecedence(peek(stack, 1), operator))
         reduceTop(stack);
 }
 
-void shiftOperator(Stack* stack, Node* operator) {
+static void shiftOperator(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     switch (getFixity(operator)) {
         case NOFIX: push(stack, reduce(operator, NULL, NULL)); break;
