@@ -25,8 +25,6 @@ def shiftOperand(state, operandTag, operand)
     item := OperandItem(operand)
     if stack is top :: stack'
         if top is OperatorItem(operator)
-            if getBinaryPrefixInfixOperator(operator) is Just(operator')
-                State(OperatorItem(operator') :: item :: stack', operators)
             State(item :: stack, operators)
         syntaxError("missing operator before", operandTag)
     State(item :: stack, operators)

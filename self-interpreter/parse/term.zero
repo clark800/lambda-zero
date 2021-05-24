@@ -180,8 +180,8 @@ def showTerm
                 showTerm(domain) ++ " ⇒ " ++ showTerm(body)
     case Intersection(tag, domain, body) -> (
         if isTypeZero(domain)
-            "∀(" ++ showTag(tag) ++ ") " ++ showTerm(body)
-        "∀(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") " ++
+            "∀(" ++ showTag(tag) ++ ") ↣ " ++ showTerm(body)
+        "∀(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") ↣ " ++
             showTerm(body)
     )
     case Application(_, applicand, argument) ->
