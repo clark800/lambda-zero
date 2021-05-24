@@ -171,7 +171,6 @@ void initSymbols(void) {
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
     addCoreSyntax("<|", 6, INFIX, R, Juxtaposition);
-    addBinaryPrefixSyntax("forall", 8, reduceIdentity);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
@@ -179,6 +178,7 @@ void initSymbols(void) {
     addCoreSyntax("=>", 10, INFIX, R, reduceErased);
     addCoreSyntax(">->", 10, INFIX, R, reduceErased);
     addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
+    addCoreSyntax("forall", 11, PREFIX, N, reducePrefix);
     addCoreSyntax("@", 12, INFIX, N, AsPattern);
     addCoreSyntax("is", 13, INFIX, L, reduceIs);
     addCoreSyntax("abort", 14, PREFIX, L, reduceAbort);

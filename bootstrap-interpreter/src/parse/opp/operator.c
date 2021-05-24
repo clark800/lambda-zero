@@ -17,7 +17,6 @@ struct Syntax {
     Associativity associativity;
     bool special;
     Reducer reduce;
-    Syntax* infixSyntax;        // for binary prefix operators
 };
 
 static inline Node* Operator(Tag tag, long long subprecedence, void* syntax) {
@@ -140,7 +139,7 @@ void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
     bool special = prior != NULL;
     String priorLexeme = prior ? getLexeme(prior) : EMPTY;
     appendSyntax((Syntax){tag.lexeme, tag.lexeme, priorLexeme, '_', precedence,
-        precedence, fixity, associativity, special, reducer, NULL});
+        precedence, fixity, associativity, special, reducer});
 }
 
 void popSyntax(void) { unappend(SYNTAX); }
@@ -151,7 +150,7 @@ void addCoreSyntax(const char* symbol, Precedence precedence,
         Fixity fixity, Associativity associativity, Reducer reducer) {
     String lexeme = toString(symbol);
     appendSyntax((Syntax){lexeme, lexeme, EMPTY, '_', precedence,
-        precedence, fixity, associativity, true, reducer, NULL});
+        precedence, fixity, associativity, true, reducer});
 }
 
 void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
@@ -161,32 +160,7 @@ void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
     Precedence leftPrecedence = fixity == OPENFIX ? outerPrecedence : 0;
     Precedence rightPrecedence = fixity == OPENFIX ? 0 : outerPrecedence;
     appendSyntax((Syntax){lexeme, lexeme, EMPTY, type,
-        leftPrecedence, rightPrecedence, fixity, R, true, reducer, NULL});
-}
-
-static Node* reduceBinaryPrefix(Tag tag, Node* left, Node* right) {
-    (void)left, (void)right;
-    syntaxError("Internal error: reduce binary prefix", tag);
-    return NULL;
-}
-
-void addBinaryPrefixSyntax(const char* symbol, Precedence precedence,
-        Reducer reducer) {
-    String lexeme = toString(symbol);
-    appendSyntax((Syntax){lexeme, lexeme, EMPTY, '_', 99,
-        precedence, INFIX, R, true, reducer, NULL});
-    Syntax* infixSyntax = elementAt(SYNTAX, length(SYNTAX) - 1);
-    appendSyntax((Syntax){lexeme, lexeme, EMPTY, '_', 99,
-        99, PREFIX, L, true, reduceBinaryPrefix, infixSyntax});
-}
-
-Node* getBinaryPrefixInfixOperator(Node* operator) {
-    Syntax* infixSyntax = getSyntax(operator)->infixSyntax;
-    if (infixSyntax == NULL)
-        return NULL;
-    if (getFixity(operator) != PREFIX)
-        syntaxErrorNode("infix syntax on non-prefix operator", operator);
-    return Operator(getTag(operator), getSubprecedence(operator), infixSyntax);
+        leftPrecedence, rightPrecedence, fixity, R, true, reducer});
 }
 
 void addCoreAlias(const char* alias, const char* name) {

@@ -5,17 +5,9 @@
 #include "shift.h"
 
 static void shiftOperand(Stack* stack, Node* operand) {
-    if (!isEmpty(stack)) {
-        Node* top = peek(stack, 0);
-        if (isOperator(top)) {
-            Node* operator = getBinaryPrefixInfixOperator(top);
-            if (operator != NULL) {
-                release(pop(stack));
-                push(stack, operand);
-                push(stack, operator);
-            } else push(stack, operand);
-        } else syntaxErrorNode("missing operator before", operand);
-    } else push(stack, operand);
+    if (!isEmpty(stack) && !isOperator(peek(stack, 0)))
+        syntaxErrorNode("missing operator before", operand);
+    push(stack, operand);
 }
 
 static void shiftPostfix(Stack* stack, Node* operator) {

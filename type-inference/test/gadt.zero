@@ -15,7 +15,7 @@ fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
 a ⊓ b ⩴ {(_ : a, _ : b)}
 
 Nat ::= {0, up(n : Nat)}
-(+) := 0 -> m -> m; up n -> m -> up(n + m)
+(+) := case 0 -> m -> m; case up n -> m -> up(n + m)
 
 List(a) ⩴ {[], (head : a) :: (tail : List(a))}
 
@@ -24,7 +24,7 @@ impossible := abort("impossible")
 
 Vector(n : Nat, a) ::= {
     Nil : Vector(0, a),
-    forall(n' : Nat) (_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a)
+    forall(n' : Nat) >-> ((_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a))
 }
 
 vector := 1 ::: Nil
@@ -36,20 +36,20 @@ vector' := 2 ::: vector
 #def pushOne(xs)
 #    1 ::: xs
 
-sig forall(n : Nat) forall(a) Vector(n, a) => Nat
+sig forall(n : Nat) >-> forall(a) >-> Vector(n, a) => Nat
 def vlength
     case Nil -> 0
     case x ::: xs' -> up vlength(xs')
 
-sig forall(n : Nat) forall(m : Nat) forall(a) Vector(n, a) =>
-    Vector(m, a) => Vector(n + m, a)
+sig forall(n : Nat) >-> forall(m : Nat) >-> forall(a) >->
+    Vector(n, a) => Vector(m, a) => Vector(n + m, a)
 def concatenate(xs, ys)
     match xs
-        Nil -> ys
-        x ::: xs' -> x ::: concatenate(xs', ys)
+        case Nil -> ys
+        case x ::: xs' -> x ::: concatenate(xs', ys)
 
-sig forall(n : Nat) forall(a) forall(b) Vector(n, a) => Vector(n, b) =>
-    Vector(n, a ⊓ b)
+sig forall(n : Nat) >-> forall(a) >-> forall(b) >->
+    Vector(n, a) => Vector(n, b) => Vector(n, a ⊓ b)
 def vzip(xs, ys)
     match xs
         case Nil -> Nil
