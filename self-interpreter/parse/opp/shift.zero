@@ -20,14 +20,24 @@ StateT(operand) ::= {State(
 getStack(State(stack, _)) := stack
 
 
+def isOperandTop(State(stack, operators))
+    if stack is top :: _
+        not isOperator(top)
+    False
+
+
+def pushOperator(State(stack, operators), operator)
+    State(OperatorItem(operator) :: stack, operators)
+
+
+def pushOperand(State(stack, operators), operand)
+    State(OperandItem(operand) :: stack, operators)
+
+
 def shiftOperand(state, operandTag, operand)
-    _ @ State(stack, operators) := state
-    item := OperandItem(operand)
-    if stack is top :: stack'
-        if top is OperatorItem(operator)
-            State(item :: stack, operators)
+    if isOperandTop(state)
         syntaxError("missing operator before", operandTag)
-    State(item :: stack, operators)
+    pushOperand(state, operand)
 
 
 def isValidAdfixPrior(getTag, operator, node)
@@ -54,7 +64,7 @@ def reduceTop(onReduce, getTag, state, operator, right)
             if not isValidAdfixPrior(getTag, operator, right)
                 opSyntaxError("invalid prior for", operator)
             reduction := reduce(getOperatorTag(operator), right)
-            state' := shiftOperand(state, getTag(reduction), reduction)
+            state' := pushOperand(state, reduction)
             onReduce(state', operator, Void, Just(right), reduction)
         case Infix(reduce)
             if stack is leftItem :: stack'
@@ -62,8 +72,7 @@ def reduceTop(onReduce, getTag, state, operator, right)
                     if not isValidInfixPrior(getTag, operator, left, right)
                         opSyntaxError("invalid prior for", operator)
                     reduction := reduce(getOperatorTag(operator), left, right)
-                    state' := shiftOperand(State(stack', operators),
-                        getTag(reduction), reduction)
+                    state' := pushOperand(State(stack', operators), reduction)
                     onReduce(state', operator,
                         Just(left), Just(right), reduction)
                 pass
@@ -88,12 +97,15 @@ def reduceLeft(onReduce, getTag, state @ State(stack, operators), operator)
     state
 
 
-def shiftPrefix(State(stack, operators), operator)
-    State(OperatorItem(operator) :: stack, operators)
+def shiftPrefix(state, operator)
+    if isOperandTop(state)
+        opSyntaxError("missing operator before", operator)
+    pushOperator(state, operator)
 
 
-def shiftNofix(reduce, State(stack, operators), operator)
-    State(OperandItem(reduce(getOperatorTag(operator))) :: stack, operators)
+def shiftNofix(reduce, state, operator)
+    tag := getOperatorTag(operator)
+    shiftOperand(state, tag, reduce(tag))
 
 
 def shiftPostfix(onReduce, getTag, reduce, State(stack, operators), operator)
@@ -102,23 +114,16 @@ def shiftPostfix(onReduce, getTag, reduce, State(stack, operators), operator)
             if not isValidAdfixPrior(getTag, operator, operand)
                 opSyntaxError("invalid prior for", operator)
             reduction := reduce(getOperatorTag(operator), operand)
-            state' := shiftOperand(State(stack', operators),
-                getTag(reduction), reduction)
+            state' := pushOperand(State(stack', operators), reduction)
             onReduce(state', operator, Just(operand), Void, reduction)
         pass
     opSyntaxError("missing left operand for", operator)
 
 
-def shiftInfix(State(stack, operators), operator)
-    if stack is top :: _
-        if not isOperator(top)
-            State(OperatorItem(operator) :: stack, operators)
+def shiftInfix(state, operator)
+    if not isOperandTop(state)
         opSyntaxError("missing left operand for", operator)
-    opSyntaxError("missing left operand for", operator)
-
-
-def shiftOpenfix(State(stack, operators), open)
-    State(OperatorItem(open) :: stack, operators)
+    pushOperator(state, operator)
 
 
 def reduceBracket(reduceOpen, reduceClose, open, close, before, contents)
@@ -135,7 +140,7 @@ def shiftBracket'(onReduce, reduceOpen, reduceClose, state,
         open, close, left, right)
     _ @ State(stack, operators) := state
     operand := reduceBracket(reduceOpen, reduceClose, open, close, left, right)
-    state' := shiftOperand(state, getOperatorTag(open), operand)
+    state' := pushOperand(state, operand)
     onReduce(state', open, left, right, operand)
 
 
@@ -180,7 +185,7 @@ def getShifter(onReduce, getTag, fixity)
         case Prefix(reduce) -> shiftPrefix
         case Infix(reduce) -> shiftInfix
         case Postfix(reduce) -> shiftPostfix(onReduce, getTag, reduce)
-        case Openfix(reduce) -> shiftOpenfix
+        case Openfix(reduce) -> pushOperator
         case Closefix(reduce) -> shiftClosefix(onReduce, reduce)
 
 
@@ -218,14 +223,14 @@ def erase(lexeme, state @ State(stack, operators))
     State(stack.dropIf(`isThisOperatorItem(lexeme)), operators)
 
 
-def pushOperator(lexeme, syntax', operators)
+def pushOperatorSyntax(lexeme, syntax', operators)
     if operators is top :: _
         top.insert(lexeme, syntax') :: operators
     [newDictionary([(lexeme, syntax')])]
 
 
 def pushSyntax(lexeme, syntax', state @ State(stack, operators))
-    State(stack, pushOperator(lexeme, syntax', operators))
+    State(stack, pushOperatorSyntax(lexeme, syntax', operators))
 
 
 def popSyntax(state @ State(stack, operators))
