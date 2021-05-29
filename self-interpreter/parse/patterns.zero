@@ -35,7 +35,8 @@ def newArrow(pattern, body)
         function := arguments.fold(newArrow, body)
         projectors := upto(arity).map(newProjector(tag, arity))
         projections := projectors.map(Juxtaposition(tag, underscore))
-        lockArrow(ExplicitCaseArrow([(constructor, arity)], Underscore(tag, 0),
+        lockArrow(ExplicitCaseArrow(tag,
+            [(constructor, arity)], Underscore(tag, 0),
             projections.cascade(Juxtaposition(tag), function)))
     astSyntaxError("invalid parameter", pattern)
 
@@ -52,7 +53,7 @@ def newCase(left, right)
     constructor := Name(tag)  # name could be a number
     thisName := This(tag)
     body := Juxtaposition(tag, thisName, reconstructor)
-    ExplicitCaseArrow([(constructor, arity)], thisName, body)
+    ExplicitCaseArrow(tag, [(constructor, arity)], thisName, body)
 
 
 def combineCaseBodies'(tag, base, extension)
@@ -106,6 +107,8 @@ def attachDefaultCase(tag, caseArrow, fallback)
 
 
 def combineCases(tag, left, right)
+    if length(getCases(left)) > 1
+        astSyntaxError("invalid case indentation", left)
     if isDefaultCase(left)
         astSyntaxError("invalid default case position", left)
     if isDefaultCase(right)
@@ -113,6 +116,6 @@ def combineCases(tag, left, right)
     thisName := This(tag)
     cases := getCases(left) ++ getCases(right)
     body := combineCaseBodies(tag, thisName, left, right)
-    ExplicitCaseArrow(cases, thisName, body)
+    ExplicitCaseArrow(tag, cases, thisName, body)
 
 #*

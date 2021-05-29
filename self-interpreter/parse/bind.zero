@@ -116,7 +116,8 @@ def bind(getBuiltin, globals, index, parameters, node)
             if abs(debruijn) > 0
                 Variable(tag, debruijn)
             bindName(getBuiltin, parameters, index, isNegative(debruijn), tag)
-        case Arrow(tag, arrowType, cases, parameter, annotation, body)
+        case Arrow(_, arrowType, cases, parameter, annotation, body)
+            tag := getTag(parameter)
             if arrowType is Double
                 if annotation is Just(type)
                     Implication(tag, bind'(type), body.bind''(parameter))

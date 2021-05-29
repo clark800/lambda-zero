@@ -82,7 +82,13 @@ static Node* combineCaseBodies(Tag tag, Node* base, Node* extension) {
     return Juxtaposition(tag, merged, getRight(extension));
 }
 
+static int getCaseCount(Node* body) {
+    return isJuxtaposition(body) ? getCaseCount(getLeft(body)) + 1 : 0;
+}
+
 Node* combineCases(Tag tag, Node* left, Node* right) {
+    if (getCaseCount(getRight(left)) > 1)
+        syntaxError("invalid case indentation", getTag(left));
     if (isDefaultCase(left))
         syntaxError("invalid default case position", getTag(left));
     if (isDefaultCase(right))
