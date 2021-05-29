@@ -175,8 +175,8 @@ def DoubleArrow(left, body)
 SingleArrow := TypedArrow(Single, Void)
 TailArrow := TypedArrow(Tail, Void)
 SingleArrowDefault(annotation) := TypedArrow(Single, Just(annotation))
-ExplicitCaseArrow(cases, parameter, body) :=
-    Arrow(getTag(parameter), ExplicitCase, cases, parameter, Void, body)
+ExplicitCaseArrow(tag, cases, parameter, body) :=
+    Arrow(tag, ExplicitCase, cases, parameter, Void, body)
 DefaultCaseArrow := TypedArrow(DefaultCase, Void)
 
 
