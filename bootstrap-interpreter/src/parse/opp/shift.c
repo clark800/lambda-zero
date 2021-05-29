@@ -10,6 +10,12 @@ static void shiftOperand(Stack* stack, Node* operand) {
     push(stack, operand);
 }
 
+static void shiftPrefix(Stack* stack, Node* operator) {
+    if (!isOperator(peek(stack, 0)))
+        syntaxErrorNode("missing operator before", operator);
+    push(stack, operator);
+}
+
 static void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxErrorNode("missing left operand for", operator);
@@ -71,11 +77,12 @@ static void reduceLeft(Stack* stack, Node* operator) {
 static void shiftOperator(Stack* stack, Node* operator) {
     reduceLeft(stack, operator);
     switch (getFixity(operator)) {
-        case NOFIX: push(stack, reduce(operator, NULL, NULL)); break;
+        case NOFIX: shiftOperand(stack, reduce(operator, NULL, NULL)); break;
         case INFIX: shiftInfix(stack, operator); break;
+        case PREFIX: shiftPrefix(stack, operator); break;
         case POSTFIX: shiftPostfix(stack, operator); break;
+        case OPENFIX: push(stack, operator); break;
         case CLOSEFIX: shiftClose(stack, operator); break;
-        default: push(stack, operator); break;
     }
 }
 
