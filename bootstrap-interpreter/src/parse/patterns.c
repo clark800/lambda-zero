@@ -87,10 +87,10 @@ static int getCaseCount(Node* body) {
 }
 
 Node* combineCases(Tag tag, Node* left, Node* right) {
-    if (getCaseCount(getRight(left)) > 1)
-        syntaxError("invalid case indentation", getTag(left));
     if (isDefaultCase(left))
         syntaxError("invalid default case position", getTag(left));
+    if (getCaseCount(getRight(left)) > 1)
+        syntaxError("invalid case indentation", getTag(left));
     if (isDefaultCase(right))
         return attachDefaultCase(tag, left, right);
     Node* this = FixedName(tag, "this");
