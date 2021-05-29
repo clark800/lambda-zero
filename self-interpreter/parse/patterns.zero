@@ -107,10 +107,10 @@ def attachDefaultCase(tag, caseArrow, fallback)
 
 
 def combineCases(tag, left, right)
-    if length(getCases(left)) > 1
-        astSyntaxError("invalid case indentation", left)
     if isDefaultCase(left)
         astSyntaxError("invalid default case position", left)
+    if length(getCases(left)) > 1
+        astSyntaxError("invalid case indentation", left)
     if isDefaultCase(right)
         attachDefaultCase(tag, left, right)
     thisName := This(tag)
