@@ -261,6 +261,7 @@ static void defineSyntax(Tag definitionTag, Node* left, Node* right) {
 
 Node* reduceDefine(Tag tag, Node* left, Node* right) {
     DefinitionVariety variety = PLAINDEFINITION;
+    syntaxErrorIf(isCommaPair(right), "invalid right hand side", tag);
     if (isKeyphrase(left, "maybe")) {
         variety = MAYBEDEFINITION;
         left = getRight(left);

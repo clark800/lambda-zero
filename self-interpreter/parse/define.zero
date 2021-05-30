@@ -298,6 +298,8 @@ def applyDefinition(definition, scope)
 
 
 def reduceDefine'(tag, definitionType, left, right)
+    if isCommaPair(right)
+        syntaxError("invalid right hand side", tag)
     if isTuple(left) or isAsPattern(left)
         Definition(tag, definitionType, left, right)
     (name, parameters) := splitArguments(left)

@@ -174,7 +174,7 @@ f(x, y, z) := y * (z + 1) \n``f(2, 3, 5)
 15
 ===============================================================================
 (syntax(%%) := infix(20), 0)
-Syntax error: missing scope for definition ':=' at line 1 column 13
+Syntax error: invalid right hand side ':=' at line 1 column 13
 ===============================================================================
 Void ?? 2
 2
