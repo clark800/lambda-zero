@@ -77,7 +77,11 @@ def reduceTop(onReduce, getTag, state, operator, right)
                         Just(left), Just(right), reduction)
                 pass
             opSyntaxError("missing left operand", operator)
-        case _
+        case Postfix(reduce)
+            opSyntaxError("internal error: reduceTop", operator)
+        case Openfix(reduce)
+            opSyntaxError("internal error: reduceTop", operator)
+        case Closefix(reduce)
             opSyntaxError("internal error: reduceTop", operator)
 
 

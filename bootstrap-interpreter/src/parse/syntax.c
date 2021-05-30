@@ -69,12 +69,12 @@ static Node* reduceNewline(Tag tag, Node* left, Node* right) {
         return right; // ignore sig
     if (isCase(left) && isCase(right))
         return combineCases(tag, left, right);
-    if (isArrow(left) && isArrow(right))
-        syntaxError("consecutive functions must be cases", tag);
     if (isKeyphrase(left, "case"))
         return newCase(getRight(left), right);
     if (isKeyphrase(left, "if is"))
         return reduceIfIs(tag, getRight(left), right);
+    if (isArrow(left) && isArrow(right))
+        syntaxError("consecutive functions must be cases", tag);
     return Juxtaposition(tag, left, right);
 }
 
@@ -162,13 +162,13 @@ void initSymbols(void) {
     addBracketSyntax("}", '{', 95, CLOSEFIX, reduceIdentity);
     addCoreSyntax("\n", 1, INFIX, R, reduceNewline);
     addCoreSyntax(";;", 2, INFIX, R, reduceNewline);
-    addCoreSyntax("|", 3, INFIX, N, reduceReserved);
-    addCoreSyntax(",", 4, INFIX, L, CommaPair);
-    addCoreSyntax("def", 5, PREFIX, L, reducePrefix);
-    addCoreSyntax("sig", 5, PREFIX, L, reducePrefix);
-    addCoreSyntax(":=", 5, INFIX, R, reduceDefine);
-    addCoreSyntax("::=", 5, INFIX, R, reduceADTDefinition);
-    addCoreSyntax("where", 5, INFIX, R, reduceWhere);
+    addCoreSyntax("def", 3, PREFIX, N, reducePrefix);
+    addCoreSyntax("sig", 3, PREFIX, N, reducePrefix);
+    addCoreSyntax(":=", 3, INFIX, R, reduceDefine);
+    addCoreSyntax("::=", 3, INFIX, N, reduceADTDefinition);
+    addCoreSyntax("where", 3, INFIX, R, reduceWhere);
+    addCoreSyntax("|", 4, INFIX, N, reduceReserved);
+    addCoreSyntax(",", 5, INFIX, L, CommaPair);
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
     addCoreSyntax("<|", 6, INFIX, R, Juxtaposition);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
