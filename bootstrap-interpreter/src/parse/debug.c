@@ -16,7 +16,7 @@ static void serializeAST(Node* node, FILE* stream) {
         // numbers can be generated, so not all numbers will exist in input
         fputll(getValue(node), stream);
     } else {
-        printString(getLexeme(node), stream);
+        printTag(getTag(node), stream);
         fputs("#", stream);
         fputll(getValue(node), stream);
     }
@@ -40,7 +40,7 @@ static void debugStack(Stack* stack, void debugNode(Node*)) {
 void debugParseState(Tag tag, Stack* stack, bool trace) {
     if (trace) {
         fputs("Token: '", stderr);
-        printString(tag.lexeme, stderr);
+        printTag(tag, stderr);
         fputs("'  Stack: ", stderr);
         debugStack(stack, debugAST);
         fputs("\n", stderr);

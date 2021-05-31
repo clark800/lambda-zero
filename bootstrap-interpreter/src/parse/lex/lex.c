@@ -54,13 +54,6 @@ static const char* skipLexeme(const char* s) {
     return s[0] == '\0' ? s : s + 1;
 }
 
-static String getNextLexeme(Tag tag) {
-    const char* start = tag.lexeme.start + tag.lexeme.length;
-    long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
-    syntaxErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", tag);
-    return newString(start, (unsigned char)length);
-}
-
 static Location advanceLocation(Tag tag) {
     if (isComment(tag.lexeme.start[0]) && tag.lexeme.start[1] == '*') {
         const char* filename = skipRepeatable(&(tag.lexeme.start[2]), ' ');
@@ -78,10 +71,18 @@ static Location advanceLocation(Tag tag) {
     return newLocation(loc.file, loc.line, (unsigned short)column);
 }
 
+static Tag getNextTag(Tag tag) {
+    const char* start = tag.lexeme.start + tag.lexeme.length;
+    long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
+    syntaxErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", tag);
+    String lexeme = newString(start, (unsigned char)length);
+    return newTag(lexeme, advanceLocation(tag));
+}
+
 Token lex(Token token) {
     if (token.tag.lexeme.start[0] == '\0')
         return (Token){token.tag, END};
-    Tag tag = newTag(getNextLexeme(token.tag), advanceLocation(token.tag));
+    Tag tag = getNextTag(token.tag);
 
     const char *start = tag.lexeme.start;
     const char *next = start + tag.lexeme.length;

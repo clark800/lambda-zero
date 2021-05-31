@@ -146,7 +146,7 @@ def showTag(Tag(lexeme, fixity, _, _))
 
 def showQuotedLexeme(lexeme)
     if lexeme is c :: _
-        if c = '\n' then "(end of line)" else pass
+        if c = '\n' then "'(end of line)'" else pass
     "'" ++ lexeme ++ "'"
 
 

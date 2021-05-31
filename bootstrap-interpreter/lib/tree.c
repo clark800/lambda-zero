@@ -16,9 +16,7 @@ struct Node {
     Branch left, right;
 };
 
-Node VOID_NODE = {.referenceCount=1, .type=0, .variety=0, .tag={.lexeme={
-    .start="VOID", .length=4}, .location={.line=0, .column=0, .file=0}},
-    .left={.value=0}, .right={.value=0}};
+Node VOID_NODE = {.referenceCount=1, .tag={.lexeme={.start="VOID", .length=4}}};
 Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {initPool(sizeof(Node), 4096);}
