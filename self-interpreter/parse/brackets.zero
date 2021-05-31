@@ -83,12 +83,6 @@ def reduceCloseSection(tag, left, contents)
     syntaxError("invalid section", tag)
 
 
-def createList(tag, commaList, list)
-    if commaList is CommaPair(_, left, right)
-        createList(tag, left, prependList(tag, right, list))
-    prependList(tag, commaList, list)
-
-
 def reduceSquare(tag, left, right)
     if right is Just(contents)
         if left is Just(before)
@@ -96,7 +90,7 @@ def reduceSquare(tag, left, right)
             constructor := FixedName(tag, repeat('[').take(n))
             base := Juxtaposition(tag, constructor, before)
             applyToCommaList(tag, base, contents)
-        createList(tag, contents, newNil(tag))
+        buildList(tag, getCommaListElements(contents))
     if left is Void
         newNil(tag)
     syntaxError("missing argument to", tag)

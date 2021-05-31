@@ -48,12 +48,14 @@ static unsigned char decodeCharacter(const char* start, Tag tag) {
 }
 
 static Node* parseCharacterLiteral(Tag tag) {
-    char quote = tag.lexeme.start[0];
-    const char* end = tag.lexeme.start + tag.lexeme.length - 1;
-    syntaxErrorIf(end[0] != quote, "missing end quote for", tag);
-    const char* skip = skipQuoteCharacter(tag.lexeme.start + 1);
-    syntaxErrorIf(skip != end, "invalid character literal", tag);
-    return Number(tag, decodeCharacter(tag.lexeme.start + 1, tag));
+    const char* start = tag.lexeme.start;
+    const char* end = start + tag.lexeme.length - 1;
+    syntaxErrorIf(end[0] != start[0], "missing end quote for", tag);
+    long long n = 0, c = 0;
+    for (const char* p = ++start; p < end; p = skipQuoteCharacter(p), c++)
+        n = n * 256 + decodeCharacter(p, tag);
+    syntaxErrorIf(c == 0 || c > 4, "invalid character literal", tag);
+    return Number(tag, n);
 }
 
 static Node* buildStringLiteral(Tag tag, const char* start) {
