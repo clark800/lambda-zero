@@ -163,7 +163,7 @@ def getConstructorFunction(name, parameters, n, j)
     arguments := reverse(n + 1 .. n + m).map(Underscore(tag))
     base := arguments.cascade(Juxtaposition(tag), Underscore(tag, n -- j))
     # wrap with arrows for each constructor case
-    construct := (UnderscoreArrow(tag)^<>(n))(base)
+    construct := (UnderscoreArrow(tag)^^(n))(base)
     # wrap with arrows for each parameter for this constructor
     parameters.fold(SingleArrow, construct)
 

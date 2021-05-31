@@ -127,6 +127,7 @@ U
 
 # circle and diamond operators
 <>
+^^
 <:>
 <+>
 <->
@@ -311,7 +312,6 @@ x_9
 ^=
 
 # combining characters (appearing inside a name)
-a^^
 a^_
 a^__
 a^*

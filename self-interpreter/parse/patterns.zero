@@ -16,7 +16,7 @@ def getArguments(node)
 
 
 def newProjector(tag, arity, index)
-    (UnderscoreArrow(tag)^<>(arity))(Underscore(tag, arity -- index))
+    (UnderscoreArrow(tag)^^(arity))(Underscore(tag, arity -- index))
 
 
 def newArrow(pattern, body)

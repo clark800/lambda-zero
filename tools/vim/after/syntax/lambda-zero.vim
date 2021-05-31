@@ -19,7 +19,6 @@ syntax match zeroNiceOperator "&" conceal cchar=∩
 syntax match zeroNiceOperator "\<U\>" conceal cchar=⋃   " union
 syntax match zeroNiceOperator "\~\~" conceal cchar=¬
 syntax match zeroNiceOperator "\~\*" conceal cchar=≀
-syntax match zeroNiceOperator "\~:" conceal cchar=∻     " or ⩪ ?
 syntax match zeroNiceOperator "/\~" conceal cchar=≁
 syntax match zeroNiceOperator "+_" conceal cchar=ᐩ
 syntax match zeroNiceOperator "-_" conceal cchar=ᐨ
@@ -34,7 +33,9 @@ syntax match zeroNiceOperator "!?" conceal cchar=⁉
 syntax match zeroNiceOperator "??" conceal cchar=⁇
 syntax match zeroNiceOperator "//" conceal cchar=⫽
 syntax match zeroNiceOperator "-:" conceal cchar=∹
-syntax match zeroNiceOperator "-:-" conceal cchar=⫬      " bitwise not
+syntax match zeroNiceOperator "\~:" conceal cchar=⫬      " bitwise not
+syntax match zeroNiceOperator "-:-" conceal cchar=÷
+syntax match zeroNiceOperator "\~:\~" conceal cchar=∻     " or ⩪ ?
 syntax match zeroNiceOperator "||" conceal cchar=‖
 
 " comparison operators
@@ -310,7 +311,7 @@ syntax match lambdaZeroSubscript "_9" conceal contained cchar=₉
 
 " superscript operators
 " ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ
-syntax match zeroNiceOperator "\^<>" conceal cchar=°
+syntax match zeroNiceOperator "\^\^" conceal cchar=°
 syntax match zeroNiceOperator "\^+" conceal cchar=⁺
 syntax match zeroNiceOperator "\^-" conceal cchar=⁻
 syntax match zeroNiceOperator "\^=" conceal cchar=⁼
@@ -331,7 +332,6 @@ syntax match zeroNiceOperator "\^k" conceal cchar=ᵏ
 
 " combining characters (appearing inside a name)
 syntax match zeroNiceOperator "\^_" conceal cchar=̅
-syntax match zeroNiceOperator "\^\^" conceal cchar=̂
 syntax match zeroNiceOperator "\^__" conceal cchar=̿
 syntax match zeroNiceOperator "\^\~" conceal cchar=̃
 syntax match zeroNiceOperator "\^\*" conceal cchar=̇
