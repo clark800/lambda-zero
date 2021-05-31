@@ -205,6 +205,7 @@ UnderscoreArrow(tag, body) := SingleArrow(Name(veil(tag)), body)
 newNil(tag) := FixedName(tag, "[]")
 prependList(tag, item, list) := Juxtaposition(tag,
     Juxtaposition(tag, Name(renameTag(tag, "::", INFIX)), item), list)
+buildList(tag, nodes) := nodes.fold(prependList(tag), newNil(tag))
 
 
 def getFixityCode(fixity)
