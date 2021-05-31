@@ -12,7 +12,7 @@ static void printBacktrace(Closure* closure) {
     Stack* backtrace = (Stack*)getBacktrace(closure);
     for (Iterator* it = iterate(backtrace); !end(it); it = next(it)) {
         fputs("  ", stderr);
-        printTag(getTag(cursor(it)), "", stderr);
+        printTagWithLocation(getTag(cursor(it)), stderr);
         fputs("\n", stderr);
     }
 }
@@ -23,7 +23,7 @@ void printRuntimeError(const char* message, Closure* closure) {
     fputs("\nRuntime error: ", stderr);
     fputs(message, stderr);
     fputs(" ", stderr);
-    printTag(getTag(getTerm(closure)), "\'", stderr);
+    printTagWithLocation(getTag(getTerm(closure)), stderr);
     fputs("\n", stderr);
 }
 

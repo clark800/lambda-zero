@@ -59,10 +59,15 @@ bool isSameString(String a, String b) {
         strncmp(a.start, b.start, a.length) == 0;
 }
 
-void printString(String string, FILE* stream) {
-    if (string.prefix != '\0')
-        fputc(string.prefix, stream);
-    fwrite(string.start, sizeof(char), string.length, stream);
+void printTag(Tag tag, FILE* stream) {
+    String lexeme = tag.lexeme;
+    if (lexeme.prefix == '\0' && lexeme.length > 0 && lexeme.start[0] == '\n') {
+        fputs("(end of line)", stream);
+    } else {
+        if (lexeme.prefix != '\0')
+            fputc(lexeme.prefix, stream);
+        fwrite(lexeme.start, sizeof(char), lexeme.length, stream);
+    }
 }
 
 static void printLine(const char* line, FILE* stream) {
@@ -71,30 +76,29 @@ static void printLine(const char* line, FILE* stream) {
     fwrite(line, sizeof(char), length, stream);
 }
 
-void printTag(Tag tag, const char* quote, FILE* stream) {
-    if (tag.lexeme.length > 0 && tag.lexeme.start[0] == '\n') {
-        fputs("(end of line)", stream);
-    } else {
-        fputs(quote, stream);
-        printString(tag.lexeme, stream);
-        fputs(quote, stream);
-    }
-    fputs(" at ", stream);
-    if (tag.location.file != 0) {
-        printLine(FILENAMES[tag.location.file], stream);
-        fputs(" " , stream);
+static void printLocation(Location location, FILE* stream) {
+    if (location.file != 0) {
+        printLine(FILENAMES[location.file], stream);
+        fputs(" ", stream);
     }
     fputs("line ", stream);
-    fputll((long long)tag.location.line, stream);
+    fputll((long long)location.line, stream);
     fputs(" column ", stream);
-    fputll((long long)tag.location.column, stream);
+    fputll((long long)location.column, stream);
+}
+
+void printTagWithLocation(Tag tag, FILE* stream) {
+    fputs("'", stream);
+    printTag(tag, stream);
+    fputs("' at ", stream);
+    printLocation(tag.location, stream);
 }
 
 void syntaxError(const char* message, Tag tag) {
     fputs("Syntax error: ", stderr);
     fputs(message, stderr);
     fputs(" ", stderr);
-    printTag(tag, "\'", stderr);
+    printTagWithLocation(tag, stderr);
     fputs("\n", stderr);
     exit(1);
 }

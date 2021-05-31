@@ -33,5 +33,5 @@ syntax(`) := prefix(97)\n  x -> ` \n  x
 Syntax error: missing operand after '`' at line 2 column 8
 ===============================================================================
 case a -> 0\n  case b -> 1\ncase c -> 0
-Syntax error: invalid case indentation (end of line) at line 1 column 12
+Syntax error: invalid case indentation '(end of line)' at line 1 column 12
 ===============================================================================

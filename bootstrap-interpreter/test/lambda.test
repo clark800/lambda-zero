@@ -48,7 +48,7 @@ a ↦ b ↦ c ↦ d ↦ (a(\nb\nc\n)\nd)
 a ↦ b ↦ c ↦ d ↦ a(b(c))(d)
 ===============================================================================
 ( \n(p ↦ (p(x ↦ (y ↦ x)))) \n(f ↦ ((f(a ↦ a))(b ↦ b))) \n)
-Syntax error: consecutive functions must be cases (end of line) at line 2 column 30
+Syntax error: consecutive functions must be cases '(end of line)' at line 2 column 30
 ===============================================================================
 (↦ 0)
 Syntax error: missing left operand for '->' at line 1 column 2
@@ -57,7 +57,7 @@ Syntax error: missing left operand for '->' at line 1 column 2
 Syntax error: missing right operand for '->' at line 1 column 4
 ===============================================================================
 (x -> x)\n (x -> x)
-Syntax error: odd-width indent after (end of line) at line 1 column 9
+Syntax error: odd-width indent after '(end of line)' at line 1 column 9
 ===============================================================================
 (x ->\n x)
 x ↦ x

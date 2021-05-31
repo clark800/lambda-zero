@@ -16,10 +16,10 @@ extern bool isIO;
 
 static void showTag(Tag tag, FILE* stream) {
     if (getTagFixity(tag) == NOFIX) {
-        printString(tag.lexeme, stream);
+        printTag(tag, stream);
     } else {
         fputs("(", stream);
-        printString(tag.lexeme, stream);
+        printTag(tag, stream);
         fputs(")", stream);
     }
 }
