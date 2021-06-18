@@ -23,6 +23,7 @@ AST ::= {
     ColonPair(tag : TagT, left : AST, right : AST),
     SetBuilder(tag : TagT, forms : List(AST)),
     ADT(tag : TagT, parameters : List(AST), body : AST),
+    For(tag : TagT, left : AST, right : AST),
     Constructor(tag : TagT, adtType : AST, function : AST,
         count : ℕ, index : ℕ, arity : ℕ)
 }
@@ -54,6 +55,7 @@ def getTag
     case ColonPair(tag, _, _) -> tag
     case SetBuilder(tag, _) -> tag
     case ADT(tag, _, _) -> tag
+    case For(tag, _, _) -> tag
     case Constructor(tag, _, _, _, _, _) -> tag
 
 
@@ -77,6 +79,7 @@ def isPreterm
     case ColonPair(_, _, _) -> False
     case SetBuilder(_, _) -> False
     case ADT(_, _, _) -> True
+    case For(_, _, _) -> False
     case Constructor(_, _, _, _, _, _) -> True
 
 
@@ -121,6 +124,8 @@ def showAST
     case SetBuilder(_, forms) -> "{" ++ forms.map(showAST).joinWith(", ") ++ "}"
     case ADT(tag, parameters, body) ->
         showTag(tag) ++ "(" ++ parameters.map(showAST).joinWith(", ") ++ ")"
+    case For(tag, left, right) ->
+        "(" ++ showAST(left) ++ " for " ++ showAST(right) ++ ")"
     case Constructor(_, _, body, _, _, _) -> showAST(body)
 
 
@@ -139,6 +144,7 @@ isCommaPair := case CommaPair(_, _, _) -> True; case _ -> False
 isColonPair := case ColonPair(_, _, _) -> True; case _ -> False
 isSetBuilder := case SetBuilder(_, _) -> True; case _ -> False
 isADT := case ADT(_, _, _) -> True; case _ -> False
+isFor := case For(_, _, _) -> True; case _ -> False
 isConstructor := case Constructor(_, _, _, _, _, _) -> True; case _ -> False
 
 def isCase(node)
@@ -178,13 +184,6 @@ SingleArrowDefault(annotation) := TypedArrow(Single, Just(annotation))
 ExplicitCaseArrow(tag, cases, parameter, body) :=
     Arrow(tag, ExplicitCase, cases, parameter, Void, body)
 DefaultCaseArrow := TypedArrow(DefaultCase, Void)
-
-
-def mapArrowBody(f, node)
-    if node is Arrow(tag, type, cases, parameter, annotation, body)
-        Arrow(tag, type, cases, parameter, annotation, f(body))
-    node
-
 
 def setAnnotation(annotation, node)
     if node is Arrow(tag, arrowType, cases, parameter, _, body)
