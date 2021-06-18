@@ -69,6 +69,7 @@ def containsFreeName(name)
     case ColonPair(_, _, right) -> right.containsFreeName(name)
     case SetBuilder(_, forms) -> False
     case ADT(_, _, body) -> body.containsFreeName(name)
+    case For(_, left, right) -> False
     case Constructor(_, _, _, _, _, _) -> False
 
 
@@ -124,9 +125,8 @@ def newReconstructorType(returnType, form)
 
 
 def getCaseType(adtType, returnType, form)
-    # only forall arrows can make it here, todo: change to "for" binder
-    if isArrow(form)
-        form.mapArrowBody(getCaseType(adtType, returnType))
+    if form is For(_, left, right)
+        TailArrow(right, getCaseType(adtType, returnType, left))
     # check for GADT annotation of constructor return type
     if form is ColonPair(tag, form', dataType)
         if not isValidConstructorAnnotation(adtType, dataType)
@@ -168,16 +168,14 @@ def getConstructorFunction(name, parameters, n, j)
     parameters.fold(SingleArrow, construct)
 
 
-def peelTailArrows(form)
-    if form is Arrow(_, type, _, _, _, body)
-        if type is Tail
-            peelTailArrows(body)
-        form
+def removeFor(form)
+    if form is For(tag, left, right)
+        removeFor(left)
     form
 
 
 def newConstructorDefinition(tag, adtType, n, (j, form), scope)
-    (name, parameters) := splitArguments(removeAnnotation(peelTailArrows(form)))
+    (name, parameters) := splitArguments(removeAnnotation(removeFor(form)))
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     if invalidParameters is parameter :: _
         astSyntaxError("invalid constructor parameter", parameter)
@@ -217,8 +215,8 @@ def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
 
 
 def getDeconstructorType(tag, adtType, form)
-    if isArrow(form)    # only forall arrows can make it here
-        form.mapArrowBody(getDeconstructorType(tag, adtType))
+    if form is For(_, left, right)
+        TailArrow(right, getDeconstructorType(tag, adtType, left))
     parameters := getArguments(removeAnnotation(form))
     parameterTypes := parameters.map(getParameterType)
     newDeconstructorType(tag, parameterTypes, adtType)
@@ -233,7 +231,7 @@ def newDeconstructorFunction(tag, n, ms, j)
 
 
 def newDeconstructorDefinition(tag, adtType, n, ms, (j, form), scope)
-    constructorTag := getTag(getHead(removeAnnotation(peelTailArrows(form))))
+    constructorTag := getTag(getHead(removeAnnotation(removeFor(form))))
     name := Name(addPrefix(constructorTag, '@'))
     deconstructor := newDeconstructorFunction(constructorTag, n, ms, j)
     type := getDeconstructorType(constructorTag, adtType, form)

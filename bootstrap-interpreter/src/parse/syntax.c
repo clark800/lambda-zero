@@ -103,9 +103,14 @@ static Node* reduceErased(Tag tag, Node* left, Node* right) {
     return FixedName(tag, "(_)");
 }
 
-static Node* reduceIdentity(Tag tag, Node* left, Node* right) {
+static Node* reduceRightIdentity(Tag tag, Node* left, Node* right) {
     (void)tag, (void)left;
     return right;
+}
+
+static Node* reduceLeftIdentity(Tag tag, Node* left, Node* right) {
+    (void)tag, (void)right;
+    return left;
 }
 
 static bool isParenthesizedAdfixOperator(Node* node) {
@@ -151,15 +156,15 @@ static Node* reduceReverseArrow(Tag tag, Node* left, Node* right) {
 void initSymbols(void) {
     initSyntax();
     addBracketSyntax("", '\0', 0, OPENFIX, reduceOpenFile);
-    addBracketSyntax("\0", '\0', 0, CLOSEFIX, reduceIdentity);
+    addBracketSyntax("\0", '\0', 0, CLOSEFIX, reduceRightIdentity);
     addBracketSyntax("(", '(', 95, OPENFIX, reduceOpenParenthesis);
-    addBracketSyntax(")", '(', 95, CLOSEFIX, reduceIdentity);
+    addBracketSyntax(")", '(', 95, CLOSEFIX, reduceRightIdentity);
     addBracketSyntax("( ", '(', 95, OPENFIX, reduceOpenSection);
     addBracketSyntax(" )", '(', 95, CLOSEFIX, reduceCloseSection);
     addBracketSyntax("[", '[', 95, OPENFIX, reduceOpenSquareBracket);
-    addBracketSyntax("]", '[', 95, CLOSEFIX, reduceIdentity);
+    addBracketSyntax("]", '[', 95, CLOSEFIX, reduceRightIdentity);
     addBracketSyntax("{", '{', 95, OPENFIX, reduceOpenBrace);
-    addBracketSyntax("}", '{', 95, CLOSEFIX, reduceIdentity);
+    addBracketSyntax("}", '{', 95, CLOSEFIX, reduceRightIdentity);
     addCoreSyntax("\n", 1, INFIX, R, reduceNewline);
     addCoreSyntax(";;", 2, INFIX, R, reduceNewline);
     addCoreSyntax("def", 3, PREFIX, N, reducePrefix);
@@ -172,6 +177,7 @@ void initSymbols(void) {
     addCoreSyntax("|>", 6, INFIX, L, reducePipeline);
     addCoreSyntax("<|", 6, INFIX, R, Juxtaposition);
     addCoreSyntax(";", 8, INFIX, R, reduceNewline);
+    addCoreSyntax("for", 7, INFIX, L, reduceLeftIdentity);
     addCoreSyntax(":", 9, INFIX, N, reduceColonPair);
     addCoreSyntax("->", 10, INFIX, R, reduceArrow);
     addCoreSyntax("<-", 10, INFIX, R, reduceReverseArrow);

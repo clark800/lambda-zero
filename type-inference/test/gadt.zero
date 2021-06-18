@@ -24,7 +24,7 @@ impossible := abort("impossible")
 
 Vector(n : Nat, a) ::= {
     Nil : Vector(0, a),
-    forall(n' : Nat) >-> ((_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a))
+    ((_ : a) ::: (_ : Vector(n', a)) : Vector(up n', a)) for n' : Nat
 }
 
 vector := 1 ::: Nil

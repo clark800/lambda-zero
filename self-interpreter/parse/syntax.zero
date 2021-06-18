@@ -250,6 +250,7 @@ OPERATORS := [newDictionary([
     coreAlias("⦊", "|>", 6, 6, LA, Infix(reducePipeline)),
     coreSyntax("<|", 6, 6, RA, Infix(reduceApply)),
     coreAlias("⦉","<|", 6, 6, RA, Infix(reduceApply)),
+    coreSyntax("for", 7, 7, LA, Infix(For)),
     coreSyntax(";", 8, 8, RA, Infix(reduceNewline)),
     coreSyntax(":", 9, 9, NA, Infix(reduceColonPair)),
     coreSyntax("->", 10, 10, RA, Infix(reduceArrow)),
