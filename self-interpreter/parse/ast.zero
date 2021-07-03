@@ -24,7 +24,7 @@ AST ::= {
     SetBuilder(tag : TagT, forms : List(AST)),
     ADT(tag : TagT, parameters : List(AST), body : AST),
     For(tag : TagT, left : AST, right : AST),
-    Constructor(tag : TagT, adtType : AST, function : AST,
+    Constructor(tag : TagT, adtName : AST, function : AST,
         count : ℕ, index : ℕ, arity : ℕ)
 }
 
