@@ -21,9 +21,9 @@ def getType(types, Binding(tag, closure, annotation, isConstruct))
     _ @ Closure(term, environment) := closure
     context := (environment, types)
     if annotation is Just(type)
-        if isConstruct  # skip inference for constructors and deconstructors
-            lift renameUniversals(type)
         try _ <- getTerm(type).inferType(context) # typecheck the type
+        if isConstruct  # skip check for constructors and deconstructors
+            lift renameUniversals(type)
         try _ <- check(context, type, term)
         lift return type
     inferGeneralizedType(context, term)

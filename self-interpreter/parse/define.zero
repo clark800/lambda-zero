@@ -106,6 +106,12 @@ def removeAnnotation(node)
     node
 
 
+def convertForm(form)
+    (name, parameters) := splitArguments(form)
+    parameterNames := parameters.map(removeAnnotation)
+    parameterNames.cascade(Juxtaposition(getTag(name)), name)
+
+
 def getParameterType(parameter)
     if parameter is ColonPair(_, _, type)
         type
@@ -137,9 +143,10 @@ def getCaseType(adtType, returnType, form)
     newReconstructorType(returnType, form)
 
 
-def getConstructorType(adtType, form)
+def getConstructorType(adtForm, form)
+    adtType := convertForm(adtForm)
     type := getCaseType(adtType, adtType, form)
-    getArguments(adtType).fold(TailArrow, type)
+    getArguments(adtForm).fold(TailArrow, type)
 
 
 def newConstruction(tag, adtType, forms)
@@ -174,7 +181,7 @@ def removeFor(form)
     form
 
 
-def newConstructorDefinition(tag, adtType, n, (j, form), scope)
+def newConstructorDefinition(tag, adtForm, n, (j, form), scope)
     (name, parameters) := splitArguments(removeAnnotation(removeFor(form)))
     invalidParameters := parameters.filter((not) <> isValidConstructorParameter)
     if invalidParameters is parameter :: _
@@ -188,9 +195,10 @@ def newConstructorDefinition(tag, adtType, n, (j, form), scope)
     function := getConstructorFunction(name, parameters', n, j)
     if not isPreterm(function)
         astSyntaxError("invalid constructor", name)   # force errors
-    type := getConstructorType(adtType, form)
+    type := getConstructorType(adtForm, form)
     arity := length(parameters)
-    constructor := Constructor(getTag(name), adtType, function, n, j + 1, arity)
+    adtName := getHead(adtForm)
+    constructor := Constructor(getTag(name), adtName, function, n, j + 1, arity)
     name' := Name(getTag(name))
     newConstructDefinition(tag, Just(type), name', constructor, scope)
 
@@ -202,24 +210,24 @@ def newFallbackCase(tag, m)
     (1 .. m).cascade(b -> _ -> UnderscoreArrow(tag, b), body)
 
 
-def newDeconstructorType(tag, parameterTypeASTs, adtTypeAST)
+def newDeconstructorType(tag, parameterTypeASTs, adtForm)
     # todo: change name from "r" so it can't clash with user's names
     returnType := FixedName(tag, "r")
     reconstructorType := parameterTypeASTs.fold(DoubleArrow, returnType)
     syntax(=>>) := syntax(++)
     (=>>) := DoubleArrow
-    fallbackType := adtTypeAST =>> returnType
-    typeAST := reconstructorType =>> fallbackType =>> adtTypeAST =>> returnType
-    parameters := getArguments(adtTypeAST)
-    TailArrow(returnType, parameters.fold(TailArrow, typeAST))
+    adtType := convertForm(adtForm)
+    fallbackType := adtType =>> returnType
+    typeAST := reconstructorType =>> fallbackType =>> adtType =>> returnType
+    TailArrow(returnType, getArguments(adtForm).fold(TailArrow, typeAST))
 
 
-def getDeconstructorType(tag, adtType, form)
+def getDeconstructorType(tag, adtForm, form)
     if form is For(_, left, right)
-        TailArrow(right, getDeconstructorType(tag, adtType, left))
+        TailArrow(right, getDeconstructorType(tag, adtForm, left))
     parameters := getArguments(removeAnnotation(form))
     parameterTypes := parameters.map(getParameterType)
-    newDeconstructorType(tag, parameterTypes, adtType)
+    newDeconstructorType(tag, parameterTypes, adtForm)
 
 
 def newDeconstructorFunction(tag, n, ms, j)
@@ -230,19 +238,19 @@ def newDeconstructorFunction(tag, n, ms, j)
     UnderscoreArrow(tag, UnderscoreArrow(tag, UnderscoreArrow(tag, body)))
 
 
-def newDeconstructorDefinition(tag, adtType, n, ms, (j, form), scope)
+def newDeconstructorDefinition(tag, adtForm, n, ms, (j, form), scope)
     constructorTag := getTag(getHead(removeAnnotation(removeFor(form))))
     name := Name(addPrefix(constructorTag, '@'))
     deconstructor := newDeconstructorFunction(constructorTag, n, ms, j)
-    type := getDeconstructorType(constructorTag, adtType, form)
+    type := getDeconstructorType(constructorTag, adtForm, form)
     newConstructDefinition(tag, Just(type), name, deconstructor, scope)
 
 
-def newConstructorDefinitions(tag, adtType, n, ms, formj, scope)
+def newConstructorDefinitions(tag, adtForm, n, ms, formj, scope)
     # define deconstructor first in case the constructor name is the same
     # as the ADT name: this ensures that we always bind the ADT name
-    scope' := newConstructorDefinition(tag, adtType, n, formj, scope)
-    newDeconstructorDefinition(tag, adtType, n, ms, formj, scope')
+    scope' := newConstructorDefinition(tag, adtForm, n, formj, scope)
+    newDeconstructorDefinition(tag, adtForm, n, ms, formj, scope')
 
 
 def newADT(adtType, forms)
@@ -256,23 +264,21 @@ def newADT(adtType, forms)
     ADT(tag, parameterNames, newConstruction(tag, adtType, forms))
 
 
-def defineConstructorsAndDeconstructors(tag, adtType, forms, scope)
+def defineConstructorsAndDeconstructors(tag, adtForm, forms, scope)
     n := length(forms)
     ms := forms.map(length <> getArguments)
-    enumerate(forms).fold(newConstructorDefinitions(tag, adtType, n, ms), scope)
+    enumerate(forms).fold(newConstructorDefinitions(tag, adtForm, n, ms), scope)
 
 
-def applyADTDefinition(tag, left, right, scope)
-    if right is SetBuilder(_, forms)
-        (name, parameters) := splitArguments(left)
-        parameterNames := parameters.map(removeAnnotation)
-        adtType := parameterNames.cascade(Juxtaposition(tag), name)
+def applyADTDefinition(tag, adtForm, setbuilder, scope)
+    if setbuilder is SetBuilder(_, forms)
         scope' := defineConstructorsAndDeconstructors(
-            tag, adtType, forms, scope)
-        adt := newADT(adtType, forms)
+            tag, adtForm, forms, scope)
+        adt := newADT(convertForm(adtForm), forms)
+        (name, parameters) := splitArguments(adtForm)
         value := parameters.fold(SingleArrowDefault(Top(tag)), adt)
         newConstructDefinition(tag, Void, name, value, scope')
-    astSyntaxError("internal error", left)
+    astSyntaxError("internal error", adtForm)
 
 
 def applyDefinition(definition, scope)

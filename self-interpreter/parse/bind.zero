@@ -46,8 +46,8 @@ def bindOperation(getBuiltin, tag, term)
 
 
 def getADTName(constructor)
-    if constructor is Constructor(_, adtType, _, _, _, _)
-        getHead(adtType)
+    if constructor is Constructor(_, adtName, _, _, _, _)
+        adtName
     astSyntaxError("invalid constructor", constructor)
 
 
@@ -175,9 +175,9 @@ def bind(getBuiltin, globals, index, parameters, node)
             Construction(tag, index, arguments, term)
         case For(_, _, _)
             astSyntaxError("not in valid location", node)
-        case Constructor(tag, adtType, function, count, index, arity)
+        case Constructor(tag, adtName, function, count, index, arity)
             if function is Number(_, value)
-                Numeral(tag, bind'(adtType), value)
+                Numeral(tag, bind'(adtName), value)
             bind'(function)
 
 
