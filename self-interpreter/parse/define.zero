@@ -125,22 +125,25 @@ def isValidConstructorAnnotation(dataType, annotation)
         isThisName(name, getLexeme(adtName))
 
 
-def newReconstructorType(returnType, form)
+def newReconstructorType(returnType, constructorForm)
+    form := removeAnnotation(constructorForm)
     parameterTypes := getArguments(form).map(getParameterType)
     parameterTypes.fold(DoubleArrow, returnType)
 
 
-def getCaseType(adtType, returnType, form)
-    if form is For(_, left, right)
-        TailArrow(right, getCaseType(adtType, returnType, left))
-    # check for GADT annotation of constructor return type
-    if form is ColonPair(tag, form', dataType)
-        if not isValidConstructorAnnotation(adtType, dataType)
-            astSyntaxError("inconsistent annotation form", dataType)
-        body := newReconstructorType(returnType, form')
-        equation := PreEquation(tag, dataType, adtType)
+def addEquationConstraint(adtType, constructorForm, body)
+    if constructorForm is ColonPair(tag, _, annotation)
+        if not isValidConstructorAnnotation(adtType, annotation)
+            astSyntaxError("inconsistent annotation form", annotation)
+        equation := PreEquation(tag, annotation, adtType)
         Arrow(veil(tag), Tail, [], Underscore(tag, 0), Just(equation), body)
-    newReconstructorType(returnType, form)
+    body
+
+
+def getCaseType(adtType, returnType, form)
+    if form is For(_, form', parameter)
+        TailArrow(parameter, getCaseType(adtType, returnType, form'))
+    addEquationConstraint(adtType, form, newReconstructorType(returnType, form))
 
 
 def getConstructorType(adtForm, form)
@@ -210,24 +213,23 @@ def newFallbackCase(tag, m)
     (1 .. m).cascade(b -> _ -> UnderscoreArrow(tag, b), body)
 
 
-def newDeconstructorType(tag, parameterTypeASTs, adtForm)
-    # todo: change name from "r" so it can't clash with user's names
-    returnType := FixedName(tag, "r")
-    reconstructorType := parameterTypeASTs.fold(DoubleArrow, returnType)
+def getDeconstructorType'(tag, adtForm, constructorForm, returnType)
+    if constructorForm is For(_, left, right)
+        TailArrow(right, getDeconstructorType'(tag, adtForm, left, returnType))
+    adtType := convertForm(adtForm)
+    reconstructorType := newReconstructorType(returnType, constructorForm)
     syntax(=>>) := syntax(++)
     (=>>) := DoubleArrow
-    adtType := convertForm(adtForm)
     fallbackType := adtType =>> returnType
-    typeAST := reconstructorType =>> fallbackType =>> adtType =>> returnType
-    TailArrow(returnType, getArguments(adtForm).fold(TailArrow, typeAST))
+    type := reconstructorType =>> fallbackType =>> adtType =>> returnType
+    addEquationConstraint(adtType, constructorForm, type)
 
 
-def getDeconstructorType(tag, adtForm, form)
-    if form is For(_, left, right)
-        TailArrow(right, getDeconstructorType(tag, adtForm, left))
-    parameters := getArguments(removeAnnotation(form))
-    parameterTypes := parameters.map(getParameterType)
-    newDeconstructorType(tag, parameterTypes, adtForm)
+def getDeconstructorType(tag, adtForm, constructorForm)
+    # todo: change name from "r" so it can't clash with user's names
+    returnType := FixedName(tag, "r")
+    type := getDeconstructorType'(tag, adtForm, constructorForm, returnType)
+    TailArrow(returnType, getArguments(adtForm).fold(TailArrow, type))
 
 
 def newDeconstructorFunction(tag, n, ms, j)
