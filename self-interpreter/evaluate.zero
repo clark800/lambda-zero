@@ -42,7 +42,7 @@ def evaluate(metacontext, metaindices, stack, closure)
         case Construction(tag, index, arguments, term') -> done(tag)
         case Numeral(tag, type, n)
             if isNil(stack)
-                enclose(term)
+                closure
             evaluate(stack, Closure(expandNumeral(tag, type, n), environment))
         case Operation(tag, term', Optimization(arity, operator))
             if operator(evaluate([]), stack.take(arity)) is Just(closure')
