@@ -13,8 +13,8 @@ def pushContext(type, term, context @ (environment, types))
 
 
 def newInstantiationMetavariable(tag, domainClosure)
-    _ @ Closure(domain, environment) := evaluateClosure(domainClosure)
-    metavariable <- newPositiveMetavariable(tag)
+    closure @ Closure(domain, environment) := evaluateClosure(domainClosure)
+    metavariable <- newPositiveMetavariable(tag, Just(closure))
     if isType(domain) or isSingleton(domain) or isConstruction(domain)
         # TODO: verify construction is non-empty
         lift return metavariable
@@ -68,7 +68,7 @@ def getDomain(closure @ Closure(domain, environment))
             lift error "undefined type family".onTerm(domain)
         lift return closure
     if isUnknown(domain)
-        metavariable <- newPositiveMetavariable(getTermTag(domain))
+        metavariable <- newPositiveMetavariable(getTermTag(domain), Void)
         lift return enclose(metavariable)
     lift return closure
 
@@ -109,7 +109,7 @@ def inferType(context @ (environment, types))
         argument <- newNegativeMetavariable(tag)
         context' := context.pushContext(domainClosure, argument)
         try range <- body.inferType(context')
-        codomain <- addPositiveMetavariable(tag, range)
+        codomain <- newMetaconstant(tag, range)
         lift return newFunctionType(tag, domainClosure, codomain)
     case Implication(tag, domain, body)
         try _ <- domain.inferType(context)
@@ -137,7 +137,7 @@ def inferType(context @ (environment, types))
         if term' is Implication(tag, domain, body)
             try _ <- unify(argumentType, Closure(domain, environment'))
             lift return Closure(body, environment'.push(argumentType))
-        returnType <- newPositiveMetavariable(tag)
+        returnType <- newPositiveMetavariable(tag, Void)
         tag := getTermTag(applicand)
         functionType := newFunctionType(tag, argumentType, returnType)
         # applicandType <: functionType  =>  argumentType <: parameterType
