@@ -52,6 +52,10 @@ def opSyntaxError(message, Operator(tag, _, _))
     syntaxError(message, tag)
 
 
+def opInternalError(message, Operator(tag, _, _))
+    internalError(message, tag)
+
+
 def isHigherPrecedence(left, right)
     leftSyntax := getSyntax(left)
     rightSyntax := getSyntax(right)

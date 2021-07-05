@@ -86,7 +86,8 @@ def inferType(context @ (environment, types))
     enclose'(term) := Closure(term, environment)
 
     case Metavariable(tag, index)
-        # todo: check for annotated type in metacontext
+        # terms from the parser never contain metavariables and inferType is
+        # only called on terms from the parser, so this case is unused
         lift error "not implemented".onTag(tag)
     case Type(tag, index)
         match index

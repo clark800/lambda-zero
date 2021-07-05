@@ -280,7 +280,7 @@ def applyADTDefinition(tag, adtForm, setbuilder, scope)
         (name, parameters) := splitArguments(adtForm)
         value := parameters.fold(SingleArrowDefault(Top(tag)), adt)
         newConstructDefinition(tag, Void, name, value, scope')
-    astSyntaxError("internal error", adtForm)
+    internalError("expected set notation", getTag(setbuilder))
 
 
 def applyDefinition(definition, scope)
@@ -300,7 +300,7 @@ def applyDefinition(definition, scope)
                 applyBindDefinition(tag, name, value, scope)
             case TryBindDefinition
                 applyTryBindDefinition(tag, name, value, scope)
-    astSyntaxError("internal error", definition)
+    internalError("expected definition", getTag(definition))
 
 
 def reduceDefine'(tag, definitionType, left, right)

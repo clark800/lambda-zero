@@ -59,7 +59,7 @@ def reduceTop(onReduce, getTag, state, operator, right)
     _ @ State(stack, operators) := state
     match getFixity(getSyntax(operator))
         case Nofix(reduce)
-            opSyntaxError("internal error: nofix in reduceTop", operator)
+            opInternalError("nofix in reduceTop", operator)
         case Prefix(reduce)
             if not isValidAdfixPrior(getTag, operator, right)
                 opSyntaxError("invalid prior for", operator)
@@ -78,11 +78,11 @@ def reduceTop(onReduce, getTag, state, operator, right)
                 pass
             opSyntaxError("missing left operand", operator)
         case Postfix(reduce)
-            opSyntaxError("internal error: reduceTop", operator)
+            opInternalError("postfix in reduceTop", operator)
         case Openfix(reduce)
-            opSyntaxError("internal error: reduceTop", operator)
+            opInternalError("openfix in reduceTop", operator)
         case Closefix(reduce)
-            opSyntaxError("internal error: reduceTop", operator)
+            opInternalError("closefix in reduceTop", operator)
 
 
 def reduceLeft(onReduce, getTag, state @ State(stack, operators), operator)

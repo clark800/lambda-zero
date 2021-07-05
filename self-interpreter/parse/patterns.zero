@@ -66,8 +66,8 @@ def combineCaseBodies(tag, thisName, left, right)
     if left is Arrow(_, _, _, _, _, body)
         if right is Arrow(_, _, _, _, _, body')
             combineCaseBodies'(tag, body, body')
-        astSyntaxError("internal error: expected arrow", right)
-    astSyntaxError("internal error: expected arrow", left)
+        internalError("expected arrow", getTag(right))
+    internalError("expected arrow", getTag(left))
 
 
 def getCases(arrow)
@@ -81,7 +81,7 @@ def getReconstructor(caseArrow)
         if body is Juxtaposition(_, _, right)
             right
         pass
-    astSyntaxError("Internal error: expected case arrow", caseArrow)
+    internalError("expected case arrow", getTag(caseArrow))
 
 
 def getConstructorTag(caseArrow)
@@ -89,9 +89,9 @@ def getConstructorTag(caseArrow)
         if cases is (constructor, _) :: cases'
             if isNil(cases')
                 getTag(constructor)
-            astSyntaxError("Internal error: multiple cases", caseArrow)
-        astSyntaxError("Internal error: missing case", caseArrow)
-    astSyntaxError("Internal error: expected case arrow", caseArrow)
+            internalError("multiple cases", getTag(caseArrow))
+        internalError("missing case", getTag(caseArrow))
+    internalError("expected case arrow", getTag(caseArrow))
 
 
 def attachDefaultCase(tag, caseArrow, fallback)

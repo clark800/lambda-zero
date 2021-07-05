@@ -162,6 +162,10 @@ def syntaxError(message, tag)
     throwError("Syntax error: " ++ message, tag)
 
 
+def internalError(message, tag)
+    throwError("Internal error: " ++ message, tag)
+
+
 TokenCode ::= {
     Space, VSpace, Newline, Symbolic, Numeric, Character, String,
     Comment, Invalid
