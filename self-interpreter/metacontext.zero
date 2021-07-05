@@ -2,17 +2,18 @@
 
 MetacontextT ::= {Metacontext(
     positives : ArrayT((ClosureT(Term))?),
-    negatives : ArrayT((ClosureT(Term))?)
+    negatives : ArrayT((ClosureT(Term))?),
+    domains : ArrayT((ClosureT(Term))?)    # for positives only
 )}
 
-emptyMetacontext := Metacontext(newArray([]), newArray([]))
+emptyMetacontext := Metacontext(newArray([]), newArray([]), newArray([]))
 
 
-def getPositives(Metacontext(positives, negatives))
+def getPositives(Metacontext(positives, negatives, domains))
     positives
 
 
-def getNegatives(Metacontext(positives, negatives))
+def getNegatives(Metacontext(positives, negatives, domains))
     negatives
 
 
@@ -22,7 +23,7 @@ def showMetaValue(metaValue)
     "Free"
 
 
-def showMetacontext(Metacontext(positives, negatives))
+def showMetacontext(Metacontext(positives, negatives, domains))
     if getSize(positives) = 0
         "Empty"
     enumerate(positives.toList).map((index, metaValue) ->
@@ -30,22 +31,25 @@ def showMetacontext(Metacontext(positives, negatives))
         showMetaValue(metaValue)).joinWith("\n")
 
 
-def newPositiveMetavariable(tag, Metacontext(positives, negatives))
+def newPositiveMetavariable(tag, domain,
+        Metacontext(positives, negatives, domains))
     (index, positives') := positives.append(Void)
-    (Metavariable(tag, +_ index), Metacontext(positives', negatives))
+    (_, domains') := domains.append(domain)
+    (Metavariable(tag, +_ index), Metacontext(positives', negatives, domains'))
 
 
-def addPositiveMetavariable(tag, value, Metacontext(positives, negatives))
+def newMetaconstant(tag, value, Metacontext(positives, negatives, domains))
     (index, positives') := positives.append(Just(value))
-    (Metavariable(tag, +_ index), Metacontext(positives', negatives))
+    (_, domains') := domains.append(Void)
+    (Metavariable(tag, +_ index), Metacontext(positives', negatives, domains'))
 
 
-def newNegativeMetavariable(tag, Metacontext(positives, negatives))
+def newNegativeMetavariable(tag, Metacontext(positives, negatives, domains))
     (index, negatives') := negatives.append(Void)
-    (Metavariable(tag, -_ index), Metacontext(positives, negatives'))
+    (Metavariable(tag, -_ index), Metacontext(positives, negatives', domains))
 
 
-def getMetaValue(index, Metacontext(positives, negatives))
+def getMetaValue(index, Metacontext(positives, negatives, domains))
     positives.get(index) ?? Void
 
 
@@ -65,12 +69,12 @@ def isDeterminedMetavariable(metavariable, metacontext)
     False
 
 
-def setMetaValue(index, value, Metacontext(positives, negatives))
-    Metacontext(positives.set(index, Just(value)), negatives)
+def setMetaValue(index, value, Metacontext(positives, negatives, domains))
+    Metacontext(positives.set(index, Just(value)), negatives, domains)
 
 
-def clearMetaValue(index, Metacontext(positives, negatives))
-    Metacontext(positives.set(index, Void), negatives)
+def clearMetaValue(index, Metacontext(positives, negatives, domains))
+    Metacontext(positives.set(index, Void), negatives, domains)
 
 
 def clearMetaValues(indices, metacontext)
