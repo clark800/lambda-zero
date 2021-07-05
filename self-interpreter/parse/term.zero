@@ -8,6 +8,7 @@ ClosureT(term) ::= {Closure(
 getTerm(Closure(term, _)) := term
 getEnvironment(Closure(_, environment)) := environment
 
+pushTerm(term, environment) := environment.push(Closure(term, environment))
 enclose(term) := Closure(term, newArray([]))
 
 OptimizationT(term) ::= {Optimization(

@@ -9,7 +9,7 @@ def onTerm(term, message)
 
 
 def pushContext(type, term, context @ (environment, types))
-    (environment.push(Closure(term, environment)), types.push(type))
+    (environment.pushTerm(term), types.push(type))
 
 
 def newInstantiationMetavariable(tag, domainClosure)
