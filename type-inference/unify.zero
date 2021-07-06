@@ -30,7 +30,7 @@ def isSameMetavariable
 
 
 def tryEvaluate(metacontext, closure)
-    closure' := evaluate(metacontext, [], [], closure)
+    closure' := metaevaluate(metacontext, closure)
     term := getTerm(closure')
     if getMetavariableValue(term, metacontext) is Just(closure')
         recursionError(term, closure', metacontext)

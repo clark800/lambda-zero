@@ -6,36 +6,33 @@ def expandNumeral(tag, type, n)
                 Application(tag, Variable(tag, -_ 1), Numeral(tag, type, n'))))
 
 
-def evaluate(metacontext, metaindices, stack, closure)
+def evaluate(metacontext, stack, closure @ Closure(term, environment))
     evaluate' := evaluate(metacontext)
-    evaluate := evaluate'(metaindices)
-    _ @ Closure(term, environment) := closure
     done(tag) := if isNil(stack) then closure else enclose(Unknown(tag))
 
     match term
         case Metavariable(tag, index)
             if index is +_ index'
                 if metacontext.getMetaValue(index') is Just(closure')
-                    if metaindices.contains((= index'))
-                        done(tag)
-                    evaluate'(index' :: metaindices, stack, closure')
+                    metacontext' := metacontext.clearMetaValue(index')
+                    evaluate(metacontext', stack, closure')
                 done(tag)
             done(tag)
         case Type(tag, index) -> done(tag)
         case Variable(tag, index)
             if environment.seek(-_ abs(index)) is Just(closure')
-                evaluate(stack, closure')
+                evaluate'(stack, closure')
             closure
         case Inference(tag, domain) -> done(tag)
         case Singleton(tag, type, index) -> done(tag)
         case Function(tag, domain, body)
             if stack is argument :: stack'
-                evaluate(stack', Closure(body, environment.push(argument)))
+                evaluate'(stack', Closure(body, environment.push(argument)))
             closure
         case Implication(tag, domain, body) -> done(tag)
         case Intersection(tag, domain, body) -> done(tag)
         case Application(tag, applicand, argument)
-            result := evaluate(Closure(argument, environment) :: stack,
+            result := evaluate'(Closure(argument, environment) :: stack,
                 Closure(applicand, environment))
             if isUnknown(getTerm(result)) then closure else result
         case Equation(tag, left, right) -> done(tag)
@@ -43,15 +40,19 @@ def evaluate(metacontext, metaindices, stack, closure)
         case Numeral(tag, type, n)
             if isNil(stack)
                 closure
-            evaluate(stack, Closure(expandNumeral(tag, type, n), environment))
+            evaluate'(stack, Closure(expandNumeral(tag, type, n), environment))
         case Operation(tag, term', Optimization(arity, operator))
-            if operator(evaluate([]), stack.take(arity)) is Just(closure')
-                evaluate(stack.drop(arity), closure')
-            evaluate(stack, Closure(term', environment))
+            if operator(evaluate'([]), stack.take(arity)) is Just(closure')
+                evaluate'(stack.drop(arity), closure')
+            evaluate'(stack, Closure(term', environment))
+
+
+def metaevaluate(metacontext, closure)
+    evaluate(metacontext, [], closure)
 
 
 def evaluateClosure(closure)
-    evaluate(emptyMetacontext, [], [], closure)
+    evaluate(emptyMetacontext, [], closure)
 
 
 def evaluateTerm(term)
