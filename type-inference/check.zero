@@ -59,7 +59,7 @@ def isImpossible(context, term)
 
 def check(context @ (environment, types), type, term)
     metacontext <- getState
-    type @ Closure(typeTerm, typeEnv) := evaluate(metacontext, [], [], type)
+    type @ Closure(typeTerm, typeEnv) := metaevaluate(metacontext, type)
 
     # we have to handle fix applications specially so that we can retain
     # the generalized type for the function in the context
@@ -94,7 +94,7 @@ def check(context @ (environment, types), type, term)
             try type' <- instantiate(getVariableType(context, tag, index))
             if isNegative(index)
                 metacontext <- getState
-                type'' := evaluate(metacontext, [], [], type')
+                type'' := metaevaluate(metacontext, type')
                 try type''' <- instantiateConstruction(type'', environment)
                 unify(type''', type)
             unify(type', type)
