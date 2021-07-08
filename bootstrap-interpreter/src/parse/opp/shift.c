@@ -69,9 +69,10 @@ static void reduceTop(Stack* stack) {
 }
 
 static void reduceLeft(Stack* stack, Node* operator) {
-    while (!isEmpty(stack) && !isOperator(peek(stack, 0)) &&
-            isHigherPrecedence(peek(stack, 1), operator))
-        reduceTop(stack);
+    if (!isEmpty(stack))
+        while (!isOperator(peek(stack, 0)) &&
+                isHigherPrecedence(peek(stack, 1), operator))
+            reduceTop(stack);
 }
 
 static void shiftOperator(Stack* stack, Node* operator) {
