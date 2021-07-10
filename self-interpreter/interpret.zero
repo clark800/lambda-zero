@@ -11,11 +11,11 @@ def splitCodeAndInput(input)
 
 def isMain(term)
     # todo: detect the name "main" rather than parameter name "input"
-    isFunction(term) and getTagLexeme(getTermTag(term)) =*= "input"
+    isAbstraction(term) and getTagLexeme(getTermTag(term)) =*= "input"
 
 
 def newNilTerm(tag)
-    FreeFunction(tag, FreeFunction(tag, Variable(tag, +_ 2)))
+    FreeAbstraction(tag, FreeAbstraction(tag, Variable(tag, +_ 2)))
 
 
 def constructString(tag, string)

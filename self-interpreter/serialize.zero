@@ -8,7 +8,7 @@ def maybeDebruijnIndex(term)
 
 
 def maybeBody(term)
-    if term is Function(_, _, body)
+    if term is Abstraction(_, _, body)
         Just(body)
     Void
 

@@ -1,7 +1,7 @@
 #* evaluate.zero
 
 def expandNumeral(tag, type, n)
-    FreeFunction(tag, FreeFunction(tag,
+    FreeAbstraction(tag, FreeAbstraction(tag,
             n |> case 0 -> Variable(tag, -_ 2); case up n' ->
                 Application(tag, Variable(tag, -_ 1), Numeral(tag, type, n'))))
 
@@ -25,7 +25,7 @@ def evaluate(metacontext, stack, closure @ Closure(term, environment))
             closure
         case Inference(tag, domain) -> done(tag)
         case Singleton(tag, type, index) -> done(tag)
-        case Function(tag, domain, body)
+        case Abstraction(tag, domain, body)
             if stack is argument :: stack'
                 evaluate'(stack', Closure(body, environment.push(argument)))
             closure

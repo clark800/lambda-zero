@@ -36,7 +36,7 @@ def reduceTerm(term)
     if term is Application(tag, left, right)
         left' := reduceTerm(left)
         right' := reduceTerm(right)
-        if left' is Function(tag', domain, body)
+        if left' is Abstraction(tag', domain, body)
             reduceTerm(substituteArgument(right', body))
         Application(tag, left', right')
     term

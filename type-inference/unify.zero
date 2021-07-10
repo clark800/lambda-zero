@@ -107,8 +107,8 @@ def unify'(fail, metacontext, (left, right))
             if rightTerm is Singleton(tag', type', index')
                 if index = index' then return metacontext else fail'
             fail'
-        case Function(tag, domain, body)
-            if rightTerm is Function(tag', domain', body')
+        case Abstraction(tag, domain, body)
+            if rightTerm is Abstraction(tag', domain', body')
                 if isUnknown(domain) and isUnknown(domain')
                     unifyBodies(tag, metacontext, body, body')
                 unifyBinder(tag, domain, domain', body, body')

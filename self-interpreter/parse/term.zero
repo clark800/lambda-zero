@@ -23,7 +23,7 @@ Term ::= {
     Variable(tag : TagT, index : ℤ),
     Inference(tag : TagT, domain : (Term)?),
     Singleton(tag : TagT, type : Term, index : ℕ),
-    Function(tag : TagT, domain : Term, body : Term),
+    Abstraction(tag : TagT, domain : Term, body : Term),
     Implication(tag : TagT, domain : Term, body : Term),
     Intersection(tag : TagT, domain : Term, body : Term),
     Application(tag : TagT, applicand : Term, argument : Term),
@@ -41,7 +41,7 @@ def getTermTag
     case Variable(tag, _) -> tag
     case Inference(tag, _) -> tag
     case Singleton(tag, _, _) -> tag
-    case Function(tag, _, _) -> tag
+    case Abstraction(tag, _, _) -> tag
     case Implication(tag, _, _) -> tag
     case Intersection(tag, _, _) -> tag
     case Application(tag, _, _) -> tag
@@ -56,7 +56,7 @@ isType := case Type(_, _) -> True; case _ -> False
 isVariable := case Variable(_, _) -> True; case _ -> False
 isInference := case Inference(_, _) -> True; case _ -> False
 isSingleton := case Singleton(_, _, _) -> True; case _ -> False
-isFunction := case Function(_, _, _) -> True; case _ -> False
+isAbstraction := case Abstraction(_, _, _) -> True; case _ -> False
 isImplication := case Implication(_, _, _) -> True; case _ -> False
 isIntersection := case Intersection(_, _, _) -> True; case _ -> False
 isApplication := case Application(_, _, _) -> True; case _ -> False
@@ -71,8 +71,8 @@ def isUnknown(term)
     False
 
 
-def FreeFunction(tag, body)
-    Function(tag, Unknown(tag), body)
+def FreeAbstraction(tag, body)
+    Abstraction(tag, Unknown(tag), body)
 
 
 def splitSpine(term)
@@ -88,7 +88,7 @@ def setTag(tag)
     case Variable(_, index) -> Variable(tag, index)
     case Inference(_, domain) -> Inference(tag, domain)
     case Singleton(_, type, index) -> Singleton(tag, type, index)
-    case Function(_, domain, body) -> Function(tag, domain, body)
+    case Abstraction(_, domain, body) -> Abstraction(tag, domain, body)
     case Implication(_, domain, body) -> Implication(tag, domain, body)
     case Intersection(_, domain, body) -> Intersection(tag, domain, body)
     case Application(_, left, right) -> Application(tag, left, right)
@@ -133,7 +133,7 @@ def showMetavariable(index)
 
 
 def needsParentheses
-    case Function(_, _, _) -> True
+    case Abstraction(_, _, _) -> True
     case Implication(_, _, _) -> True
     case Intersection(_, domain, _) -> True
     case _ -> False
@@ -170,7 +170,7 @@ def showTerm
             showTag(tag) # ++ showIntegerSubscript(index)
     case Inference(tag, domain) -> "infer"
     case Singleton(tag, type, index) -> "{" ++ showTag(tag) ++ "}"
-    case Function(tag, domain, body) ->
+    case Abstraction(tag, domain, body) ->
         if isUnknown(domain) or isTypeFamily(domain) then
             showTag(tag) ++ " ↦ " ++ showTerm(body) else
             "(" ++ showTag(tag) ++ " : " ++ showTerm(domain) ++ ") ↦ " ++
