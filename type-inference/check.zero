@@ -41,7 +41,7 @@ def isFix(term)
 
 
 def getFinalBody(term)
-    if term is Function(_, _, body)
+    if term is Abstraction(_, _, body)
         getFinalBody(body)
     term
 
@@ -62,10 +62,10 @@ def check(context @ (environment, types), type, term)
     type @ Closure(typeTerm, typeEnv) := metaevaluate(metacontext, type)
 
     # we have to handle fix applications specially so that we can retain
-    # the generalized type for the function in the context
+    # the generalized type in the context
     if term is Application(tag, left, right)
         if isFix(left)
-            if right is Function(tag', domain, body)
+            if right is Abstraction(tag', domain, body)
                 context' := context.pushContext(type, term)
                 check(context', type, body)
             pass
@@ -106,7 +106,7 @@ def check(context @ (environment, types), type, term)
             lift error "Type error: unknown value".onTag(tag)
         case Singleton(tag, type', index)
             unify(enclose(Type(tag, +_ 0)), type)
-        case Function(tag, domain, body)
+        case Abstraction(tag, domain, body)
             if typeTerm is Implication(tag', domain', body')
                 try domainClosure <- getDomain(Closure(domain, environment))
                 try domainClosure' <- getDomain(Closure(domain', typeEnv))

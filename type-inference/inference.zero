@@ -36,14 +36,14 @@ def instantiate(closure)
     instantiateWith(newInstantiationMetavariable, closure)
 
 
-def convertFunctionsToIntersections(term)
-    if term is Function(tag, domain, body)
-        Intersection(tag, domain, convertFunctionsToIntersections(body))
+def convertAbstractionsToIntersections(term)
+    if term is Abstraction(tag, domain, body)
+        Intersection(tag, domain, convertAbstractionsToIntersections(body))
     term
 
 
 def getPatternMatchDomain(Closure(typeConstructor, environment))
-    term := convertFunctionsToIntersections(typeConstructor)
+    term := convertAbstractionsToIntersections(typeConstructor)
     try closure <- instantiate(Closure(term, environment))
     lift return evaluateClosure(closure)  # evaluate application of type constructor
 
@@ -73,7 +73,7 @@ def getDomain(closure @ Closure(domain, environment))
     lift return closure
 
 
-def newFunctionType(tag, domainClosure, body)
+def newImplicationType(tag, domainClosure, body)
     _ @ Closure(domain, environment) := domainClosure
     Closure(Implication(tag, domain, body), environment)
 
@@ -104,14 +104,14 @@ def inferType(context @ (environment, types))
         lift error "not implemented".onTag(tag)
     case Singleton(tag, type, index)
         lift return enclose(Type(tag, +_ 0))
-    case Function(tag, domain, body)
+    case Abstraction(tag, domain, body)
         try _ <- domain.inferType(context)
         try domainClosure <- getDomain(enclose'(domain))
         argument <- newNegativeMetavariable(tag)
         context' := context.pushContext(domainClosure, argument)
         try range <- body.inferType(context')
         codomain <- newMetaconstant(tag, range)
-        lift return newFunctionType(tag, domainClosure, codomain)
+        lift return newImplicationType(tag, domainClosure, codomain)
     case Implication(tag, domain, body)
         try _ <- domain.inferType(context)
         argument <- newNegativeMetavariable(tag)
@@ -124,7 +124,7 @@ def inferType(context @ (environment, types))
         lift return enclose(Type(tag, +_ 0))
     case Application(tag, applicand, argument)
         try argumentType <- argument.inferType(context)
-        if applicand is Function(tag', domain, body)
+        if applicand is Abstraction(tag', domain, body)
             # handle local definitions specially so that we have argument in env
             if isUnknown(domain)  # avoid creating unnecessary metavariable
                 body.inferType(context.pushContext(argumentType, argument))
@@ -140,9 +140,9 @@ def inferType(context @ (environment, types))
             lift return Closure(body, environment'.push(argumentType))
         returnType <- newPositiveMetavariable(tag, Void)
         tag := getTermTag(applicand)
-        functionType := newFunctionType(tag, argumentType, returnType)
-        # applicandType <: functionType  =>  argumentType <: parameterType
-        try _ <- unify(applicandType, functionType)
+        implicationType := newImplicationType(tag, argumentType, returnType)
+        # applicandType <: implicationType  =>  argumentType <: parameterType
+        try _ <- unify(applicandType, implicationType)
         lift return enclose(returnType)
     case Equation(tag, left, right)
         try leftType <- left.inferType(context)

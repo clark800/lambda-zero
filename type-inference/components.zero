@@ -6,7 +6,7 @@ def getComponents
     case Variable(_, _) -> []
     case Inference(_, domain) -> domain.mapJust((:: [])) ?? []
     case Singleton(_, type, index) -> [type]
-    case Function(_, domain, body) -> [domain, body]
+    case Abstraction(_, domain, body) -> [domain, body]
     case Implication(_, domain, body) -> [domain, body]
     case Intersection(tag, domain, body) -> [domain, body]
     case Application(_, left, right) -> [left, right]
@@ -25,8 +25,8 @@ def mapComponentsWithDepth(f, depth, term)
             Inference(tag, domain.mapJust(f(depth)))
         case Singleton(tag, type, index) ->
             Singleton(tag, type.f(depth), index)
-        case Function(tag, domain, body) ->
-            Function(tag, domain.f(depth), body.f(up depth))
+        case Abstraction(tag, domain, body) ->
+            Abstraction(tag, domain.f(depth), body.f(up depth))
         case Implication(tag, domain, body) ->
             Implication(tag, domain.f(depth), body.f(up depth))
         case Intersection(tag, domain, body) ->
