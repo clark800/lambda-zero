@@ -1,4 +1,4 @@
-#* metacontext.zero
+#@ metacontext.zero
 
 MetacontextT ::= {Metacontext(
     positives : ArrayT((ClosureT(Term))?),
@@ -87,4 +87,4 @@ def getMetacontextUpdates(metacontext, metacontext')
         isVoid(getMetaValue(index, metacontext)) and
         not isVoid(getMetaValue(index, metacontext')))
 
-#*
+#@

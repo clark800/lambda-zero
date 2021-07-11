@@ -1,4 +1,4 @@
-#* unify.zero
+#@ unify.zero
 
 def unificationError(originals, left, right)
     error("Type error: Can't unify\n" ++
@@ -151,4 +151,4 @@ def unify(left, right, metacontext)
         case Left(message) -> (Left(message), metacontext)
         case Right(metacontext') -> (Right(metacontext'), metacontext')
 
-#*
+#@

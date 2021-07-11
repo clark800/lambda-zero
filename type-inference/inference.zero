@@ -1,4 +1,4 @@
-#* inference.zero
+#@ inference.zero
 
 def onTag(tag, message)
     message ++ " " ++ showTagWithLocation(tag) ++ "\n"
@@ -164,4 +164,4 @@ def inferGeneralizedType(context, term)
     metacontext <- getState
     lift return enclose(type.generalize(metacontext))
 
-#*
+#@

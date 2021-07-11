@@ -1,4 +1,4 @@
-#* brackets.zero
+#@ brackets.zero
 
 def applyToCommaList(tag, base, arguments)
     if arguments is CommaPair(_, left, right)
@@ -111,4 +111,4 @@ def reduceOpenFile(tag, left, right)
         contents
     syntaxError("no input", tag)
 
-#*
+#@

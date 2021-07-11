@@ -1,4 +1,4 @@
-#* resolve.zero
+#@ resolve.zero
 
 
 def resolveError(metavariable, metacontext)
@@ -72,4 +72,4 @@ def showClosure(closure)
     showTerm(closure.resolveLocals(emptyMetacontext))
 
 
-#*
+#@

@@ -1,4 +1,4 @@
-#* parse.zero
+#@ parse.zero
 
 def onReduceHandler(state, operator, left, right, reduction)
     if left is Just(left')
@@ -107,4 +107,4 @@ def parse(getBuiltin, code)
         pass
     abort "parser error"
 
-#*
+#@

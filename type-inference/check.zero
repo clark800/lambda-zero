@@ -1,4 +1,4 @@
-#* check.zero
+#@ check.zero
 
 
 def checkError(term, type)
@@ -140,4 +140,4 @@ def check(context @ (environment, types), type, term)
         case Operation(tag, term, optimization)
             check(context, type, term)
 
-#*
+#@

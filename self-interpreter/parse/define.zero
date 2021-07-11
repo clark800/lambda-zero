@@ -1,4 +1,4 @@
-#* define.zero
+#@ define.zero
 
 def isTupleConstructor(node)
     isName(node) and getLexeme(node).startsWith(",")
@@ -338,4 +338,4 @@ def reduceADTDefine(tag, left, right)
         syntaxError("ADT required to right of", tag)
     Definition(tag, ADTDefinition, left, right)
 
-#*
+#@

@@ -1,4 +1,4 @@
-#* evaluate.zero
+#@ evaluate.zero
 
 def expandNumeral(tag, type, n)
     FreeAbstraction(tag, FreeAbstraction(tag,
@@ -58,4 +58,4 @@ def evaluateClosure(closure)
 def evaluateTerm(term)
     evaluateClosure(Closure(term, newArray([])))
 
-#*
+#@

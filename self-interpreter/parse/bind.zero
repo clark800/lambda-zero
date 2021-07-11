@@ -1,4 +1,4 @@
-#* bind.zero
+#@ bind.zero
 
 GlobalT ::= {Global(index : ℕ, ast : AST, term : Term)}
 
@@ -212,4 +212,4 @@ def bindAST(getBuiltin, node)
     (bindings, _parameters, _globals, _environment) := state'
     bindings  # top level bindings in reverse order
 
-#*
+#@

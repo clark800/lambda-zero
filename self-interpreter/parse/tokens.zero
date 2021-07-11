@@ -1,4 +1,4 @@
-#* tokens.zero
+#@ tokens.zero
 
 def parseEscapeCode(code, tag)
     if code = '0' then '\0'
@@ -99,4 +99,4 @@ def parseToken(state, token)
         case Comment -> internalError("Comment reached parseToken", tag)
         case Invalid -> syntaxError("invalid character", tag)
 
-#*
+#@

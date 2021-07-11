@@ -1,4 +1,4 @@
-#* patterns.zero
+#@ patterns.zero
 
 def splitArguments(node)
     if node is Juxtaposition(_, left, right)
@@ -118,4 +118,4 @@ def combineCases(tag, left, right)
     body := combineCaseBodies(tag, thisName, left, right)
     ExplicitCaseArrow(tag, cases, thisName, body)
 
-#*
+#@

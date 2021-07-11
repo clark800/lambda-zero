@@ -1,4 +1,4 @@
-#* table.zero
+#@ table.zero
 
 TableT(k, v) ::= {
     Table(compare : (k => k => 𝔹), data : BinaryTree(AADatumT(k && v)))
@@ -22,4 +22,4 @@ def showTable(showKey, showValue, table)
 newDictionary := newTable((<*=))
 showDictionary := showTable(showString)
 
-#*
+#@

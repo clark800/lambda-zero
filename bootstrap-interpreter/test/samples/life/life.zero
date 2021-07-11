@@ -1,4 +1,4 @@
-#* life.zero
+#@ life.zero
 
 def newMatrix(nx, ny)
     newArray(replicate(ny, newArray(replicate(nx, 0))))
@@ -160,4 +160,4 @@ def initialize(nx, ny, pixelsPerCell, serverData)
 def main(input)
     XWindow(initialize(12, 12, 50), handleEvent, input)
 
-#*
+#@

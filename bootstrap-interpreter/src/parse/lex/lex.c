@@ -55,7 +55,7 @@ static const char* skipLexeme(const char* s) {
 }
 
 static Location advanceLocation(Tag tag) {
-    if (isComment(tag.lexeme.start[0]) && tag.lexeme.start[1] == '*') {
+    if (isComment(tag.lexeme.start[0]) && tag.lexeme.start[1] == '@') {
         const char* filename = skipRepeatable(&(tag.lexeme.start[2]), ' ');
         if (isLineFeed(filename[0]) || filename[0] == '\0')
             return newLocation(0, 0, 0);

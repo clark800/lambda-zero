@@ -1,4 +1,4 @@
-#* ralist.zero
+#@ ralist.zero
 
 def list.pushRAL(x)
     match list
@@ -95,4 +95,4 @@ def list.showRAL(showValue)
 def newRandomAccessList(elements)
     elements.fold(pushRAL, [])
 
-#*
+#@

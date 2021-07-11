@@ -1,4 +1,4 @@
-#* prelude.zero
+#@ prelude.zero
 
 id(x) ≔ x
 const(x) ≔ _ ↦ x
@@ -353,4 +353,4 @@ def onRightState(f, rhs)
     exy ↤ rhs
     exy ⦊ case Left(x) ↦ lift Left(x); case Right(y) ↦ f(y)
 
-#*
+#@

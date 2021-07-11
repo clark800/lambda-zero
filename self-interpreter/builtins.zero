@@ -1,4 +1,4 @@
-#* builtins.zero
+#@ builtins.zero
 
 maxInteger := 9223372036854775807
 
@@ -94,4 +94,4 @@ def getBuiltin(tag)
 
     builtins.lookup(getTagLexeme(tag))
 
-#*
+#@
