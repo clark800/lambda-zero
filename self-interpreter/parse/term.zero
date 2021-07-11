@@ -1,4 +1,4 @@
-#* term.zero
+#@ term.zero
 
 ClosureT(term) ::= {Closure(
     term : term,
@@ -204,4 +204,4 @@ def showTermLocation(term)
 def showTermAndLocation(term)
     showTerm(term) ++ " at " ++ showTermLocation(term)
 
-#*
+#@

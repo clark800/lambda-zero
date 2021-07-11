@@ -1,4 +1,4 @@
-#* interpret.zero
+#@ interpret.zero
 
 def runtimeError(message, tag)
     throwError("\nRuntime error: " ++ message, tag)
@@ -67,4 +67,4 @@ def main(input)
 #main(input) := lex(input).map(showToken).joinWith("\n")
 #main(input) := showAST(parse(getBuiltin, input))
 
-#*
+#@

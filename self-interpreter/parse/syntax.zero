@@ -1,4 +1,4 @@
-#* syntax.zero
+#@ syntax.zero
 
 def reduceApply(tag, left, right)
     Juxtaposition(tag, left, right)
@@ -276,4 +276,4 @@ OPERATORS := [newDictionary([
     coreSyntax("alias", 99, 99, LA, Prefix(reduceAdfix))
 ])]
 
-#*
+#@

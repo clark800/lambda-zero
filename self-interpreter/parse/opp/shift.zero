@@ -1,4 +1,4 @@
-#* shift.zero
+#@ shift.zero
 
 StackItem(operandT) ::= {
     OperatorItem(operator : OperatorT(operandT)),
@@ -246,4 +246,4 @@ def lookupSyntax(lexeme, State(_, operators))
         top.lookup(lexeme)
     Void
 
-#*
+#@

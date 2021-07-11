@@ -1,4 +1,4 @@
-#* operators.zero
+#@ operators.zero
 
 syntax(match) := prefix(7)
 syntax(to) := interfix(match _)
@@ -121,4 +121,4 @@ syntax(↓) ≔ alias(down)
 syntax(²) := alias(^2)
 syntax(…) := alias(...)
 
-#*
+#@

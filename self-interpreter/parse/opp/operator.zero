@@ -1,4 +1,4 @@
-#* operator.zero
+#@ operator.zero
 
 Associativity ::= {LA, RA, NA}
 
@@ -72,4 +72,4 @@ def isHigherPrecedence(left, right)
 
     leftSyntax.getRightPrecedence > rightSyntax.getLeftPrecedence
 
-#*
+#@

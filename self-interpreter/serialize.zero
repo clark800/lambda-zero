@@ -1,4 +1,4 @@
-#* serialize.zero
+#@ serialize.zero
 
 
 def maybeDebruijnIndex(term)
@@ -84,4 +84,4 @@ def serializeString(evaluateClosure, closure)
 
     Just(character :: remaining)
 
-#*
+#@

@@ -1,4 +1,4 @@
-#* xwindows.zero
+#@ xwindows.zero
 
 # constants
 UNUSED := 0
@@ -510,4 +510,4 @@ def runX(initializer, eventHandler, stream)
 def XWindow(initializer, eventHandler, stream)
     connectRequest ++ runX(initializer, eventHandler, stream)
 
-#*
+#@

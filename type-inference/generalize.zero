@@ -1,4 +1,4 @@
-#* generalize.zero
+#@ generalize.zero
 
 def substitute(indices, depth, term)
     # depth should start as the length of indices
@@ -38,4 +38,4 @@ def generalize(metacontext, closure)
     indices' := enumerate(indices).map(first)
     indices'.fold(wrapIntersection(getTermTag(type)), type')
 
-#*
+#@

@@ -1,4 +1,4 @@
-#* main.zero
+#@ main.zero
 
 def getFixType(tag)
     syntax(=>>) := syntax(++)
@@ -61,4 +61,4 @@ def main(input)
     tags := bindings.map(getBindingTag)
     showTypings(zip(tags, types.toList)) ++ showTypeError(maybeError)
 
-#*
+#@

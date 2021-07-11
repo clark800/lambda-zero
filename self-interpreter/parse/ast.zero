@@ -1,4 +1,4 @@
-#* ast.zero
+#@ ast.zero
 
 DefinitionType ::= {PlainDefinition, MaybeDefinition, TryDefinition,
     SyntaxDefinition, ADTDefinition, BindDefinition, TryBindDefinition}
@@ -234,4 +234,4 @@ def maybeConstructorArity(node)
         Just(arity)
     Void
 
-#*
+#@

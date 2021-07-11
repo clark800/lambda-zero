@@ -1,4 +1,4 @@
-#* aatree.zero
+#@ aatree.zero
 
 AADatumT(a) ::= {AADatum(level : ℕ, value : a)}
 
@@ -64,4 +64,4 @@ def extendAA((~<), hash, values, tree)
 def mergeAA((~<), hash, tree', tree)
     extendAA((~<), hash, flattenAA(tree'), tree)
 
-#*
+#@

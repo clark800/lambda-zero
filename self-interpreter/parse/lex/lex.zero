@@ -1,4 +1,4 @@
-#* lex.zero
+#@ lex.zero
 
 NOFIX := 0
 PREFIX := 1
@@ -103,7 +103,7 @@ def splitLexeme(ns)
 
 
 def advanceLocation(Location(file, line, column), lexeme)
-    if lexeme.startsWith("#*")
+    if lexeme.startsWith("#@")
         (_, after) := lexeme.drop(2).splitWhen((=/= ' '))
         (file', _) := after.splitWhen(isLineFeed)
         Location(file', if isNil(file') then 0 else 1, 0)
@@ -224,4 +224,4 @@ def lex(string)
 
 #main(input) := scan(input).map(showTag).joinWith("\n")
 
-#*
+#@

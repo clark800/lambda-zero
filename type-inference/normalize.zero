@@ -1,4 +1,4 @@
-#* normalize.zero
+#@ normalize.zero
 
 
 def setAbsoluteValue(n)
@@ -46,4 +46,4 @@ def normalize(term)
     reduceTerm(term).mapComponents(normalize)
 
 
-#*
+#@

@@ -1,4 +1,4 @@
-#* components.zero
+#@ components.zero
 
 def getComponents
     case Metavariable(_, _) -> []
@@ -44,4 +44,4 @@ def mapComponentsWithDepth(f, depth, term)
 def mapComponents(f, term)
     mapComponentsWithDepth(_ -> f, 0, term)
 
-#*
+#@

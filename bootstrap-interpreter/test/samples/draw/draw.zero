@@ -1,4 +1,4 @@
-#* draw.zero
+#@ draw.zero
 
 def handleEvent(event, state)
     eventCode := event.lookup("code") ?? 0
@@ -16,4 +16,4 @@ def handleEvent(event, state)
 def main(input)
     XWindow(defaultWindow(600, 500), handleEvent, input)
 
-#*
+#@
