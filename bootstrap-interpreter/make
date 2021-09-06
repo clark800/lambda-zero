@@ -22,9 +22,9 @@ NOCOLOR='\033[0m'
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
 GCC_FLAGS="-Ilib -fno-asynchronous-unwind-tables \
--std=c99 -pedantic -Werror -Wfatal-errors -Wall -Wextra \
+-std=c99 -pedantic -Wfatal-errors -Wall -Wextra \
 -Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
--Wnull-dereference -Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
+-Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
 TCC_FLAGS="-Ilib -Wall -Werror -Wunsupported -Wwrite-strings"
 XCC_FLAGS="-Ilib"  # for unknown C compiler
 
@@ -32,9 +32,9 @@ XCC_FLAGS="-Ilib"  # for unknown C compiler
 # increases the executable size; we can set it back to the default with
 # --hash-style=sysv
 
-LINK_FLAGS="-Wl,--hash-style=sysv,--gc-sections,--strip-discarded"
-SOURCES=$(find -L ./src ./lib -name "*.c" -not -path "./lib/libc/*")
-HEADERS=$(find -L ./src ./lib -name "*.h" -not -path "./lib/libc/*")
+LINK_FLAGS="-static -Wl,--hash-style=sysv,--gc-sections,--strip-discarded"
+SOURCES=$(find -L ./src ./lib -name "*.c" | grep -v "/libc/")
+HEADERS=$(find -L ./src ./lib -name "*.h" | grep -v "/libc/")
 OBJECTS="*.o"
 
 echoexec() {
@@ -54,7 +54,7 @@ build_libc() {
 }
 
 showsize() {
-    echo "$1 SIZE: $(du -b "$OUT" | cut -f1) bytes"
+    echo "$1 SIZE: $(wc -c "$OUT" | cut -f1) bytes"
 }
 
 finish() {
