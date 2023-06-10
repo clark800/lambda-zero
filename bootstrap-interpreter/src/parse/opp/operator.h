@@ -4,6 +4,7 @@ typedef unsigned char Precedence;
 typedef Node* (*Reducer)(Tag tag, Node* left, Node* right);
 
 Fixity getFixity(Node* op);
+String getPrior(Node* op);
 bool isOperator(Node* node);
 bool isSpecialOperator(Node* op);
 bool isHigherPrecedence(Node* left, Node* right);

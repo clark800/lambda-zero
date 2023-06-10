@@ -18,7 +18,7 @@ syntax(if) := prefix(10)\nsyntax(then) := infixL(if _)\n1 then 0
 Syntax error: invalid prior for 'then' at line 3 column 3
 ===============================================================================
 syntax(=) := infix(20)\nsyntax(~=~) := infix(_ = _)\n0 ~=~ 0
-Syntax error: invalid associativity for prior '=' at line 2 column 24
+Syntax error: invalid associativity for operator or prior '~=~' at line 2 column 8
 ===============================================================================
 1 2
 Syntax error: missing operator before '2' at line 1 column 3

@@ -50,13 +50,15 @@ char getTagFixity(Tag tag) {
 }
 
 bool isThisString(String a, const char* b) {
+    // strncmp(NULL, NULL, 0) is undefined behavior, so we check for 0 length
     return a.prefix == '\0' && a.length == strlen(b) &&
-        strncmp(a.start, b, a.length) == 0;
+        (a.length == 0 || strncmp(a.start, b, a.length) == 0);
 }
 
 bool isSameString(String a, String b) {
+    // strncmp(NULL, NULL, 0) is undefined behavior, so we check for 0 length
     return a.length == b.length && a.prefix == b.prefix &&
-        strncmp(a.start, b.start, a.length) == 0;
+        (a.length == 0 || strncmp(a.start, b.start, a.length) == 0);
 }
 
 void printTag(Tag tag, FILE* stream) {

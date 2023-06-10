@@ -34,35 +34,13 @@ static inline Syntax* getSyntax(Node* op) {
 }
 
 Fixity getFixity(Node* op) {return getSyntax(op)->fixity;}
+String getPrior(Node* op) {return getSyntax(op)->prior;}
 bool isSpecialOperator(Node* op) {return getSyntax(op)->special;}
 static char getBracketType(Node* op) {return getSyntax(op)->bracketType;}
 unsigned char getSubprecedence(Node* op) {return (unsigned char)getVariety(op);}
 
-static Node* getPriorNode(Node* operator, Node* left, Node* right) {
-    Syntax* syntax = getSyntax(operator);
-    switch (syntax->fixity) {
-        case INFIX:
-            switch (syntax->associativity) {
-                case L: return left;
-                case R: return right;
-                default: return NULL;
-            }
-        case PREFIX: return right;
-        case POSTFIX: return left;
-        default: return NULL;
-    }
-}
-
 Node* reduce(Node* operator, Node* left, Node* right) {
-    Syntax* syntax = getSyntax(operator);
-    if (syntax->prior.length > 0) {
-        Node* node = getPriorNode(operator, left, right);
-        if (node == NULL)
-            syntaxErrorNode("invalid operator with prior", operator);
-        if (isLeaf(node) || !isSameString(getLexeme(node), syntax->prior))
-            syntaxErrorNode("invalid prior for", operator);
-    }
-    return syntax->reduce(getTag(operator), left, right);
+    return getSyntax(operator)->reduce(getTag(operator), left, right);
 }
 
 Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents) {
@@ -128,13 +106,13 @@ static void appendSyntax(Syntax syntax) {
 void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
         Associativity associativity, Reducer reducer) {
     if (prior != NULL) {
-        // if special, override precedence with precedence of prior
         Syntax* syntax = findSyntax(getLexeme(prior));
-        syntaxErrorNodeIf(syntax == NULL, "syntax not defined", prior);
-        if (syntax->associativity != associativity || associativity == N)
-            syntaxErrorNode("invalid associativity for prior", prior);
-        precedence = syntax->associativity == L ?
-            syntax->rightPrecedence : syntax->leftPrecedence;
+        syntaxErrorNodeIf(syntax == NULL, "prior syntax not defined", prior);
+        precedence = syntax->rightPrecedence;  // precedence comes in as 0
+        if (fixity != INFIX && fixity != POSTFIX)
+            syntaxError("invalid fixity for operator with prior", tag);
+        if (associativity != L || syntax->associativity != L)
+            syntaxError("invalid associativity for operator or prior", tag);
     }
     bool special = prior != NULL;
     String priorLexeme = prior ? getLexeme(prior) : EMPTY;
