@@ -18,18 +18,18 @@ static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     return 0;
 }
 
-static int findOperationCode(Node* name) {
-    for (unsigned int i = 0; i < sizeof(Operations)/sizeof(char*); ++i)
+static char findOperationCode(Node* name) {
+    for (unsigned char i = 0; i < sizeof(Operations)/sizeof(char*); ++i)
         if (isThisName(name, Operations[i]))
-            return (int)i;
+            return (char)i;
     return -1;
 }
 
 static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
-    int operationCode = findOperationCode(node);
+    char operationCode = findOperationCode(node);
     if (isPseudoOperation(operationCode)) {
         setType(node, OPERATION);
-        setValue(node, operationCode);
+        setVariety(node, operationCode);
         return;
     }
     unsigned long long i = (unsigned long long)getValue(node);
