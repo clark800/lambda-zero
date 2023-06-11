@@ -155,6 +155,12 @@ get_loc() {
     gcc -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
 }
 
+get_ploc() {
+    # doesn't strip out /* ... */ comments
+    cat $HEADERS $SOURCES | sed 's|//.*||' |
+        grep -v '^[[:space:]]*$' | grep -v assert | wc -l
+}
+
 run_cloc() {
     cloc --quiet --exclude-list-file=.clocignore --by-file "$@"
 }
@@ -205,6 +211,7 @@ case "$1" in
     dot) build_graph;;
     graph) build_graph | dot -o architecture.pdf -T pdf;;
     loc) get_loc;;
+    ploc) get_ploc;;
     floc) show_floc;;
     cloc) run_cloc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;
     cloc-all) run_cloc . | tail -n +3 | cut -c -78;;

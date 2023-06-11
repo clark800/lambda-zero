@@ -3,22 +3,25 @@
 #include "stack.h"
 #include "util.h"
 #include "ast.h"
+#include "opp/operator.h"
 #include "debug.h"
 
 static void serializeAST(Node* node, FILE* stream) {
-    if (!isLeaf(node)) {
+    if (isArrow(node) || isJuxtaposition(node) ||
+            isLet(node) || isDefinition(node)) {
         fputs("(", stream);
         serializeAST(getLeft(node), stream);
-        fputs(isArrow(node) ? " -> " : " ", stream);
+        fputs(isArrow(node) ? " -> " :
+                isDefinition(node) ? " := " : " ", stream);
         serializeAST(getRight(node), stream);
         fputs(")", stream);
     } else if (isNumber(node)) {
         // numbers can be generated, so not all numbers will exist in input
         fputll(getValue(node), stream);
-    } else {
+    } else if (isReference(node) || isOperator(node)) {
         printTag(getTag(node), stream);
-        fputs("#", stream);
-        fputll(getValue(node), stream);
+    } else {
+        fputs("(?)", stream);
     }
 }
 

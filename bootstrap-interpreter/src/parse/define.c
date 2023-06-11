@@ -70,13 +70,22 @@ static Node* newMainCall(Node* name) {
 }
 
 static bool containsFreeName(Node* node, Node* name) {
-    if (isArrow(node))
-        return !isSameLexeme(getLeft(node), name)
-            && containsFreeName(getRight(node), name);
-    if (!isLeaf(node))
-        return containsFreeName(getLeft(node), name)
-            || containsFreeName(getRight(node), name);
-    return isName(node) ? isSameLexeme(node, name) : false;
+    switch (getASTType(node)) {
+        case REFERENCE:
+            return getValue(node) == 0 && isSameLexeme(node, name);
+        case ARROW:
+            return !isSameLexeme(getLeft(node), name)
+                && containsFreeName(getRight(node), name);
+        case LET:
+        case JUXTAPOSITION:
+            return containsFreeName(getLeft(node), name)
+                || containsFreeName(getRight(node), name);
+        case NUMBER:
+            return false;
+        default:
+            assert(false);
+            return false;
+    }
 }
 
 static Node* transformRecursion(Node* name, Node* value) {

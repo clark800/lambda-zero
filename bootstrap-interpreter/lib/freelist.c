@@ -19,17 +19,18 @@ static size_t COUNT = 0;
 
 void initPool(size_t itemSize, size_t initialCapacity) {
     assert(POOL == NULL);
-    SIZE = /*sizeof(void*) + */ itemSize;
+    //SIZE = sizeof(void*) + itemSize;  // for marker
+    SIZE = itemSize;
     NEXT = POOL = newPool(SIZE, initialCapacity);
 }
 
 void destroyPool(void) {deletePool(POOL);}
 size_t getMemoryUsage(void) {return COUNT * SIZE;}
 
-/*void* mark(void* slot) {
-    *(void**)slot = MARKER;
-    return &(((void**)slot)[1]);
-}*/
+//void* mark(void* slot) {
+//    *(void**)slot = MARKER;
+//    return &(((void**)slot)[1]);
+//}
 
 void* allocate(void) {
     COUNT += 1;
@@ -40,10 +41,10 @@ void* allocate(void) {
     return head;  //mark(head);
 }
 
-/*void* unmark(void* allocated) {
-    assert(((void**)allocated)[-1] == MARKER);  // detect double reclaim
-    return &(((void**)allocated)[-1]);
-}*/
+//void* unmark(void* allocated) {
+//    assert(((void**)allocated)[-1] == MARKER);  // detect double reclaim
+//    return &(((void**)allocated)[-1]);
+//}
 
 void reclaim(void* allocated) {
     COUNT -= 1;

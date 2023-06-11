@@ -23,7 +23,6 @@ Node *const VOID = &VOID_NODE;
 
 void initNodeAllocator() {initPool(sizeof(Node), 4096);}
 void destroyNodeAllocator() {destroyPool();}
-bool isLeaf(Node* node) {return !(node->flags & GC_BOTH);}
 Tag getTag(Node* node) {return node->tag;}
 String getLexeme(Node* node) {return node->tag.lexeme;}
 void setTag(Node* node, Tag tag) {node->tag = tag;}
