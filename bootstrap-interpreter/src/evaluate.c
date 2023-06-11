@@ -132,10 +132,10 @@ static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
         release(left);
     }
     if (result == NULL) {
-        if (isLeaf(getTerm(closure)))
+        Node* fallback = getRight(getTerm(closure));
+        if (fallback == NULL)  // pseudo-operation, no definiens term
             runtimeError("missing argument to", closure);
-        // fallback to term
-        setTerm(closure, getRight(getTerm(closure)));
+        setTerm(closure, fallback);
     } else {
         setClosure(closure, getNode(result));
         release(result);
