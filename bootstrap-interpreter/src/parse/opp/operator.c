@@ -25,7 +25,7 @@ static inline Node* Operator(Tag tag, long long subprecedence, void* syntax) {
 }
 
 bool isOperator(Node* node) {
-    return isLeaf(node) && getType(node) == 0;
+    return getType(node) == 0;
 }
 
 static inline Syntax* getSyntax(Node* op) {
