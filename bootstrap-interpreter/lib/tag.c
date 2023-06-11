@@ -29,20 +29,18 @@ Location newLocation(unsigned short file,
     return (Location){line, column, file};
 }
 
-Tag newTag(String lexeme, Location location) {
+Tag newTag(String lexeme, Location location, char fixity) {
+    lexeme.fixity = fixity;
     return (Tag){lexeme, location};
 }
 
-Tag renameTag(Tag tag, const char* name) {
-    return newTag(newString(name, (unsigned char)strlen(name)), tag.location);
+Tag renameTag(Tag tag, const char* name, char fixity) {
+    String lexeme = newString(name, (unsigned char)strlen(name));
+    return newTag(lexeme, tag.location, fixity);
 }
 
 Tag addPrefix(Tag tag, char prefix) {
     return tag.lexeme.prefix = prefix, tag;
-}
-
-Tag setTagFixity(Tag tag, char fixity) {
-    return tag.lexeme.fixity = fixity, tag;
 }
 
 char getTagFixity(Tag tag) {

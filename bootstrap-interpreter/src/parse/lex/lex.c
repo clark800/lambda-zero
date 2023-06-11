@@ -76,7 +76,7 @@ static Tag getNextTag(Tag tag) {
     long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
     syntaxErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", tag);
     String lexeme = newString(start, (unsigned char)length);
-    return newTag(lexeme, advanceLocation(tag));
+    return newTag(lexeme, advanceLocation(tag), 0);
 }
 
 Token lex(Token token) {
@@ -98,5 +98,6 @@ Token lex(Token token) {
 }
 
 Token newStartToken(const char* start) {
-    return (Token){newTag(newString(start, 0), newLocation(0, 1, 1)), SYMBOLIC};
+    return (Token){newTag(newString(start, 0),
+        newLocation(0, 1, 1), 0), SYMBOLIC};
 }

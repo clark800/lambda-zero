@@ -51,7 +51,7 @@ Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right) {
 }
 
 Node* newPair(Node* left, Node* right) {
-    Tag tag = newTag(newString(NULL, 0), newLocation(0, 0, 0));
+    Tag tag = newTag(newString(NULL, 0), newLocation(0, 0, 0), 0);
     return newBranch(tag, -1, 0, left, right);
 }
 

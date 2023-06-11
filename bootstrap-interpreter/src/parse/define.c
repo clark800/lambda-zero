@@ -64,7 +64,7 @@ static Node* newMainCall(Node* name) {
     Node* get = FixedName(tag, "(get)");
     Node* get0 = Juxtaposition(tag, get, Number(tag, 0));
     Node* operators = newChurchPair(tag, FixedName(tag, "[]"),
-        Name(setTagFixity(renameTag(tag, "::"), INFIX)));
+        Name(renameTag(tag, "::", INFIX)));
     Node* input = Juxtaposition(tag, get0, operators);
     return Juxtaposition(tag, print, Juxtaposition(tag, name, input));
 }

@@ -28,10 +28,9 @@ String toString(const char* start);
 unsigned short newFilename(const char* filename);
 Location newLocation(unsigned short file,
     unsigned int line, unsigned short column);
-Tag newTag(String lexeme, Location location);
-Tag renameTag(Tag tag, const char* name);
+Tag newTag(String lexeme, Location location, char fixity);
+Tag renameTag(Tag tag, const char* name, char fixity);
 Tag addPrefix(Tag tag, char prefix);
-Tag setTagFixity(Tag tag, char fixity);
 char getTagFixity(Tag tag);
 bool isThisString(String a, const char* b);
 bool isSameString(String a, String b);

@@ -66,16 +66,19 @@ static void shiftNode(Stack* stack, Node* node) {
             shift(stack, node);
         } else if (isThisOperator(top, "(") && isRightSectionOperator(node)) {
             erase(stack, "(");
-            Hold* open = hold(parseSymbol(renameTag(getTag(top), "( "), 0));
-            Hold* placeholder = hold(Name(renameTag(getTag(top), ".*")));
+            Hold* open = hold(parseSymbol(
+                renameTag(getTag(top), "( ", OPENFIX), 0));
+            Hold* placeholder = hold(Name(renameTag(getTag(top), ".*", NOFIX)));
             shift(stack, getNode(open));
             shift(stack, getNode(placeholder));
             shift(stack, node);
             release(open);
             release(placeholder);
         } else if (isThisOperator(node, ")") && isLeftSectionOperator(top)) {
-            Hold* close = hold(parseSymbol(renameTag(getTag(node), " )"), 0));
-            Hold* placeholder = hold(Name(renameTag(getTag(node), "*.")));
+            Hold* close = hold(parseSymbol(
+                renameTag(getTag(node), " )", CLOSEFIX), 0));
+            Hold* placeholder = hold(Name(
+                renameTag(getTag(node), "*.", NOFIX)));
             shift(stack, getNode(placeholder));
             shift(stack, getNode(close));
             release(placeholder);

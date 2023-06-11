@@ -85,8 +85,8 @@ static Syntax* findSyntax(String lexeme) {
 
 Node* parseOperator(Tag tag, long long subprecedence) {
     Syntax* syntax = findSyntax(tag.lexeme);
-    return syntax == NULL ? NULL : Operator(setTagFixity(newTag(syntax->alias,
-        tag.location), (char)syntax->fixity), subprecedence, syntax);
+    return syntax == NULL ? NULL : Operator(newTag(syntax->alias,
+        tag.location, (char)syntax->fixity), subprecedence, syntax);
 }
 
 static void appendSyntaxCopy(Syntax* syntax, String lexeme, String alias) {
