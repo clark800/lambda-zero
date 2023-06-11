@@ -144,7 +144,7 @@ static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
 
 static Term* expandNumeral(Term* numeral) {
     long long n = getValue(numeral);
-    Tag tag = renameTag(getTag(numeral), "_", 0);
+    Tag tag = newLiteralTag("_", getTag(numeral).location, 0);
     Term* body = n == 0 ? Variable(tag, 2) :
        Application(tag, Variable(tag, 1), Numeral(tag, n - 1));
     return Abstraction(tag, Abstraction(tag, body));

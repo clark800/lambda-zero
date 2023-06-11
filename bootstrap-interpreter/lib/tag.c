@@ -34,9 +34,9 @@ Tag newTag(String lexeme, Location location, char fixity) {
     return (Tag){lexeme, location};
 }
 
-Tag renameTag(Tag tag, const char* name, char fixity) {
+Tag newLiteralTag(const char* name, Location location, char fixity) {
     String lexeme = newString(name, (unsigned char)strlen(name));
-    return newTag(lexeme, tag.location, fixity);
+    return newTag(lexeme, location, fixity);
 }
 
 Tag addPrefix(Tag tag, char prefix) {

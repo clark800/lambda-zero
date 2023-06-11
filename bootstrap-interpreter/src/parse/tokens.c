@@ -80,8 +80,8 @@ Node* parseToken(Token token) {
         case NUMERIC: return parseNumber(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
-        case NEWLINE: return parseSymbol(renameTag(token.tag, "\n", INFIX),
-            (long long)(token.tag.lexeme.length - 1));
+        case NEWLINE: return parseSymbol(newLiteralTag("\n", token.tag.location,
+                        INFIX), (long long)(token.tag.lexeme.length - 1));
         case INVALID: syntaxError("invalid character", token.tag); return NULL;
         default: return parseSymbol(token.tag, 0);
     }

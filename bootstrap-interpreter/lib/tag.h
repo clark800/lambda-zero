@@ -29,7 +29,7 @@ unsigned short newFilename(const char* filename);
 Location newLocation(unsigned short file,
     unsigned int line, unsigned short column);
 Tag newTag(String lexeme, Location location, char fixity);
-Tag renameTag(Tag tag, const char* name, char fixity);
+Tag newLiteralTag(const char* name, Location location, char fixity);
 Tag addPrefix(Tag tag, char prefix);
 char getTagFixity(Tag tag);
 bool isThisString(String a, const char* b);

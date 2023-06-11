@@ -57,7 +57,7 @@ static inline Node* Reference(Tag tag, long long value) {
 static inline Node* Name(Tag tag) {return Reference(tag, 0);}
 
 static inline Node* FixedName(Tag tag, const char* s) {
-    return Name(renameTag(tag, s, 0));
+    return Name(newLiteralTag(s, tag.location, 0));
 }
 
 static inline Node* ForbiddenName(Tag tag) {
@@ -116,7 +116,7 @@ static inline Node* SetBuilder(Tag tag, Node* commaList) {
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
-    return Reference(renameTag(tag, "_", 0), (long long)debruijn);
+    return Reference(newLiteralTag("_", tag.location, 0), (long long)debruijn);
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {

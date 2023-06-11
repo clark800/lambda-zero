@@ -9,7 +9,7 @@ Node* Nil(Tag tag) {return FixedName(tag, "[]");}
 
 Node* prepend(Tag tag, Node* item, Node* list) {
     return Juxtaposition(tag, Juxtaposition(tag,
-        Name(renameTag(tag, "::", INFIX)), item), list);
+        Name(newLiteralTag("::", tag.location, INFIX)), item), list);
 }
 
 static unsigned int getCommaListLength(Node* node) {
@@ -75,7 +75,7 @@ Node* reduceOpenSquareBracket(Tag tag, Node* before, Node* contents) {
 Node* reduceOpenBrace(Tag tag, Node* before, Node* patterns) {
     syntaxErrorIf(before != NULL, "invalid operand before", tag);
     if (patterns == NULL)
-        return SetBuilder(renameTag(tag, "{}", NOFIX), VOID);
+        return SetBuilder(newLiteralTag("{}", tag.location, NOFIX), VOID);
     return SetBuilder(tag, newTuple(tag, patterns));
 }
 
