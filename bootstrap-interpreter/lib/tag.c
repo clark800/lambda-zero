@@ -26,7 +26,7 @@ unsigned short newFilename(const char* filename) {
 
 Location newLocation(unsigned short file,
         unsigned int line, unsigned short column) {
-    return (Location){line, column, file};
+    return (Location){.file=file, .line=line, .column=column};
 }
 
 Tag newTag(String lexeme, Location location, char fixity) {

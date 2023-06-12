@@ -64,9 +64,11 @@ static Location advanceLocation(Tag tag) {
         return newLocation(file, 1, 0);
     }
     Location loc = tag.location;
-    if (isLineFeed(tag.lexeme.start[0]))
+    if (isLineFeed(tag.lexeme.start[0])) {
+        syntaxErrorIf(loc.line >= MAX_LINE, "too many lines in file", tag);
         return newLocation(loc.file, loc.line + 1, tag.lexeme.length);
-    unsigned int column = (unsigned int)(loc.column + tag.lexeme.length);
+    }
+    unsigned long column = (unsigned long)(loc.column + tag.lexeme.length);
     syntaxErrorIf(column > MAX_COLUMN, "column too wide", tag);
     return newLocation(loc.file, loc.line, (unsigned short)column);
 }

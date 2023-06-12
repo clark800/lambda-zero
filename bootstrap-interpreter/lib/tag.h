@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 static const unsigned int MAX_LEXEME_LENGTH = 0xff;
+static const unsigned int MAX_LINE = 0xffff;
 static const unsigned int MAX_COLUMN = 0xffff;
-static const unsigned int MAX_LINE = 0xffffffff;
 
 typedef struct {
     const char* start;
@@ -12,8 +12,7 @@ typedef struct {
 } String;
 
 typedef struct {
-    unsigned int line;
-    unsigned short column, file;
+    unsigned short file, line, column;
 } Location;
 
 typedef struct {
