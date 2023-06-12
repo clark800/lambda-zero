@@ -27,5 +27,5 @@ get
 Syntax error: undefined symbol 'get' at line 1 column 1
 ==========================================================================
 
-Syntax error: invalid character '' at line 1 column 1
+Lexical error: invalid character at line 1 column 1
 ===============================================================================

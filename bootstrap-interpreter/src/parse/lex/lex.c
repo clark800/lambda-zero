@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h> // exit
-#include "tag.h"
+#include "lexeme.h"
 #include "token.h"
 #include "lex.h"
 
@@ -67,52 +67,50 @@ static const char* skipLexeme(const char* s) {
     return s[0] == '\0' ? s : s + 1;
 }
 
-static Location advance(Tag tag) {
-    if (isComment(tag.lexeme.start[0]) && tag.lexeme.start[1] == '@') {
-        const char* filename = skipRepeatable(&(tag.lexeme.start[2]), ' ');
+static Location advance(Lexeme lexeme) {
+    if (isComment(lexeme.start[0]) && lexeme.start[1] == '@') {
+        const char* filename = skipRepeatable(&(lexeme.start[2]), ' ');
         if (isLineFeed(filename[0]) || filename[0] == '\0')
             return newLocation(0, 0, 0);
         unsigned short file = newFilename(filename);
-        lexErrorIf(file == 0, "too many files", tag.lexeme.location);
+        lexErrorIf(file == 0, "too many files", lexeme.location);
         return newLocation(file, 1, 0);
     }
-    Location loc = tag.lexeme.location;
-    if (isLineFeed(tag.lexeme.start[0])) {
+    Location loc = lexeme.location;
+    if (isLineFeed(lexeme.start[0])) {
         lexErrorIf(loc.line >= MAX_LINE, "too many lines in file", loc);
-        return newLocation(loc.file, loc.line + 1, tag.lexeme.length);
+        return newLocation(loc.file, loc.line + 1, lexeme.length);
     }
-    unsigned long column = (unsigned long)(loc.column + tag.lexeme.length);
+    unsigned long column = (unsigned long)(loc.column + lexeme.length);
     lexErrorIf(column > MAX_COLUMN, "column too wide", loc);
     return newLocation(loc.file, loc.line, (unsigned short)column);
 }
 
-static Tag getNextTag(Tag tag) {
-    Location location = tag.lexeme.location;
-    const char* start = tag.lexeme.start + tag.lexeme.length;
+static Lexeme getNextLexeme(Lexeme lexeme) {
+    const char* start = lexeme.start + lexeme.length;
     long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
-    lexErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", location);
-    return newTag(newLexeme(start, (unsigned short)length, advance(tag)), 0);
+    lexErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", lexeme.location);
+    return newLexeme(start, (unsigned short)length, advance(lexeme));
 }
 
 Token lex(Token token) {
-    if (token.tag.lexeme.start[0] == '\0')
-        return (Token){token.tag, END};
-    Tag tag = getNextTag(token.tag);
+    if (token.lexeme.start[0] == '\0')
+        return (Token){token.lexeme, END};
+    Lexeme lexeme = getNextLexeme(token.lexeme);
 
-    const char *start = tag.lexeme.start;
-    const char *next = start + tag.lexeme.length;
-    if (start[0] == ' ') return (Token){tag, SPACE};
-    if (start[0] == '\n') return (Token){tag, next[0] == '\0' ||
+    const char *start = lexeme.start;
+    const char *next = start + lexeme.length;
+    lexErrorIf(isInvalid(start[0]), "invalid character", lexeme.location);
+    if (start[0] == ' ') return (Token){lexeme, SPACE};
+    if (start[0] == '\n') return (Token){lexeme, next[0] == '\0' ||
         isLineFeed(next[0]) || isComment(next[0]) ? VSPACE : NEWLINE};
-    if (start[0] == '\'') return (Token){tag, CHARACTER};
-    if (start[0] == '\"') return (Token){tag, STRING};
-    if (isNumeric(start)) return (Token){tag, NUMERIC};
-    if (isComment(start[0])) return (Token){tag, COMMENT};
-    if (isInvalid(start[0])) return (Token){tag, INVALID};
-    return (Token){tag, SYMBOLIC};
+    if (start[0] == '\'') return (Token){lexeme, CHARACTER};
+    if (start[0] == '\"') return (Token){lexeme, STRING};
+    if (isNumeric(start)) return (Token){lexeme, NUMERIC};
+    if (isComment(start[0])) return (Token){lexeme, COMMENT};
+    return (Token){lexeme, SYMBOLIC};
 }
 
 Token newStartToken(const char* start) {
-    return (Token){newTag(newLexeme(start, 0, newLocation(0, 1, 1)), 0),
-        SYMBOLIC};
+    return (Token){newLexeme(start, 0, newLocation(0, 1, 1)), SYMBOLIC};
 }

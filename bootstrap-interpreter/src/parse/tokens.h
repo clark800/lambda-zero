@@ -1,2 +1,2 @@
-Node* parseSymbol(Tag tag, long long subprecedence);
+Node* parseSymbol(Lexeme lexeme, long long subprecedence);
 Node* parseToken(Token token);

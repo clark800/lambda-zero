@@ -1,7 +1,7 @@
 typedef enum {END, SPACE, VSPACE, NEWLINE, SYMBOLIC, NUMERIC, CHARACTER,
-    STRING, COMMENT, INVALID} TokenType;
+    STRING, COMMENT} TokenType;
 
 typedef struct {
-    Tag tag;
+    Lexeme lexeme;
     TokenType type;
 } Token;

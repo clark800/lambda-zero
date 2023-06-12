@@ -17,7 +17,7 @@ typedef struct {
 extern const Lexeme EMPTY;
 
 Lexeme newLexeme(const char* start, unsigned short length, Location location);
-Lexeme newLiteralLexeme(const char* start);
+Lexeme newLiteralLexeme(const char* start, Location location);
 unsigned short newFilename(const char* filename);
 Location newLocation(unsigned short file,
     unsigned short line, unsigned short column);

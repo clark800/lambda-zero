@@ -11,7 +11,7 @@ bool isHigherPrecedence(Node* left, Node* right);
 unsigned char getSubprecedence(Node* op);
 Node* reduce(Node* op, Node* left, Node* right);
 Node* reduceBracket(Node* open, Node* close, Node* before, Node* contents);
-Node* parseOperator(Tag tag, long long subprecedence);
+Node* parseOperator(Lexeme lexeme, long long subprecedence);
 
 void initSyntax(void);
 void addCoreSyntax(const char*, Precedence, Fixity, Associativity, Reducer);

@@ -12,9 +12,8 @@ Lexeme newLexeme(const char* start, unsigned short length, Location location) {
     return (Lexeme){.location=location, .length=length, .start=start};
 }
 
-Lexeme newLiteralLexeme(const char* start) {
-    unsigned short length = (unsigned short)strlen(start);
-    return (Lexeme){.location={0}, .length=length, .start=start};
+Lexeme newLiteralLexeme(const char* start, Location location) {
+    return newLexeme(start, (unsigned short)strlen(start), location);
 }
 
 unsigned short newFilename(const char* filename) {

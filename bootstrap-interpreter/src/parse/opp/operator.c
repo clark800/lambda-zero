@@ -83,10 +83,10 @@ static Syntax* findSyntax(Lexeme lexeme) {
     return NULL;
 }
 
-Node* parseOperator(Tag tag, long long subprecedence) {
-    Syntax* syntax = findSyntax(tag.lexeme);
+Node* parseOperator(Lexeme lexeme, long long subprecedence) {
+    Syntax* syntax = findSyntax(lexeme);
     return syntax == NULL ? NULL : Operator(newTag(newLexeme(
-        syntax->alias.start, syntax->alias.length, tag.lexeme.location),
+        syntax->alias.start, syntax->alias.length, lexeme.location),
         (char)syntax->fixity), subprecedence, syntax);
 }
 
@@ -127,7 +127,7 @@ void initSyntax(void) { SYNTAX = newArray(1024); }
 
 void addCoreSyntax(const char* symbol, Precedence precedence,
         Fixity fixity, Associativity associativity, Reducer reducer) {
-    Lexeme lexeme = newLiteralLexeme(symbol);
+    Lexeme lexeme = newLiteralLexeme(symbol, newLocation(0, 0, 0));
     appendSyntax((Syntax){lexeme, lexeme, EMPTY, '_', precedence,
         precedence, fixity, associativity, true, reducer});
 }
@@ -143,8 +143,9 @@ void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
 }
 
 void addCoreAlias(const char* alias, const char* name) {
-    Syntax* syntax = findSyntax(newLiteralLexeme(name));
-    appendSyntaxCopy(syntax, newLiteralLexeme(alias), syntax->alias);
+    Syntax* syntax = findSyntax(newLiteralLexeme(name, newLocation(0, 0, 0)));
+    Lexeme lexeme = newLiteralLexeme(alias, newLocation(0, 0, 0));
+    appendSyntaxCopy(syntax, lexeme, syntax->alias);
 }
 
 void addSyntaxCopy(Lexeme lexeme, Node* name, bool alias) {

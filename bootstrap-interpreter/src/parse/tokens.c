@@ -17,8 +17,9 @@ static bool isNumberLexeme(Lexeme lexeme) {
     return lexeme.length > 0;
 }
 
-static Node* parseNumber(Tag tag) {
-    syntaxErrorIf(!isNumberLexeme(tag.lexeme), "invalid token", tag);
+static Node* parseNumber(Lexeme lexeme) {
+    Tag tag = newTag(lexeme, NOFIX);
+    syntaxErrorIf(!isNumberLexeme(lexeme), "invalid token", tag);
     errno = 0;
     long long value = strtoll(tag.lexeme.start, NULL, 10);
     if ((value == LLONG_MIN || value == LLONG_MAX) && errno == ERANGE)
@@ -47,9 +48,10 @@ static unsigned char decodeCharacter(const char* start, Tag tag) {
     return '\0';
 }
 
-static Node* parseCharacterLiteral(Tag tag) {
-    const char* start = tag.lexeme.start;
-    const char* end = start + tag.lexeme.length - 1;
+static Node* parseCharacterLiteral(Lexeme lexeme) {
+    Tag tag = newTag(lexeme, NOFIX);
+    const char* start = lexeme.start;
+    const char* end = start + lexeme.length - 1;
     syntaxErrorIf(end[0] != start[0], "missing end quote for", tag);
     long long n = 0, c = 0;
     for (const char* p = ++start; p < end; p = skipQuoteCharacter(p), c++)
@@ -66,24 +68,22 @@ static Node* buildStringLiteral(Tag tag, const char* start) {
         buildStringLiteral(tag, skipQuoteCharacter(start)));
 }
 
-static Node* parseStringLiteral(Tag tag) {
-    return buildStringLiteral(tag, tag.lexeme.start + 1);
+static Node* parseStringLiteral(Lexeme lexeme) {
+    return buildStringLiteral(newTag(lexeme, NOFIX), lexeme.start + 1);
 }
 
-Node* parseSymbol(Tag tag, long long subprecedence) {
-    Node* operator = parseOperator(tag, subprecedence);
-    return operator == NULL ? Name(tag) : operator;
+Node* parseSymbol(Lexeme lexeme, long long subprecedence) {
+    Node* operator = parseOperator(lexeme, subprecedence);
+    return operator == NULL ? Name(newTag(lexeme, NOFIX)) : operator;
 }
 
 Node* parseToken(Token token) {
     switch (token.type) {
-        case NUMERIC: return parseNumber(token.tag);
-        case STRING: return parseStringLiteral(token.tag);
-        case CHARACTER: return parseCharacterLiteral(token.tag);
-        case NEWLINE: return parseSymbol(newLiteralTag("\n",
-            token.tag.lexeme.location, INFIX),
-            (long long)(token.tag.lexeme.length - 1));
-        case INVALID: syntaxError("invalid character", token.tag); return NULL;
-        default: return parseSymbol(token.tag, 0);
+        case NUMERIC: return parseNumber(token.lexeme);
+        case STRING: return parseStringLiteral(token.lexeme);
+        case CHARACTER: return parseCharacterLiteral(token.lexeme);
+        case NEWLINE: return parseSymbol(newLiteralLexeme("\n",
+          token.lexeme.location), (long long)(token.lexeme.length - 1));
+        default: return parseSymbol(token.lexeme, 0);
     }
 }
