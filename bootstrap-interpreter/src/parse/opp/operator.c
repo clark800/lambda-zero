@@ -116,8 +116,9 @@ void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
             syntaxError("invalid associativity for operator or prior", tag);
     }
     bool special = prior != NULL;
+    Lexeme lexeme = getLexeme(tag);
     Lexeme priorLexeme = prior ? getLexeme(getTag(prior)) : EMPTY;
-    appendSyntax((Syntax){tag.lexeme, tag.lexeme, priorLexeme, '_', precedence,
+    appendSyntax((Syntax){lexeme, lexeme, priorLexeme, '_', precedence,
         precedence, fixity, associativity, special, reducer});
 }
 

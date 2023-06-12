@@ -67,9 +67,9 @@ static void shiftNode(Stack* stack, Node* node) {
         } else if (isThisOperator(top, "(") && isRightSectionOperator(node)) {
             erase(stack, "(");
             Hold* open = hold(parseSymbol(
-                newLiteralLexeme("( ", getTag(top).lexeme.location), 0));
+                newLiteralLexeme("( ", getLexeme(getTag(top)).location), 0));
             Hold* placeholder = hold(Name(
-                newLiteralTag(".*", getTag(top).lexeme.location, NOFIX)));
+                newLiteralTag(".*", getLexeme(getTag(top)).location, NOFIX)));
             shift(stack, getNode(open));
             shift(stack, getNode(placeholder));
             shift(stack, node);
@@ -77,9 +77,9 @@ static void shiftNode(Stack* stack, Node* node) {
             release(placeholder);
         } else if (isThisOperator(node, ")") && isLeftSectionOperator(top)) {
             Hold* close = hold(parseSymbol(newLiteralLexeme(" )",
-                getTag(node).lexeme.location), 0));
+                getLexeme(getTag(node)).location), 0));
             Hold* placeholder = hold(Name(
-                newLiteralTag("*.", getTag(node).lexeme.location, NOFIX)));
+                newLiteralTag("*.", getLexeme(getTag(node)).location, NOFIX)));
             shift(stack, getNode(placeholder));
             shift(stack, getNode(close));
             release(placeholder);

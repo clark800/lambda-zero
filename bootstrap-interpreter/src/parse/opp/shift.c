@@ -77,7 +77,7 @@ static void reduceLeft(Stack* stack, Node* operator) {
                 isHigherPrecedence(peek(stack, 1), operator))
             tag = reduceTop(stack);
     Lexeme prior = getPrior(operator);
-    if (prior.length > 0 && !isSameLexeme(tag.lexeme, prior))
+    if (prior.length > 0 && !isSameLexeme(getLexeme(tag), prior))
         syntaxErrorNode("invalid prior for", operator);
 }
 

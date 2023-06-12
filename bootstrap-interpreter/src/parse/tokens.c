@@ -21,7 +21,7 @@ static Node* parseNumber(Lexeme lexeme) {
     Tag tag = newTag(lexeme, NOFIX);
     syntaxErrorIf(!isNumberLexeme(lexeme), "invalid token", tag);
     errno = 0;
-    long long value = strtoll(tag.lexeme.start, NULL, 10);
+    long long value = strtoll(lexeme.start, NULL, 10);
     if ((value == LLONG_MIN || value == LLONG_MAX) && errno == ERANGE)
        syntaxError("magnitude of numeral is too large", tag);
     return Number(tag, value);
@@ -63,7 +63,7 @@ static Node* parseCharacterLiteral(Lexeme lexeme) {
 static Node* buildStringLiteral(Tag tag, const char* start) {
     char c = start[0];
     syntaxErrorIf(c == '\n' || c == '\0', "missing end quote for", tag);
-    return c == tag.lexeme.start[0] ? Nil(tag) :
+    return c == getLexeme(tag).start[0] ? Nil(tag) :
         prepend(tag, Number(tag, decodeCharacter(start, tag)),
         buildStringLiteral(tag, skipQuoteCharacter(start)));
 }
