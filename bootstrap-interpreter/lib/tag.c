@@ -4,13 +4,13 @@
 #include "util.h"
 #include "tag.h"
 
-const String EMPTY = {"", 0, '\0', 0};
+const String EMPTY = {"", 0, '\0'};
 const char* FILENAMES[2048] = {0};
 const unsigned int MAX_FILENAMES = sizeof(FILENAMES) / sizeof(const char*);
 unsigned short FILE_COUNT = 0;
 
 String newString(const char* start, unsigned char length) {
-    return (String){start, length, '\0', 0};
+    return (String){start, length, '\0'};
 }
 
 String toString(const char* start) {
@@ -30,8 +30,7 @@ Location newLocation(unsigned short file,
 }
 
 Tag newTag(String lexeme, Location location, char fixity) {
-    lexeme.fixity = fixity;
-    return (Tag){lexeme, location};
+    return (Tag){.fixity=fixity, .lexeme=lexeme, .location=location};
 }
 
 Tag newLiteralTag(const char* name, Location location, char fixity) {
@@ -44,7 +43,7 @@ Tag addPrefix(Tag tag, char prefix) {
 }
 
 char getTagFixity(Tag tag) {
-    return tag.lexeme.fixity;
+    return tag.fixity;
 }
 
 bool isThisString(String a, const char* b) {

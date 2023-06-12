@@ -8,7 +8,6 @@ typedef struct {
     const char* start;
     unsigned char length;
     char prefix;
-    char fixity;  // should be in Tag, but putting it here reduces sizeof(Tag)
 } String;
 
 typedef struct {
@@ -16,6 +15,13 @@ typedef struct {
 } Location;
 
 typedef struct {
+    Location location;
+    unsigned short length;
+    char* start;
+} Lexeme;
+
+typedef struct {
+    char fixity;
     String lexeme;
     Location location;
 } Tag;
