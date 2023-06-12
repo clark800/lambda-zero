@@ -25,7 +25,8 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
 
 static Node* newSpineName(Tag tag, const char* name, unsigned short length) {
     syntaxErrorIf(length > strlen(name), "too many arguments", tag);
-    return Name(newTag(newLexeme(name, length, (Location){0}), NOFIX));
+    Lexeme lexeme = newLexeme(name, length, getLexeme(tag).location);
+    return Name(newTag(lexeme, NOFIX));
 }
 
 static Node* newTuple(Tag tag, Node* commaList) {
