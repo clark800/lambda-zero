@@ -7,10 +7,6 @@ typedef enum {PLAINDEFINITION, MAYBEDEFINITION, TRYDEFINITION,
 
 static inline ASTType getASTType(Node* n) {return (ASTType)getType(n);}
 
-static inline bool isSameLexeme(Node* a, Node* b) {
-    return isSameTag(getTag(a), getTag(b));
-}
-
 static inline bool isReference(Node* n) {return getASTType(n) == REFERENCE;}
 static inline bool isName(Node* n) {return isReference(n) && getValue(n) == 0;}
 static inline bool isArrow(Node* n) {return getASTType(n) == ARROW;}
@@ -57,7 +53,7 @@ static inline Node* Reference(Tag tag, long long value) {
 static inline Node* Name(Tag tag) {return Reference(tag, 0);}
 
 static inline Node* FixedName(Tag tag, const char* s) {
-    return Name(newLiteralTag(s, tag.location, 0));
+    return Name(newLiteralTag(s, tag.lexeme.location, 0));
 }
 
 static inline Node* ForbiddenName(Tag tag) {
@@ -116,7 +112,8 @@ static inline Node* SetBuilder(Tag tag, Node* commaList) {
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {
-    return Reference(newLiteralTag("_", tag.location, 0), (long long)debruijn);
+    return Reference(newLiteralTag("_", tag.lexeme.location, 0),
+            (long long)debruijn);
 }
 
 static inline Node* UnderscoreArrow(Tag tag, Node* body) {

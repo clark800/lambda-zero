@@ -4,7 +4,7 @@ typedef unsigned char Precedence;
 typedef Node* (*Reducer)(Tag tag, Node* left, Node* right);
 
 Fixity getFixity(Node* op);
-String getPrior(Node* op);
+Lexeme getPrior(Node* op);
 bool isOperator(Node* node);
 bool isSpecialOperator(Node* op);
 bool isHigherPrecedence(Node* left, Node* right);
@@ -17,6 +17,6 @@ void initSyntax(void);
 void addCoreSyntax(const char*, Precedence, Fixity, Associativity, Reducer);
 void addSyntax(Tag, Node* prior, Precedence, Fixity, Associativity, Reducer);
 void addBracketSyntax(const char*, char type, Precedence, Fixity, Reducer);
-void addSyntaxCopy(String lexeme, Node* name, bool alias);
+void addSyntaxCopy(Lexeme lexeme, Node* name, bool alias);
 void addCoreAlias(const char* alias, const char* name);
 void popSyntax(void);

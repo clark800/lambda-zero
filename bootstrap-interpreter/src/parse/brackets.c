@@ -9,10 +9,10 @@ Node* Nil(Tag tag) {return FixedName(tag, "[]");}
 
 Node* prepend(Tag tag, Node* item, Node* list) {
     return Juxtaposition(tag, Juxtaposition(tag,
-        Name(newLiteralTag("::", tag.location, INFIX)), item), list);
+        Name(newLiteralTag("::", tag.lexeme.location, INFIX)), item), list);
 }
 
-static unsigned int getCommaListLength(Node* node) {
+static unsigned short getCommaListLength(Node* node) {
     return !isCommaPair(node) ? 1 : 1 + getCommaListLength(getLeft(node));
 }
 
@@ -23,10 +23,9 @@ static Node* applyToCommaList(Tag tag, Node* base, Node* arguments) {
         getLeft(arguments)), getRight(arguments));
 }
 
-static Node* newSpineName(Tag tag, const char* name, unsigned int length) {
+static Node* newSpineName(Tag tag, const char* name, unsigned short length) {
     syntaxErrorIf(length > strlen(name), "too many arguments", tag);
-    String lexeme = newString(name, (unsigned char)length);
-    return Name(newTag(lexeme, tag.location, NOFIX));
+    return Name(newTag(newLexeme(name, length, (Location){0}), NOFIX));
 }
 
 static Node* newTuple(Tag tag, Node* commaList) {
@@ -75,7 +74,7 @@ Node* reduceOpenSquareBracket(Tag tag, Node* before, Node* contents) {
 Node* reduceOpenBrace(Tag tag, Node* before, Node* patterns) {
     syntaxErrorIf(before != NULL, "invalid operand before", tag);
     if (patterns == NULL)
-        return SetBuilder(newLiteralTag("{}", tag.location, NOFIX), VOID);
+        return SetBuilder(newLiteralTag("{}", tag.lexeme.location, 0), VOID);
     return SetBuilder(tag, newTuple(tag, patterns));
 }
 

@@ -64,7 +64,7 @@ static Node* newMainCall(Node* name) {
     Node* get = FixedName(tag, "(get)");
     Node* get0 = Juxtaposition(tag, get, Number(tag, 0));
     Node* operators = newChurchPair(tag, FixedName(tag, "[]"),
-        Name(newLiteralTag("::", tag.location, INFIX)));
+        Name(newLiteralTag("::", tag.lexeme.location, INFIX)));
     Node* input = Juxtaposition(tag, get0, operators);
     return Juxtaposition(tag, print, Juxtaposition(tag, name, input));
 }
@@ -72,9 +72,9 @@ static Node* newMainCall(Node* name) {
 static bool containsFreeName(Node* node, Node* name) {
     switch (getASTType(node)) {
         case REFERENCE:
-            return getValue(node) == 0 && isSameLexeme(node, name);
+            return getValue(node) == 0 && isSameTag(getTag(node), getTag(name));
         case ARROW:
-            return !isSameLexeme(getLeft(node), name)
+            return !isSameTag(getTag(getLeft(node)), getTag(name))
                 && containsFreeName(getRight(node), name);
         case LET:
         case JUXTAPOSITION:

@@ -4,17 +4,18 @@
 #include "util.h"
 #include "tag.h"
 
-const String EMPTY = {"", 0};
+const Lexeme EMPTY = {.location={0}, .length=0, .start=""};
 const char* FILENAMES[2048] = {0};
 const unsigned int MAX_FILENAMES = sizeof(FILENAMES) / sizeof(const char*);
 unsigned short FILE_COUNT = 0;
 
-String newString(const char* start, unsigned char length) {
-    return (String){start, length};
+Lexeme newLexeme(const char* start, unsigned short length, Location location) {
+    return (Lexeme){.location=location, .length=length, .start=start};
 }
 
-String toString(const char* start) {
-    return newString(start, (unsigned char)strlen(start));
+Lexeme newLiteralLexeme(const char* start) {
+    unsigned short length = (unsigned short)strlen(start);
+    return (Lexeme){.location={0}, .length=length, .start=start};
 }
 
 unsigned short newFilename(const char* filename) {
@@ -25,17 +26,17 @@ unsigned short newFilename(const char* filename) {
 }
 
 Location newLocation(unsigned short file,
-        unsigned int line, unsigned short column) {
+        unsigned short line, unsigned short column) {
     return (Location){.file=file, .line=line, .column=column};
 }
 
-Tag newTag(String lexeme, Location location, char fixity) {
-    return (Tag){.fixity=fixity, .lexeme=lexeme, .location=location};
+Tag newTag(Lexeme lexeme, char fixity) {
+    return (Tag){.fixity=fixity, .lexeme=lexeme};
 }
 
 Tag newLiteralTag(const char* name, Location location, char fixity) {
-    String lexeme = newString(name, (unsigned char)strlen(name));
-    return newTag(lexeme, location, fixity);
+    Lexeme lexeme = newLexeme(name, (unsigned short)strlen(name), location);
+    return newTag(lexeme, fixity);
 }
 
 Tag addPrefix(Tag tag, char prefix) {
@@ -46,28 +47,28 @@ char getTagFixity(Tag tag) {
     return tag.fixity;
 }
 
-bool isThisString(String a, const char* b) {
+bool isThisLexeme(Lexeme a, const char* b) {
     // strncmp(NULL, NULL, 0) is undefined behavior, so we check for 0 length
     return a.length == strlen(b) &&
         (a.length == 0 || strncmp(a.start, b, a.length) == 0);
 }
 
-bool isSameString(String a, String b) {
+bool isSameLexeme(Lexeme a, Lexeme b) {
     // strncmp(NULL, NULL, 0) is undefined behavior, so we check for 0 length
     return a.length == b.length &&
         (a.length == 0 || strncmp(a.start, b.start, a.length) == 0);
 }
 
 bool isThisTag(Tag a, const char* b) {
-    return a.prefix == '\0' && isThisString(a.lexeme, b);
+    return a.prefix == '\0' && isThisLexeme(a.lexeme, b);
 }
 
 bool isSameTag(Tag a, Tag b) {
-    return a.prefix == b.prefix && isSameString(a.lexeme, b.lexeme);
+    return a.prefix == b.prefix && isSameLexeme(a.lexeme, b.lexeme);
 }
 
 void printTag(Tag tag, FILE* stream) {
-    String lexeme = tag.lexeme;
+    Lexeme lexeme = tag.lexeme;
     if (tag.prefix == '\0' && lexeme.length > 0 && lexeme.start[0] == '\n') {
         fputs("(end of line)", stream);
     } else {
@@ -98,7 +99,7 @@ void printTagWithLocation(Tag tag, FILE* stream) {
     fputs("'", stream);
     printTag(tag, stream);
     fputs("' at ", stream);
-    printLocation(tag.location, stream);
+    printLocation(tag.lexeme.location, stream);
 }
 
 void syntaxError(const char* message, Tag tag) {

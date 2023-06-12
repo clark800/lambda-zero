@@ -54,7 +54,7 @@ static const char* skipLexeme(const char* s) {
     return s[0] == '\0' ? s : s + 1;
 }
 
-static Location advanceLocation(Tag tag) {
+static Location advance(Tag tag) {
     if (isComment(tag.lexeme.start[0]) && tag.lexeme.start[1] == '@') {
         const char* filename = skipRepeatable(&(tag.lexeme.start[2]), ' ');
         if (isLineFeed(filename[0]) || filename[0] == '\0')
@@ -63,7 +63,7 @@ static Location advanceLocation(Tag tag) {
         syntaxErrorIf(file == 0, "too many files", tag);
         return newLocation(file, 1, 0);
     }
-    Location loc = tag.location;
+    Location loc = tag.lexeme.location;
     if (isLineFeed(tag.lexeme.start[0])) {
         syntaxErrorIf(loc.line >= MAX_LINE, "too many lines in file", tag);
         return newLocation(loc.file, loc.line + 1, tag.lexeme.length);
@@ -77,8 +77,7 @@ static Tag getNextTag(Tag tag) {
     const char* start = tag.lexeme.start + tag.lexeme.length;
     long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
     syntaxErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", tag);
-    String lexeme = newString(start, (unsigned char)length);
-    return newTag(lexeme, advanceLocation(tag), 0);
+    return newTag(newLexeme(start, (unsigned short)length, advance(tag)), 0);
 }
 
 Token lex(Token token) {
@@ -100,6 +99,6 @@ Token lex(Token token) {
 }
 
 Token newStartToken(const char* start) {
-    return (Token){newTag(newString(start, 0),
-        newLocation(0, 1, 1), 0), SYMBOLIC};
+    return (Token){newTag(newLexeme(start, 0, newLocation(0, 1, 1)), 0),
+        SYMBOLIC};
 }

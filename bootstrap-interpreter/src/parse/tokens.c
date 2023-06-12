@@ -10,7 +10,7 @@
 #include "brackets.h"  // Nil and prepend
 #include "tokens.h"
 
-static bool isNumberLexeme(String lexeme) {
+static bool isNumberLexeme(Lexeme lexeme) {
     for (unsigned int i = 0; i < lexeme.length; ++i)
         if (!isdigit(lexeme.start[i]))
             return false;
@@ -80,8 +80,9 @@ Node* parseToken(Token token) {
         case NUMERIC: return parseNumber(token.tag);
         case STRING: return parseStringLiteral(token.tag);
         case CHARACTER: return parseCharacterLiteral(token.tag);
-        case NEWLINE: return parseSymbol(newLiteralTag("\n", token.tag.location,
-                        INFIX), (long long)(token.tag.lexeme.length - 1));
+        case NEWLINE: return parseSymbol(newLiteralTag("\n",
+            token.tag.lexeme.location, INFIX),
+            (long long)(token.tag.lexeme.length - 1));
         case INVALID: syntaxError("invalid character", token.tag); return NULL;
         default: return parseSymbol(token.tag, 0);
     }

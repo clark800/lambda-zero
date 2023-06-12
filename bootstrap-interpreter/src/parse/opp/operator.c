@@ -10,7 +10,7 @@ static Array* SYNTAX = NULL;     // note: this never gets free'd
 typedef struct Syntax Syntax;
 
 struct Syntax {
-    String lexeme, alias, prior;
+    Lexeme lexeme, alias, prior;
     char bracketType;
     Precedence leftPrecedence, rightPrecedence;
     Fixity fixity;
@@ -34,7 +34,7 @@ static inline Syntax* getSyntax(Node* op) {
 }
 
 Fixity getFixity(Node* op) {return getSyntax(op)->fixity;}
-String getPrior(Node* op) {return getSyntax(op)->prior;}
+Lexeme getPrior(Node* op) {return getSyntax(op)->prior;}
 bool isSpecialOperator(Node* op) {return getSyntax(op)->special;}
 static char getBracketType(Node* op) {return getSyntax(op)->bracketType;}
 unsigned char getSubprecedence(Node* op) {return (unsigned char)getVariety(op);}
@@ -73,11 +73,11 @@ bool isHigherPrecedence(Node* left, Node* right) {
     return leftSyntax->rightPrecedence > rightSyntax->leftPrecedence;
 }
 
-static Syntax* findSyntax(String lexeme) {
+static Syntax* findSyntax(Lexeme lexeme) {
     size_t n = length(SYNTAX);
     for (unsigned int i = 1; i <= n; ++i) {
         Syntax* syntax = elementAt(SYNTAX, n - i);
-        if (isSameString(lexeme, syntax->lexeme))
+        if (isSameLexeme(lexeme, syntax->lexeme))
             return syntax;
     }
     return NULL;
@@ -85,11 +85,12 @@ static Syntax* findSyntax(String lexeme) {
 
 Node* parseOperator(Tag tag, long long subprecedence) {
     Syntax* syntax = findSyntax(tag.lexeme);
-    return syntax == NULL ? NULL : Operator(newTag(syntax->alias,
-        tag.location, (char)syntax->fixity), subprecedence, syntax);
+    return syntax == NULL ? NULL : Operator(newTag(newLexeme(
+        syntax->alias.start, syntax->alias.length, tag.lexeme.location),
+        (char)syntax->fixity), subprecedence, syntax);
 }
 
-static void appendSyntaxCopy(Syntax* syntax, String lexeme, String alias) {
+static void appendSyntaxCopy(Syntax* syntax, Lexeme lexeme, Lexeme alias) {
     Syntax* newSyntax = (Syntax*)smalloc(sizeof(Syntax));
     *newSyntax = *syntax;
     newSyntax->lexeme = lexeme;
@@ -115,7 +116,7 @@ void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
             syntaxError("invalid associativity for operator or prior", tag);
     }
     bool special = prior != NULL;
-    String priorLexeme = prior ? getLexeme(prior) : EMPTY;
+    Lexeme priorLexeme = prior ? getLexeme(prior) : EMPTY;
     appendSyntax((Syntax){tag.lexeme, tag.lexeme, priorLexeme, '_', precedence,
         precedence, fixity, associativity, special, reducer});
 }
@@ -126,7 +127,7 @@ void initSyntax(void) { SYNTAX = newArray(1024); }
 
 void addCoreSyntax(const char* symbol, Precedence precedence,
         Fixity fixity, Associativity associativity, Reducer reducer) {
-    String lexeme = toString(symbol);
+    Lexeme lexeme = newLiteralLexeme(symbol);
     appendSyntax((Syntax){lexeme, lexeme, EMPTY, '_', precedence,
         precedence, fixity, associativity, true, reducer});
 }
@@ -134,7 +135,7 @@ void addCoreSyntax(const char* symbol, Precedence precedence,
 void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
         Fixity fixity, Reducer reducer) {
     size_t length = symbol[0] == 0 && fixity == CLOSEFIX ? 1 : strlen(symbol);
-    String lexeme = newString(symbol, (unsigned char)length);
+    Lexeme lexeme = newLexeme(symbol, (unsigned short)length, (Location){0});
     Precedence leftPrecedence = fixity == OPENFIX ? outerPrecedence : 0;
     Precedence rightPrecedence = fixity == OPENFIX ? 0 : outerPrecedence;
     appendSyntax((Syntax){lexeme, lexeme, EMPTY, type,
@@ -142,11 +143,11 @@ void addBracketSyntax(const char* symbol, char type, Precedence outerPrecedence,
 }
 
 void addCoreAlias(const char* alias, const char* name) {
-    Syntax* syntax = findSyntax(toString(name));
-    appendSyntaxCopy(syntax, toString(alias), syntax->alias);
+    Syntax* syntax = findSyntax(newLiteralLexeme(name));
+    appendSyntaxCopy(syntax, newLiteralLexeme(alias), syntax->alias);
 }
 
-void addSyntaxCopy(String lexeme, Node* name, bool alias) {
+void addSyntaxCopy(Lexeme lexeme, Node* name, bool alias) {
     Syntax* syntax = findSyntax(getLexeme(name));
     syntaxErrorNodeIf(syntax == NULL, "syntax not defined", name);
     appendSyntaxCopy(syntax, lexeme, alias ? syntax->alias : lexeme);
