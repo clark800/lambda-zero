@@ -16,6 +16,10 @@ Tag addPrefix(Tag tag, char prefix) {
     return tag.prefix = prefix, tag;
 }
 
+Lexeme getLexeme(Tag tag) {
+    return tag.lexeme;
+}
+
 char getTagFixity(Tag tag) {
     return tag.fixity;
 }

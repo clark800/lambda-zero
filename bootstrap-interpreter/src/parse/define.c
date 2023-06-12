@@ -243,7 +243,7 @@ static void defineSyntax(Tag definitionTag, Node* left, Node* right) {
     if (isThisName(fixity, "alias") || isThisName(fixity, "syntax")) {
         if (!isName(argument))
             syntaxErrorNode("expected operator name", argument);
-        addSyntaxCopy(getLexeme(name), argument, isThisName(fixity, "alias"));
+        addSyntaxCopy(getLexeme(tag), argument, isThisName(fixity, "alias"));
         return;
     }
 

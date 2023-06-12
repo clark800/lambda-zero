@@ -30,7 +30,9 @@ static inline bool isCase(Node* n) {
         (getVariety(n) == DEFAULTCASE || getVariety(n) == EXPLICITCASE);
 }
 
-static inline bool isUnused(Node* n) {return getLexeme(n).start[0] == '_';}
+static inline bool isUnused(Node* n) {
+    return getLexeme(getTag(n)).start[0] == '_';
+}
 
 static inline bool isSyntaxDefinition(Node* n) {
     return isDefinition(n) && getVariety(n) == SYNTAXDEFINITION;
@@ -123,5 +125,5 @@ static inline Node* UnderscoreArrow(Tag tag, Node* body) {
 static inline bool isTuple(Node* node) {
     // a tuple is a spine of applications headed by a name starting with comma
     return isJuxtaposition(node) ? isTuple(getLeft(node)) :
-        (isName(node) && getLexeme(node).start[0] == ',');
+        (isName(node) && getLexeme(getTag(node)).start[0] == ',');
 }

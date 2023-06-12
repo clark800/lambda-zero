@@ -107,7 +107,7 @@ static void appendSyntax(Syntax syntax) {
 void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
         Associativity associativity, Reducer reducer) {
     if (prior != NULL) {
-        Syntax* syntax = findSyntax(getLexeme(prior));
+        Syntax* syntax = findSyntax(getLexeme(getTag(prior)));
         syntaxErrorNodeIf(syntax == NULL, "prior syntax not defined", prior);
         precedence = syntax->rightPrecedence;  // precedence comes in as 0
         if (fixity != INFIX && fixity != POSTFIX)
@@ -116,7 +116,7 @@ void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
             syntaxError("invalid associativity for operator or prior", tag);
     }
     bool special = prior != NULL;
-    Lexeme priorLexeme = prior ? getLexeme(prior) : EMPTY;
+    Lexeme priorLexeme = prior ? getLexeme(getTag(prior)) : EMPTY;
     appendSyntax((Syntax){tag.lexeme, tag.lexeme, priorLexeme, '_', precedence,
         precedence, fixity, associativity, special, reducer});
 }
@@ -149,7 +149,7 @@ void addCoreAlias(const char* alias, const char* name) {
 }
 
 void addSyntaxCopy(Lexeme lexeme, Node* name, bool alias) {
-    Syntax* syntax = findSyntax(getLexeme(name));
+    Syntax* syntax = findSyntax(getLexeme(getTag(name)));
     syntaxErrorNodeIf(syntax == NULL, "syntax not defined", name);
     appendSyntaxCopy(syntax, lexeme, alias ? syntax->alias : lexeme);
 }

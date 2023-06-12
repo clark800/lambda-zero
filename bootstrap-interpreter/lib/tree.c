@@ -24,7 +24,6 @@ Node *const VOID = &VOID_NODE;
 void initNodeAllocator() {initPool(sizeof(Node), 4096);}
 void destroyNodeAllocator() {destroyPool();}
 Tag getTag(Node* node) {return node->tag;}
-Lexeme getLexeme(Node* node) {return node->tag.lexeme;}
 void setTag(Node* node, Tag tag) {node->tag = tag;}
 char getType(Node* node) {return node->type;}
 void setType(Node* node, char type) {node->type = type;}

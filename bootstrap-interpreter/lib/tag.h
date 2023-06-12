@@ -10,6 +10,7 @@ typedef struct {
 Tag newTag(Lexeme lexeme, char fixity);
 Tag newLiteralTag(const char* name, Location location, char fixity);
 Tag addPrefix(Tag tag, char prefix);
+Lexeme getLexeme(Tag tag);
 char getTagFixity(Tag tag);
 bool isThisTag(Tag a, const char* b);
 bool isSameTag(Tag a, Tag b);
