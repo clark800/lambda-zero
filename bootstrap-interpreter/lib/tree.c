@@ -6,16 +6,15 @@
 
 typedef enum {GC_NONE=0, GC_LEFT=1, GC_RIGHT=2, GC_BOTH=3} Flags;
 
-typedef union {
-    Node* child;
-    long long value;
-} Branch;
-
 struct Node {
     unsigned int referenceCount;
     char flags, type, variety;
     Tag tag;
-    Branch left, right;
+    union {
+        struct {Node *left, *right;} branches;
+        long long value;
+        Lexeme lexeme;
+    } data;
 };
 
 Node VOID_NODE = {.referenceCount=1, .tag={.lexeme={.start="VOID", .length=4}}};
@@ -29,11 +28,11 @@ char getType(Node* node) {return node->type;}
 void setType(Node* node, char type) {node->type = type;}
 char getVariety(Node* node) {return node->variety;}
 void setVariety(Node* node, char variety) {node->variety = variety;}
-Node* getLeft(Node* node) {return node->left.child;}
-Node* getRight(Node* node) {return node->right.child;}
-long long getValue(Node* node) {return node->left.value;}
-void setValue(Node* node, long long value) {node->left.value = value;}
-void* getData(Node* node) {return (void*)node->left.child;}
+Node* getLeft(Node* node) {return node->data.branches.left;}
+Node* getRight(Node* node) {return node->data.branches.right;}
+long long getValue(Node* node) {return node->data.value;}
+void setValue(Node* node, long long value) {node->data.value = value;}
+void* getData(Node* node) {return (void*)node->data.branches.left;}
 static Node* copyNode(Node* node, Node* source) {return *node = *source, node;}
 static Node* reference(Node* node) {return node->referenceCount += 1, node;}
 
@@ -41,7 +40,7 @@ static Node* newNode(Tag tag, char flags, char type, char variety,
         Node* left, Node* right) {
     return copyNode((Node*)allocate(), &(Node)
         {.referenceCount=0, .flags=flags, .type=type, .variety=variety,
-        .tag=tag, .left={.child=left}, .right={.child=right}});
+        .tag=tag, .data={.branches={.left=left, .right=right}}});
 }
 
 Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right) {
@@ -63,24 +62,24 @@ static void releaseNode(Node* node) {
     node->referenceCount -= 1;
     if (node->referenceCount == 0) {
         if (node->flags & GC_LEFT)
-            releaseNode(node->left.child);
+            releaseNode(node->data.branches.left);
         if (node->flags & GC_RIGHT)
-            releaseNode(node->right.child);
+            releaseNode(node->data.branches.right);
         reclaim(node);
     }
 }
 
 void setLeft(Node* node, Node* left) {
     assert((node->flags & GC_LEFT) && left != NULL);
-    Node* oldLeft = node->left.child;
-    node->left.child = reference(left);
+    Node* oldLeft = node->data.branches.left;
+    node->data.branches.left = reference(left);
     releaseNode(oldLeft);
 }
 
 void setRight(Node* node, Node* right) {
     assert((node->flags & GC_RIGHT) && right != NULL);
-    Node* oldRight = node->right.child;
-    node->right.child = reference(right);
+    Node* oldRight = node->data.branches.right;
+    node->data.branches.right = reference(right);
     releaseNode(oldRight);
 }
 
@@ -91,8 +90,8 @@ Node* getNode(Hold* nodeHold) {return (Node*)nodeHold;}
 Node* getListElement(Node* node, unsigned long long n) {
     assert((node->flags & GC_BOTH) == GC_BOTH);
     for (unsigned long long i = 0; i < n; ++i) {
-        node = node->right.child;
+        node = node->data.branches.right;
         assert((node->flags & GC_BOTH) == GC_BOTH);
     }
-    return node->left.child;
+    return node->data.branches.left;
 }
