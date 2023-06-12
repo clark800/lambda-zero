@@ -1,6 +1,8 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h> // exit
 #include "tag.h"
 #include "token.h"
 #include "lex.h"
@@ -10,6 +12,17 @@ static bool isQuote(char c) {return c == '"' || c == '\'';}
 static bool isLineFeed(char c) {return c == '\n';}
 static bool isInvalid(char c) {return c > 0 && iscntrl(c) && !isLineFeed(c);}
 static bool isRepeatable(char c) {return c > 0 && strchr(" `.,;", c) != NULL;}
+
+static void lexErrorIf(bool condition, const char* message, Location loc) {
+    if (condition) {
+        fputs("Lexical error: ", stderr);
+        fputs(message, stderr);
+        fputs(" at ", stderr);
+        printLocation(loc, stderr);
+        fputs("\n", stderr);
+        exit(1);
+    }
+}
 
 static bool isDelimiter(char c) {
     return c == '\0' || isInvalid(c) || strchr(" `.,;@#$()[]{}\"\n", c) != NULL;
@@ -60,23 +73,24 @@ static Location advance(Tag tag) {
         if (isLineFeed(filename[0]) || filename[0] == '\0')
             return newLocation(0, 0, 0);
         unsigned short file = newFilename(filename);
-        syntaxErrorIf(file == 0, "too many files", tag);
+        lexErrorIf(file == 0, "too many files", tag.lexeme.location);
         return newLocation(file, 1, 0);
     }
     Location loc = tag.lexeme.location;
     if (isLineFeed(tag.lexeme.start[0])) {
-        syntaxErrorIf(loc.line >= MAX_LINE, "too many lines in file", tag);
+        lexErrorIf(loc.line >= MAX_LINE, "too many lines in file", loc);
         return newLocation(loc.file, loc.line + 1, tag.lexeme.length);
     }
     unsigned long column = (unsigned long)(loc.column + tag.lexeme.length);
-    syntaxErrorIf(column > MAX_COLUMN, "column too wide", tag);
+    lexErrorIf(column > MAX_COLUMN, "column too wide", loc);
     return newLocation(loc.file, loc.line, (unsigned short)column);
 }
 
 static Tag getNextTag(Tag tag) {
+    Location location = tag.lexeme.location;
     const char* start = tag.lexeme.start + tag.lexeme.length;
     long length = start[0] == '\0' ? 1 : skipLexeme(start) - start;
-    syntaxErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", tag);
+    lexErrorIf(length > MAX_LEXEME_LENGTH, "lexeme too long", location);
     return newTag(newLexeme(start, (unsigned short)length, advance(tag)), 0);
 }
 
