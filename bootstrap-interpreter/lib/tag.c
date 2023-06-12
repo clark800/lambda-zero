@@ -4,13 +4,13 @@
 #include "util.h"
 #include "tag.h"
 
-const String EMPTY = {"", 0, '\0'};
+const String EMPTY = {"", 0};
 const char* FILENAMES[2048] = {0};
 const unsigned int MAX_FILENAMES = sizeof(FILENAMES) / sizeof(const char*);
 unsigned short FILE_COUNT = 0;
 
 String newString(const char* start, unsigned char length) {
-    return (String){start, length, '\0'};
+    return (String){start, length};
 }
 
 String toString(const char* start) {
@@ -39,7 +39,7 @@ Tag newLiteralTag(const char* name, Location location, char fixity) {
 }
 
 Tag addPrefix(Tag tag, char prefix) {
-    return tag.lexeme.prefix = prefix, tag;
+    return tag.prefix = prefix, tag;
 }
 
 char getTagFixity(Tag tag) {
@@ -48,23 +48,31 @@ char getTagFixity(Tag tag) {
 
 bool isThisString(String a, const char* b) {
     // strncmp(NULL, NULL, 0) is undefined behavior, so we check for 0 length
-    return a.prefix == '\0' && a.length == strlen(b) &&
+    return a.length == strlen(b) &&
         (a.length == 0 || strncmp(a.start, b, a.length) == 0);
 }
 
 bool isSameString(String a, String b) {
     // strncmp(NULL, NULL, 0) is undefined behavior, so we check for 0 length
-    return a.length == b.length && a.prefix == b.prefix &&
+    return a.length == b.length &&
         (a.length == 0 || strncmp(a.start, b.start, a.length) == 0);
+}
+
+bool isThisTag(Tag a, const char* b) {
+    return a.prefix == '\0' && isThisString(a.lexeme, b);
+}
+
+bool isSameTag(Tag a, Tag b) {
+    return a.prefix == b.prefix && isSameString(a.lexeme, b.lexeme);
 }
 
 void printTag(Tag tag, FILE* stream) {
     String lexeme = tag.lexeme;
-    if (lexeme.prefix == '\0' && lexeme.length > 0 && lexeme.start[0] == '\n') {
+    if (tag.prefix == '\0' && lexeme.length > 0 && lexeme.start[0] == '\n') {
         fputs("(end of line)", stream);
     } else {
-        if (lexeme.prefix != '\0')
-            fputc(lexeme.prefix, stream);
+        if (tag.prefix != '\0')
+            fputc(tag.prefix, stream);
         fwrite(lexeme.start, sizeof(char), lexeme.length, stream);
     }
 }

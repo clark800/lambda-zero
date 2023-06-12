@@ -8,7 +8,7 @@ typedef enum {PLAINDEFINITION, MAYBEDEFINITION, TRYDEFINITION,
 static inline ASTType getASTType(Node* n) {return (ASTType)getType(n);}
 
 static inline bool isSameLexeme(Node* a, Node* b) {
-    return isSameString(getLexeme(a), getLexeme(b));
+    return isSameTag(getTag(a), getTag(b));
 }
 
 static inline bool isReference(Node* n) {return getASTType(n) == REFERENCE;}
@@ -41,7 +41,7 @@ static inline bool isSyntaxDefinition(Node* n) {
 }
 
 static inline bool isThisName(Node* node, const char* lexeme) {
-    return isName(node) && isThisString(getLexeme(node), lexeme);
+    return isName(node) && isThisTag(getTag(node), lexeme);
 }
 
 static inline bool isKeyphrase(Node* n, const char* key) {

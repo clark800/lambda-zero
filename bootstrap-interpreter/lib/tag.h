@@ -7,7 +7,6 @@ static const unsigned int MAX_COLUMN = 0xffff;
 typedef struct {
     const char* start;
     unsigned char length;
-    char prefix;
 } String;
 
 typedef struct {
@@ -22,6 +21,7 @@ typedef struct {
 
 typedef struct {
     char fixity;
+    char prefix;
     String lexeme;
     Location location;
 } Tag;
@@ -39,6 +39,8 @@ Tag addPrefix(Tag tag, char prefix);
 char getTagFixity(Tag tag);
 bool isThisString(String a, const char* b);
 bool isSameString(String a, String b);
+bool isThisTag(Tag a, const char* b);
+bool isSameTag(Tag a, Tag b);
 void printTag(Tag tag, FILE* stream);
 void printTagWithLocation(Tag tag, FILE* stream);
 void syntaxError(const char* message, Tag tag);

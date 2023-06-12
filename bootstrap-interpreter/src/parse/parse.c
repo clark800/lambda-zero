@@ -20,7 +20,7 @@ static Node* getTop(Stack* stack) {
 }
 
 static bool isThisOperator(Node* node, const char* lexeme) {
-    return isOperator(node) && isThisString(getLexeme(node), lexeme);
+    return isOperator(node) && isThisTag(getTag(node), lexeme);
 }
 
 static void erase(Stack* stack, const char* lexeme) {
