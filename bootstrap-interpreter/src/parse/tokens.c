@@ -69,7 +69,10 @@ static Node* buildStringLiteral(Tag tag, const char* start) {
 }
 
 static Node* parseStringLiteral(Lexeme lexeme) {
-    return buildStringLiteral(newTag(lexeme, NOFIX), lexeme.start + 1);
+    Hold* name = hold(Name(newTag(lexeme, NOFIX)));
+    Node* node = buildStringLiteral(getTag(getNode(name)), lexeme.start + 1);
+    release(name);
+    return node;
 }
 
 Node* parseSymbol(Lexeme lexeme, long long subprecedence) {

@@ -56,10 +56,10 @@ static void shiftClose(Stack* stack, Node* close) {
     release(contentsHold);
 }
 
-static Tag reduceTop(Stack* stack) {
+static Lexeme reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
-    Tag tag = getTag(getNode(operator));
+    Lexeme lexeme = getLexeme(getTag(getNode(operator)));
     Fixity fixity = getFixity(getNode(operator));
     Hold* left = fixity == INFIX ? pop(stack) : hold(VOID);
     Node* operand = reduce(getNode(operator), getNode(left), getNode(right));
@@ -67,17 +67,17 @@ static Tag reduceTop(Stack* stack) {
     release(right);
     release(operator);
     release(left);
-    return tag;
+    return lexeme;
 }
 
 static void reduceLeft(Stack* stack, Node* operator) {
-    Tag tag = {0};
+    Lexeme lexeme = EMPTY;
     if (!isEmpty(stack))
         while (!isOperator(peek(stack, 0)) &&
                 isHigherPrecedence(peek(stack, 1), operator))
-            tag = reduceTop(stack);
+            lexeme = reduceTop(stack);
     Lexeme prior = getPrior(operator);
-    if (prior.length > 0 && !isSameLexeme(getLexeme(tag), prior))
+    if (prior.length > 0 && !isSameLexeme(lexeme, prior))
         syntaxErrorNode("invalid prior for", operator);
 }
 
