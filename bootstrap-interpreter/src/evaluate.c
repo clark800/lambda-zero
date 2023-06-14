@@ -35,8 +35,8 @@ static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     }
 }
 
-static Closure* getReferee(Term* reference, Node* locals) {
-    return getListElement(locals, getDebruijnIndex(reference) - 1);
+static Closure* getReferee(Term* variable, Node* locals) {
+    return getListElement(locals, getDebruijnIndex(variable) - 1);
 }
 
 static Term* getGlobalValue(Term* global, Globals* globals) {
@@ -63,7 +63,7 @@ static void evaluateApplication(Closure* closure, Stack* stack) {
     setTerm(closure, getLeft(application));
 }
 
-static void evaluateLambda(Closure* closure, Stack* stack) {
+static void evaluateAbstraction(Closure* closure, Stack* stack) {
     // move argument from stack to local environment and step into body
     Hold* argument = pop(stack);
     push((Stack*)closure, getNode(argument));
@@ -71,16 +71,16 @@ static void evaluateLambda(Closure* closure, Stack* stack) {
     setTerm(closure, getBody(getTerm(closure)));
 }
 
-static void evaluateReference(Closure* closure, Stack* stack, Globals* globals){
-    Term* reference = getTerm(closure);
-    if (isGlobal(reference)) {
-        setTerm(closure, getGlobalValue(reference, globals));
+static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
+    Term* variable = getTerm(closure);
+    if (isGlobal(variable)) {
+        setTerm(closure, getGlobalValue(variable, globals));
         if (!TEST)
-            push((Stack*)getBacktrace(closure), reference);
+            push((Stack*)getBacktrace(closure), variable);
         setLocals(closure, VOID);
     } else {
         // lookup referenced closure in the local environment and switch to it
-        Closure* referee = getReferee(reference, getLocals(closure));
+        Closure* referee = getReferee(variable, getLocals(closure));
         // only optimize in IO mode so that term serializations are standardized
         if (isIO && !isValue(getTerm(referee)))
             push(stack, newUpdate(referee));
@@ -166,8 +166,8 @@ static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
                 return closure;
         }
         switch (type) {
-            case VARIABLE: evaluateReference(closure, stack, globals); break;
-            case ABSTRACTION: evaluateLambda(closure, stack); break;
+            case VARIABLE: evaluateVariable(closure, stack, globals); break;
+            case ABSTRACTION: evaluateAbstraction(closure, stack); break;
             case APPLICATION: evaluateApplication(closure, stack); break;
             case NUMERAL: evaluateNumeral(closure); break;
             case OPERATION: evaluateOperation(closure, stack, globals); break;

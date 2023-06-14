@@ -65,7 +65,7 @@ Node* newCase(Node* left, Node* right) {
 static Node* attachDefaultCase(Tag tag, Node* caseArrow, Node* fallback) {
     // Constructor(a) -> b; _ -> c  ~>
     //   this -> @Constructor(a -> b, _ -> c, this)
-    // we wrap it in a lambda so that transformRecursion knows it's a function
+    // we wrap it in an arrow so that transformRecursion knows it's a function
     Tag constructorTag = getTag(caseArrow);
     Node* deconstructor = Name(addPrefix(constructorTag, '@'));
     Node* reconstructor = getRight(getRight(caseArrow));
