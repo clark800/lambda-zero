@@ -14,23 +14,24 @@ static volatile bool INTERRUPT = false;
 typedef const Array Globals;
 static Node* evaluateClosure(Closure* closure, Globals* globals);
 
-static bool isUpdate(Closure* closure) {return getTerm(closure) == VOID;}
-static Closure* getUpdateClosure(Closure* update) {return getLocals(update);}
+static bool isUpdate(Closure* closure) {
+    return getVariety(closure) == 1;
+}
 
-static Closure* newUpdate(Closure* closure) {
-    return newClosure(VOID, closure, VOID);
+static Closure* setUpdate(Closure* closure, bool update) {
+    setVariety(closure, update ? 1 : 0);
+    return closure;
 }
 
 static void eraseUpdates(Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0)))
-        release(pop(stack));
+        release((Hold*)setUpdate(getNode(pop(stack)), false));
 }
 
 static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
         Hold* update = pop(stack);
-        Closure* closureToUpdate = getUpdateClosure(getNode(update));
-        updateClosure(closureToUpdate, evaluatedClosure);
+        updateClosure(setUpdate(getNode(update), false), evaluatedClosure);
         release(update);
     }
 }
@@ -82,8 +83,8 @@ static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
         // lookup referenced closure in the local environment and switch to it
         Closure* referee = getReferee(variable, getLocals(closure));
         // only optimize in IO mode so that term serializations are standardized
-        if (isIO && !isValue(getTerm(referee)))
-            push(stack, newUpdate(referee));
+        if (isIO && !isValue(getTerm(referee)) && !isUpdate(referee))
+            push(stack, setUpdate(referee, true));
         setClosure(closure, referee);
     }
 }
