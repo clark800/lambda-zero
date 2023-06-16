@@ -18,7 +18,7 @@ static void printBacktrace(Closure* closure) {
 }
 
 void printRuntimeError(const char* message, Closure* closure) {
-    if (!TEST && !isEmpty((Stack*)getBacktrace(closure)))
+    if (TRACE && !isEmpty((Stack*)getBacktrace(closure)))
         printBacktrace(closure);
     fputs("\nRuntime error: ", stderr);
     fputs(message, stderr);

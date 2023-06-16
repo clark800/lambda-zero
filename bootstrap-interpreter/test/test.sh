@@ -7,7 +7,7 @@ NOCOLOR='\033[0m'
 
 DIR=$(dirname "$0")
 LIB="$DIR/../../libraries"
-CMD="$DIR/../main -t"
+CMD="$DIR/../main"
 
 if test "$#" -gt 0 && test "$1" = "meta"; then
     META=1

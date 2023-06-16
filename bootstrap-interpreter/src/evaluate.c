@@ -76,7 +76,7 @@ static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
     Term* variable = getTerm(closure);
     if (isGlobal(variable)) {
         setTerm(closure, getGlobalValue(variable, globals));
-        if (!TEST)
+        if (TRACE)
             push((Stack*)getBacktrace(closure), variable);
         setLocals(closure, VOID);
     } else {
@@ -158,8 +158,7 @@ static void evaluateNumeral(Closure* closure) {
 
 static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     while (true) {
-        if (INTERRUPT)
-            runtimeError("interrupted", closure);
+        assert(INTERRUPT ? (runtimeError("interrupted", closure), 0) : 1);
         TermType type = getTermType(getTerm(closure));
         if (isValueType(type)) {
             applyUpdates(closure, stack);
@@ -185,14 +184,15 @@ static Closure* evaluateClosure(Closure* closure, Globals* globals) {
     return result;
 }
 
-static void interrupt(int parameter) {(void)parameter, INTERRUPT = true;}
+static void interrupt(int parameter) {(void)parameter; INTERRUPT = true;}
 
 Hold* evaluateTerm(Term* term, Globals* globals) {
+    (void)interrupt;
     INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, VOID, VOID));
-    signal(SIGINT, interrupt);
+    assert(signal(SIGINT, interrupt) != SIG_ERR);
     Hold* result = hold(evaluateClosure(getNode(closure), globals));
-    signal(SIGINT, SIG_DFL);
+    assert(signal(SIGINT, SIG_DFL) != SIG_ERR);
     release(closure);
     deleteStack(INPUT_STACK);
     return result;

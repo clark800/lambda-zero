@@ -11,7 +11,7 @@
 #include "closure.h"
 #include "evaluate.h"
 
-bool TEST = false;
+bool TRACE = false;
 extern bool isIO;
 
 static void showTag(Tag tag, FILE* stream) {
@@ -84,7 +84,7 @@ static void print3(const char* a, const char* b, const char* c) {
 }
 
 static void usageError(const char* name) {
-    print3("Usage error: ", name, " [-d] [-D] [-t] [FILE]\n");
+    print3("Usage error: ", name, " [-d] [-D] [FILE]\n");
     exit(2);
 }
 
@@ -132,19 +132,21 @@ static char* readSourceCode(const char* filename) {
 }
 
 int main(int argc, char* argv[]) {
+    assert(TRACE = true);  // enable tracing when asserts are enabled
+
     // note: setbuf(stdin, NULL) will leave unread input in stdin on exit
     // causing the shell to execute it, which is dangerous
     // note: disabling buffering slows down I/O quite a bit, but it is necessary
     // for binary protocols like X Windows.
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
+
     const char* programName = argv[0];
     while (--argc > 0 && (*++argv)[0] == '-') {
         for (const char* flag = argv[0] + 1; flag[0] != '\0'; ++flag) {
             switch (flag[0]) {
                 case 'd': DEBUG = 1; break;
                 case 'D': DEBUG = 2; break;
-                case 't': TEST = true; break;      // hide line #s in errors
                 default: usageError(programName); break;
             }
         }

@@ -6,4 +6,4 @@ ulimit -s unlimited
 printf "%s" "$CODE" | cat \
 "$DIR/../../../libraries/operators.zero" \
 "$DIR/../../../libraries/prelude.zero" - |
-\time "$DIR/../../main" -t
+\time "$DIR/../../main"

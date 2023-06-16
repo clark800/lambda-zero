@@ -63,7 +63,7 @@ static long long getNumericValue(Term* operation, Term* numeral) {
 }
 
 static Hold* evaluateAbort(Closure* operation, Closure* message) {
-    if (!TEST) {
+    if (TRACE) {
         printRuntimeError("hit", operation);
         fputc((int)'\n', stderr);
     }

@@ -10,7 +10,7 @@ OUT="$DIR/main"
 # BSD chmod still prints an error when the file is not found even with
 # the -f flag, so we redirect stderr to /dev/null to hide that message
 chmod -f +w "$OUT" 2> /dev/null || true
-echo "#!../bootstrap-interpreter/main -t" > "$OUT"
+echo "#!../bootstrap-interpreter/main" > "$OUT"
 
 # cat sources files and erase lines containing only comments to speed parsing
 # note: can't remove blank lines because it would change line numbers in errors
