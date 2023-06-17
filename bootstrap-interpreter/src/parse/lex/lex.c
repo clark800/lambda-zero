@@ -100,7 +100,6 @@ Token lex(Token token) {
 
     const char *start = lexeme.start;
     const char *next = start + lexeme.length;
-    lexErrorIf(isInvalid(start[0]), "invalid character", lexeme.location);
     if (start[0] == ' ') return (Token){lexeme, SPACE};
     if (start[0] == '\n') return (Token){lexeme, next[0] == '\0' ||
         isLineFeed(next[0]) || isComment(next[0]) ? VSPACE : NEWLINE};
@@ -108,6 +107,7 @@ Token lex(Token token) {
     if (start[0] == '\"') return (Token){lexeme, STRING};
     if (isNumeric(start)) return (Token){lexeme, NUMERIC};
     if (isComment(start[0])) return (Token){lexeme, COMMENT};
+    if (isInvalid(start[0])) return (Token){lexeme, INVALID};
     return (Token){lexeme, SYMBOLIC};
 }
 

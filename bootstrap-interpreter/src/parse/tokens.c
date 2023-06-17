@@ -81,12 +81,14 @@ Node* parseSymbol(Lexeme lexeme, long long subprecedence) {
 }
 
 Node* parseToken(Token token) {
+    Lexeme lexeme = token.lexeme;
     switch (token.type) {
-        case NUMERIC: return parseNumber(token.lexeme);
-        case STRING: return parseStringLiteral(token.lexeme);
-        case CHARACTER: return parseCharacterLiteral(token.lexeme);
-        case NEWLINE: return parseSymbol(newLiteralLexeme("\n",
-          token.lexeme.location), (long long)(token.lexeme.length - 1));
-        default: return parseSymbol(token.lexeme, 0);
+        case NUMERIC: return parseNumber(lexeme);
+        case STRING: return parseStringLiteral(lexeme);
+        case CHARACTER: return parseCharacterLiteral(lexeme);
+        case NEWLINE: return parseSymbol(newLiteralLexeme(
+            "\n", lexeme.location), (long long)(lexeme.length - 1));
+        case INVALID: syntaxError("invalid character", newTag(lexeme, NOFIX));
+        default: return parseSymbol(lexeme, 0);
     }
 }
