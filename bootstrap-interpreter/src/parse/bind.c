@@ -5,6 +5,8 @@
 #include "term.h"
 #include "bind.h"
 
+Term *TRUE = NULL, *FALSE = NULL;
+
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     syntaxErrorNodeIf(isUnused(name),
         "cannot reference a symbol starting with underscore", name);
@@ -84,8 +86,13 @@ Array* bind(Hold* root) {
         Node* definiens = getRight(node);
         bindWith(definiens, parameters, globals);
         OperationCode code = findOperationCode(definiendum);
-        if (code != NONE && !isPseudoOperation(code))
+        if (code != NONE && !isPseudoOperation(code)) {
+            syntaxErrorIf(!TRUE || !FALSE, "must define booleans before", tag);
             setRight(node, Operation(tag, code, definiens));
+        } else if (TRUE == NULL && isThisTag(tag, "True"))
+            TRUE = definiens;
+        else if (FALSE == NULL && isThisTag(tag, "False"))
+            FALSE = definiens;
         append(parameters, definiendum);
         append(globals, getRight(node));
         setType(node, APPLICATION);

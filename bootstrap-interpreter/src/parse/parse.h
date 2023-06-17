@@ -1,6 +1,6 @@
 typedef struct {
     Hold* root;
-    Node* entry;
+    Term* entry;
     Array* globals;
 } Program;
 

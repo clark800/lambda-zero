@@ -11,11 +11,9 @@
 
 static bool STDERR = false;
 Stack* INPUT_STACK;
+extern Term *TRUE, *FALSE;
 
-static Term* newBoolean(Tag tag, bool value) {
-    return Abstraction(tag, Abstraction(tag,
-        value ? Variable(tag, 1) : Variable(tag, 2)));
-}
+static Term* Boolean(bool value) {return value ? TRUE : FALSE;}
 
 static void operationError(const char* message) {
     fputs("\nRuntime error: ", stderr);
@@ -113,14 +111,13 @@ static Term* computeOperation(Closure* operation,
         case TIMES: return Numeral(tag, multiply(left, right));
         case DIVIDE: return Numeral(tag, right == 0 ? 0 : left / right);
         case MODULO: return Numeral(tag, right == 0 ? left : left % right);
-        case EQUAL: return newBoolean(tag, left == right);
-        case NOTEQUAL: return newBoolean(tag, left != right);
-        case LESSTHAN: return newBoolean(tag, left < right);
-        case GREATERTHAN: return newBoolean(tag, left > right);
-        case LESSTHANOREQUAL: return newBoolean(tag, left <= right);
-        case GREATERTHANOREQUAL: return newBoolean(tag, left >= right);
-        default: assert(false);
-            return NULL;
+        case EQUAL: return Boolean(left == right);
+        case NOTEQUAL: return Boolean(left != right);
+        case LESSTHAN: return Boolean(left < right);
+        case GREATERTHAN: return Boolean(left > right);
+        case LESSTHANOREQUAL: return Boolean(left <= right);
+        case GREATERTHANOREQUAL: return Boolean(left >= right);
+        default: assert(false); return NULL;
     }
 }
 

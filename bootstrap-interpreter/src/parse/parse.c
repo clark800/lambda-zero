@@ -9,6 +9,7 @@
 #include "ast.h"
 #include "syntax.h"
 #include "tokens.h"
+#include "term.h"
 #include "bind.h"
 #include "parse.h"
 
@@ -103,7 +104,7 @@ static Hold* synthesize(Token (*lexer)(Token), Token start) {
 Program parse(const char* input) {
     Hold* result = synthesize(lex, newStartToken(input));
     Array* globals = bind(result);
-    Node* entry = elementAt(globals, length(globals) - 1);
+    Term* entry = elementAt(globals, length(globals) - 1);
     return (Program){result, entry, globals};
 }
 
