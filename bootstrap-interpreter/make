@@ -54,7 +54,8 @@ build_libc() {
 }
 
 showsize() {
-    echo "$1 SIZE: $(wc -c "$OUT" | cut -f1) bytes"
+    output="$(wc -c "$OUT" | tr '\t' ' ' | tr -s ' ')"
+    echo "$1 SIZE:\t$(echo "${output## }" | cut -d' ' -f1) bytes"
 }
 
 finish() {
@@ -70,7 +71,11 @@ xstrip() {
         sstrip "$OUT"
         showsize "STRIPPED"
     elif command -v strip > /dev/null; then
-        strip -R .note -R .comment -R .eh_frame -R .eh_frame_hdr -s "$OUT"
+        if [ "$(uname)" == "Darwin" ]; then
+            strip "$OUT"
+        else
+            strip -R .note -R .comment -R .eh_frame -R .eh_frame_hdr -s "$OUT"
+        fi
         showsize "STRIPPED"
     else
         echo "Note: sstrip/strip not found, skipping strip"
@@ -84,11 +89,6 @@ compress() {
     else
         echo "Note: upx not found, skipping compression"
     fi
-}
-
-shrink() {
-    xstrip
-    compress
 }
 
 build_one_stage() {
@@ -114,6 +114,8 @@ build() {
 
     if is_cc "gcc" || is_cc "clang"; then
         CC_FLAGS="$GCC_FLAGS" build_two_stage
+    elif is_cc "Apple clang"; then
+        CC_FLAGS="$GCC_FLAGS" build_one_stage
     elif is_cc "tcc"; then
         CC_FLAGS="$TCC_FLAGS" build_one_stage
     else
@@ -198,13 +200,12 @@ show_floc() {
 }
 
 case "$1" in
-    "") config_fast && build;;
-    fast) clean && config_fast && build && xstrip;;
-    small) clean && config_fast && build && shrink;;
-    test) config_fast && build && time test/test.sh;;
+    "") clean && config_fast && build && xstrip;;
     debug) clean && config_debug && build;;
-    custom) clean && config_custom && build_libc && build && shrink;;
-    unused) clean && config_unused && build_libc && build;;
+    test) config_fast && build && time test/test.sh;;
+    custom) clean && config_custom && build_libc && build && xstrip;;
+    unused) clean && config_unused && build_libc && build && xstrip;;
+    compress) config_fast && build && xstrip && compress;;
     lint) lint;;
     clean) clean;;
     tree) tree --noreport -C -P '*.[hc]' -I lib src;;
