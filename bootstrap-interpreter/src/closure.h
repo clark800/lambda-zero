@@ -14,11 +14,11 @@ static inline Node* getLocals(Closure* closure) {
 }
 
 static inline Node* getTrace(Closure* closure) {
-    return !TRACE ? VOID : getRight(getLeft(closure));
+    return !TRACE ? NULL : getRight(getLeft(closure));
 }
 
 static inline Node* getBacktrace(Closure* closure) {
-    return !TRACE ? VOID : getLeft(closure);        // can be cast to a Stack
+    return !TRACE ? NULL : getLeft(closure);        // can be cast to a Stack
 }
 
 static inline void setTerm(Closure* closure, Term* term) {

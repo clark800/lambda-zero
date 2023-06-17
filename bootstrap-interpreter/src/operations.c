@@ -125,7 +125,7 @@ static Term* computeOperation(Closure* operation,
 }
 
 static Hold* makeResult(Closure* operation, Term* node) {
-    return hold(newClosure(node, VOID, getTrace(operation)));
+    return hold(newClosure(node, NULL, getTrace(operation)));
 }
 
 static Hold* evaluateOperator(Closure* operation, Term* left, Term* right) {

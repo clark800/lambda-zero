@@ -1,14 +1,14 @@
 #include "tree.h"
 #include "stack.h"
 
-Stack* newStack() {return (Stack*)newPair(VOID, VOID);}
+Stack* newStack() {return (Stack*)newPair(NULL, NULL);}
 void deleteStack(Stack* stack) {release(hold((Node*)stack));}
 static Node* getHead(Stack* stack) {return getRight((Node*)stack);}
 static void setHead(Stack* stack, Node* head) {setRight((Node*)stack, head);}
-bool isEmpty(Stack* stack) {return getHead(stack) == VOID;}
+bool isEmpty(Stack* stack) {return getHead(stack) == NULL;}
 Iterator* iterate(Stack* stack) {return (Iterator*)getHead(stack);}
 Node* cursor(Iterator* iterator) {return getLeft((Node*)iterator);}
-bool end(Iterator* iterator) {return (Node*)iterator == VOID;}
+bool end(Iterator* iterator) {return (Node*)iterator == NULL;}
 
 Iterator* next(Iterator* iterator) {
     return (Iterator*)getRight((Node*)iterator);

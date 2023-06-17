@@ -20,7 +20,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxErrorNode("missing left operand for", operator);
     Hold* operand = pop(stack);
-    shiftOperand(stack, reduce(operator, getNode(operand), VOID));
+    shiftOperand(stack, reduce(operator, getNode(operand), NULL));
     release(operand);
 }
 
@@ -61,7 +61,7 @@ static Lexeme reduceTop(Stack* stack) {
     Hold* operator = pop(stack);
     Lexeme lexeme = getLexeme(getTag(getNode(operator)));
     Fixity fixity = getFixity(getNode(operator));
-    Hold* left = fixity == INFIX ? pop(stack) : hold(VOID);
+    Hold* left = fixity == INFIX ? pop(stack) : hold(NULL);
     Node* operand = reduce(getNode(operator), getNode(left), getNode(right));
     shiftOperand(stack, operand);
     release(right);

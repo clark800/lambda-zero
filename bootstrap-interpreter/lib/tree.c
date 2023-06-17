@@ -20,11 +20,6 @@ struct Node {
     } data;
 };
 
-Node VOID_TAG = {.referenceCount=1, .flags=GC_NONE, .tag=NULL,
-    .data={.lexeme={.start="VOID", .length=4}}};
-Node VOID_NODE = {.referenceCount=1, .flags=GC_NONE, .tag=(Tag)(&VOID_TAG)};
-Node *const VOID = &VOID_NODE;
-
 void initNodeAllocator() {initPool(sizeof(Node), 4096);}
 void destroyNodeAllocator() {destroyPool();}
 Tag getTag(Node* node) {return node->tag;}
@@ -38,12 +33,15 @@ long long getValue(Node* node) {return node->data.value;}
 void setValue(Node* node, long long value) {node->data.value = value;}
 void* getData(Node* node) {return node->data.pointer;}
 static Node* copyNode(Node* node, Node* source) {return *node = *source, node;}
-static Node* reference(Node* node) {return node->referenceCount += 1, node;}
+
+static Node* reference(Node* node) {
+    return node == NULL ? NULL : (node->referenceCount += 1, node);
+}
 
 Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right) {
     return copyNode((Node*)allocate(), &(Node)
         {.referenceCount=0, .flags=GC_BOTH, .type=type, .variety=variety,
-        .tag=(tag == NULL ? NULL : (Tag)reference((Node*)tag)),
+        .tag=(Tag)reference((Node*)tag),
         .data={.branches={.left=reference(left), .right=reference(right)}}});
 }
 
@@ -58,6 +56,8 @@ Node* newLeaf(Tag tag, char type, char variety, void* data) {
 }
 
 static void releaseNode(Node* node) {
+    if (node == NULL)
+        return;
     assert(node->referenceCount > 0);
     node->referenceCount -= 1;
     if (node->referenceCount == 0) {
@@ -72,7 +72,7 @@ static void releaseNode(Node* node) {
 }
 
 void setLeft(Node* node, Node* left) {
-    assert((node->flags & GC_LEFT) && left != NULL);
+    assert(node->flags & GC_LEFT);
     Node* oldLeft = node->data.branches.left;
     node->data.branches.left = reference(left);
     releaseNode(oldLeft);
@@ -85,7 +85,7 @@ void setTag(Node* node, Tag tag) {
 }
 
 void setRight(Node* node, Node* right) {
-    assert((node->flags & GC_RIGHT) && right != NULL);
+    assert(node->flags & GC_RIGHT);
     Node* oldRight = node->data.branches.right;
     node->data.branches.right = reference(right);
     releaseNode(oldRight);

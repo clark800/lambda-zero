@@ -76,7 +76,7 @@ Node* reduceOpenBrace(Tag tag, Node* before, Node* patterns) {
     syntaxErrorIf(before != NULL, "invalid operand before", tag);
     if (patterns == NULL)
         return SetBuilder(
-            newLiteralTag("{}", getLexeme(tag).location, 0), VOID);
+            newLiteralTag("{}", getLexeme(tag).location, 0), NULL);
     return SetBuilder(tag, newTuple(tag, patterns));
 }
 

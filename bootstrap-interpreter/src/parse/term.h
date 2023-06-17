@@ -30,7 +30,7 @@ static inline Term* Variable(Tag tag, long long debruijn) {
 }
 
 static inline Term* Abstraction(Tag tag, Term* body) {
-    return newBranch(tag, ABSTRACTION, 0, VOID, body);
+    return newBranch(tag, ABSTRACTION, 0, NULL, body);
 }
 
 static inline Term* Application(Tag tag, Term* left, Term* right) {
@@ -44,7 +44,7 @@ static inline Term* Numeral(Tag tag, long long n) {
 // note: arithmetic operations are branches and always have a fallback term
 // but pseudo operations are leaves and don't have a fallback term
 static inline Term* Operation(Tag tag, OperationCode code, Term* term) {
-    return newBranch(tag, OPERATION, (char)code, VOID, term);
+    return newBranch(tag, OPERATION, (char)code, NULL, term);
 }
 
 static inline unsigned long long getDebruijnIndex(Term* t) {

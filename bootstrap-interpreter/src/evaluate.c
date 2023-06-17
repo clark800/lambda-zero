@@ -49,9 +49,9 @@ static Closure* optimizeClosure(Term* term, Node* locals, Node* trace) {
     // the other cases are short-circuit optmizations
     switch (getTermType(term)) {
         case OPERATION:
-        case NUMERAL: return newClosure(term, VOID, trace);
+        case NUMERAL: return newClosure(term, NULL, trace);
         case VARIABLE: return isGlobal(term) ?
-            newClosure(term, VOID, trace) : getReferee(term, locals);
+            newClosure(term, NULL, trace) : getReferee(term, locals);
         default: return newClosure(term, locals, trace);
     }
 }
@@ -78,7 +78,7 @@ static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
         setTerm(closure, getGlobalValue(variable, globals));
         if (TRACE)
             push((Stack*)getBacktrace(closure), variable);
-        setLocals(closure, VOID);
+        setLocals(closure, NULL);
     } else {
         // lookup referenced closure in the local environment and switch to it
         Closure* referee = getReferee(variable, getLocals(closure));
@@ -91,7 +91,7 @@ static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
 
 static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
     unsigned int arity = getArity(getTerm(closure));
-    setLocals(closure, VOID);
+    setLocals(closure, NULL);
     applyUpdates(closure, stack);
     Hold* left = arity >= 1 && !isEmpty(stack) ? pop(stack) : NULL;
     eraseUpdates(stack);    // partially applied operations are not values
@@ -152,7 +152,7 @@ static Term* expandNumeral(Term* numeral) {
 }
 
 static void evaluateNumeral(Closure* closure) {
-    setLocals(closure, VOID);
+    setLocals(closure, NULL);
     setTerm(closure, expandNumeral(getTerm(closure)));
 }
 
@@ -189,7 +189,7 @@ static void interrupt(int parameter) {(void)parameter; INTERRUPT = true;}
 Hold* evaluateTerm(Term* term, Globals* globals) {
     (void)interrupt;
     INPUT_STACK = newStack();
-    Hold* closure = hold(newClosure(term, VOID, VOID));
+    Hold* closure = hold(newClosure(term, NULL, NULL));
     assert(signal(SIGINT, interrupt) != SIG_ERR);
     Hold* result = hold(evaluateClosure(getNode(closure), globals));
     assert(signal(SIGINT, SIG_DFL) != SIG_ERR);

@@ -110,7 +110,7 @@ static inline Node* Definition(Tag tag, DefinitionVariety variety,
 }
 
 static inline Node* SetBuilder(Tag tag, Node* commaList) {
-    return newBranch(tag, SETBUILDER, 0, VOID, commaList);
+    return newBranch(tag, SETBUILDER, 0, NULL, commaList);
 }
 
 static inline Node* Underscore(Tag tag, unsigned long long debruijn) {

@@ -6,7 +6,6 @@
 
 typedef struct Node Node;
 typedef struct Tag* Tag;
-extern Node* const VOID;
 
 void initNodeAllocator(void);
 void destroyNodeAllocator(void);

@@ -165,7 +165,7 @@ static Node* applyADTDefinition(Tag tag, Node* left, Node* adt, Node* scope) {
     // for each item in the forms tuple, define constructor functions
     Node* forms = getRight(adt);
     Node* node = forms;
-    unsigned int n = getArgumentCount(forms);
+    unsigned int n = forms == NULL ? 0 : getArgumentCount(forms);
     unsigned int ms[256]; // store the number of arguments for each constructor
 
     for (unsigned int i = 0; i < n; ++i, node = getLeft(node))
