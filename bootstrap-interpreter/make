@@ -108,7 +108,6 @@ is_cc() {
 
 build() {
     if is_up_to_date "$OUT"; then
-        echo "$OUT up-to-date"
         return
     fi
 
@@ -200,12 +199,13 @@ show_floc() {
 }
 
 case "$1" in
-    "") clean && config_fast && build && xstrip;;
-    debug) clean && config_debug && build;;
+    "") config_fast && build;;
     test) config_fast && build && time test/test.sh;;
-    custom) clean && config_custom && build_libc && build && xstrip;;
-    unused) clean && config_unused && build_libc && build && xstrip;;
-    compress) config_fast && build && xstrip && compress;;
+    debug) clean && config_debug && build;;
+    custom) clean && config_custom && build_libc && build;;
+    unused) clean && config_unused && build_libc && build;;
+    strip) xstrip;;
+    compress) compress;;
     lint) lint;;
     clean) clean;;
     tree) tree --noreport -C -P '*.[hc]' -I lib src;;

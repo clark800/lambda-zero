@@ -5,6 +5,8 @@ LIB="$DIR/../libraries"
 PARSER="$DIR/../self-interpreter"
 OUT="$DIR/main"
 
+# make sure interpreter is up to date to avoid the risk of confusion when
+# debugging and the code was changed but not recompiled
 (cd ../bootstrap-interpreter || exit; ./make)
 
 # BSD chmod still prints an error when the file is not found even with

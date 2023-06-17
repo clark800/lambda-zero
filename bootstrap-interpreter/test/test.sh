@@ -90,7 +90,7 @@ run() {
     suite_failures=0
     if [ "$META" -eq 1 ]; then
         # prevent segfaults due to high recursion depth
-        ulimit -s unlimited || true
+        ulimit -s unlimited 2> /dev/null || true
         PRELUDE_SUITES=$META_PRELUDE_SUITES
     fi
 
