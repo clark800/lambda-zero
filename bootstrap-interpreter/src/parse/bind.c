@@ -18,18 +18,18 @@ static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
     return 0;
 }
 
-static char findOperationCode(Node* name) {
-    for (unsigned char i = 0; i < sizeof(Operations)/sizeof(char*); ++i)
+static OperationCode findOperationCode(Node* name) {
+    for (OperationCode i = 0; i < sizeof(Operations)/sizeof(char*); ++i)
         if (isThisName(name, Operations[i]))
-            return (char)i;
-    return -1;
+            return i;
+    return NONE;
 }
 
 static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
-    char operationCode = findOperationCode(node);
+    OperationCode operationCode = findOperationCode(node);
     if (isPseudoOperation(operationCode)) {
         setType(node, OPERATION);
-        setVariety(node, operationCode);
+        setVariety(node, (char)operationCode);
         return;
     }
     unsigned long long i = (unsigned long long)getValue(node);
@@ -83,11 +83,14 @@ Array* bind(Hold* root) {
         Tag tag = getTag(definiendum);
         Node* definiens = getRight(node);
         bindWith(definiens, parameters, globals);
-        int code = findOperationCode(definiendum);
-        if (code >= 0 && !isPseudoOperation(code))
-            setRight(node, Operation(tag, (OperationCode)code, definiens));
+        OperationCode code = findOperationCode(definiendum);
+        if (code != NONE && !isPseudoOperation(code))
+            setRight(node, Operation(tag, code, definiens));
         append(parameters, definiendum);
         append(globals, getRight(node));
+        setType(node, APPLICATION);
+        setType(getLeft(node), ABSTRACTION);
+        setTag(getLeft(node), getTag(getParameter(getLeft(node))));
         node = getBody(getLeft(node));
     }
     bindWith(node, parameters, globals);

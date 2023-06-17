@@ -1,14 +1,14 @@
 typedef enum {VARIABLE, ABSTRACTION, APPLICATION, NUMERAL, OPERATION} TermType;
 
 // names in Operations must line up with codes in OperationCode
-static const char* const Operations[] = {"+", "--", "*", "//", "%",
+static const char* const Operations[] = {"", "+", "--", "*", "//", "%",
     "=", "=/=", "<", ">", "<=", ">=", "abort",
     "up", "(exit)", "(put)", "(get)"};
-typedef enum {PLUS, MONUS, TIMES, DIVIDE, MODULO, EQUAL, NOTEQUAL,
+typedef enum {NONE, PLUS, MONUS, TIMES, DIVIDE, MODULO, EQUAL, NOTEQUAL,
       LESSTHAN, GREATERTHAN, LESSTHANOREQUAL, GREATERTHANOREQUAL,
       ABORT, INCREMENT, EXIT, PUT, GET} OperationCode;
 
-static inline bool isPseudoOperation(int c) {
+static inline bool isPseudoOperation(OperationCode c) {
     return c == ABORT || c == EXIT || c == PUT || c == GET;
 }
 

@@ -66,7 +66,8 @@ static void showTerm(Term* term, FILE* stream) {
             showTerm(getBody(term), stream);
             break;
         case NUMERAL: fputll(getValue(term), stream); break;
-        default: showTag(getTag(term), stream); break;
+        case VARIABLE: showTag(getTag(term), stream); break;
+        case OPERATION: showTag(getTag(term), stream); break;
     }
 }
 
@@ -84,7 +85,7 @@ static void print3(const char* a, const char* b, const char* c) {
 }
 
 static void usageError(const char* name) {
-    print3("Usage error: ", name, " [-d] [-D] [FILE]\n");
+    print3("Usage error: ", name, " [-c] [-p] [FILE]\n");
     exit(2);
 }
 
@@ -106,9 +107,7 @@ static void checkForMemoryLeak(const char* label, size_t expectedUsage) {
         memoryError(label, (long long)(usage - expectedUsage));
 }
 
-static void interpret(const char* sourceCode) {
-    initNodeAllocator();
-    Program program = parse(sourceCode);
+static void interpret(Program program) {
     size_t memoryUsageBeforeEvaluate = getMemoryUsage();
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     size_t memoryUsageBeforeSerialize = getMemoryUsage();
@@ -117,9 +116,6 @@ static void interpret(const char* sourceCode) {
     checkForMemoryLeak("serialize", memoryUsageBeforeSerialize);
     release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);
-    deleteProgram(program);
-    checkForMemoryLeak("parse", 0);
-    destroyNodeAllocator();
 }
 
 static char* readSourceCode(const char* filename) {
@@ -141,12 +137,14 @@ int main(int argc, char* argv[]) {
     setbuf(stdout, NULL);
     setbuf(stderr, NULL);
 
+    enum {INTERPRET, PARSE, CHECK};
+    int mode = INTERPRET;
     const char* programName = argv[0];
     while (--argc > 0 && (*++argv)[0] == '-') {
         for (const char* flag = argv[0] + 1; flag[0] != '\0'; ++flag) {
             switch (flag[0]) {
-                case 'd': DEBUG = 1; break;
-                case 'D': DEBUG = 2; break;
+                case 'c': mode = CHECK; break;
+                case 'p': mode = PARSE; break;
                 default: usageError(programName); break;
             }
         }
@@ -154,7 +152,17 @@ int main(int argc, char* argv[]) {
     if (argc > 1)
         usageError(programName);
     char* sourceCode = argc == 0 ? readfile(stdin) : readSourceCode(argv[0]);
-    interpret(sourceCode);
+
+    initNodeAllocator();
+    Program program = parse(sourceCode);
+    switch (mode) {
+        case INTERPRET: interpret(program); break;
+        case PARSE: showTerm(program.root, stdout); fputs("\n", stdout); break;
+        case CHECK: break;
+    }
+    deleteProgram(program);
+    checkForMemoryLeak("parse", 0);
+    destroyNodeAllocator();
     free(sourceCode);
     return 0;
 }

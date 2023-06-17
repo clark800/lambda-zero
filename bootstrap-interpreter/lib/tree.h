@@ -28,7 +28,7 @@ long long getValue(Node* leafNode);
 void setValue(Node* leafNode, long long value);
 void* getData(Node* leafNode);
 
-typedef struct Hold Hold;
+typedef struct Node Hold;
 Hold* hold(Node* node);
 void release(Hold* node);
 Node* getNode(Hold* hold);

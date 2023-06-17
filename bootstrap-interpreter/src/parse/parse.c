@@ -10,10 +10,7 @@
 #include "syntax.h"
 #include "tokens.h"
 #include "bind.h"
-#include "debug.h"
 #include "parse.h"
-
-int DEBUG = 0;
 
 static Node* getTop(Stack* stack) {
     return isEmpty(stack) ? NULL : peek(stack, 0);
@@ -43,7 +40,6 @@ static bool isRightSectionOperator(Node* op) {
 }
 
 static void shiftNode(Stack* stack, Node* node) {
-    debugParseState(getTag(node), stack, DEBUG >= 2);
     Hold* nodeHold = hold(node);
     if (isOperator(node) && getFixity(node) == CLOSEFIX) {
         erase(stack, "\n");
@@ -106,7 +102,6 @@ static Hold* synthesize(Token (*lexer)(Token), Token start) {
 
 Program parse(const char* input) {
     Hold* result = synthesize(lex, newStartToken(input));
-    debugParseStage("parse", getNode(result), DEBUG >= 2);
     Array* globals = bind(result);
     Node* entry = elementAt(globals, length(globals) - 1);
     return (Program){result, entry, globals};
