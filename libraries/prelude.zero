@@ -252,10 +252,10 @@ isDigit(n) ≔ n ≥ '0' and n ≤ '9'
 isQuote(n) ≔ n = '"' or n = '\''
 isWhitespace(n) ≔ n = ' ' or n ≥ '\t' and n ≤ '\r'
 isBlank(n) ≔ n = ' ' or n = '\t'
-isControl(n) ≔ n ≥ 0 and n < 32 or n = 127
+isControl(n) ≔ n < 32 or n = 127
+isPrintable(n) ≔ n >= 32 and n < 127
 isAlphabetic(n) ≔ isUppercase(n) or isLowercase(n)
 isAlphanumeric(n) ≔ isAlphabetic(n) or isDigit(n)
-isPrintable(n) ≔ n < 127 and not isControl(n)
 isGraphical(n) ≔ isPrintable(n) and not isBlank(n)
 isPunctuation(n) ≔ isGraphical(n) and not isAlphanumeric(n)
 

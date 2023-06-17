@@ -32,9 +32,9 @@ isSameTag(tag1, tag2) :=
 
 isComment(c) := c = '#'
 isLineFeed(c) := c = '\n'
-isInvalid(c) := c =/= 0 and isControl(c) and not isLineFeed(c)
-isDelimiter(c) := " `.,;@#$()[]{}\"\n\0".any((= c)) or isInvalid(c)
-isRepeatable(c) := " `.,;".any((= c))
+isInvalid(c) := isControl(c) and c =/= '\n' and c =/= 0
+isDelimiter(c) := isControl(c) or " (),.;@#[]{}\"`$".any((= c)) # \n,\0 are ctrl
+isRepeatable(c) := " ,.;`".any((= c))
 
 
 def startsWithDigit(lexeme)
