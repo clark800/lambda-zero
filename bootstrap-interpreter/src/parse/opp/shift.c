@@ -20,7 +20,7 @@ static void shiftPostfix(Stack* stack, Node* operator) {
     if (isOperator(peek(stack, 0)))
         syntaxErrorNode("missing left operand for", operator);
     Hold* operand = pop(stack);
-    shiftOperand(stack, reduce(operator, getNode(operand), NULL));
+    shiftOperand(stack, reduce(operator, operand, NULL));
     release(operand);
 }
 
@@ -36,33 +36,32 @@ static void shiftBracket(Stack* stack, Node* open, Node* close, Node* contents){
     } else {
         Hold* before = pop(stack);
         shiftOperand(stack,
-            reduceBracket(open, close, getNode(before), contents));
+            reduceBracket(open, close, before, contents));
         release(before);
     }
 }
 
 static void shiftClose(Stack* stack, Node* close) {
-    Hold* contentsHold = pop(stack);
-    Node* contents = getNode(contentsHold);
+    Hold* contents = pop(stack);
     if (isOperator(contents)) {
         if (getFixity(contents) == OPENFIX)
             shiftBracket(stack, contents, close, NULL);
         else syntaxErrorNode("missing right operand for", contents);
     } else {
         Hold* open = pop(stack);
-        shiftBracket(stack, getNode(open), close, contents);
+        shiftBracket(stack, open, close, contents);
         release(open);
     }
-    release(contentsHold);
+    release(contents);
 }
 
 static Lexeme reduceTop(Stack* stack) {
     Hold* right = pop(stack);
     Hold* operator = pop(stack);
-    Lexeme lexeme = getLexeme(getTag(getNode(operator)));
-    Fixity fixity = getFixity(getNode(operator));
+    Lexeme lexeme = getLexeme(getTag(operator));
+    Fixity fixity = getFixity(operator);
     Hold* left = fixity == INFIX ? pop(stack) : hold(NULL);
-    Node* operand = reduce(getNode(operator), getNode(left), getNode(right));
+    Node* operand = reduce(operator, left, right);
     shiftOperand(stack, operand);
     release(right);
     release(operator);

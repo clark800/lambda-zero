@@ -25,13 +25,13 @@ static Closure* setUpdate(Closure* closure, bool update) {
 
 static void eraseUpdates(Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0)))
-        release((Hold*)setUpdate(getNode(pop(stack)), false));
+        release(setUpdate(pop(stack), false));
 }
 
 static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     while (!isEmpty(stack) && isUpdate(peek(stack, 0))) {
         Hold* update = pop(stack);
-        updateClosure(setUpdate(getNode(update), false), evaluatedClosure);
+        updateClosure(setUpdate(update, false), evaluatedClosure);
         release(update);
     }
 }
@@ -67,7 +67,7 @@ static void evaluateApplication(Closure* closure, Stack* stack) {
 static void evaluateAbstraction(Closure* closure, Stack* stack) {
     // move argument from stack to local environment and step into body
     Hold* argument = pop(stack);
-    push((Stack*)closure, getNode(argument));
+    push((Stack*)closure, argument);
     release(argument);
     setTerm(closure, getBody(getTerm(closure)));
 }
@@ -99,27 +99,27 @@ static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
 
     // save the closure data since evaluate will mutate the closure and we
     // may have to revert if the operation optimization does not work
-    Hold* leftTerm = left == NULL ? NULL : hold(getTerm(getNode(left)));
-    Hold* leftLocals = left == NULL ? NULL : hold(getLocals(getNode(left)));
-    Hold* rightTerm = right == NULL ? NULL : hold(getTerm(getNode(right)));
-    Hold* rightLocals = right == NULL ? NULL : hold(getLocals(getNode(right)));
+    Hold* leftTerm = left == NULL ? NULL : hold(getTerm(left));
+    Hold* leftLocals = left == NULL ? NULL : hold(getLocals(left));
+    Hold* rightTerm = right == NULL ? NULL : hold(getTerm(right));
+    Hold* rightLocals = right == NULL ? NULL : hold(getLocals(right));
 
     // left and right may be mutated in evaluateClosure
     Hold* result = evaluateOperationTerm(closure,
-        left == NULL ? NULL : evaluateClosure(getNode(left), globals),
-        right == NULL ? NULL : evaluateClosure(getNode(right), globals));
+        left == NULL ? NULL : evaluateClosure(left, globals),
+        right == NULL ? NULL : evaluateClosure(right, globals));
 
     if (result == NULL) {
         // restore stack to it's original state
         if (right != NULL) {
-            setTerm(getNode(right), getNode(rightTerm));
-            setLocals(getNode(right), getNode(rightLocals));
-            push(stack, getNode(right));
+            setTerm(right, rightTerm);
+            setLocals(right, rightLocals);
+            push(stack, right);
         }
         if (left != NULL) {
-            setTerm(getNode(left), getNode(leftTerm));
-            setLocals(getNode(left), getNode(leftLocals));
-            push(stack, getNode(left));
+            setTerm(left, leftTerm);
+            setLocals(left, leftLocals);
+            push(stack, left);
         }
     }
     if (right != NULL) {
@@ -138,7 +138,7 @@ static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
             runtimeError("missing argument to", closure);
         setTerm(closure, fallback);
     } else {
-        setClosure(closure, getNode(result));
+        setClosure(closure, result);
         release(result);
     }
 }
@@ -191,7 +191,7 @@ Hold* evaluateTerm(Term* term, Globals* globals) {
     INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, NULL, NULL));
     assert(signal(SIGINT, interrupt) != SIG_ERR);
-    Hold* result = hold(evaluateClosure(getNode(closure), globals));
+    Hold* result = hold(evaluateClosure(closure, globals));
     assert(signal(SIGINT, SIG_DFL) != SIG_ERR);
     release(closure);
     deleteStack(INPUT_STACK);

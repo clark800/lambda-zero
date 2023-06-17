@@ -35,13 +35,13 @@ static Hold* resolveLocals(Term* term, Node* locals, unsigned int depth) {
         } case APPLICATION: {
             Hold* left = resolveLocals(getLeft(term), locals, depth);
             Hold* right = resolveLocals(getRight(term), locals, depth);
-            Term* ap = Application(getTag(term), getNode(left), getNode(right));
+            Term* ap = Application(getTag(term), left, right);
             release(left);
             release(right);
             return hold(ap);
         } case ABSTRACTION: {
             Hold* body = resolveLocals(getBody(term), locals, depth + 1);
-            Term* abstraction = Abstraction(getTag(term), getNode(body));
+            Term* abstraction = Abstraction(getTag(term), body);
             release(body);
             return hold(abstraction);
         } default: return hold(term);
@@ -73,7 +73,7 @@ static void showTerm(Term* term, FILE* stream) {
 
 static void showClosure(Closure* closure, FILE* stream) {
     Hold* term = resolveLocals(getTerm(closure), getLocals(closure), 0);
-    showTerm(getNode(term), stream);
+    showTerm(term, stream);
     release(term);
     fputs("\n", stream);
 }
@@ -112,7 +112,7 @@ static void interpret(Program program) {
     Hold* valueClosure = evaluateTerm(program.entry, program.globals);
     size_t memoryUsageBeforeSerialize = getMemoryUsage();
     if (!isIO)
-        showClosure(getNode(valueClosure), stdout);
+        showClosure(valueClosure, stdout);
     checkForMemoryLeak("serialize", memoryUsageBeforeSerialize);
     release(valueClosure);
     checkForMemoryLeak("evaluate", memoryUsageBeforeEvaluate);

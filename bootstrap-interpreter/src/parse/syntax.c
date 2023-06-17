@@ -47,8 +47,8 @@ static Node* reduceIfIs(Tag tag, Node* asPattern, Node* thenBlock) {
     Node* elseBlock = Underscore(tag, 3);
     Hold* caseArrow = hold(newCase(pattern, thenBlock));
     Hold* underscore = hold(Underscore(tag, 0));
-    Node* fallback = newCase(getNode(underscore), elseBlock);
-    Node* function = combineCases(tag, getNode(caseArrow), fallback);
+    Node* fallback = newCase(underscore, elseBlock);
+    Node* function = combineCases(tag, caseArrow, fallback);
     release(caseArrow);
     release(underscore);
     return SingleArrow(FixedName(tag, "pass"),

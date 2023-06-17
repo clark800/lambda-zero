@@ -65,8 +65,8 @@ static void shiftNode(Stack* stack, Node* node) {
             erase(stack, "(");
             Hold* open = hold(parseSymbol(newLiteralLexeme("( ", location), 0));
             Hold* placeholder = hold(Name(newLiteralTag(".*", location, 0)));
-            shift(stack, getNode(open));
-            shift(stack, getNode(placeholder));
+            shift(stack, open);
+            shift(stack, placeholder);
             shift(stack, node);
             release(open);
             release(placeholder);
@@ -76,8 +76,8 @@ static void shiftNode(Stack* stack, Node* node) {
             Hold* close = hold(parseSymbol(
                 newLiteralLexeme(" )", location), 0));
             Hold* placeholder = hold(Name(newLiteralTag("*.", location, 0)));
-            shift(stack, getNode(placeholder));
-            shift(stack, getNode(close));
+            shift(stack, placeholder);
+            shift(stack, close);
             release(placeholder);
             release(close);
         } else shift(stack, node);
@@ -95,7 +95,7 @@ static Hold* synthesize(Token (*lexer)(Token), Token start) {
                 && token.type != SPACE)
             shiftNode(stack, parseToken(token));
     Hold* ast = hold(getTop(stack));
-    syntaxErrorNodeIf(getNode(ast) == startNode, "no input", getNode(ast));
+    syntaxErrorNodeIf(ast == startNode, "no input", ast);
     deleteStack(stack);
     return ast;
 }

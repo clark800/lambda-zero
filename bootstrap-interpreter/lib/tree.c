@@ -91,9 +91,8 @@ void setRight(Node* node, Node* right) {
     releaseNode(oldRight);
 }
 
-Hold* hold(Node* node) {return (Hold*)reference(node);}
-void release(Hold* nodeHold) {releaseNode((Node*)nodeHold);}
-Node* getNode(Hold* nodeHold) {return (Node*)nodeHold;}
+Hold* hold(Node* node) {return reference(node);}
+void release(Hold* node) {releaseNode(node);}
 
 Node* getListElement(Node* node, unsigned long long n) {
     assert((node->flags & GC_BOTH) == GC_BOTH);

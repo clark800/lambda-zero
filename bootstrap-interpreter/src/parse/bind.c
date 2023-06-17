@@ -75,7 +75,7 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
 }
 
 Array* bind(Hold* root) {
-    Node* node = getNode(root);
+    Node* node = root;
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
     while (isLet(node) && !isUnderscore(getParameter(getLeft(node)))) {

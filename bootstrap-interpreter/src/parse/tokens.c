@@ -70,7 +70,7 @@ static Node* buildStringLiteral(Tag tag, const char* start) {
 
 static Node* parseStringLiteral(Lexeme lexeme) {
     Hold* name = hold(Name(newTag(lexeme, NOFIX)));
-    Node* node = buildStringLiteral(getTag(getNode(name)), lexeme.start + 1);
+    Node* node = buildStringLiteral(getTag(name), lexeme.start + 1);
     release(name);
     return node;
 }
