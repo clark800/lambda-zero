@@ -11,8 +11,7 @@
 extern bool isIO;
 static volatile bool INTERRUPT = false;
 
-typedef const Array Globals;
-static Node* evaluateClosure(Closure* closure, Globals* globals);
+static Node* evaluateClosure(Closure* closure, Array* globals);
 
 static bool isUpdate(Closure* closure) {
     return getVariety(closure) == 1;
@@ -40,7 +39,7 @@ static Closure* getReferee(Term* variable, Node* locals) {
     return getListElement(locals, getDebruijnIndex(variable) - 1);
 }
 
-static Term* getGlobalValue(Term* global, Globals* globals) {
+static Term* getGlobalValue(Term* global, Array* globals) {
     return elementAt(globals, (size_t)getGlobalIndex(global));
 }
 
@@ -72,7 +71,7 @@ static void evaluateAbstraction(Closure* closure, Stack* stack) {
     setTerm(closure, getBody(getTerm(closure)));
 }
 
-static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
+static void evaluateVariable(Closure* closure, Stack* stack, Array* globals) {
     Term* variable = getTerm(closure);
     if (isGlobal(variable)) {
         setTerm(closure, getGlobalValue(variable, globals));
@@ -89,7 +88,7 @@ static void evaluateVariable(Closure* closure, Stack* stack, Globals* globals) {
     }
 }
 
-static void evaluateOperation(Closure* closure, Stack* stack, Globals* globals){
+static void evaluateOperation(Closure* closure, Stack* stack, Array* globals) {
     unsigned int arity = getArity(getTerm(closure));
     setLocals(closure, NULL);
     applyUpdates(closure, stack);
@@ -156,7 +155,7 @@ static void evaluateNumeral(Closure* closure) {
     setTerm(closure, expandNumeral(getTerm(closure)));
 }
 
-static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
+static Closure* evaluate(Closure* closure, Stack* stack, Array* globals) {
     while (true) {
         assert(INTERRUPT ? (runtimeError("interrupted", closure), 0) : 1);
         TermType type = getTermType(getTerm(closure));
@@ -175,7 +174,7 @@ static Closure* evaluate(Closure* closure, Stack* stack, Globals* globals) {
     }
 }
 
-static Closure* evaluateClosure(Closure* closure, Globals* globals) {
+static Closure* evaluateClosure(Closure* closure, Array* globals) {
     if (isValue(getTerm(closure)))
         return closure;
     Stack* stack = newStack();
@@ -186,7 +185,7 @@ static Closure* evaluateClosure(Closure* closure, Globals* globals) {
 
 static void interrupt(int parameter) {(void)parameter; INTERRUPT = true;}
 
-Hold* evaluateTerm(Term* term, Globals* globals) {
+Hold* evaluateTerm(Term* term, Array* globals) {
     (void)interrupt;
     INPUT_STACK = newStack();
     Hold* closure = hold(newClosure(term, NULL, NULL));

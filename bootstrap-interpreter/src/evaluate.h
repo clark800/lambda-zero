@@ -1,1 +1,1 @@
-Hold* evaluateTerm(Term* term, const Array* globals);
+Hold* evaluateTerm(Term* term, Array* globals);
