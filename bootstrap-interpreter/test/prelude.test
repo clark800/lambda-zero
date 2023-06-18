@@ -174,7 +174,7 @@ f(x, y, z) := y * (z + 1) \n``f(2, 3, 5)
 15
 ===============================================================================
 (syntax(%%) := infix(20), 0)
-Syntax error: invalid right hand side ':=' at line 1 column 13
+Syntax error: missing scope for definition ':=' at line 1 column 13
 ===============================================================================
 Void ?? 2
 2
@@ -209,35 +209,35 @@ try x := Right(1)\n2
 (case 0 ↦ 0; case n @ up n' ↦ n + n')(4)
 Syntax error: invalid case '@' at line 1 column 23
 ===============================================================================
-def x\n  match 3 to case 0 ↦ 1; case up(n) ↦ n * n\nx
+def x\n  match 3 to (case 0 ↦ 1; case up(n) ↦ n * n)\nx
 4
 ==========================================================================
-[1] |> case x :: xs ↦ x; case _ ↦ 0
+[1] |> (case x :: xs ↦ x; case _ ↦ 0)
 1
 ==========================================================================
-[] |> case x :: xs ↦ x; case _ ↦ 0
+[] |> (case x :: xs ↦ x; case _ ↦ 0)
 0
 ==========================================================================
-Void |> case Void ↦ 1; case _ ↦ 2
+Void |> (case Void ↦ 1; case _ ↦ 2)
 1
 ==========================================================================
-Just(3) |> case Void ↦ 1; case _ ↦ 2
+Just(3) |> (case Void ↦ 1; case _ ↦ 2)
 2
 ==========================================================================
-Void |> case Just(x) ↦ x; case _ ↦ 0
+Void |> (case Just(x) ↦ x; case _ ↦ 0)
 0
 ==========================================================================
-Just(3) |> case Just(x) ↦ x; case _ ↦ 0
+Just(3) |> (case Just(x) ↦ x; case _ ↦ 0)
 3
 ==========================================================================
-Void |> case Just(x) ↦ x; case Void ↦ 1; case _ ↦ 0
+Void |> (case Just(x) ↦ x; case Void ↦ 1; case _ ↦ 0)
 1
 ==========================================================================
-Just(3) |> case Void ↦ 1; case Just(x) ↦ x; case _ ↦ 0
+Just(3) |> (case Void ↦ 1; case Just(x) ↦ x; case _ ↦ 0)
 3
 ==========================================================================
-[] |> case _ ↦ 0; case x :: xs ↦ 1
-Syntax error: invalid default case position 'this' at line 1 column 12
+[] |> (case _ ↦ 0; case x :: xs ↦ 1)
+Syntax error: invalid default case position 'this' at line 1 column 13
 ==========================================================================
 if [1] is x :: xs\n  x\n0
 1

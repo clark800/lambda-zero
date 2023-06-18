@@ -15,7 +15,7 @@ fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
 a ⊓ b ⩴ {(_ : a, _ : b)}
 
 Nat ::= {0, up(n : Nat)}
-(+) := case 0 -> m -> m; case up n -> m -> up(n + m)
+(+) := (case 0 -> m -> m; case up n -> m -> up(n + m))
 
 List(a) ⩴ {[], (head : a) :: (tail : List(a))}
 

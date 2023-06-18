@@ -51,19 +51,19 @@ def getTermTag
     case Operation(tag, _, _) -> tag
 
 
-isMetavariable := case Metavariable(_, _) -> True; case _ -> False
-isType := case Type(_, _) -> True; case _ -> False
-isVariable := case Variable(_, _) -> True; case _ -> False
-isInference := case Inference(_, _) -> True; case _ -> False
-isSingleton := case Singleton(_, _, _) -> True; case _ -> False
-isAbstraction := case Abstraction(_, _, _) -> True; case _ -> False
-isImplication := case Implication(_, _, _) -> True; case _ -> False
-isIntersection := case Intersection(_, _, _) -> True; case _ -> False
-isApplication := case Application(_, _, _) -> True; case _ -> False
-isEquation := case Equation(_, _, _) -> True; case _ -> False
-isConstruction := case Construction(_, _, _, _) -> True; case _ -> False
-isNumeral := case Numeral(_, _, _) -> True; case _ -> False
-isOperation := case Operation(_, _, _) -> True; case _ -> False
+isMetavariable := (case Metavariable(_, _) -> True; case _ -> False)
+isType := (case Type(_, _) -> True; case _ -> False)
+isVariable := (case Variable(_, _) -> True; case _ -> False)
+isInference := (case Inference(_, _) -> True; case _ -> False)
+isSingleton := (case Singleton(_, _, _) -> True; case _ -> False)
+isAbstraction := (case Abstraction(_, _, _) -> True; case _ -> False)
+isImplication := (case Implication(_, _, _) -> True; case _ -> False)
+isIntersection := (case Intersection(_, _, _) -> True; case _ -> False)
+isApplication := (case Application(_, _, _) -> True; case _ -> False)
+isEquation := (case Equation(_, _, _) -> True; case _ -> False)
+isConstruction := (case Construction(_, _, _, _) -> True; case _ -> False)
+isNumeral := (case Numeral(_, _, _) -> True; case _ -> False)
+isOperation := (case Operation(_, _, _) -> True; case _ -> False)
 
 def isUnknown(term)
     if term is Variable(_, index)

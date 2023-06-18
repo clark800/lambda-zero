@@ -31,7 +31,7 @@ def applyTryDefinition(tag, name, value, scope)
 
 
 def applyBindDefinition(tag, name, value, scope)
-    # name <- value;; scope ==> value >> (name -> scope)
+    # name <- value; scope ==> value >> (name -> scope)
     Juxtaposition(tag, Juxtaposition(tag, FixedName(tag, ">>"), value),
         newArrow(name, scope))
 

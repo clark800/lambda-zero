@@ -35,7 +35,7 @@ Quadruple(a, b, c, d) ⩴ {(_ : a, _ : b, _ : c, _ : d)}
 
 # boolean
 𝔹 ⩴ {False, True}
-if b then x else y ≔ b ⦊ case False ↦ y; case True ↦ x
+if b then x else y ≔ b ⦊ (case False ↦ y; case True ↦ x)
 not b ≔ if b then False else True
 b and c ≔ if b then c else False
 b or c ≔ if b then True else c
@@ -45,76 +45,76 @@ while(p, f, z) ≔ until((not) ∘ p, f, z)
 
 # maybe
 (a)? ⩴ {Void, Just(_ : a)}
-isVoid ≔ case Void ↦ True; case Just(_) ↦ False
-onJust(f, mx) ≔ mx ⦊ case Void ↦ Void; case Just(x) ↦ f(x)
+isVoid ≔ (case Void ↦ True; case Just(_) ↦ False)
+onJust(f, mx) ≔ mx ⦊ (case Void ↦ Void; case Just(x) ↦ f(x))
 mapJust(f, mx) ≔ mx.onJust(Just ∘ f)
-mx ⁇ x ≔ mx ⦊ case Void ↦ x; case Just(x′) ↦ x′
+mx ⁇ x ≔ mx ⦊ (case Void ↦ x; case Just(x′) ↦ x′)
 
 # either
 a ⊔ b ⩴ {Left(_ : a), Right(_ : b)}
 (error) := Left
 (return) := Right
-isLeft ≔ case Left(_) ↦ True; case Right(_) ↦ False
-isRight ≔ case Left(_) ↦ False; case Right(_) ↦ True
-onLeft(f, exy) ≔ exy ⦊ case Left(x) ↦ f(x); case Right(y) ↦ Right(y)
-onRight(f, exy) ≔ exy ⦊ case Left(x) ↦ Left(x); case Right(y) ↦ f(y)
+isLeft ≔ (case Left(_) ↦ True; case Right(_) ↦ False)
+isRight ≔ (case Left(_) ↦ False; case Right(_) ↦ True)
+onLeft(f, exy) ≔ exy ⦊ (case Left(x) ↦ f(x); case Right(y) ↦ Right(y))
+onRight(f, exy) ≔ exy ⦊ (case Left(x) ↦ Left(x); case Right(y) ↦ f(y))
 mapLeft(f, exy) ≔ exy.onLeft(Left ∘ f)
 mapRight(f, exy) ≔ exy.onRight(Right ∘ f)
-toMaybe ≔ case Left(_) ↦ Void; case Right(y) ↦ Just(y)
-exy ⁉ y ≔ exy ⦊ case Left(_) ↦ y; case Right(y′) ↦ y′
-my ⁈ x ≔ my ⦊ case Void ↦ Left(x); case Just(y) ↦ Right(y)
+toMaybe ≔ (case Left(_) ↦ Void; case Right(y) ↦ Just(y))
+exy ⁉ y ≔ exy ⦊ (case Left(_) ↦ y; case Right(y′) ↦ y′)
+my ⁈ x ≔ my ⦊ (case Void ↦ Left(x); case Just(y) ↦ Right(y))
 
 # numbers
 ℕ ⩴ {0, ↑(n : ℕ)}
 ℤ ⩴ {ᐩ(n : ℕ), ᐨ(n : ℕ)}
 ℚ ⩴ {(numerator : ℤ) / (denominator : ℤ)}
 
-↓ n ≔ n ⦊ case 0 ↦ 0; case ↑ n′ ↦ n′
-(=) ≔ case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ False);
-      case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n = m)
-(≠) ≔ case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ True);
-      case ↑ n ↦ (case 0 ↦ True; case ↑ m ↦ n ≠ m)
-(<) ≔ case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ True);
-      case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n < m)
-(>) ≔ case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ False);
-      case ↑ n ↦ (case 0 ↦ True; case ↑ m ↦ n > m)
-(≤) ≔ case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ True);
-      case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n ≤ m)
-(≥) ≔ case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ False);
-      case ↑ n ↦ (case 0 ↦ True; case ↑ m ↦ n ≥ m)
-(+) ≔ case 0 ↦ m ↦ m; case ↑ n ↦ m ↦ ↑(n + m)
-(∸) ≔ case 0 ↦ (case 0 ↦ 0; case ↑ _ ↦ 0);
-      case ↑ n ↦ (case 0 ↦ ↑ n; case ↑ m ↦ n ∸ m)
-(⋅) ≔ case 0 ↦ (_ ↦ 0); case ↑ n ↦ m ↦ m + n ⋅ m
+↓ n ≔ n ⦊ (case 0 ↦ 0; case ↑ n′ ↦ n′)
+(=) ≔ (case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ False);
+       case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n = m))
+(≠) ≔ (case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ True);
+       case ↑ n ↦ (case 0 ↦ True; case ↑ m ↦ n ≠ m))
+(<) ≔ (case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ True);
+       case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n < m))
+(>) ≔ (case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ False);
+       case ↑ n ↦ (case 0 ↦ True; case ↑ m ↦ n > m))
+(≤) ≔ (case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ True);
+       case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n ≤ m))
+(≥) ≔ (case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ False);
+       case ↑ n ↦ (case 0 ↦ True; case ↑ m ↦ n ≥ m))
+(+) ≔ (case 0 ↦ m ↦ m; case ↑ n ↦ m ↦ ↑(n + m))
+(∸) ≔ (case 0 ↦ (case 0 ↦ 0; case ↑ _ ↦ 0);
+       case ↑ n ↦ (case 0 ↦ ↑ n; case ↑ m ↦ n ∸ m))
+(⋅) ≔ (case 0 ↦ (_ ↦ 0); case ↑ n ↦ m ↦ m + n ⋅ m)
 n ⫽ m ≔ if m = 0 or n < m then 0 else ↑((n ∸ m) ⫽ m)
 n % m ≔ if m = 0 then n else (if n < m then n else (n ∸ m) % m)
 
-(≐) ≔ case ᐩ n ↦ (case ᐩ m ↦ n = m; case ᐨ m ↦ False);
-      case ᐨ n ↦ (case ᐩ m ↦ False; case ᐨ m ↦ n = m)
-isPositive ≔ case ᐩ n ↦ True; case ᐨ n ↦ False
-isNegative ≔ case ᐩ n ↦ False; case ᐨ n ↦ True
-negate ≔ case ᐩ n ↦ ᐨ n; case ᐨ n ↦ ᐩ n
-abs ≔ case ᐩ n ↦ n; case ᐨ n ↦ n
+(≐) ≔ (case ᐩ n ↦ (case ᐩ m ↦ n = m; case ᐨ m ↦ False);
+       case ᐨ n ↦ (case ᐩ m ↦ False; case ᐨ m ↦ n = m))
+isPositive ≔ (case ᐩ n ↦ True; case ᐨ n ↦ False)
+isNegative ≔ (case ᐩ n ↦ False; case ᐨ n ↦ True)
+negate ≔ (case ᐩ n ↦ ᐨ n; case ᐨ n ↦ ᐩ n)
+abs ≔ (case ᐩ n ↦ n; case ᐨ n ↦ n)
 min(n, m) ≔ if n ≤ m then n else m
 max(n, m) ≔ if n ≥ m then n else m
 mod(d, n) ≔ n % d
 isEven(n) ≔ n.mod(2) = 0
 isOdd(n) ≔ n.mod(2) ≠ 0
 divides(n, d) ≔ n.mod(d) = 0
-n ! ≔ n ⦊ case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !
+n ! ≔ n ⦊ (case 0 ↦ 1; case ↑ n′ ↦ n ⋅ n′ !)
 gcd(n, m) ≔ if m = 0 then n else gcd(m, n.mod(m))
-f ° n ≔ n ⦊ case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′
+f ° n ≔ n ⦊ (case 0 ↦ id; case ↑ n′ ↦ f ∘ f ° n′)
 (n)² ≔ n ⋅ n
-n ^ m ≔ m ⦊ case 0 ↦ 1;
-            case ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′
+n ^ m ≔ m ⦊ (case 0 ↦ 1;
+             case ↑ m′ ↦ if isEven(m) then (n ^ (m ⫽ 2))² else n ⋅ n ^ m′)
 
 
 # list
 List(a) ⩴ {[], (head : a) ∷ (tail : List(a))}
 prepend ≔ (∷)
-isNil ≔ case [] ↦ True; case _ ∷ _ ↦ False
-fold(f, z, xs) ≔ xs ⦊ case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(f, z, xs′))
-cascade(f, z, xs) ≔ xs ⦊ case [] ↦ z; case x ∷ xs′ ↦ cascade(f, f(z, x), xs′)
+isNil ≔ (case [] ↦ True; case _ ∷ _ ↦ False)
+fold(f, z, xs) ≔ xs ⦊ (case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(f, z, xs′)))
+cascade(f, z, xs) ≔ xs ⦊ (case [] ↦ z; case x ∷ xs′ ↦ cascade(f, f(z, x), xs′))
 abort(message : List(ℕ)) ≔ abort(message)
 impossible := abort("impossible")
 
@@ -122,37 +122,38 @@ xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
 length(xs) ≔ xs.fold(const((↑)), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
-drop(n, xs) ≔ n ⦊ case 0 ↦ xs; case ↑ n′ ↦
-    (xs ⦊ case [] ↦ []; case _ ∷ xs′ ↦ xs′.drop(n′))
-take(n, xs) ≔ n ⦊ case 0 ↦ []; case ↑ n′ ↦
-    (xs ⦊ case [] ↦ []; case x ∷ xs′ ↦ x ∷ xs′.take(n′))
+drop(n, xs) ≔ n ⦊ (case 0 ↦ xs; case ↑ n′ ↦
+    (xs ⦊ (case [] ↦ []; case _ ∷ xs′ ↦ xs′.drop(n′))))
+take(n, xs) ≔ n ⦊ (case 0 ↦ []; case ↑ n′ ↦
+    (xs ⦊ (case [] ↦ []; case x ∷ xs′ ↦ x ∷ xs′.take(n′))))
 xs[n, n′] ≔ xs.drop(n).take(n′ ∸ n)
 slice(n, n′, xs) ≔ xs[n, n′]
-pop(xs) ≔ xs ⦊ case [] ↦ Void; case x ∷ _ ↦ Just(x)
+pop(xs) ≔ xs ⦊ (case [] ↦ Void; case x ∷ _ ↦ Just(x))
 pick(n, xs) ≔ pop(xs.drop(n))
-dropLast(xs) ≔ xs ⦊ case [] ↦ [];
-    case x ∷ xs′ ↦ if isNil(xs′) then [] else x ∷ dropLast(xs′)
-dropIf(p, ns) ≔ ns ⦊ case [] ↦ []; case n ∷ ns′ ↦ if p(n) then ns′ else ns
-takeWhile(p, xs) ≔ xs ⦊ case [] ↦ [];
-    case x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(p, xs′) else []
-dropWhile(p, xs) ≔ xs ⦊ case [] ↦ [];
-    case x ∷ xs′ ↦ if p(x) then dropWhile(p, xs′) else xs
+dropLast(xs) ≔ xs ⦊ (case [] ↦ [];
+    case x ∷ xs′ ↦ if isNil(xs′) then [] else x ∷ dropLast(xs′))
+dropIf(p, ns) ≔ ns ⦊ (case [] ↦ []; case n ∷ ns′ ↦ if p(n) then ns′ else ns)
+takeWhile(p, xs) ≔ xs ⦊ (case [] ↦ [];
+    case x ∷ xs′ ↦ if p(x) then x ∷ takeWhile(p, xs′) else [])
+dropWhile(p, xs) ≔ xs ⦊ (case [] ↦ [];
+    case x ∷ xs′ ↦ if p(x) then dropWhile(p, xs′) else xs)
 filter(p, xs) ≔ xs.fold(x ↦ xs′ ↦ if p(x) then x ∷ xs′ else xs′, [])
 xs ¦ p ≔ filter(p, xs)
 map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 (⬫) ≔ map
-sift(mxs) ≔ mxs ⦊ case [] ↦ []; case mx ∷ mxs′ ↦
-    (mx ⦊ case Void ↦ sift(mxs′); case Just(x) ↦ x ∷ sift(mxs′))
-collect(mxs) ≔ mxs ⦊ case [] ↦ Just([]); case mx ∷ mxs′ ↦
-    (mx ⦊ case Void ↦ Void; case Just(x) ↦
-        (collect(mxs′) ⦊ case Void ↦ Void; case Just(xs) ↦ Just(x ∷ xs)))
-zipWith(f, xs, ys) ≔ xs ⦊ case [] ↦ []; case x ∷ xs′ ↦
-    (ys ⦊ case [] ↦ []; case y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))
+sift(mxs) ≔ mxs ⦊ (case [] ↦ []; case mx ∷ mxs′ ↦
+    (mx ⦊ (case Void ↦ sift(mxs′); case Just(x) ↦ x ∷ sift(mxs′))))
+collect(mxs) ≔ mxs ⦊ (case [] ↦ Just([]); case mx ∷ mxs′ ↦
+    (mx ⦊ (case Void ↦ Void; case Just(x) ↦
+        (collect(mxs′) ⦊ (case Void ↦ Void; case Just(xs) ↦ Just(x ∷ xs))))))
+zipWith(f, xs, ys) ≔ xs ⦊ (case [] ↦ []; case x ∷ xs′ ↦
+    (ys ⦊ (case [] ↦ []; case y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
-pairs(xs) ≔ xs ⦊ case [] ↦ []; case _ ∷ xs′ ↦ zip(xs, xs′)
-interleave(y, xs) ≔ xs ⦊ case [] ↦ []; case x ∷ xs′ ↦ x ∷ interleave′(xs′) where
-    interleave′ ≔ case [] ↦ []; case x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′)
+pairs(xs) ≔ xs ⦊ (case [] ↦ []; case _ ∷ xs′ ↦ zip(xs, xs′))
+interleave(y, xs) ≔ xs ⦊
+    (case [] ↦ []; case x ∷ xs′ ↦ x ∷ interleave′(xs′)) where
+    interleave′ ≔ (case [] ↦ []; case x ∷ xs′ ↦ y ∷ x ∷ interleave′(xs′))
 joinWith(ys, xss) ≔ join(interleave(ys, xss))
 bisect(p, xs) ≔ (xs ¦ p, xs ¦ (not) ∘ p)
 any(p, xs) ≔ xs.map(p).fold((or), False)
@@ -172,22 +173,22 @@ contains(p, xs) ≔ not isVoid(xs.find(p))
 findIndices(p, xs) ≔ (enumerate(xs) ¦ p ∘ second).map(first)
 findIndex(p, xs) ≔ pop(findIndices(p, xs))
 
-cascadeMaybe(f, z, xs) ≔ xs ⦊ case [] ↦ Just(z); case x ∷ xs′ ↦
-    f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′))
-tryCascade(f, z, xs) ≔ xs ⦊ case [] ↦ Right(z); case x ∷ xs′ ↦
-    f(z, x).onRight(y ↦ tryCascade(f, y, xs′))
+cascadeMaybe(f, z, xs) ≔ xs ⦊ (case [] ↦ Just(z); case x ∷ xs′ ↦
+    f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′)))
+tryCascade(f, z, xs) ≔ xs ⦊ (case [] ↦ Right(z); case x ∷ xs′ ↦
+    f(z, x).onRight(y ↦ tryCascade(f, y, xs′)))
 
 # cascadeMap : (a => s => (b && s)) => s => List(a) => (List(b) && s)
 cascadeMap(f, z, xs) ≔ xs.cascade((ys, s) ↦ x ↦
     f(x, s).mapFirst((∷ ys)), ([], z)).mapFirst(reverse)
 
-sort ≔ case [] ↦ []; case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n))
+sort ≔ (case [] ↦ []; case n ∷ ns ↦ sort(ns ¦ (≤ n)) ⧺ [n] ⧺ sort(ns ¦ (> n)))
 
-sortBy((≾)) ≔ case [] ↦ []; case n ∷ ns ↦
-    sortBy((≾), ns ¦ (≾ n)) ⧺ [n] ⧺ sortBy((≾), ns ¦ (not) ∘ (≾ n))
+sortBy((≾)) ≔ (case [] ↦ []; case n ∷ ns ↦
+    sortBy((≾), ns ¦ (≾ n)) ⧺ [n] ⧺ sortBy((≾), ns ¦ (not) ∘ (≾ n)))
 
-deduplicateBy((≟), xs) ≔ xs ⦊ case [] ↦ [];
-    case x ∷ xs′ ↦ x ∷ deduplicateBy((≟), xs′ ¦ (not) ∘ (≟ x))
+deduplicateBy((≟), xs) ≔ xs ⦊ (case [] ↦ [];
+    case x ∷ xs′ ↦ x ∷ deduplicateBy((≟), xs′ ¦ (not) ∘ (≟ x)))
 deduplicate(xs) ≔ deduplicateBy((=), xs)
 
 ∑(ns) ≔ ns.cascade((+), 0)
@@ -196,26 +197,26 @@ sum ≔ ∑
 product ≔ ∏
 
 fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
-primes ≔ p(2 …) where p ≔ case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0))
+primes ≔ p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0)))
 
 # string
-xs ≛ ys ≔ xs ⦊ case [] ↦ isNil(ys); case x ∷ xs′ ↦
-    (ys ⦊ case [] ↦ False; case y ∷ ys′ ↦ x = y and xs′ ≛ ys′)
+xs ≛ ys ≔ xs ⦊ (case [] ↦ isNil(ys); case x ∷ xs′ ↦
+    (ys ⦊ (case [] ↦ False; case y ∷ ys′ ↦ x = y and xs′ ≛ ys′)))
 
-ns ⩿ ms ≔ ns ⦊ case [] ↦ True; case n ∷ ns′ ↦
-    (ms ⦊ case [] ↦ False; case m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)
+ns ⩿ ms ≔ ns ⦊ (case [] ↦ True; case n ∷ ns′ ↦
+    (ms ⦊ (case [] ↦ False; case m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)))
 
 
-startsWith(ks, ns) ≔ ks ⦊ case [] ↦ True; case k ∷ ks′ ↦
-    (ns ⦊ case [] ↦ False; case n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))
+startsWith(ks, ns) ≔ ks ⦊ (case [] ↦ True; case k ∷ ks′ ↦
+    (ns ⦊ (case [] ↦ False; case n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))))
 
-split(p, xs) ≔ xs ⦊ case [] ↦ ([], []); case x ∷ xs′ ↦
+split(p, xs) ≔ xs ⦊ (case [] ↦ ([], []); case x ∷ xs′ ↦
     (if p(xs) then ([], xs) else (x ∷ before, after) where
-        (before, after) ≔ xs′.split(p))
+        (before, after) ≔ xs′.split(p)))
 
-splitWhen(p, xs) ≔ xs ⦊ case [] ↦ ([], []); case x ∷ xs′ ↦
+splitWhen(p, xs) ≔ xs ⦊ (case [] ↦ ([], []); case x ∷ xs′ ↦
     (if p(x) then ([], xs) else (x ∷ before, after) where
-        (before, after) ≔ xs′.splitWhen(p))
+        (before, after) ≔ xs′.splitWhen(p)))
 
 splitAt(n, xs) ≔ (xs.take(n), xs.drop(n))
 splitEvery(n, xs) ≔ if isNil(xs) then [] else
@@ -267,7 +268,7 @@ def showNatural(n)
         if m = 0 then [] else ('0' + m.mod(10)) ∷ showReversedNatural(m ⫽ 10)
     if n = 0 then "0" else reverse(showReversedNatural(n))
 
-showSign ≔ case ᐩ _ ↦ ""; case ᐨ _ ↦ "-"
+showSign ≔ (case ᐩ _ ↦ ""; case ᐨ _ ↦ "-")
 showInteger(z) ≔ showSign(z) ⧺ showNatural(abs(z))
 showString(ns) ≔ "\"" ⧺ ns ⧺ "\""     # todo: escape
 def showPair(showFirst, showSecond, xsxs)
@@ -282,10 +283,10 @@ def showSuperscript(n)
     superscripts ≔ ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
     showNatural(n).map((∸ '0')).map(`pick(superscripts)).sift.join
 
-showSubscriptSign ≔ case ᐩ _ ↦ ""; case ᐨ _ ↦ "₋"
+showSubscriptSign ≔ (case ᐩ _ ↦ ""; case ᐨ _ ↦ "₋")
 showIntegerSubscript(z) ≔ showSubscriptSign(z) ⧺ showSubscript(abs(z))
 
-showSuperscriptSign ≔ case ᐩ _ ↦ ""; case ᐨ _ ↦ "⁻"
+showSuperscriptSign ≔ (case ᐩ _ ↦ ""; case ᐨ _ ↦ "⁻")
 showIntegerSuperscript(z) ≔ showSuperscriptSign(z) ⧺ showSuperscript(abs(z))
 
 # parsing
@@ -351,6 +352,6 @@ alterState(f) ≔ state ↦ duplicate(f(state))
 cascadeMapState(f, xs) ≔ state ↦ xs.cascadeMap(f, state)
 def onRightState(f, rhs)
     exy ↤ rhs
-    exy ⦊ case Left(x) ↦ lift Left(x); case Right(y) ↦ f(y)
+    exy ⦊ (case Left(x) ↦ lift Left(x); case Right(y) ↦ f(y))
 
 #@

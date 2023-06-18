@@ -1,9 +1,12 @@
 #@ evaluate.zero
 
 def expandNumeral(tag, type, n)
-    FreeAbstraction(tag, FreeAbstraction(tag,
-            n |> case 0 -> Variable(tag, -_ 2); case up n' ->
-                Application(tag, Variable(tag, -_ 1), Numeral(tag, type, n'))))
+    FreeAbstraction(tag, FreeAbstraction(tag, n |> (
+        case 0
+            Variable(tag, -_ 2)
+        case up n'
+            Application(tag, Variable(tag, -_ 1), Numeral(tag, type, n'))
+    )))
 
 
 def evaluate(metacontext, stack, closure @ Closure(term, environment))

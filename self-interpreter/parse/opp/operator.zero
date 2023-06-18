@@ -4,7 +4,7 @@ Associativity ::= {LA, RA, NA}
 
 
 def isSameAssociativity(left, right)
-    getAssociativityCode := case LA -> 0; case RA -> 1; case NA -> 2
+    getAssociativityCode := (case LA -> 0; case RA -> 1; case NA -> 2)
     getAssociativityCode(left) = getAssociativityCode(right)
 
 

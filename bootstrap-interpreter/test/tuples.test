@@ -24,10 +24,10 @@ f(x,((a,b),c)) := a * c -- b\nf(0,((5,4),3))
 11
 ===============================================================================
 (a := 1, 2)
-Syntax error: invalid right hand side ':=' at line 1 column 4
+Syntax error: missing scope for definition ':=' at line 1 column 4
 ===============================================================================
 (1, b := 2)
-Syntax error: invalid left hand side ':=' at line 1 column 7
+Syntax error: missing scope for definition ':=' at line 1 column 7
 ===============================================================================
 (x, y) := (1, 2) \n(x, y) := (3, 4) \nx
 3

@@ -108,7 +108,7 @@ def showAST
         "(" ++ showAST(left) ++ " " ++ showAST(right) ++ ")"
     case Let(tag, _, _, name, value, scope) ->
         "(" ++ showAST(name) ++ " := " ++ showAST(value) ++
-            ";;" ++ showAST(scope) ++ ")"
+            ";" ++ showAST(scope) ++ ")"
     case Number(tag, value) -> showNatural(value)
     case PreInference(tag) -> "infer"
     case PreEquation(tag, left, right) ->
@@ -129,23 +129,23 @@ def showAST
     case Constructor(_, _, body, _, _, _) -> showAST(body)
 
 
-isTop := case Top(_) -> True; case _ -> False
-isFamily := case Family(_) -> True; case _ -> False
-isReference := case Reference(_, _) -> True; case _ -> False
-isArrow := case Arrow(_, _, _, _, _, _) -> True; case _ -> False
-isJuxtaposition := case Juxtaposition(_, _, _) -> True; case _ -> False
-isLet := case Let(_, _, _, _, _, _) -> True; case _ -> False
-isNumber := case Number(_, _) -> True; case _ -> False
-isPreInference := case PreInference(_) -> True; case _ -> False
-isPreEquation := case PreEquation(_, _, _) -> True; case _ -> False
-isDefinition := case Definition(_, _, _, _) -> True; case _ -> False
-isAsPattern := case AsPattern(_, _, _) -> True; case _ -> False
-isCommaPair := case CommaPair(_, _, _) -> True; case _ -> False
-isColonPair := case ColonPair(_, _, _) -> True; case _ -> False
-isSetBuilder := case SetBuilder(_, _) -> True; case _ -> False
-isADT := case ADT(_, _, _) -> True; case _ -> False
-isFor := case For(_, _, _) -> True; case _ -> False
-isConstructor := case Constructor(_, _, _, _, _, _) -> True; case _ -> False
+isTop := (case Top(_) -> True; case _ -> False)
+isFamily := (case Family(_) -> True; case _ -> False)
+isReference := (case Reference(_, _) -> True; case _ -> False)
+isArrow := (case Arrow(_, _, _, _, _, _) -> True; case _ -> False)
+isJuxtaposition := (case Juxtaposition(_, _, _) -> True; case _ -> False)
+isLet := (case Let(_, _, _, _, _, _) -> True; case _ -> False)
+isNumber := (case Number(_, _) -> True; case _ -> False)
+isPreInference := (case PreInference(_) -> True; case _ -> False)
+isPreEquation := (case PreEquation(_, _, _) -> True; case _ -> False)
+isDefinition := (case Definition(_, _, _, _) -> True; case _ -> False)
+isAsPattern := (case AsPattern(_, _, _) -> True; case _ -> False)
+isCommaPair := (case CommaPair(_, _, _) -> True; case _ -> False)
+isColonPair := (case ColonPair(_, _, _) -> True; case _ -> False)
+isSetBuilder := (case SetBuilder(_, _) -> True; case _ -> False)
+isADT := (case ADT(_, _, _) -> True; case _ -> False)
+isFor := (case For(_, _, _) -> True; case _ -> False)
+isConstructor := (case Constructor(_, _, _, _, _, _) -> True; case _ -> False)
 
 def isCase(node)
     if node is Arrow(_, type, _, _, _, _)
@@ -157,7 +157,7 @@ def isCase(node)
 
 def isDefaultCase(node)
     if node is Arrow(_, type, _, _, _, _)
-        type |> case DefaultCase -> True; case _ -> False
+        type |> (case DefaultCase -> True; case _ -> False)
     False
 
 Name(tag) := Reference(tag, +_ 0)
@@ -165,7 +165,11 @@ This(tag) := Reference(renameTag(tag, "this", NOFIX), -_ 1)
 Underscore(tag, debruijn) := Reference(veil(tag), +_ debruijn)
 NegativeUnderscore(tag) := Reference(veil(tag), -_ 1)
 FixedName(tag, lexeme) := Name(renameTag(tag, lexeme, NOFIX))
-isName(node) := if node is Reference(_, index); abs(index) = 0 <| False
+
+def isName(node)
+    if node is Reference(_, index)
+        abs(index) = 0
+    False
 
 def TypedArrow(arrowType, defaultAnnotation, left, body)
     if left is ColonPair(_, parameter, type)
@@ -191,8 +195,13 @@ def setAnnotation(annotation, node)
     abort("can only set annotation on arrow nodes")
 
 
-isSyntaxDefinition(node) := if node is Definition(_, type, _, _);
-    (if type is SyntaxDefinition; True <| False) <| False
+def isSyntaxDefinition(node)
+    if node is Definition(_, type, _, _)
+        if type is SyntaxDefinition
+            True
+        False
+    False
+
 getLexeme(node) := getTagLexeme(getTag(node))
 showLexeme(node) := showTag(getTag(node))
 isThisLexeme(node, lexeme) := getLexeme(node) =*= lexeme

@@ -59,7 +59,7 @@ def splitQuoteCharacter(quote, ns)
 
 
 def shiftSplit((a, b))
-    b |> case [] -> (a, b); case n :: ns -> (a ++ [n], ns)
+    b |> (case [] -> (a, b); case n :: ns -> (a ++ [n], ns))
 
 
 def splitQuote(ns)

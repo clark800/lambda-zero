@@ -23,10 +23,10 @@ Syntax error: invalid associativity for prior '=' at line 2 column 24
 1 2
 Syntax error: missing operator before '2' at line 1 column 3
 ===============================================================================
-syntax(%%) := infix(20);; a %% b := a;; 5 %% 6
+syntax(%%) := infix(20); a %% b := a; 5 %% 6
 5
 ===============================================================================
-O ::= {};;A ::= {x(y : O)};;case x(y) -> y
+O ::= {};A ::= {x(y : O)};case x(y) -> y
 this ↦ this(y ↦ y)
 ===============================================================================
 syntax(`) := prefix(97)\n  x -> ` \n  x

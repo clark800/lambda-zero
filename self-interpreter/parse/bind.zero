@@ -146,7 +146,11 @@ def bind(getBuiltin, globals, index, parameters, node)
             if isConstruct
                 astSyntaxError("type constructors must be at the top level",
                     node)
-            domain := (if annotation is Just(type); bind'(type);; Unknown(tag))
+            domain := (
+                if annotation is Just(type)
+                    bind'(type)
+                Unknown(tag)
+            )
             abstraction := Abstraction(getTag(name), domain, scope.bind''(name))
             Application(tag, abstraction, bind'(value))
         case Number(tag, value)
