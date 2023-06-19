@@ -176,18 +176,18 @@ void initSymbols(void) {
     addCoreSyntax("where", 5, INFIX, R, reduceWhere);
     addCoreSyntax("for", 5, INFIX, L, reduceLeftIdentity);
     addCoreSyntax(":", 6, INFIX, N, reduceColonPair);
-    addCoreSyntax("|>", 7, INFIX, L, reducePipeline);
-    addCoreSyntax("<|", 7, INFIX, R, Juxtaposition);
-    addCoreSyntax("->", 10, INFIX, R, reduceArrow);
-    addCoreSyntax("<-", 10, INFIX, R, reduceReverseArrow);
-    addCoreSyntax("=>", 10, INFIX, R, reduceErased);
-    addCoreSyntax(">->", 10, INFIX, R, reduceErased);
-    addCoreSyntax("case", 11, PREFIX, N, reducePrefix);
-    addCoreSyntax("forall", 11, PREFIX, N, reducePrefix);
-    addCoreSyntax("@", 12, INFIX, N, AsPattern);
-    addCoreSyntax("is", 13, INFIX, L, reduceIs);
-    addCoreSyntax("abort", 14, PREFIX, L, reduceAbort);
-    addCoreSyntax("infer", 14, NOFIX, N, reduceInfer);
+    addCoreSyntax("->", 7, INFIX, R, reduceArrow);
+    addCoreSyntax("<-", 7, INFIX, R, reduceReverseArrow);
+    addCoreSyntax("=>", 7, INFIX, R, reduceErased);
+    addCoreSyntax(">->", 7, INFIX, R, reduceErased);
+    addCoreSyntax("case", 8, PREFIX, N, reducePrefix);
+    addCoreSyntax("forall", 8, PREFIX, N, reducePrefix);
+    addCoreSyntax("@", 9, INFIX, N, AsPattern);
+    addCoreSyntax("<|", 10, INFIX, R, Juxtaposition);  // haskell $
+    addCoreSyntax("|>", 11, INFIX, L, reducePipeline); // haskell &
+    addCoreSyntax("is", 14, INFIX, L, reduceIs);
+    addCoreSyntax("abort", 15, PREFIX, L, reduceAbort);
+    addCoreSyntax("infer", 15, NOFIX, N, reduceInfer);
     addCoreSyntax("==", 20, INFIX, N, reduceErased);
     addCoreSyntax(".", 92, INFIX, L, reducePipeline);
     addCoreSyntax("$", 99, PREFIX, L, reduceReserved);
