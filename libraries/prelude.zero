@@ -69,7 +69,7 @@ my ⁈ x ≔ my ⦊ (case Void ↦ Left(x); case Just(y) ↦ Right(y))
 ℤ ⩴ {ᐩ(n : ℕ), ᐨ(n : ℕ)}
 ℚ ⩴ {(numerator : ℤ) / (denominator : ℤ)}
 
-↓ n ≔ n ⦊ (case 0 ↦ 0; case ↑ n′ ↦ n′)
+(↓) ≔ (case 0 ↦ 0; case ↑ n′ ↦ n′)
 (=) ≔ (case 0 ↦ (case 0 ↦ True; case ↑ _ ↦ False);
        case ↑ n ↦ (case 0 ↦ False; case ↑ m ↦ n = m))
 (≠) ≔ (case 0 ↦ (case 0 ↦ False; case ↑ _ ↦ True);
@@ -123,9 +123,9 @@ join(xss) ≔ xss.fold((⧺), [])
 length(xs) ≔ xs.fold(const((↑)), 0)
 reverse(xs) ≔ xs.cascade(`(∷), [])
 drop(n, xs) ≔ n ⦊ (case 0 ↦ xs; case ↑ n′ ↦
-    (xs ⦊ (case [] ↦ []; case _ ∷ xs′ ↦ xs′.drop(n′))))
+    xs ⦊ (case [] ↦ []; case _ ∷ xs′ ↦ xs′.drop(n′)))
 take(n, xs) ≔ n ⦊ (case 0 ↦ []; case ↑ n′ ↦
-    (xs ⦊ (case [] ↦ []; case x ∷ xs′ ↦ x ∷ xs′.take(n′))))
+    xs ⦊ (case [] ↦ []; case x ∷ xs′ ↦ x ∷ xs′.take(n′)))
 xs[n, n′] ≔ xs.drop(n).take(n′ ∸ n)
 slice(n, n′, xs) ≔ xs[n, n′]
 pop(xs) ≔ xs ⦊ (case [] ↦ Void; case x ∷ _ ↦ Just(x))
@@ -142,12 +142,12 @@ xs ¦ p ≔ filter(p, xs)
 map(f, xs) ≔ xs.fold((∷) ∘ f, [])
 (⬫) ≔ map
 sift(mxs) ≔ mxs ⦊ (case [] ↦ []; case mx ∷ mxs′ ↦
-    (mx ⦊ (case Void ↦ sift(mxs′); case Just(x) ↦ x ∷ sift(mxs′))))
+    mx ⦊ (case Void ↦ sift(mxs′); case Just(x) ↦ x ∷ sift(mxs′)))
 collect(mxs) ≔ mxs ⦊ (case [] ↦ Just([]); case mx ∷ mxs′ ↦
-    (mx ⦊ (case Void ↦ Void; case Just(x) ↦
-        (collect(mxs′) ⦊ (case Void ↦ Void; case Just(xs) ↦ Just(x ∷ xs))))))
+    mx ⦊ (case Void ↦ Void; case Just(x) ↦
+        collect(mxs′) ⦊ (case Void ↦ Void; case Just(xs) ↦ Just(x ∷ xs))))
 zipWith(f, xs, ys) ≔ xs ⦊ (case [] ↦ []; case x ∷ xs′ ↦
-    (ys ⦊ (case [] ↦ []; case y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′))))
+    ys ⦊ (case [] ↦ []; case y ∷ ys′ ↦ f(x, y) ∷ zipWith(f, xs′, ys′)))
 zip(xs, ys) ≔ zipWith(pair, xs, ys)
 unzip(xs) ≔ (xs.map(first), xs.map(second))
 pairs(xs) ≔ xs ⦊ (case [] ↦ []; case _ ∷ xs′ ↦ zip(xs, xs′))
@@ -201,14 +201,14 @@ primes ≔ p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦
 
 # string
 xs ≛ ys ≔ xs ⦊ (case [] ↦ isNil(ys); case x ∷ xs′ ↦
-    (ys ⦊ (case [] ↦ False; case y ∷ ys′ ↦ x = y and xs′ ≛ ys′)))
+    ys ⦊ (case [] ↦ False; case y ∷ ys′ ↦ x = y and xs′ ≛ ys′))
 
 ns ⩿ ms ≔ ns ⦊ (case [] ↦ True; case n ∷ ns′ ↦
-    (ms ⦊ (case [] ↦ False; case m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′)))
+    ms ⦊ (case [] ↦ False; case m ∷ ms′ ↦ n < m or n = m and ns′ ⩿ ms′))
 
 
 startsWith(ks, ns) ≔ ks ⦊ (case [] ↦ True; case k ∷ ks′ ↦
-    (ns ⦊ (case [] ↦ False; case n ∷ ns′ ↦ n = k and startsWith(ks′, ns′))))
+    ns ⦊ (case [] ↦ False; case n ∷ ns′ ↦ n = k and startsWith(ks′, ns′)))
 
 split(p, xs) ≔ xs ⦊ (case [] ↦ ([], []); case x ∷ xs′ ↦
     (if p(xs) then ([], xs) else (x ∷ before, after) where
