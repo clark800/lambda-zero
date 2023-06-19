@@ -1,7 +1,7 @@
 #include <signal.h>
 #include "tree.h"
-#include "array.h"
 #include "stack.h"
+#include "array.h"
 #include "parse/term.h"
 #include "closure.h"
 #include "exception.h"
@@ -35,12 +35,8 @@ static void applyUpdates(Closure* evaluatedClosure, Stack* stack) {
     }
 }
 
-static Closure* getReferee(Term* variable, Node* locals) {
+static Closure* getLocalReferent(Term* variable, Node* locals) {
     return getListElement(locals, getDebruijnIndex(variable) - 1);
-}
-
-static Term* getGlobalValue(Term* global, Array* globals) {
-    return elementAt(globals, (size_t)getGlobalIndex(global));
 }
 
 static Closure* optimizeClosure(Term* term, Node* locals, Node* trace) {
@@ -50,7 +46,7 @@ static Closure* optimizeClosure(Term* term, Node* locals, Node* trace) {
         case OPERATION:
         case NUMERAL: return newClosure(term, NULL, trace);
         case VARIABLE: return isGlobal(term) ?
-            newClosure(term, NULL, trace) : getReferee(term, locals);
+            newClosure(term, NULL, trace) : getLocalReferent(term, locals);
         default: return newClosure(term, locals, trace);
     }
 }
@@ -74,17 +70,17 @@ static void evaluateAbstraction(Closure* closure, Stack* stack) {
 static void evaluateVariable(Closure* closure, Stack* stack, Array* globals) {
     Term* variable = getTerm(closure);
     if (isGlobal(variable)) {
-        setTerm(closure, getGlobalValue(variable, globals));
+        setTerm(closure, getGlobalReferent(variable, globals));
         if (TRACE)
             push((Stack*)getBacktrace(closure), variable);
         setLocals(closure, NULL);
     } else {
         // lookup referenced closure in the local environment and switch to it
-        Closure* referee = getReferee(variable, getLocals(closure));
+        Closure* referent = getLocalReferent(variable, getLocals(closure));
         // only optimize in IO mode so that term serializations are standardized
-        if (isIO && !isValue(getTerm(referee)) && !isUpdate(referee))
-            push(stack, setUpdate(referee, true));
-        setClosure(closure, referee);
+        if (isIO && !isValue(getTerm(referent)) && !isUpdate(referent))
+            push(stack, setUpdate(referent, true));
+        setClosure(closure, referent);
     }
 }
 

@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include "freelist.h"
 #include "readfile.h"
+#include "util.h"
 #include "tree.h"
 #include "array.h"
-#include "freelist.h"
-#include "util.h"
 #include "parse/opp/operator.h"
 #include "parse/term.h"
 #include "parse/parse.h"

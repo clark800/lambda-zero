@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "tree.h"
 #include "stack.h"
+#include "array.h"
 #include "parse/term.h"
 #include "closure.h"
 #include "exception.h"

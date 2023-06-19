@@ -52,14 +52,14 @@ static inline unsigned long long getDebruijnIndex(Term* t) {
     return (unsigned long long)getValue(t);
 }
 
-static inline unsigned long long getGlobalIndex(Term* t) {
+static inline Term* getGlobalReferent(Term* global, const Array* globals) {
     assert(getValue(t) < 0);
-    return (unsigned long long)(-getValue(t) - 1);
+    return elementAt(globals, (size_t)(-getValue(global) - 1));
 }
-
 
 static inline Term* getParameter(Term* t) {return getLeft(t);}
 static inline Term* getBody(Term* t) {return getRight(t);}
+static inline void setBody(Term* t, Term* body) {setRight(t, body);}
 static inline OperationCode getOperationCode(Term* t) {
     assert(isOperation(t));
     return (OperationCode)getVariety(t);

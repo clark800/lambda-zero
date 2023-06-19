@@ -5,6 +5,8 @@
 #include "term.h"
 #include "bind.h"
 
+extern bool isIO, TRACE;
+bool INLINE = true;
 Term *TRUE = NULL, *FALSE = NULL;
 
 static unsigned long long findDebruijnIndex(Node* name, Array* parameters) {
@@ -46,21 +48,29 @@ static void bindReference(Node* node, Array* parameters, size_t globalDepth) {
 
 static void bindWith(Node* node, Array* parameters, const Array* globals) {
     switch (getASTType(node)) {
-        case REFERENCE: bindReference(node, parameters, length(globals)); break;
+        case REFERENCE:
+            bindReference(node, parameters, length(globals)); break;
         case ARROW:
             append(parameters, getParameter(node));
             bindWith(getBody(node), parameters, globals);
             unappend(parameters);
             setTag(node, getTag(getParameter(node)));
             setType(node, ABSTRACTION);
+            if (INLINE && isGlobal(getBody(node)))
+                setBody(node, getGlobalReferent(getBody(node), globals));
             break;
         case JUXTAPOSITION:
         case LET:
             bindWith(getLeft(node), parameters, globals);
             bindWith(getRight(node), parameters, globals);
             setType(node, APPLICATION);
+            if (INLINE && isGlobal(getLeft(node)))
+                setLeft(node, getGlobalReferent(getLeft(node), globals));
+            if (INLINE && isGlobal(getRight(node)))
+                setRight(node, getGlobalReferent(getRight(node), globals));
             break;
-        case NUMBER: setType(node, NUMERAL); break;
+        case NUMBER:
+            setType(node, NUMERAL); break;
         case DEFINITION:
             syntaxErrorNode("missing scope for definition", node); break;
         case ASPATTERN:
@@ -77,13 +87,14 @@ static void bindWith(Node* node, Array* parameters, const Array* globals) {
 }
 
 Array* bind(Hold* root) {
+    INLINE = isIO && !TRACE;
     Node* node = root;
     Array* parameters = newArray(2048);         // names of globals and locals
     Array* globals = newArray(2048);            // values of globals
     while (isLet(node) && !isUnderscore(getParameter(getLeft(node)))) {
         Node* definiendum = getParameter(getLeft(node));
-        Tag tag = getTag(definiendum);
         Node* definiens = getRight(node);
+        Tag tag = getTag(definiendum);
         bindWith(definiens, parameters, globals);
         OperationCode code = findOperationCode(definiendum);
         if (code != NONE && !isPseudoOperation(code)) {
@@ -97,7 +108,7 @@ Array* bind(Hold* root) {
         append(globals, getRight(node));
         setType(node, APPLICATION);
         setType(getLeft(node), ABSTRACTION);
-        setTag(getLeft(node), getTag(getParameter(getLeft(node))));
+        setTag(getLeft(node), tag);
         node = getBody(getLeft(node));
     }
     bindWith(node, parameters, globals);
