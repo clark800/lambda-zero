@@ -112,8 +112,10 @@ void addSyntax(Tag tag, Node* prior, Precedence precedence, Fixity fixity,
         precedence = syntax->rightPrecedence;  // precedence comes in as 0
         if (fixity != INFIX && fixity != POSTFIX)
             syntaxError("invalid fixity for operator with prior", tag);
-        if (associativity != L || syntax->associativity != L)
-            syntaxError("invalid associativity for operator or prior", tag);
+        if (syntax->associativity != L)
+            syntaxError("invalid associativity for prior", getTag(prior));
+        if (associativity != L)
+            syntaxError("invalid associativity for operator with prior", tag);
     }
     bool special = prior != NULL;
     Lexeme lexeme = getLexeme(tag);

@@ -173,23 +173,6 @@ def copySyntax(state, tag, name)
             Syntax(lexeme, l, r, a, s, b, p, f)
 
 
-def findPrecedence(state, node)
-    syntax' := state.lookupSyntax(getLexeme(node)) ??
-        astSyntaxError("syntax not defined", node)
-    match getAssociativity(syntax')
-        case LA -> getRightPrecedence(syntax')
-        case RA -> getLeftPrecedence(syntax')
-        case NA -> astSyntaxError("invalid associativity for prior", node)
-
-
-def parsePrecedence(state, node)
-    if node is Number(_, precedence)
-        if precedence > 99
-            astSyntaxError("invalid precedence", node)
-        precedence
-    findPrecedence(state, node)
-
-
 def defineSyntax(state, definition, name, right)
     tag := getTag(definition)
     if not isName(name)
@@ -199,9 +182,20 @@ def defineSyntax(state, definition, name, right)
             getAliasSyntax(state, argument)
         if isThisName(fixity, "syntax")
             copySyntax(state, getTag(name), argument)
-        precedence := parsePrecedence(state, argument)
-        prior := if isNumber(argument) then "" else getLexeme(argument)
-        newSyntax(getTag(name), precedence, fixity, prior)
+        if argument is Number(_, precedence)
+            if precedence > 99
+                astSyntaxError("invalid precedence", argument)
+            newSyntax(getTag(name), precedence, fixity, "")
+        prior := getLexeme(argument)
+        priorSyntax := state.lookupSyntax(prior) ??
+            astSyntaxError("syntax not defined", argument)
+        if getAssociativity(priorSyntax) is LA
+            precedence := getRightPrecedence(priorSyntax)
+            syntax' := newSyntax(getTag(name), precedence, fixity, prior)
+            if getAssociativity(syntax') is LA
+                syntax'
+            astSyntaxError("invalid associativity for operator with prior", name)
+        astSyntaxError("invalid associativity for prior", argument)
     astSyntaxError("invalid syntax definition", definition)
 
 
