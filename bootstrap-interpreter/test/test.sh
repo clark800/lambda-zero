@@ -83,6 +83,7 @@ summarize() {
 }
 
 SUITES="tokens.test quote.test brackets.test lambda.test syntax.test adt.test"
+PRELUDE="$LIB/operators.zero $LIB/prelude.zero $DIR/include.zero"
 PRELUDE_SUITES="arithmetic.test definition.test sections.test tuples.test math.test prelude.test show.test infinite.test"
 META_PRELUDE_SUITES="arithmetic.test definition.test sections.test tuples.test math.test prelude.test"
 
@@ -100,7 +101,7 @@ run() {
         fi
     done
     for suite in $PRELUDE_SUITES; do
-        if ! oneline_suite "$suite" "$LIB/operators.zero" "$LIB/prelude.zero"
+        if ! oneline_suite "$suite" $PRELUDE
         then
             suite_failures=$((suite_failures+1))
         fi

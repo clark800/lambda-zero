@@ -1,0 +1,6 @@
+#@ include.zero
+
+fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
+primes ≔ p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0)))
+
+#@

@@ -196,9 +196,6 @@ deduplicate(xs) ≔ deduplicateBy((=), xs)
 sum ≔ ∑
 product ≔ ∏
 
-fibonaccis ≔ f(0, 1) where f(m, n) ≔ m ∷ f(n, m + n)
-primes ≔ p(2 …) where p ≔ (case [] ↦ []; case n ∷ ns ↦ n ∷ p(ns ¦ (% n ≠ 0)))
-
 # string
 xs ≛ ys ≔ xs ⦊ (case [] ↦ isNil(ys); case x ∷ xs′ ↦
     ys ⦊ (case [] ↦ False; case y ∷ ys′ ↦ x = y and xs′ ≛ ys′))
