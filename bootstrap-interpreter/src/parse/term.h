@@ -53,7 +53,7 @@ static inline unsigned long long getDebruijnIndex(Term* t) {
 }
 
 static inline Term* getGlobalReferent(Term* global, const Array* globals) {
-    assert(getValue(t) < 0);
+    assert(getValue(global) < 0);
     return elementAt(globals, (size_t)(-getValue(global) - 1));
 }
 

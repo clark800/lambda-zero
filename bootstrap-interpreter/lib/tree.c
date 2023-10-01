@@ -20,8 +20,8 @@ struct Node {
     } data;
 };
 
-void initNodeAllocator() {initPool(sizeof(Node), 4096);}
-void destroyNodeAllocator() {destroyPool();}
+void initNodeAllocator(void) {initPool(sizeof(Node), 4096);}
+void destroyNodeAllocator(void) {destroyPool();}
 Tag getTag(Node* node) {return node->tag;}
 char getType(Node* node) {return node->type;}
 void setType(Node* node, char type) {node->type = type;}

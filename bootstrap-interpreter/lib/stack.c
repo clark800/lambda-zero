@@ -1,7 +1,7 @@
 #include "tree.h"
 #include "stack.h"
 
-Stack* newStack() {return (Stack*)newPair(NULL, NULL);}
+Stack* newStack(void) {return (Stack*)newPair(NULL, NULL);}
 void deleteStack(Stack* stack) {release(hold((Node*)stack));}
 static Node* getHead(Stack* stack) {return getRight((Node*)stack);}
 static void setHead(Stack* stack, Node* head) {setRight((Node*)stack, head);}
