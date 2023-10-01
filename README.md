@@ -1,6 +1,6 @@
 # Introduction
 
-Lambda Zero is a minimalist pure lazy functional programming language bootstrapped from about 2500 lines of C. It can be thought of as pythonic haskell with no IO. Here "no IO" means that the main function maps strings to strings, so there is no concept of IO *within the language*, but the interpreter maps the input and output of main to stdin and stdout. Due to laziness, it's possible to build interactive GUI applications using an adapter (see the Conway's Game of Life sample in the repo).
+Lambda Zero is a minimalist pure lazy functional programming language bootstrapped from about 2500 lines of C. It can be thought of as pythonic haskell with no IO. Here "no IO" means that the main function maps strings to strings, so there is no concept of IO *within the language*, but the interpreter maps the input and output of main to stdin and stdout. Due to laziness, it's possible to build interactive GUI applications using an adapter (see the Conway's [Game of Life](samples/life/life.zero) sample in the repo).
 
 Features include:
 * All the standard Lambda Calculus features (first class functions, closures,
