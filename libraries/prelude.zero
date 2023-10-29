@@ -116,6 +116,8 @@ fold(f, z, xs) ≔ xs ⦊ (case [] ↦ z; case x ∷ xs′ ↦ f(x, fold(f, z, x
 cascade(f, z, xs) ≔ xs ⦊ (case [] ↦ z; case x ∷ xs′ ↦ cascade(f, f(z, x), xs′))
 abort(message : List(ℕ)) ≔ abort(message)
 impossible := abort("impossible")
+sig ⊥
+nothing ≔ impossible
 
 xs ⧺ ys ≔ xs.fold((∷), ys)
 join(xss) ≔ xss.fold((⧺), [])
