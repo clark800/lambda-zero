@@ -2,7 +2,6 @@
 
 id(x) ≔ x
 const(x) ≔ _ ↦ x
-apply(f, x) ≔ f(x)
 match x to f ≔ f(x)
 f ∘ g ≔ x ↦ f(g(x))
 `f(x, y) ≔ f(y, x)
