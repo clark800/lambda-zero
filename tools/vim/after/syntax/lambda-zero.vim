@@ -295,19 +295,38 @@ syntax match lambdaZeroPrime "''''\ze\([^']\|$\)" conceal contained cchar=⁗
 syntax match lambdaZeroPrime "'''\ze\([^']\|$\)" conceal contained cchar=‴
 syntax match lambdaZeroPrime "''\ze\([^']\|$\)" conceal contained cchar=″
 syntax match lambdaZeroPrime "'\ze\([^']\|$\)" conceal contained cchar=′
-"syntax match lambdaZeroSubscript "_i" conceal contained cchar=ᵢ
-"syntax match lambdaZeroSubscript "_j" conceal contained cchar=ⱼ
-"syntax match lambdaZeroSubscript "_x" conceal contained cchar=ₓ
-syntax match lambdaZeroSubscript "_0" conceal contained cchar=₀
-syntax match lambdaZeroSubscript "_1" conceal contained cchar=₁
-syntax match lambdaZeroSubscript "_2" conceal contained cchar=₂
-syntax match lambdaZeroSubscript "_3" conceal contained cchar=₃
-syntax match lambdaZeroSubscript "_4" conceal contained cchar=₄
-syntax match lambdaZeroSubscript "_5" conceal contained cchar=₅
-syntax match lambdaZeroSubscript "_6" conceal contained cchar=₆
-syntax match lambdaZeroSubscript "_7" conceal contained cchar=₇
-syntax match lambdaZeroSubscript "_8" conceal contained cchar=₈
-syntax match lambdaZeroSubscript "_9" conceal contained cchar=₉
+syntax match lambdaZeroSubscript "_0\>" conceal contained cchar=₀
+syntax match lambdaZeroSubscript "_1\>" conceal contained cchar=₁
+syntax match lambdaZeroSubscript "_2\>" conceal contained cchar=₂
+syntax match lambdaZeroSubscript "_3\>" conceal contained cchar=₃
+syntax match lambdaZeroSubscript "_4\>" conceal contained cchar=₄
+syntax match lambdaZeroSubscript "_5\>" conceal contained cchar=₅
+syntax match lambdaZeroSubscript "_6\>" conceal contained cchar=₆
+syntax match lambdaZeroSubscript "_7\>" conceal contained cchar=₇
+syntax match lambdaZeroSubscript "_8\>" conceal contained cchar=₈
+syntax match lambdaZeroSubscript "_9\>" conceal contained cchar=₉
+
+syntax match lambdaZeroSubscript "_a\>" conceal contained cchar=ₐ
+syntax match lambdaZeroSubscript "_e\>" conceal contained cchar=ₑ
+syntax match lambdaZeroSubscript "_h\>" conceal contained cchar=ₕ
+syntax match lambdaZeroSubscript "_i\>" conceal contained cchar=ᵢ
+syntax match lambdaZeroSubscript "_j\>" conceal contained cchar=ⱼ
+syntax match lambdaZeroSubscript "_k\>" conceal contained cchar=ₖ
+syntax match lambdaZeroSubscript "_l\>" conceal contained cchar=ₗ
+syntax match lambdaZeroSubscript "_m\>" conceal contained cchar=ₘ
+syntax match lambdaZeroSubscript "_n\>" conceal contained cchar=ₙ
+syntax match lambdaZeroSubscript "_o\>" conceal contained cchar=ₒ
+syntax match lambdaZeroSubscript "_p\>" conceal contained cchar=ₚ
+syntax match lambdaZeroSubscript "_r\>" conceal contained cchar=ᵣ
+syntax match lambdaZeroSubscript "_s\>" conceal contained cchar=ₛ
+syntax match lambdaZeroSubscript "_t\>" conceal contained cchar=ₜ
+syntax match lambdaZeroSubscript "_u\>" conceal contained cchar=ᵤ
+syntax match lambdaZeroSubscript "_v\>" conceal contained cchar=ᵥ
+syntax match lambdaZeroSubscript "_x\>" conceal contained cchar=ₓ
+syntax match lambdaZeroSubscript "_+" conceal contained cchar=₊
+syntax match lambdaZeroSubscript "_-" conceal contained cchar=₋
+syntax match lambdaZeroSubscript "_=" conceal contained cchar=₌
+
 
 " superscript operators
 " ᵃ ᵇ ᶜ ᵈ ᵉ ᶠ ᵍ ʰ ⁱ ʲ ᵏ ˡ ᵐ ⁿ ᵒ ᵖ ʳ ˢ ᵗ ᵘ ᵛ ʷ ˣ ʸ ᶻ
