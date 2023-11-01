@@ -60,15 +60,18 @@ static void releaseNode(Node* node) {
         return;
     assert(node->referenceCount > 0);
     node->referenceCount -= 1;
-    if (node->referenceCount == 0) {
-        if (node->flags & GC_LEFT)
-            releaseNode(node->data.branches.left);
-        if (node->flags & GC_RIGHT)
-            releaseNode(node->data.branches.right);
-        if (node->tag != NULL)
-            releaseNode((Node*)(node->tag));
-        reclaim(node);
-    }
+    if (node->referenceCount > 0)
+        return;
+    if (node->tag != NULL)
+        releaseNode((Node*)(node->tag));
+    // conserve stack with partial tail recursion to reduce stack segfaults
+    Node* left = node->flags & GC_LEFT ? node->data.branches.left : NULL;
+    Node* right = node->flags & GC_RIGHT ? node->data.branches.right : NULL;
+    reclaim(node);
+    if (left != NULL)
+        releaseNode(left);
+    if (right != NULL)
+        releaseNode(right);
 }
 
 void setLeft(Node* node, Node* left) {

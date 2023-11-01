@@ -128,7 +128,7 @@ config_fast() {
 }
 
 config_debug() {
-    GCC_FLAGS="-g -Og $GCC_FLAGS"
+    GCC_FLAGS="-g -Og -fsanitize=address,undefined -Wno-macro-redefined -D_FORTIFY_SOURCE=2 $GCC_FLAGS"
     TCC_FLAGS="-g $TCC_FLAGS"
     XCC_FLAGS="-g $XCC_FLAGS"
 }
