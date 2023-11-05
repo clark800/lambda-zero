@@ -3,7 +3,6 @@
 #include "array.h"
 #include "lex/token.h"
 #include "lex/lex.h"
-#include "opp/errors.h"
 #include "opp/operator.h"
 #include "opp/shift.h"
 #include "ast.h"

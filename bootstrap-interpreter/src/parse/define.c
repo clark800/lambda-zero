@@ -1,5 +1,4 @@
 #include "tree.h"
-#include "opp/errors.h"
 #include "opp/operator.h"
 #include "ast.h"
 #include "patterns.h"

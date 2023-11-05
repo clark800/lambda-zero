@@ -2,7 +2,6 @@
 #include "array.h"
 #include "tree.h"
 #include "util.h"
-#include "errors.h"
 #include "operator.h"
 
 static Array* SYNTAX = NULL;     // note: this never gets free'd

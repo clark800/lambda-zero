@@ -4,7 +4,6 @@
 #include <limits.h>
 #include "tree.h"
 #include "lex/token.h"
-#include "opp/errors.h"
 #include "opp/operator.h"
 #include "ast.h"
 #include "brackets.h"  // Nil and prepend

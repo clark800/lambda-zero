@@ -45,3 +45,5 @@ void printTag(Tag tag, FILE* stream);
 void printTagWithLocation(Tag tag, FILE* stream);
 void syntaxError(const char* message, Tag tag);
 void syntaxErrorIf(bool condition, const char* message, Tag tag);
+void syntaxErrorNode(const char* message, Node* node);
+void syntaxErrorNodeIf(bool condition, const char* message, Node* node);

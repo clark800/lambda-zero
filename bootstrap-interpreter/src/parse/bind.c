@@ -1,6 +1,5 @@
 #include "tree.h"
 #include "array.h"
-#include "opp/errors.h"
 #include "ast.h"
 #include "term.h"
 #include "bind.h"

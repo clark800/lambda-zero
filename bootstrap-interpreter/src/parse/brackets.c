@@ -1,6 +1,5 @@
 #include <string.h>
 #include "tree.h"
-#include "opp/errors.h"
 #include "opp/operator.h"
 #include "ast.h"
 #include "brackets.h"

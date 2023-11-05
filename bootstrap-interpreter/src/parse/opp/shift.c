@@ -1,6 +1,5 @@
 #include "tree.h"
 #include "stack.h"
-#include "errors.h"
 #include "operator.h"
 #include "shift.h"
 
