@@ -85,7 +85,7 @@ static void print3(const char* a, const char* b, const char* c) {
 }
 
 static void usageError(const char* name) {
-    print3("Usage error: ", name, " [-c] [-p] [FILE]\n");
+    print3("Usage error: ", name, " [-c] [-p] [-t] [FILE]\n");
     exit(2);
 }
 
@@ -128,8 +128,6 @@ static char* readSourceCode(const char* filename) {
 }
 
 int main(int argc, char* argv[]) {
-    assert(TRACE = true);  // enable tracing when asserts are enabled
-
     // note: setbuf(stdin, NULL) will leave unread input in stdin on exit
     // causing the shell to execute it, which is dangerous
     // note: disabling buffering slows down I/O quite a bit, but it is necessary
@@ -145,6 +143,7 @@ int main(int argc, char* argv[]) {
             switch (flag[0]) {
                 case 'c': mode = CHECK; break;
                 case 'p': mode = PARSE; break;
+                case 't': TRACE = true; break;
                 default: usageError(programName); break;
             }
         }
