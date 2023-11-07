@@ -1,6 +1,0 @@
-make
-run
-lib/libc/make
-test/
-README.md
-.circleci/config.yml

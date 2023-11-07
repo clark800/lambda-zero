@@ -1,5 +1,4 @@
 #!/bin/sh
-# http://www.gnu.org/software/autoconf/manual/autoconf.html#Portable-Shell
 
 OUT=${OUT:-"main"}
 CC=${CC:-"cc"}
@@ -82,15 +81,6 @@ xstrip() {
     fi
 }
 
-compress() {
-    if command -v upx > /dev/null; then
-        upx -q -9 "$OUT" > /dev/null
-        showsize "COMPRESSED"
-    else
-        echo "Note: upx not found, skipping compression"
-    fi
-}
-
 build_one_stage() {
     echoexec "$CC" -o "$OUT" $CC_FLAGS $SOURCES &&
     finish
@@ -152,18 +142,22 @@ config_unused() {
     LINK_FLAGS="-Wl,--print-gc-sections $LINK_FLAGS"
 }
 
-get_loc() {
-    gcc -fpreprocessed -dD -E -P $HEADERS $SOURCES | grep -v assert | wc -l
+strip_comments() {
+    if is_cc "gcc"; then
+        gcc -fpreprocessed -dD -E -P "$@"
+    else
+        # doesn't strip out /* ... */ comments
+        cat "$@" | grep -v '^[[:space:]]*//' | grep -v '^[[:space:]]*$'
+    fi
 }
 
-get_ploc() {
-    # doesn't strip out /* ... */ comments
-    cat $HEADERS $SOURCES | sed 's|//.*||' |
-        grep -v '^[[:space:]]*$' | grep -v assert | wc -l
+sloc() {
+    strip_comments $HEADERS $SOURCES | grep -v assert | wc -l
 }
 
-run_cloc() {
-    cloc --quiet --exclude-list-file=.clocignore --by-file "$@"
+floc() {
+    strip_comments $SOURCES | grep -v assert |
+        ../tools/floc.sh | sort -n | ../tools/hist.sh
 }
 
 lint() {
@@ -193,11 +187,6 @@ build_graph() {
     echo "}"
 }
 
-show_floc() {
-    gcc -fpreprocessed -dD -E -P $SOURCES | grep -v assert |
-        ../tools/floc.sh | sort -n | ../tools/hist.sh
-}
-
 case "$1" in
     "") config_fast && build;;
     test) config_fast && build && time test/test.sh;;
@@ -205,16 +194,11 @@ case "$1" in
     custom) clean && config_custom && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
     strip) xstrip;;
-    compress) compress;;
     lint) lint;;
     clean) clean;;
-    tree) tree --noreport -C -P '*.[hc]' -I lib src;;
-    dot) build_graph;;
+    tree) find lib src | sort | sed 's#[^/]*/#| #g';;
     graph) build_graph | dot -o architecture.pdf -T pdf;;
-    loc) get_loc;;
-    ploc) get_ploc;;
-    floc) show_floc;;
-    cloc) run_cloc --exclude-dir="libc" . | tail -n +3 | cut -c -78;;
-    cloc-all) run_cloc . | tail -n +3 | cut -c -78;;
+    sloc) sloc;;
+    floc) floc;;
     *) echo "usage error: unrecognized command \"$1\""; exit 1;;
 esac
