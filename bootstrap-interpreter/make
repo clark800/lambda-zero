@@ -67,12 +67,14 @@ config_custom() {
     # stack-protector should be off by default, but some linux distributions
     # patch gcc to turn it on by default, so we explicitly disable it here
     # since it will cause the custom build to fail if it is enabled
-    CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -fno-stack-protector -flto $CFLAGS"
+    CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ \
+        -fno-builtin -fno-stack-protector -flto $CFLAGS"
     SOURCES=$(find -L . -name "*.c")
 }
 
 config_unused() {
-    CFLAGS="-O0 -fdata-sections -ffunction-sections -Wl,--gc-sections,--print-gc-sections $CFLAGS"
+    CFLAGS="-O0 -fdata-sections -ffunction-sections \
+        -Wl,--gc-sections,--print-gc-sections $CFLAGS"
 }
 
 strip_symbols() {
