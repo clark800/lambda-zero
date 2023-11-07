@@ -37,9 +37,8 @@ build() {
     if "$CC" -v 2>&1 | grep -q "^tcc"; then
         WFLAGS="-Wall"
     fi
-    if _echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES; then
+    _echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES &&
         echo && echo "BUILD SUCCESSFUL" && size
-    fi
 }
 
 default() {
