@@ -50,35 +50,18 @@ showsize() {
     echo "$1 SIZE:\t$(echo "${output## }" | cut -d' ' -f1) bytes"
 }
 
-finish() {
-    rm -f $OBJECTS
-    echo
-    echo "BUILD SUCCESSFUL"
-    showsize "BINARY"
-}
-
-run_build() {
-    echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES &&
-    finish
-}
-
-is_cc() {
-    "$CC" -v 2>&1 | grep -q "^$1"
-}
-
 build() {
     if is_up_to_date "$OUT"; then
         return
     fi
-
-    if is_cc "gcc" || is_cc "clang"; then
-        run_build
-    elif is_cc "Apple clang"; then
-        run_build
-    elif is_cc "tcc"; then
-        WFLAGS="" CFLAGS="" run_build
-    else
-        WFLAGS="" run_build
+    if "$CC" -v 2>&1 | grep -q "^tcc"; then
+        WFLAGS="-Wall"
+    fi
+    if echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES; then
+        rm -f $OBJECTS
+        echo
+        echo "BUILD SUCCESSFUL"
+        showsize "BINARY"
     fi
 }
 
