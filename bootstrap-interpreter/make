@@ -25,11 +25,6 @@ WFLAGS="-std=c99 -Wpedantic -Wfatal-errors -Wall -Wextra \
 -Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
 -Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
 
-# gcc sets --hash-style to a non-default setting when calling ld, which
-# increases the executable size; we can set it back to the default with
-# --hash-style=sysv
-
-LINK_FLAGS="-static -Wl,--hash-style=sysv,--gc-sections,--strip-discarded"
 SOURCES=$(find -L ./src ./lib -name "*.c" | grep -v "/libc/")
 HEADERS=$(find -L ./src ./lib -name "*.h" | grep -v "/libc/")
 OBJECTS="*.o"
@@ -62,6 +57,59 @@ finish() {
     showsize "BINARY"
 }
 
+run_build() {
+    echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES &&
+    finish
+}
+
+is_cc() {
+    "$CC" -v 2>&1 | grep -q "^$1"
+}
+
+build() {
+    if is_up_to_date "$OUT"; then
+        return
+    fi
+
+    if is_cc "gcc" || is_cc "clang"; then
+        run_build
+    elif is_cc "Apple clang"; then
+        run_build
+    elif is_cc "tcc"; then
+        WFLAGS="" CFLAGS="" run_build
+    else
+        WFLAGS="" run_build
+    fi
+}
+
+config_optimized() {
+    CFLAGS="-DNDEBUG -O3 -flto -fno-asynchronous-unwind-tables $CFLAGS"
+}
+
+config_static() {
+    config_optimized
+    CFLAGS="-static $CFLAGS"
+}
+
+config_debug() {
+    CFLAGS="-g -Og -fsanitize=address,undefined -Wno-macro-redefined -D_FORTIFY_SOURCE=2 $CFLAGS"
+}
+
+config_custom() {
+    printf "%b" "$RED"
+    echo "NOTE: There has been some non-determinism in this build"
+    echo "If the tests fail, try rebuilding and it should fix it,"
+    echo "or you can change the optimization level from -Os to -O1"
+    printf "%b\n" "$NOCOLOR"
+    CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -flto $CFLAGS"
+    SOURCES=$(find -L . -name "*.c")
+    OBJECTS="*.o lib/libc/sys.o"
+}
+
+config_unused() {
+    CFLAGS="-O0 -fdata-sections -ffunction-sections -Wl,--gc-sections,--print-gc-sections $CFLAGS"
+}
+
 xstrip() {
     # https://github.com/aunali1/super-strip
     if command -v sstrip > /dev/null; then
@@ -79,63 +127,11 @@ xstrip() {
     fi
 }
 
-build_one_stage() {
-    echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES &&
-    finish
-}
-
-build_two_stage() {
-    echoexec "$CC" -c -Ilib $WFLAGS $CFLAGS $SOURCES &&
-    echoexec "$CC" $LINK_FLAGS -o "$OUT" $OBJECTS &&
-    finish || (clean ; false)
-}
-
-is_cc() {
-    "$CC" -v 2>&1 | grep -q "^$1"
-}
-
-build() {
-    if is_up_to_date "$OUT"; then
-        return
-    fi
-
-    if is_cc "gcc" || is_cc "clang"; then
-        build_two_stage
-    elif is_cc "Apple clang"; then
-        build_one_stage
-    elif is_cc "tcc"; then
-        WFLAGS="" CFLAGS="" build_one_stage
-    else
-        WFLAGS="" build_one_stage
-    fi
-}
-
-config_optimized() {
-    CFLAGS="-DNDEBUG -O3 -flto -fno-asynchronous-unwind-tables $CFLAGS"
-    LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
-}
-
-config_debug() {
-    CFLAGS="-g -Og -fsanitize=address,undefined -Wno-macro-redefined -D_FORTIFY_SOURCE=2 $CFLAGS"
-}
-
-config_custom() {
-    printf "%b" "$RED"
-    echo "NOTE: There has been some non-determinism in this build"
-    echo "If the tests fail, try rebuilding and it should fix it,"
-    echo "or you can change the optimization level from -Os to -O1"
-    printf "%b\n" "$NOCOLOR"
-    custom="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -flto"
-    CFLAGS="$custom $GFLAGS"
-    LINK_FLAGS="-nostdlib -Wl,--strip-all $LINK_FLAGS"
-    SOURCES=$(find -L . -name "*.c")
-    OBJECTS="*.o lib/libc/sys.o"
-}
-
-config_unused() {
-    config_custom
-    CFLAGS="-O0 -fdata-sections -ffunction-sections $CFLAGS"
-    LINK_FLAGS="-Wl,--print-gc-sections $LINK_FLAGS"
+lint() {
+    # this is not usable due to bugs in splint
+    splint +charint -redef -compdestroy -branchstate -mustfree \
+        -temptrans -varuse -fcnuse -retvalother +matchanyintegral -unrecog \
+        -Ilib $SOURCES
 }
 
 strip_comments() {
@@ -156,25 +152,19 @@ floc() {
         ../tools/floc.sh | sort -n | ../tools/hist.sh
 }
 
-lint() {
-    # this is not usable due to bugs in splint
-    splint +charint -redef -compdestroy -branchstate -mustfree \
-        -temptrans -varuse -fcnuse -retvalother +matchanyintegral -unrecog \
-        -Ilib $SOURCES
-}
-
 case "$1" in
     "") config_optimized && build;;
     test) config_optimized && build && time test/test.sh;;
+    static) clean && config_static && build;;
     debug) clean && config_debug && build;;
     custom) clean && config_custom && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
     strip) xstrip;;
     lint) lint;;
     clean) clean;;
-    tree) find lib src | sort | sed 's#[^/]*/#| #g';;
-    graph) ../tools/depgraph.sh src | dot -o architecture.pdf -T pdf;;
     sloc) sloc;;
     floc) floc;;
+    tree) find lib src | sort | sed 's#[^/]*/#| #g';;
+    graph) ../tools/depgraph.sh src | dot -o architecture.pdf -T pdf;;
     *) echo "usage error: unrecognized command \"$1\""; exit 1;;
 esac
