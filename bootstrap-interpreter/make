@@ -94,7 +94,7 @@ strip_symbols() {
 }
 
 strip_comments() {
-    if is_cc "gcc"; then
+    if "$CC" -v 2>&1 | grep -q "^gcc"; then
         gcc -fpreprocessed -dD -E -P "$@"
     else
         # doesn't strip out /* ... */ comments
