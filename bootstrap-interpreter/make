@@ -20,12 +20,10 @@ NOCOLOR='\033[0m'
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 # note: -Wswitch-enum looks helpful, but doesn't allow default case
 # to catch multiple cases, which we are using
-GCC_FLAGS="-Ilib -fno-asynchronous-unwind-tables \
--std=c99 -pedantic -Wfatal-errors -Wall -Wextra \
+
+WFLAGS="-std=c99 -Wpedantic -Wfatal-errors -Wall -Wextra \
 -Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
 -Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
-TCC_FLAGS="-Ilib -Wall -Werror -Wunsupported -Wwrite-strings"
-XCC_FLAGS="-Ilib"  # for unknown C compiler
 
 # gcc sets --hash-style to a non-default setting when calling ld, which
 # increases the executable size; we can set it back to the default with
@@ -82,12 +80,12 @@ xstrip() {
 }
 
 build_one_stage() {
-    echoexec "$CC" -o "$OUT" $CC_FLAGS $SOURCES &&
+    echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES &&
     finish
 }
 
 build_two_stage() {
-    echoexec "$CC" -c $CC_FLAGS $SOURCES &&
+    echoexec "$CC" -c -Ilib $WFLAGS $CFLAGS $SOURCES &&
     echoexec "$CC" $LINK_FLAGS -o "$OUT" $OBJECTS &&
     finish || (clean ; false)
 }
@@ -102,25 +100,23 @@ build() {
     fi
 
     if is_cc "gcc" || is_cc "clang"; then
-        CC_FLAGS="$GCC_FLAGS" build_two_stage
+        build_two_stage
     elif is_cc "Apple clang"; then
-        CC_FLAGS="$GCC_FLAGS" build_one_stage
+        build_one_stage
     elif is_cc "tcc"; then
-        CC_FLAGS="$TCC_FLAGS" build_one_stage
+        WFLAGS="" CFLAGS="" build_one_stage
     else
-        CC_FLAGS="$XCC_FLAGS" build_one_stage
+        WFLAGS="" build_one_stage
     fi
 }
 
-config_fast() {
-    GCC_FLAGS="-DNDEBUG -O3 -flto $GCC_FLAGS"
+config_optimized() {
+    CFLAGS="-DNDEBUG -O3 -flto -fno-asynchronous-unwind-tables $CFLAGS"
     LINK_FLAGS="-flto -Wl,--strip-all $LINK_FLAGS"
 }
 
 config_debug() {
-    GCC_FLAGS="-g -Og -fsanitize=address,undefined -Wno-macro-redefined -D_FORTIFY_SOURCE=2 $GCC_FLAGS"
-    TCC_FLAGS="-g $TCC_FLAGS"
-    XCC_FLAGS="-g $XCC_FLAGS"
+    CFLAGS="-g -Og -fsanitize=address,undefined -Wno-macro-redefined -D_FORTIFY_SOURCE=2 $CFLAGS"
 }
 
 config_custom() {
@@ -130,7 +126,7 @@ config_custom() {
     echo "or you can change the optimization level from -Os to -O1"
     printf "%b\n" "$NOCOLOR"
     custom="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -flto"
-    GCC_FLAGS="$custom $GCC_FLAGS"
+    CFLAGS="$custom $GFLAGS"
     LINK_FLAGS="-nostdlib -Wl,--strip-all $LINK_FLAGS"
     SOURCES=$(find -L . -name "*.c")
     OBJECTS="*.o lib/libc/sys.o"
@@ -138,7 +134,7 @@ config_custom() {
 
 config_unused() {
     config_custom
-    GCC_FLAGS="-O0 -fdata-sections -ffunction-sections $GCC_FLAGS"
+    CFLAGS="-O0 -fdata-sections -ffunction-sections $CFLAGS"
     LINK_FLAGS="-Wl,--print-gc-sections $LINK_FLAGS"
 }
 
@@ -168,8 +164,8 @@ lint() {
 }
 
 case "$1" in
-    "") config_fast && build;;
-    test) config_fast && build && time test/test.sh;;
+    "") config_optimized && build;;
+    test) config_optimized && build && time test/test.sh;;
     debug) clean && config_debug && build;;
     custom) clean && config_custom && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
