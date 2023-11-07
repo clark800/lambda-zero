@@ -167,26 +167,6 @@ lint() {
         -Ilib $SOURCES
 }
 
-get_includes() {
-    filename="$(basename "$1" | cut -d'.' -f 1)"
-    "$CC" -MM -MT':' -I"." -Ilib "$1" | tr -d ':\\\\' | xargs -n 1 echo |
-        grep -v "lib/" | xargs -n 1 basename | grep '\.h' | cut -d'.' -f 1 |
-        xargs -n 1 -I{} echo "    $filename -> {};" | grep -v -- "-> $filename"
-}
-
-build_graph() {
-    echo "digraph graphname {"
-    echo "    size=6;"
-    echo "    ranksep=1.2;"
-    echo "    nodesep=0.8;"
-    echo "    mclimit=100;"
-    echo
-    for file in $(find . -name "*.c" | grep -v "lib/"); do
-        get_includes "$file"
-    done
-    echo "}"
-}
-
 case "$1" in
     "") config_fast && build;;
     test) config_fast && build && time test/test.sh;;
@@ -197,7 +177,7 @@ case "$1" in
     lint) lint;;
     clean) clean;;
     tree) find lib src | sort | sed 's#[^/]*/#| #g';;
-    graph) build_graph | dot -o architecture.pdf -T pdf;;
+    graph) ../tools/depgraph.sh src | dot -o architecture.pdf -T pdf;;
     sloc) sloc;;
     floc) floc;;
     *) echo "usage error: unrecognized command \"$1\""; exit 1;;
