@@ -6,20 +6,8 @@ CC=${CC:-"cc"}
 RED='\033[0;31m'
 NOCOLOR='\033[0m'
 
-# stack-protector should be off by default, but some linux distributions
-# patch gcc to turn it on by default, so we explicitly disable it here; it
-# will cause the nostdlib build to fail if it is enabled
-
-# no-asynchronous-unwind-tables decreases the executable size and there seems
-# to be no downside because the information will still be included when
-# compiling with "-g" https://stackoverflow.com/a/26302715
-
-# no-ident removes a small unneeded comment from the executable
-
 # use this command to find all warnings not enabled by -Wall -Wextra
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
-# note: -Wswitch-enum looks helpful, but doesn't allow default case
-# to catch multiple cases, which we are using
 
 WFLAGS="-std=c99 -Wpedantic -Wfatal-errors -Wall -Wextra \
 -Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
@@ -38,7 +26,7 @@ clean() {
 }
 
 is_up_to_date() {
-    test -f "$1" && test -z "$(find -L . -name "*.[c|h]" -newer "$1")"
+    [ -f "$1" ] && [ -z "$(find -L . -name "*.[c|h]" -newer "$1")" ]
 }
 
 build_libc() {
@@ -66,16 +54,17 @@ build() {
 }
 
 config_optimized() {
+    # no-asynchronous-unwind-tables decreases the executable size
     CFLAGS="-DNDEBUG -O3 -flto -fno-asynchronous-unwind-tables $CFLAGS"
 }
 
 config_static() {
-    config_optimized
     CFLAGS="-static $CFLAGS"
 }
 
 config_debug() {
-    CFLAGS="-g -Og -fsanitize=address,undefined -Wno-macro-redefined -D_FORTIFY_SOURCE=2 $CFLAGS"
+    WFLAGS="$WFLAGS -Wno-macro-redefined"
+    CFLAGS="-g -Og -fsanitize=address,undefined -D_FORTIFY_SOURCE=2 $CFLAGS"
 }
 
 config_custom() {
@@ -84,7 +73,10 @@ config_custom() {
     echo "If the tests fail, try rebuilding and it should fix it,"
     echo "or you can change the optimization level from -Os to -O1"
     printf "%b\n" "$NOCOLOR"
-    CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -flto $CFLAGS"
+    # stack-protector should be off by default, but some linux distributions
+    # patch gcc to turn it on by default, so we explicitly disable it here
+    # since it will cause the custom build to fail if it is enabled
+    CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -fno-stack-protector -flto $CFLAGS"
     SOURCES=$(find -L . -name "*.c")
     OBJECTS="*.o lib/libc/sys.o"
 }
@@ -93,28 +85,12 @@ config_unused() {
     CFLAGS="-O0 -fdata-sections -ffunction-sections -Wl,--gc-sections,--print-gc-sections $CFLAGS"
 }
 
-xstrip() {
-    # https://github.com/aunali1/super-strip
+strip_symbols() {
     if command -v sstrip > /dev/null; then
-        sstrip "$OUT"
-        showsize "STRIPPED"
-    elif command -v strip > /dev/null; then
-        if [ "$(uname)" == "Darwin" ]; then
-            strip "$OUT"
-        else
-            strip -R .note -R .comment -R .eh_frame -R .eh_frame_hdr -s "$OUT"
-        fi
-        showsize "STRIPPED"
+        sstrip "$OUT" && showsize "STRIPPED"
     else
-        echo "Note: sstrip/strip not found, skipping strip"
+        strip "$OUT" && showsize "STRIPPED"
     fi
-}
-
-lint() {
-    # this is not usable due to bugs in splint
-    splint +charint -redef -compdestroy -branchstate -mustfree \
-        -temptrans -varuse -fcnuse -retvalother +matchanyintegral -unrecog \
-        -Ilib $SOURCES
 }
 
 strip_comments() {
@@ -138,12 +114,11 @@ floc() {
 case "$1" in
     "") config_optimized && build;;
     test) config_optimized && build && time test/test.sh;;
-    static) clean && config_static && build;;
+    static) clean && config_optimized && config_static && build;;
     debug) clean && config_debug && build;;
     custom) clean && config_custom && build_libc && build;;
     unused) clean && config_unused && build_libc && build;;
-    strip) xstrip;;
-    lint) lint;;
+    strip) strip_symbols;;
     clean) clean;;
     sloc) sloc;;
     floc) floc;;
