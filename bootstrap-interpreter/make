@@ -3,9 +3,6 @@
 OUT=${OUT:-"main"}
 CC=${CC:-"cc"}
 
-RED='\033[0;31m'
-NOCOLOR='\033[0m'
-
 # use this command to find all warnings not enabled by -Wall -Wextra
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
 
@@ -15,14 +12,13 @@ WFLAGS="-std=c99 -Wpedantic -Wfatal-errors -Wall -Wextra \
 
 SOURCES=$(find -L ./src ./lib -name "*.c" | grep -v "/libc/")
 HEADERS=$(find -L ./src ./lib -name "*.h" | grep -v "/libc/")
-OBJECTS="*.o"
 
 echoexec() {
     echo "$@" && "$@"
 }
 
 clean() {
-    rm -f $OBJECTS "$OUT"
+    rm -f "$OUT"
 }
 
 is_up_to_date() {
@@ -46,10 +42,7 @@ build() {
         WFLAGS="-Wall"
     fi
     if echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES; then
-        rm -f $OBJECTS
-        echo
-        echo "BUILD SUCCESSFUL"
-        showsize "BINARY"
+        echo && echo "BUILD SUCCESSFUL" && showsize "BINARY"
     fi
 }
 
@@ -68,17 +61,14 @@ config_debug() {
 }
 
 config_custom() {
-    printf "%b" "$RED"
     echo "NOTE: There has been some non-determinism in this build"
     echo "If the tests fail, try rebuilding and it should fix it,"
     echo "or you can change the optimization level from -Os to -O1"
-    printf "%b\n" "$NOCOLOR"
     # stack-protector should be off by default, but some linux distributions
     # patch gcc to turn it on by default, so we explicitly disable it here
     # since it will cause the custom build to fail if it is enabled
     CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ -fno-builtin -fno-stack-protector -flto $CFLAGS"
     SOURCES=$(find -L . -name "*.c")
-    OBJECTS="*.o lib/libc/sys.o"
 }
 
 config_unused() {
