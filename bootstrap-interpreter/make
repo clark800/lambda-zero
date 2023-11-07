@@ -1,7 +1,9 @@
 #!/bin/sh
 
-OUT=${OUT:-"main"}
 CC=${CC:-"cc"}
+OUT=${OUT:-"main"}
+SOURCES=$(find -L ./src ./lib -name "*.c" | grep -v "/libc/")
+HEADERS=$(find -L ./src ./lib -name "*.h" | grep -v "/libc/")
 
 # use this command to find all warnings not enabled by -Wall -Wextra
 # gcc -Wall -Wextra -Q --help=warning | grep "\[disabled\]"
@@ -10,57 +12,58 @@ WFLAGS="-std=c99 -Wpedantic -Wfatal-errors -Wall -Wextra \
 -Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
 -Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
 
-SOURCES=$(find -L ./src ./lib -name "*.c" | grep -v "/libc/")
-HEADERS=$(find -L ./src ./lib -name "*.h" | grep -v "/libc/")
-
-echoexec() {
-    echo "$@" && "$@"
-}
-
 clean() {
     rm -f "$OUT"
 }
 
 is_up_to_date() {
-    [ -f "$1" ] && [ -z "$(find -L . -name "*.[c|h]" -newer "$1")" ]
+    [ -f "$OUT" ] && [ -z "$(find -L . -name "*.[c|h]" -newer "$OUT")" ]
 }
 
-build_libc() {
+libc() {
     (cd lib/libc && ./make)
 }
 
-showsize() {
+size() {
     output="$(wc -c "$OUT" | tr '\t' ' ' | tr -s ' ')"
-    echo "$1 SIZE:\t$(echo "${output## }" | cut -d' ' -f1) bytes"
+    echo "${1:-"BINARY"} SIZE:\t$(echo "${output## }" | cut -d' ' -f1) bytes"
 }
 
 build() {
-    if is_up_to_date "$OUT"; then
+    _echoexec() { echo "$@" && "$@"; }
+    if is_up_to_date; then
         return
     fi
     if "$CC" -v 2>&1 | grep -q "^tcc"; then
         WFLAGS="-Wall"
     fi
-    if echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES; then
-        echo && echo "BUILD SUCCESSFUL" && showsize "BINARY"
+    if _echoexec "$CC" -o "$OUT" -Ilib $WFLAGS $CFLAGS $SOURCES; then
+        echo && echo "BUILD SUCCESSFUL" && size
     fi
 }
 
-config_optimized() {
+default() {
     # no-asynchronous-unwind-tables decreases the executable size
     CFLAGS="-DNDEBUG -O3 -flto -fno-asynchronous-unwind-tables $CFLAGS"
+    build
 }
 
-config_static() {
+test() {
+    default && time test/test.sh
+}
+
+static() {
     CFLAGS="-static $CFLAGS"
+    clean && default
 }
 
-config_debug() {
+debug() {
     WFLAGS="$WFLAGS -Wno-macro-redefined"
     CFLAGS="-g -Og -fsanitize=address,undefined -D_FORTIFY_SOURCE=2 $CFLAGS"
+    clean && build
 }
 
-config_custom() {
+custom() {
     echo "NOTE: There has been some non-determinism in this build"
     echo "If the tests fail, try rebuilding and it should fix it,"
     echo "or you can change the optimization level from -Os to -O1"
@@ -70,22 +73,26 @@ config_custom() {
     CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ \
         -fno-builtin -fno-stack-protector -flto $CFLAGS"
     SOURCES=$(find -L . -name "*.c")
+    clean && libc && build
 }
 
-config_unused() {
+unused() {
     CFLAGS="-O0 -fdata-sections -ffunction-sections \
         -Wl,--gc-sections,--print-gc-sections $CFLAGS"
+    clean && libc && build
 }
 
-strip_symbols() {
+strip() {
     if command -v sstrip > /dev/null; then
-        sstrip "$OUT" && showsize "STRIPPED"
+        sstrip "$OUT" && size "STRIPPED"
     else
-        strip "$OUT" && showsize "STRIPPED"
+        command strip "$OUT" && size "STRIPPED"
     fi
 }
 
-strip_comments() {
+dump() {
+    # prints source files with comments and blank lines removed
+    if [ "$#" = 0 ]; then set $HEADERS $SOURCES; fi
     if "$CC" -v 2>&1 | grep -q "^gcc"; then
         gcc -fpreprocessed -dD -E -P "$@"
     else
@@ -95,26 +102,22 @@ strip_comments() {
 }
 
 sloc() {
-    strip_comments $HEADERS $SOURCES | grep -v assert | wc -l
+    dump | grep -v assert | wc -l
 }
 
 floc() {
-    strip_comments $SOURCES | grep -v assert |
+    dump $SOURCES | grep -v assert |
         ../tools/floc.sh | sort -n | ../tools/hist.sh
 }
 
-case "$1" in
-    "") config_optimized && build;;
-    test) config_optimized && build && time test/test.sh;;
-    static) clean && config_optimized && config_static && build;;
-    debug) clean && config_debug && build;;
-    custom) clean && config_custom && build_libc && build;;
-    unused) clean && config_unused && build_libc && build;;
-    strip) strip_symbols;;
-    clean) clean;;
-    sloc) sloc;;
-    floc) floc;;
-    tree) find lib src | sort | sed 's#[^/]*/#| #g';;
-    graph) ../tools/depgraph.sh src | dot -o architecture.pdf -T pdf;;
-    *) echo "usage error: unrecognized command \"$1\""; exit 1;;
-esac
+tree() {
+    find lib src | sort | sed 's#[^/]*/#| #g'
+}
+
+graph() {
+    ../tools/depgraph.sh src | dot -o architecture.pdf -T pdf
+}
+
+target="${1:-"default"}"
+if [ "$(command -v "$target")" = "$target" ]; then "$target"
+else echo "usage error: unrecognized command '$1'"; exit 1; fi
