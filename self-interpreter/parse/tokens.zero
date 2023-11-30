@@ -1,24 +1,24 @@
 #@ tokens.zero
 
 def parseEscapeCode(code, tag)
-    if code = '0' then '\0'
-    if code = 'n' then '\n'
-    if code = 't' then '\t'
-    if code = 'r' then '\r'
-    if code = '\\' then '\\'
-    if code = '\"' then '\"'
-    if code = '\'' then '\''
-    syntaxError("invalid escape sequence in", tag)
+    if code = '0' then return '\0'
+    if code = 'n' then return '\n'
+    if code = 't' then return '\t'
+    if code = 'r' then return '\r'
+    if code = '\\' then return '\\'
+    if code = '\"' then return '\"'
+    if code = '\'' then return '\''
+    error showSyntaxError("invalid escape sequence in", tag)
 
 
 def parseQuotedCharacter(tag, string)
     if string is c :: cs
         if c =/= '\\'
-            c
+            return c
         if cs is c' :: _
             parseEscapeCode(c', tag)
-        syntaxError("missing end quote for", tag)
-    syntaxError("missing end quote for", tag)
+        error showSyntaxError("missing end quote for", tag)
+    error showSyntaxError("missing end quote for", tag)
 
 
 def splitStringLiteral(string)
@@ -31,40 +31,42 @@ def splitStringLiteral(string)
 def getQuoteContents(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.length > 1 and lexeme.reverse.take(1) =*= lexeme.take(1)
-        dropLast(lexeme.drop(1))
-    syntaxError("missing end quote for", tag)
+        return dropLast(lexeme.drop(1))
+    error showSyntaxError("missing end quote for", tag)
 
 
 def getQuotedCharacters(tag)
-    splitStringLiteral(getQuoteContents(tag)).map(parseQuotedCharacter(tag))
+    try contents := getQuoteContents(tag)
+    splitStringLiteral(contents).tryMap(parseQuotedCharacter(tag))
 
 
 def parseStringLiteral(tag)
-    buildList(tag, getQuotedCharacters(tag).map(Number(tag)))
+    try characters := getQuotedCharacters(tag)
+    return buildList(tag, characters.map(Number(tag)))
 
 
 def parseCharacterLiteral(tag)
-    characters := getQuotedCharacters(tag)
+    try characters := getQuotedCharacters(tag)
     if isNil(characters) or length(characters) > 4
-        syntaxError("invalid character literal", tag)
-    Number(tag, characters.cascade(n -> c -> 256 * n + c, 0))
+        error showSyntaxError("invalid character literal", tag)
+    return Number(tag, characters.cascade(n -> c -> 256 * n + c, 0))
 
 
 def parseNumericLiteral(tag)
     lexeme := getTagLexeme(tag)
     if lexeme.any((not) <> isDigit)
-        syntaxError("invalid token", tag)
+        error showSyntaxError("invalid token", tag)
     maxNatural := "9223372036854775807"
     natural := lexeme.dropWhile((= '0'))
     if natural.length > maxNatural.length
-        syntaxError("magnitude of numeral is too large", tag)
+        error showSyntaxError("magnitude of numeral is too large", tag)
     if natural.length = maxNatural.length and
             zipWith((>), natural, maxNatural).any(id)
-        syntaxError("magnitude of numeral is too large", tag)
+        error showSyntaxError("magnitude of numeral is too large", tag)
     parsed := parseNatural(lexeme)
     if isVoid(parsed)
-        syntaxError("invalid numeral", tag)
-    Number(tag, parsed ?? 0)
+        error showSyntaxError("invalid numeral", tag)
+    return Number(tag, parsed ?? 0)
 
 
 def parseOperator(tag, value, syntax')
@@ -79,24 +81,19 @@ def parseSymbol(tag, value, state)
         OperandItem(Name(tag))
 
 
-def newOperand(operand)
-    if not isPreterm(operand)
-        astSyntaxError("invalid operand", operand)  # force syntax errors
-    OperandItem(operand)
-
-
 def parseToken(state, token)
     tag := getTokenTag(token)
     match getTokenCode(token)
-        case Space -> internalError("Space reached parseToken", tag)
-        case VSpace -> internalError("VSpace reached parseToken", tag)
-        case Newline -> state.parseSymbol(renameTag(tag, "\n", INFIX),
+        case Space -> error showInternalError("Space reached parseToken", tag)
+        case VSpace -> error showInternalError("VSpace reached parseToken", tag)
+        case Newline -> return state.parseSymbol(renameTag(tag, "\n", INFIX),
             length(getTagLexeme(tag)) -- 1)
-        case Symbolic -> state.parseSymbol(tag, 0)
-        case Numeric -> newOperand(parseNumericLiteral(tag))
-        case Character -> newOperand(parseCharacterLiteral(tag))
-        case String -> newOperand(parseStringLiteral(tag))
-        case Comment -> internalError("Comment reached parseToken", tag)
-        case Invalid -> syntaxError("invalid character", tag)
+        case Symbolic -> return state.parseSymbol(tag, 0)
+        case Numeric -> parseNumericLiteral(tag).mapRight(OperandItem)
+        case Character -> parseCharacterLiteral(tag).mapRight(OperandItem)
+        case String -> parseStringLiteral(tag).mapRight(OperandItem)
+        case Comment ->
+            error showInternalError("Comment reached parseToken", tag)
+        case Invalid -> error showSyntaxError("invalid character", tag)
 
 #@

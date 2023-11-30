@@ -175,8 +175,10 @@ findIndex(p, xs) ≔ pop(findIndices(p, xs))
 
 cascadeMaybe(f, z, xs) ≔ xs ⦊ (case [] ↦ Just(z); case x ∷ xs′ ↦
     f(z, x).onJust(y ↦ cascadeMaybe(f, y, xs′)))
-tryCascade(f, z, xs) ≔ xs ⦊ (case [] ↦ Right(z); case x ∷ xs′ ↦
-    f(z, x).onRight(y ↦ tryCascade(f, y, xs′)))
+tryMap(f, xs) ≔ xs |> (case [] -> Right([]);
+    case x :: xs' -> f(x).onRight(y -> tryMap(f, xs').mapRight((y ::))))
+tryCascade(f, z, xs) ≔ xs ⦊ (case [] ↦ Right(z);
+    case x ∷ xs′ ↦ f(z, x).onRight(y ↦ tryCascade(f, y, xs′)))
 
 # cascadeMap : (a => s => (b && s)) => s => List(a) => (List(b) && s)
 cascadeMap(f, z, xs) ≔ xs.cascade((ys, s) ↦ x ↦

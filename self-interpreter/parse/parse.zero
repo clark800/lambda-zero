@@ -44,17 +44,17 @@ def shiftOperator''(state, operator)
                 openTag := renameTag(getOperatorTag(top), "( ", OPENFIX)
                 open := state'.parseSymbol(openTag, 0)
                 placeholder := OperandItem(FixedName(getOperatorTag(top), ".*"))
-                shift'(shift'(shift'(state', open), placeholder),
+                return shift'(shift'(shift'(state', open), placeholder),
                     OperatorItem(operator))
             if isThisOperator(operator, ")") and isLeftSectionOperator(top)
                 closeTag := renameTag(getOperatorTag(operator), " )", CLOSEFIX)
                 close := state.parseSymbol(closeTag, 0)
                 placeholder := OperandItem(
                     FixedName(getOperatorTag(operator), "*."))
-                shift'(shift'(state, placeholder), close)
-            shift'(state, OperatorItem(operator))
-        shift'(state, OperatorItem(operator))
-    shift'(state, OperatorItem(operator))
+                return shift'(shift'(state, placeholder), close)
+            return shift'(state, OperatorItem(operator))
+        return shift'(state, OperatorItem(operator))
+    return shift'(state, OperatorItem(operator))
 
 
 def shiftOperator'(state, operator)
@@ -70,14 +70,14 @@ def shiftOperator'(state, operator)
         if getStack(state) is topItem :: _
             if topItem is OperatorItem(top)
                 if getFixityCode(getFixity(getSyntax(top))) = PREFIX
-                    opSyntaxError("missing operand after", top)
-                state  # ignore newlines after operators
+                    error showOpSyntaxError("missing operand after", top)
+                return state  # ignore newlines after operators
             if getSubprecedence(operator) % 2 =/= 0
-                opSyntaxError("odd-width indent after", operator)
+                error showOpSyntaxError("odd-width indent after", operator)
             shiftOperator''(state, operator)
         if getSubprecedence(operator) =/= 0
-            opSyntaxError("indent on first line", operator)
-        state  # ignore newlines at beginning of input
+            error showOpSyntaxError("indent on first line", operator)
+        return state  # ignore newlines at beginning of input
 
     shiftOperator''(state, operator)
 
@@ -85,18 +85,19 @@ def shiftOperator'(state, operator)
 def shiftItem(state, item)
     match item
         case OperatorItem(operator) -> shiftOperator'(state, operator)
-        case OperandItem(_) -> shift'(state, item)
+        case OperandItem(_) -> return shift'(state, item)
 
 
 def shiftToken(state, token)
-    shiftItem(state, parseToken(state, token))
+    try item := parseToken(state, token)
+    shiftItem(state, item)
 
 
 def parse(getBuiltin, code)
     tokens := lex(code ++ [0]) |: (not) <> isElided
-    state := shiftToken(State([], OPERATORS), START)
-    stack := getStack(tokens.cascade(shiftToken, state))
-    if stack is item :: remaining
+    try state := shiftToken(State([], OPERATORS), START)
+    try state' := tokens.tryCascade(shiftToken, state)
+    if getStack(state') is item :: remaining
         if item is OperandItem(result)
             if not isPreterm(result) and False
                 # currently bind has special case errors for non-preterms

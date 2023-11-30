@@ -48,6 +48,10 @@ getSubprecedence(Operator(_, subprecedence, _)) := subprecedence
 getSyntax(Operator(_, _, syntax')) := syntax'
 
 
+def showOpSyntaxError(message, Operator(tag, _, _))
+    showSyntaxError(message, tag)
+
+
 def opSyntaxError(message, Operator(tag, _, _))
     syntaxError(message, tag)
 

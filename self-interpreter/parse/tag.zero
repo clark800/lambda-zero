@@ -54,6 +54,10 @@ def syntaxError(message, tag)
     throwError("Syntax error: " ++ message, tag)
 
 
+def showInternalError(message, tag)
+    showError("Internal error: " ++ message, tag)
+
+
 def internalError(message, tag)
     throwError("Internal error: " ++ message, tag)
 
