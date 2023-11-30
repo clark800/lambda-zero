@@ -1,34 +1,9 @@
 #@ lex.zero
 
-NOFIX := 0
-PREFIX := 1
-INFIX := 2
-POSTFIX := 3
-OPENFIX := 4
-CLOSEFIX := 5
-
 LocationT ::= {Location(file : List(ℕ), line : ℕ, column : ℕ)}
 
-TagT ::= {Tag(lexeme : List(ℕ), fixity : ℕ, location : LocationT, global : 𝔹)}
-
-getTagLexeme(Tag(lexeme, _, _, _)) := lexeme
-getTagFixity(Tag(_, fixity, _, _)) := fixity
-getTagLocation(Tag(_, _, location, _)) := location
-isGlobal(Tag(_, _, _, global)) := global
-
-renameTag(Tag(_, _, location, global), lexeme, fixity) :=
-    Tag(lexeme, fixity, location, global)
-veil(tag) := renameTag(tag, "_", NOFIX)
-setGlobal(Tag(lexeme, fixity, location, _)) :=
-    Tag(lexeme, fixity, location, True)
-setTagLocation(location, Tag(lexeme, fixity, _, global)) :=
-    Tag(lexeme, fixity, location, global)
-addPrefix(Tag(lexeme, fixity, location, global), prefix) :=
-    Tag(prefix :: lexeme, fixity, location, global)
 isSameLocation(Location(file1, line1, col1), Location(file2, line2, col2)) :=
     file1 =*= file2 and line1 = line2 and col1 = col2
-isSameTag(tag1, tag2) :=
-    isSameLocation(getTagLocation(tag1), getTagLocation(tag2))
 
 isComment(c) := c = '#'
 isLineFeed(c) := c = '\n'
@@ -134,35 +109,10 @@ def showShortLocation(Location(file, line, column))
         showNatural(line) ++ ":" ++ showNatural(column)
 
 
-def showTag(Tag(lexeme, fixity, _, _))
-    if lexeme is c :: _
-        if c = 0 then "\\0"
-        if c = '\n' then "\\n"
-        if fixity = NOFIX then lexeme
-        "(" ++ lexeme ++ ")"
-    "\\0"
-
-
 def showQuotedLexeme(lexeme)
     if lexeme is c :: _
         if c = '\n' then "'(end of line)'" else pass
     "'" ++ lexeme ++ "'"
-
-
-def showTagWithLocation(Tag(lexeme, _, location, _))
-    showQuotedLexeme(lexeme) ++ " at " ++ showLocation(location)
-
-
-def throwError(message, tag)
-    abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
-
-
-def syntaxError(message, tag)
-    throwError("Syntax error: " ++ message, tag)
-
-
-def internalError(message, tag)
-    throwError("Internal error: " ++ message, tag)
 
 
 TokenCode ::= {
@@ -175,10 +125,6 @@ TokenT ::= {Token(tag : List(ℕ), location : LocationT, code : TokenCode)}
 getTokenLexeme(Token(lexeme, _, _)) := lexeme
 getTokenLocation(Token(_, location, _)) := location
 getTokenCode(Token(_, _, code)) := code
-# todo: delete getTokenTag
-getTokenTag(Token(lexeme, location, code)) :=
-    Tag(lexeme, NOFIX, location, False)
-
 def createLineFeedToken(lexeme, location, nextLexeme)
     if nextLexeme is c :: _
         if isLineFeed(c) or isComment(c)
@@ -208,14 +154,6 @@ def isElided(token)
         case _ -> False
 
 
-def showToken(token)
-    getTokenLexeme(token)
-
-
-def noTag
-    Tag("", NOFIX, Location("", 0, 0), False)
-
-
 def START
     Token("", Location("", 0, 0), Symbolic)
 
@@ -224,7 +162,5 @@ def lex(string)
     end := ("", Location("", 0, 0))
     pairs(scan(string) ++ [end]).map(uncurry(createToken))
 
-
-#main(input) := scan(input).map(showTag).joinWith("\n")
 
 #@

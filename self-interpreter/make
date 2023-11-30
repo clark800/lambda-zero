@@ -24,6 +24,7 @@ cat "$LIB/operators.zero" \
     "$LIB/aatree.zero" \
     "$LIB/table.zero" \
     "$DIR/parse/lex/lex.zero" \
+    "$DIR/parse/tag.zero" \
     "$DIR/parse/opp/operator.zero" \
     "$DIR/parse/opp/shift.zero" \
     "$DIR/parse/ast.zero" \

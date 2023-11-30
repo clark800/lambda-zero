@@ -64,7 +64,6 @@ def main(input)
     abort("No input")
 
 
-#main(input) := lex(input).map(showToken).joinWith("\n")
 #main(input) := showAST(parse(getBuiltin, input))
 
 #@
