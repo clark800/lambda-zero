@@ -47,21 +47,27 @@ def showDefinitions(tags, environment)
     zip(tags, terms).map(showDefinition).joinWith("\n")
 
 
-def main(input)
+def interpret(input)
     (code, input') := splitCodeAndInput(input)
     bindings := parse(getBuiltin, code)
     if bindings is Binding(_, Closure(term, environment), _, _) :: _
         if code.startsWith("#% dump")
             tags := reverse(bindings.map(getBindingTag))
-            showDefinitions(tags, environment)
+            return showDefinitions(tags, environment)
         closure := evaluateCheck(Closure(term, environment))
         if isMain(getTerm(closure))
-            evaluateMain(closure, input')
+            return evaluateMain(closure, input')
         serialized := showClosure(closure)
         if length(serialized) < 0
-            abort("force syntax errors")
-        serialized
-    abort("No input")
+            error "force syntax errors"
+        return serialized
+    error "No input"
+
+
+def main(input)
+    match interpret(input)
+        case Left(message) -> abort(message)
+        case Right(output) -> output
 
 
 #main(input) := showAST(parse(getBuiltin, input))
