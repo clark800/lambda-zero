@@ -10,7 +10,9 @@ HEADERS=$(find -L ./src ./lib -name "*.h" | grep -v "/libc/")
 
 WFLAGS="-std=c99 -Wpedantic -Wfatal-errors -Wall -Wextra \
 -Wshadow -Winit-self -Wwrite-strings -Wconversion -Wcast-qual \
--Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes"
+-Wredundant-decls -Wstrict-prototypes -Wmissing-prototypes \
+-Wimplicit-fallthrough"
+# note: gcc enables -Wimplicit-fallthrough with -Wextra, but clang does not
 
 clean() {
     rm -f "$OUT"
@@ -43,7 +45,7 @@ build() {
 
 default() {
     # no-asynchronous-unwind-tables decreases the executable size
-    CFLAGS="-DNDEBUG -O3 -flto -fno-asynchronous-unwind-tables $CFLAGS"
+    CFLAGS="-DNDEBUG -O3 -flto=auto -fno-asynchronous-unwind-tables $CFLAGS"
     build
 }
 
@@ -70,7 +72,7 @@ custom() {
     # patch gcc to turn it on by default, so we explicitly disable it here
     # since it will cause the custom build to fail if it is enabled
     CFLAGS="-Os -nostdlib -nostdinc -isystem ./lib/libc/include/ \
-        -fno-builtin -fno-stack-protector -flto $CFLAGS"
+        -fno-builtin -fno-stack-protector -flto=auto $CFLAGS"
     SOURCES=$(find -L . -name "*.c")
     clean && libc && build
 }

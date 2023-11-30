@@ -88,6 +88,7 @@ Node* parseToken(Token token) {
         case NEWLINE: return parseSymbol(newLiteralLexeme(
             "\n", lexeme.location), (long long)(lexeme.length - 1));
         case INVALID: syntaxError("invalid character", newTag(lexeme, NOFIX));
+            return NULL;
         default: return parseSymbol(lexeme, 0);
     }
 }

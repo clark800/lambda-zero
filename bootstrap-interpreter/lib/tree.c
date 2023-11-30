@@ -46,7 +46,7 @@ Node* newBranch(Tag tag, char type, char variety, Node* left, Node* right) {
 }
 
 Node* newPair(Node* left, Node* right) {
-    return newBranch(NULL, -1, 0, left, right);
+    return newBranch(NULL, (char)(-1), 0, left, right);
 }
 
 Node* newLeaf(Tag tag, char type, char variety, void* data) {
