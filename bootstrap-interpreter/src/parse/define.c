@@ -285,6 +285,8 @@ Node* reduceDefine(Tag tag, Node* left, Node* right) {
         return Definition(tag, variety, left, right);
     for (; isJuxtaposition(left); left = getLeft(left))
         right = newArrow(getRight(left), right);
+    if (isColonPair(left))
+        left = getLeft(left);
     syntaxErrorIf(!isName(left), "invalid left hand side", tag);
     if (isThisName(left, "main"))
         return applyPlainDefinition(tag, left, right, newMainCall(left));
