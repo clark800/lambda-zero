@@ -26,7 +26,7 @@ static inline bool isValueType(TermType t) {
 static inline bool isValue(Term* t) {return isValueType(getTermType(t));}
 
 static inline Term* Variable(Tag tag, long long debruijn) {
-    return newLeaf(tag, VARIABLE, 0, (void*)debruijn);
+    return newLeaf(tag, VARIABLE, 0, debruijn);
 }
 
 static inline Term* Abstraction(Tag tag, Term* body) {
@@ -38,7 +38,7 @@ static inline Term* Application(Tag tag, Term* left, Term* right) {
 }
 
 static inline Term* Numeral(Tag tag, long long n) {
-    return newLeaf(tag, NUMERAL, 0, (void*)n);
+    return newLeaf(tag, NUMERAL, 0, n);
 }
 
 // note: arithmetic operations are branches and always have a fallback term

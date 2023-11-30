@@ -49,7 +49,13 @@ Node* newPair(Node* left, Node* right) {
     return newBranch(NULL, (char)(-1), 0, left, right);
 }
 
-Node* newLeaf(Tag tag, char type, char variety, void* data) {
+Node* newLeaf(Tag tag, char type, char variety, long long data) {
+    return copyNode((Node*)allocate(), &(Node)
+        {.referenceCount=0, .flags=GC_NONE, .type=type, .variety=variety,
+        .tag=(Tag)reference((Node*)tag), .data={.value=data}});
+}
+
+Node* newPointerLeaf(Tag tag, char type, char variety, void* data) {
     return copyNode((Node*)allocate(), &(Node)
         {.referenceCount=0, .flags=GC_NONE, .type=type, .variety=variety,
         .tag=(Tag)reference((Node*)tag), .data={.pointer=data}});

@@ -20,7 +20,7 @@ struct Syntax {
 
 static inline Node* Operator(Tag tag, long long subprecedence, void* syntax) {
     syntaxErrorIf(subprecedence >= 256, "indent too big", tag);
-    return newLeaf(tag, 0, (char)subprecedence, syntax);
+    return newPointerLeaf(tag, 0, (char)subprecedence, syntax);
 }
 
 bool isOperator(Node* node) {
