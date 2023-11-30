@@ -120,11 +120,13 @@ TokenCode ::= {
     Comment, Invalid
 }
 
-TokenT ::= {Token(tag : List(ℕ), location : LocationT, code : TokenCode)}
+TokenT ::= {Token(lexeme : List(ℕ), location : LocationT, code : TokenCode)}
 
 getTokenLexeme(Token(lexeme, _, _)) := lexeme
 getTokenLocation(Token(_, location, _)) := location
 getTokenCode(Token(_, _, code)) := code
+
+
 def createLineFeedToken(lexeme, location, nextLexeme)
     if nextLexeme is c :: _
         if isLineFeed(c) or isComment(c)
