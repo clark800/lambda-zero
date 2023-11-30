@@ -55,10 +55,17 @@ def showTypeError
     case Just(message) -> "\n\n" ++ message ++ "\n"
 
 
-def main(input)
-    bindings := reverse(parse(getBuiltin, input))
+def inference(input)
+    try bindings := parse(getBuiltin, input)
+    bindings := reverse(bindings)
     (types, maybeError) := bindings.checkedCascade(pushType, newArray([]))
     tags := bindings.map(getBindingTag)
-    showTypings(zip(tags, types.toList)) ++ showTypeError(maybeError)
+    return showTypings(zip(tags, types.toList)) ++ showTypeError(maybeError)
+
+
+def main(input)
+    match inference(input)
+        case Left(message) -> abort(message)
+        case Right(output) -> output
 
 #@

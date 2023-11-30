@@ -38,8 +38,16 @@ def showTagWithLocation(Tag(lexeme, _, location, _))
     showQuotedLexeme(lexeme) ++ " at " ++ showLocation(location)
 
 
+def showError(message, tag)
+    message ++ " " ++ showTagWithLocation(tag) ++ "\n"
+
+
 def throwError(message, tag)
-    abort message ++ " " ++ showTagWithLocation(tag) ++ "\n"
+    abort showError(message, tag)
+
+
+def showSyntaxError(message, tag)
+    showError("Syntax error: " ++ message, tag)
 
 
 def syntaxError(message, tag)

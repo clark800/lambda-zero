@@ -59,6 +59,10 @@ def getTag
     case Constructor(tag, _, _, _, _, _) -> tag
 
 
+def showAstSyntaxError(message, node)
+    showSyntaxError(message, getTag(node))
+
+
 def astSyntaxError(message, node)
     syntaxError(message, getTag(node))
 

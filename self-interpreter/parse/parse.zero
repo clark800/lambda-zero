@@ -100,11 +100,12 @@ def parse(getBuiltin, code)
         if item is OperandItem(result)
             if not isPreterm(result) and False
                 # currently bind has special case errors for non-preterms
-                astSyntaxError("parser error", result)  # force syntax errors
+                # force syntax errors
+                error showAstSyntaxError("parser error", result)
             if not isNil(remaining)
-                astSyntaxError("parser error", result)
-            bindAST(getBuiltin, result)
+                error showAstSyntaxError("parser error", result)
+            return bindAST(getBuiltin, result)
         pass
-    abort "parser error"
+    error "parser error"
 
 #@
