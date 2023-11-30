@@ -27,8 +27,8 @@ libc() {
 }
 
 size() {
-    output="$(wc -c "$OUT" | tr '\t' ' ' | tr -s ' ')"
-    echo "${1:-"BINARY"} SIZE:\t$(echo "${output## }" | cut -d' ' -f1) bytes"
+    bytes="$(wc -c < "$OUT" | tr -d ' \t')"
+    printf '%s SIZE:\t%s bytes\n' "${1:-BINARY}" "$bytes"
 }
 
 build() {
