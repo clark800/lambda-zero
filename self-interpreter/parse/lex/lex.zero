@@ -117,8 +117,7 @@ def splitLexemes(splitter, location, string)
         []
     (lexeme, remaining) := splitter(string)
     nextLocation := advanceLocation(location, lexeme)
-    Tag(lexeme, NOFIX, location, False) ::
-        remaining.splitLexemes(splitter, nextLocation)
+    (lexeme, location) :: remaining.splitLexemes(splitter, nextLocation)
 
 
 def scan(string)
@@ -171,31 +170,34 @@ TokenCode ::= {
     Comment, Invalid
 }
 
-TokenT ::= {Token(tag : TagT, code : TokenCode)}
+TokenT ::= {Token(tag : List(ℕ), location : LocationT, code : TokenCode)}
 
-getTokenTag(Token(tag, _)) := tag
-getTokenCode(Token(_, code)) := code
+getTokenLexeme(Token(lexeme, _, _)) := lexeme
+getTokenLocation(Token(_, location, _)) := location
+getTokenCode(Token(_, _, code)) := code
+# todo: delete getTokenTag
+getTokenTag(Token(lexeme, location, code)) :=
+    Tag(lexeme, NOFIX, location, False)
 
-
-def createLineFeedToken(tag, _ @ Tag(nextLexeme, _, _, _))
+def createLineFeedToken(lexeme, location, nextLexeme)
     if nextLexeme is c :: _
         if isLineFeed(c) or isComment(c)
-            Token(tag, VSpace)
-        Token(tag, Newline)
-    Token(tag, VSpace)
+            Token(lexeme, location, VSpace)
+        Token(lexeme, location, Newline)
+    Token(lexeme, location, VSpace)
 
 
-def createToken(tag @ Tag(lexeme, _, _, _), nextTag)
+def createToken((lexeme, location), (nextLexeme, nextLocation))
     if lexeme is c :: _
-        if c = ' ' then Token(tag, Space)
-        if c = '\n' then createLineFeedToken(tag, nextTag)
-        if c = '"' then Token(tag, String)
-        if c = '\'' then Token(tag, Character)
-        if isNumeric(lexeme) then Token(tag, Numeric)
-        if isComment(c) then Token(tag, Comment)
-        if isInvalid(c) then Token(tag, Invalid)
-        Token(tag, Symbolic)
-    Token(tag, Symbolic)
+        if c = ' ' then Token(lexeme, location, Space)
+        if c = '\n' then createLineFeedToken(lexeme, location, nextLexeme)
+        if c = '"' then Token(lexeme, location, String)
+        if c = '\'' then Token(lexeme, location, Character)
+        if isNumeric(lexeme) then Token(lexeme, location, Numeric)
+        if isComment(c) then Token(lexeme, location, Comment)
+        if isInvalid(c) then Token(lexeme, location, Invalid)
+        Token(lexeme, location, Symbolic)
+    Token(lexeme, location, Symbolic)
 
 
 def isElided(token)
@@ -207,7 +209,7 @@ def isElided(token)
 
 
 def showToken(token)
-    showTag(getTokenTag(token))
+    getTokenLexeme(token)
 
 
 def noTag
@@ -215,11 +217,12 @@ def noTag
 
 
 def START
-    Token(noTag, Symbolic)
+    Token("", Location("", 0, 0), Symbolic)
 
 
 def lex(string)
-    pairs(scan(string) ++ [noTag]).map(uncurry(createToken))
+    end := ("", Location("", 0, 0))
+    pairs(scan(string) ++ [end]).map(uncurry(createToken))
 
 
 #main(input) := scan(input).map(showTag).joinWith("\n")
