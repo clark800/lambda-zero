@@ -12,7 +12,7 @@ def getFixType(tag)
 def renameUniversals(closure)
     (either, metacontext) := instantiate(closure, emptyMetacontext)
     try closure' := either
-    return enclose(closure'.generalize(metacontext))
+    closure'.generalize(metacontext).mapRight(enclose)
 
 
 def getType(types, Binding(tag, closure, annotation, isConstruct))

@@ -162,6 +162,6 @@ def inferGeneralizedType(context, term)
         lift return getVariableType(context, tag, index)
     try type <- term.inferType(context)
     metacontext <- getState
-    lift return enclose(type.generalize(metacontext))
+    lift type.generalize(metacontext).mapRight(enclose)
 
 #@

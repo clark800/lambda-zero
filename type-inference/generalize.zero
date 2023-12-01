@@ -33,9 +33,9 @@ def generalize(metacontext, closure)
     # after resolve, all positive metavariables in type are free
     indices := getMetavariableIndices(type)
     if indices.any(isNegative)
-        abort("Type error: type depends on variable: " ++ showTerm(type))
+        error "Type error: type depends on variable: " ++ showTerm(type)
     type' := type.substitute(indices, length(indices))
     indices' := enumerate(indices).map(first)
-    indices'.fold(wrapIntersection(getTermTag(type)), type')
+    return indices'.fold(wrapIntersection(getTermTag(type)), type')
 
 #@
