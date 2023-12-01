@@ -38,13 +38,11 @@ def evaluateMain(Closure(main, environment), input)
         runtimeError("expected string from", tag)
 
 
-def showDefinition((tag, term))
-    showTag(tag) ++ " := " ++ showTerm(term)
-
-
-def showDefinitions(tags, environment)
-    terms := environment.toList.map(getTerm)
-    zip(tags, terms).map(showDefinition).joinWith("\n")
+def showBinding(Binding(tag, closure, annotation, isConstruct))
+    if annotation is Just(closure')
+        showTag(tag) ++ " : " ++ showClosure(closure') ++ "\n" ++
+            showTag(tag) ++ " := " ++ showClosure(closure)
+    showTag(tag) ++ " := " ++ showClosure(closure)
 
 
 def interpret(input)
@@ -52,8 +50,7 @@ def interpret(input)
     try bindings := parse(getBuiltin, code)
     if bindings is Binding(_, Closure(term, environment), _, _) :: _
         if code.startsWith("#% dump")
-            tags := reverse(bindings.map(getBindingTag))
-            return showDefinitions(tags, environment)
+            return reverse(bindings).map(showBinding).joinWith("\n")
         closure := evaluateCheck(Closure(term, environment))
         if isMain(getTerm(closure))
             return evaluateMain(closure, input')
@@ -68,8 +65,5 @@ def main(input)
     match interpret(input)
         case Left(message) -> abort(message)
         case Right(output) -> output
-
-
-#main(input) := showAST(parse(getBuiltin, input))
 
 #@

@@ -1,3 +1,4 @@
+#% dump
 
 syntax(or) ≔ infixR(17)
 syntax(and) ≔ infixR(18)
