@@ -135,7 +135,7 @@ def newReconstructorType(returnType, constructorForm)
     parameterTypes.fold(DoubleArrow, returnType)
 
 
-def addEquationConstraint(adtType, constructorForm, body)
+def addGADTEquationConstraint(adtType, constructorForm, body)
     if constructorForm is ColonPair(tag, _, annotation)
         if not isValidConstructorAnnotation(adtType, annotation)
             astSyntaxError("inconsistent annotation form", annotation)
@@ -147,7 +147,8 @@ def addEquationConstraint(adtType, constructorForm, body)
 def getCaseType(adtType, returnType, form)
     if form is For(_, form', parameter)
         TailArrow(parameter, getCaseType(adtType, returnType, form'))
-    addEquationConstraint(adtType, form, newReconstructorType(returnType, form))
+    addGADTEquationConstraint(adtType, form,
+        newReconstructorType(returnType, form))
 
 
 def getConstructorType(adtForm, form)
@@ -226,7 +227,7 @@ def getDeconstructorType'(tag, adtForm, constructorForm, returnType)
     (=>>) := DoubleArrow
     fallbackType := adtType =>> returnType
     type := reconstructorType =>> fallbackType =>> adtType =>> returnType
-    addEquationConstraint(adtType, constructorForm, type)
+    addGADTEquationConstraint(adtType, constructorForm, type)
 
 
 def getDeconstructorType(tag, adtForm, constructorForm)

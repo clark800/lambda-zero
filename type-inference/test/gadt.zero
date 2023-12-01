@@ -1,10 +1,16 @@
 
+syntax(or) ≔ infixR(17)
+syntax(and) ≔ infixR(18)
+syntax(not) ≔ prefix(19)
+syntax(≣) ≔ infix(20)
 syntax(::) ≔ infixR(40)
 syntax(:::) := infixR(40)
 syntax(up) := prefix(90)
 syntax(<>) := infixR(70)
 syntax(match) := prefix(7)
-syntax(if) := prefix(13)
+syntax(if) := prefix(14)
+syntax(then) := interfix(if _)
+syntax(else) := interfix(if _ then _)
 syntax(+) := infixL(50)
 syntax(⊓) ≔ infixL(70)
 
@@ -13,6 +19,12 @@ fix(f) ≔ 𝛚(f <> 𝛚) where 𝛚(x) ≔ x(x)
 (match x)(f) := f(x)
 
 a ⊓ b ⩴ {(_ : a, _ : b)}
+
+𝔹 ⩴ {False, True}
+if b then x else y ≔ b ⦊ (case False ↦ y; case True ↦ x)
+not b ≔ if b then False else True
+b and c ≔ if b then c else False
+b or c ≔ if b then True else c
 
 Nat ::= {0, up(n : Nat)}
 (+) := (case 0 -> m -> m; case up n -> m -> up(n + m))
@@ -42,7 +54,7 @@ def vlength
     case x ::: xs' -> up vlength(xs')
 
 sig forall(n : Nat) >-> forall(m : Nat) >-> forall(a) >->
-    Vector(n, a) => Vector(m, a) => Vector(n + m, a)
+    Vector(n, a) => Vector(m, a) => Vector(n + m , a)
 def concatenate(xs, ys)
     match xs
         case Nil -> ys
@@ -61,5 +73,25 @@ def vzip(xs, ys)
 sig 1 + 1 == 2
 def proof
     infer
+
+
+F(s, R : Nat) ⩴ {
+    Sum(left : F(s, R), right : F(s, R)),
+    Product(left : F(s, R′), right : F(s, R″)) :
+                F(s, R′ + R″) for R′ : Nat for R″ : Nat
+}
+
+
+sig ∀(s) ↣ ∀ (R : Nat) ↣ F(s, R) ⇒ F(s, R) ⇒ 𝔹
+def left ≣ right
+    match left
+    case Sum(left, right)
+        if right is Sum(left′, right′)
+            left ≣ left′ and right ≣ right′
+        False
+    case Product(left, right)
+        if right is Product(left′, right′)
+            left ≣ left′ and right ≣ right′
+        False
 
 0
