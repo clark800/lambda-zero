@@ -33,6 +33,8 @@ Term ::= {
     Operation(tag : TagT, term : Term, optimization : OptimizationT(Term))
 }
 
+Bottom(tag) := Intersection(tag, Type(tag, +_ 0), Variable(tag, +_ 1))
+
 Unknown(tag) := Variable(tag, +_ 0)
 
 def getTermTag

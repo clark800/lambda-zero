@@ -119,7 +119,7 @@ def convertForm(form)
 def getParameterType(parameter)
     if parameter is ColonPair(_, _, type)
         type
-    astSyntaxError("constructor parameter must be annotated", parameter)
+    astSyntaxError("invalid constructor parameter", parameter)
 
 
 def isValidConstructorAnnotation(dataType, annotation)

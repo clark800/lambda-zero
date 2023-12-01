@@ -105,7 +105,7 @@ def parse(getBuiltin, code)
                 error showAstSyntaxError("parser error", result)
             if not isNil(remaining)
                 error showAstSyntaxError("parser error", result)
-            return bindAST(getBuiltin, result)
+            bindAST(getBuiltin, result)
         pass
     error "parser error"
 

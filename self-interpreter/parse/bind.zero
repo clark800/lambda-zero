@@ -98,9 +98,10 @@ def getConstructorFamily(tag, cases, globals)
 def getNaturalName(tag, globals)
     if globals.lookup("0") is Just(Global(_, _, term))
         if term is Numeral(_, type, _)
-            Name(getTermTag(type))
-        syntaxError("0 must be a numeral to use numerals", tag)
-    syntaxError("must define 0 before using numerals", tag)
+            return Just(Name(getTermTag(type)))
+        error showSyntaxError("0 must be a numeral to use numerals", tag)
+    #syntaxError("must define 0 before using numerals", tag)
+    return Void  # allow using numerals before defining zero for now
 
 
 def bind(getBuiltin, globals, index, parameters, node)
@@ -109,97 +110,113 @@ def bind(getBuiltin, globals, index, parameters, node)
 
     match node
         case Top(tag)
-            Type(tag, +_ 0)
+            return Type(tag, +_ 0)
         case Family(tag)
-            Type(tag, -_ index)
+            return Type(tag, -_ index)
         case Reference(tag, debruijn)
             if abs(debruijn) > 0
-                Variable(tag, debruijn)
-            bindName(getBuiltin, parameters, index, isNegative(debruijn), tag)
+                return Variable(tag, debruijn)
+            return bindName(getBuiltin, parameters, index,
+                isNegative(debruijn), tag)
         case Arrow(_, arrowType, cases, parameter, annotation, body)
             tag := getTag(parameter)
             if arrowType is Double
                 if annotation is Just(type)
-                    Implication(tag, bind'(type), body.bind''(parameter))
-                astSyntaxError("missing domain", node)
+                    try domain := bind'(type)
+                    try bodyTerm := body.bind''(parameter)
+                    return Implication(tag, domain, bodyTerm)
+                error showAstSyntaxError("missing domain", node)
 
             if arrowType is Tail
-                domain := annotation.mapJust(bind') ?? Type(tag, +_ 0)
-                Intersection(tag, domain, body.bind''(parameter))
+                try domain := bind'(annotation ?? Top(tag))
+                try bodyTerm := body.bind''(parameter)
+                return Intersection(tag, domain, bodyTerm)
 
-            bodyTerm := body.bind''(parameter)
+            try bodyTerm := body.bind''(parameter)
             if isNil(cases)
-                domain := annotation.mapJust(bind') ?? Unknown(tag)
-                Abstraction(tag, domain, bodyTerm)
+                if annotation is Just(type)
+                    try domain := bind'(type)
+                    return Abstraction(tag, domain, bodyTerm)
+                return Abstraction(tag, Unknown(tag), bodyTerm)
             if not isVoid(annotation)
-                astSyntaxError("parameter annotation not permitted on case",
-                    node)
+                error showAstSyntaxError(
+                    "parameter annotation not permitted on case", node)
             typeFamily := getConstructorFamily(tag, cases, globals)
             if isUnknown(typeFamily)   # force errors
-                astSyntaxError("error binding pattern match", node)
-            Abstraction(tag, typeFamily, bodyTerm)
+                error showAstSyntaxError("error binding pattern match", node)
+            return Abstraction(tag, typeFamily, bodyTerm)
         case Juxtaposition(tag, left, right)
-            Application(tag, bind'(left), bind'(right))
+            try leftTerm := bind'(left)
+            try rightTerm := bind'(right)
+            return Application(tag, leftTerm, rightTerm)
         case Let(tag, isConstruct, annotation, name, value, scope)
             if not isName(name)
-                internalError("non-name in let", getTag(node))
+                error showInternalError("non-name in let", getTag(node))
             if isConstruct
-                astSyntaxError("type constructors must be at the top level",
-                    node)
-            domain := (
+                error showAstSyntaxError(
+                    "type constructors must be at the top level", node)
+            try domain := (
                 if annotation is Just(type)
                     bind'(type)
-                Unknown(tag)
+                return Unknown(tag)
             )
-            abstraction := Abstraction(getTag(name), domain, scope.bind''(name))
-            Application(tag, abstraction, bind'(value))
+            try bodyTerm := scope.bind''(name)
+            abstraction := Abstraction(getTag(name), domain, bodyTerm)
+            try rightTerm := bind'(value)
+            return Application(tag, abstraction, rightTerm)
         case Number(tag, value)
-            type := bind'(getNaturalName(tag, globals))
-            Numeral(tag, type, value)
+            try naturalName := getNaturalName(tag, globals)
+            try type := naturalName.tryMapJust(bind')
+            # Numeral type is a hack to allow using naturals before definition
+            return Numeral(tag, type ?? Numeral(tag, Type(tag, +_ 0), 0), value)
         case PreInference(tag)
-            Inference(tag, Void)
+            return Inference(tag, Void)
         case PreEquation(tag, left, right)
-            Equation(tag, bind'(left), bind'(right))
+            try leftTerm := bind'(left)
+            try rightTerm := bind'(right)
+            return Equation(tag, leftTerm, rightTerm)
         case Definition(_, _, _, _)
-            astSyntaxError("missing scope for definition", node)
+            error showAstSyntaxError("missing scope for definition", node)
         case AsPattern(_, _, _)
-            astSyntaxError("as pattern not in valid location", node)
+            error showAstSyntaxError("as pattern not in valid location", node)
         case CommaPair(_, _, _)
-            astSyntaxError("comma not inside brackets", node)
+            error showAstSyntaxError("comma not inside brackets", node)
         case ColonPair(_, _, _)
-            astSyntaxError("colon not in valid location", node)
+            error showAstSyntaxError("colon not in valid location", node)
         case SetBuilder(_, _)
-            astSyntaxError("bracket not in valid location", node)
+            error showAstSyntaxError("bracket not in valid location", node)
         case ADT(tag, adtParameters, body)
-            arguments := adtParameters.map(bind')
+            try arguments := adtParameters.tryMap(bind')
             type := Variable(tag, +_ 0)  # todo
             domainTerm := Singleton(tag, type, index)
-            bodyTerm := body.bind''(Name(tag))
+            try bodyTerm := body.bind''(Name(tag))
             term := Intersection(tag, domainTerm, bodyTerm)
-            Construction(tag, index, arguments, term)
+            return Construction(tag, index, arguments, term)
         case For(_, _, _)
-            astSyntaxError("not in valid location", node)
+            error showAstSyntaxError("not in valid location", node)
         case Constructor(tag, adtName, function, count, index, arity)
             if function is Number(_, value)
-                Numeral(tag, bind'(adtName), value)
+                try type := bind'(adtName)
+                return Numeral(tag, type, value)
             bind'(function)
 
 
 def bindDefinition(getBuiltin, state, (tag, node, annotation, isConstruct))
     (bindings, parameters, globals, environment) := state
     bindNode := bind(getBuiltin, globals, getSize(environment), parameters)
-    term := bindNode(node)
+    try term := bindNode(node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, tag, term) ?? term
     closure := Closure(definiens, environment)
-    annotation' := annotation.mapJust(bindNode).mapJust(`Closure(environment))
+    try annotationTerm := annotation.tryMapJust(bindNode)
+    annotation' := annotationTerm.mapJust(`Closure(environment))
     bindings' := Binding(tag, closure, annotation', isConstruct) :: bindings
 
     parameters' := parameters.pushParameter(Name(tag))
     (index, environment') := environment.append(closure)
     global := Global(index, node, definiens)
     globals' := globals.insert(getTagLexeme(tag), global)
-    (bindings', parameters', globals', environment')
+    return (bindings', parameters', globals', environment')
 
 
 def getDefinitions(node)
@@ -212,8 +229,9 @@ def bindAST(getBuiltin, node)
     # TODO: make state a parameter so we can bind with an existing state
     parameters := (0, newDictionary([]))
     state := ([], parameters, newDictionary([]), newArray([]))
-    state' := getDefinitions(node).cascade(bindDefinition(getBuiltin), state)
+    bindDefinition' := bindDefinition(getBuiltin)
+    try state' := getDefinitions(node).tryCascade(bindDefinition', state)
     (bindings, _parameters, _globals, _environment) := state'
-    bindings  # top level bindings in reverse order
+    return bindings  # top level bindings in reverse order
 
 #@
