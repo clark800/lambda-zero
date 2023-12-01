@@ -22,8 +22,9 @@ def getMetavariableIndices(term)
     getMetavariableIndices'(term).deduplicateBy((=:=))
 
 
-def wrapIntersection(tag, index, body)
-    domain := Type(veil(tag), +_ 0)
+def wrapIntersection(metacontext, tag, index, body)
+    domain := getDomain(metacontext, index).mapJust(resolve(metacontext)) ??
+        Type(veil(tag), +_ 0)
     tag' := renameTag(tag, showMetavariable(+_ index), NOFIX)
     Intersection(tag', domain, body)
 
@@ -36,6 +37,6 @@ def generalize(metacontext, closure)
         error "Type error: type depends on variable: " ++ showTerm(type)
     type' := type.substitute(indices, length(indices))
     indices' := enumerate(indices).map(first)
-    return indices'.fold(wrapIntersection(getTermTag(type)), type')
+    return indices'.fold(wrapIntersection(metacontext, getTermTag(type)), type')
 
 #@

@@ -17,6 +17,10 @@ def getNegatives(Metacontext(positives, negatives, domains))
     negatives
 
 
+def getDomain(Metacontext(_, _, domains), index)
+    domains.get(index) ?? Void
+
+
 def showMetaValue(metaValue)
     if metaValue is Just(Closure(term, environment))
         showTerm(term)
