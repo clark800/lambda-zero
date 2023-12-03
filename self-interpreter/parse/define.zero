@@ -110,7 +110,7 @@ def removeAnnotation(node)
     node
 
 
-def convertForm(form)
+def removeAnnotations(form)
     (name, parameters) := splitArguments(form)
     parameterNames := parameters.map(removeAnnotation)
     parameterNames.cascade(Juxtaposition(getTag(name)), name)
@@ -152,7 +152,7 @@ def getCaseType(adtType, returnType, form)
 
 
 def getConstructorType(adtForm, form)
-    adtType := convertForm(adtForm)
+    adtType := removeAnnotations(adtForm)
     type := getCaseType(adtType, adtType, form)
     getArguments(adtForm).fold(TailArrow, type)
 
@@ -221,7 +221,7 @@ def newFallbackCase(tag, m)
 def getDeconstructorType'(tag, adtForm, constructorForm, returnType)
     if constructorForm is For(_, left, right)
         TailArrow(right, getDeconstructorType'(tag, adtForm, left, returnType))
-    adtType := convertForm(adtForm)
+    adtType := removeAnnotations(adtForm)
     reconstructorType := newReconstructorType(returnType, constructorForm)
     syntax(=>>) := syntax(++)
     (=>>) := DoubleArrow
@@ -281,7 +281,7 @@ def applyADTDefinition(tag, adtForm, setbuilder, scope)
     if setbuilder is SetBuilder(_, forms)
         scope' := defineConstructorsAndDeconstructors(
             tag, adtForm, forms, scope)
-        adt := newADT(convertForm(adtForm), forms)
+        adt := newADT(removeAnnotations(adtForm), forms)
         (name, parameters) := splitArguments(adtForm)
         value := parameters.fold(SingleArrowDefault(Top(tag)), adt)
         newConstructDefinition(tag, Void, name, value, scope')
