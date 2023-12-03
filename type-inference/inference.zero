@@ -133,7 +133,7 @@ def inferType(context @ (environment, types))
             body.inferType(context.pushContext(domainClosure, argument))
         try applicandType <- applicand.inferType(context)
         metacontext <- getState
-        try closure' <- lift tryEvaluate(metacontext, applicandType)
+        closure' <- lift metaevaluate(metacontext, applicandType)
         _ @ Closure(term', environment') := closure'
         if term' is Implication(tag, domain, body)
             try _ <- unify(argumentType, Closure(domain, environment'))

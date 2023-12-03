@@ -29,18 +29,17 @@ def isSameMetavariable
     case _ -> _ -> False
 
 
-def tryEvaluate(metacontext, closure)
-    closure' := metaevaluate(metacontext, closure)
-    term := getTerm(closure')
-    if getMetavariableValue(term, metacontext) is Just(closure')
-        recursionError(term, closure', metacontext)
-    if isUnknown(term) then return closure else return closure'
-
-
 def unify'(fail, metacontext, (left, right))
     fail' := fail(metacontext, (left, right))
-    try left := left.tryEvaluate(metacontext)
-    try right := right.tryEvaluate(metacontext)
+    left := left.metaevaluate(metacontext)
+    right := right.metaevaluate(metacontext)
+    # if metaevaluate returns a positive metavariable, it must be free.
+    # free means value-unconstrained, but it may have a domain constraint.
+    # if the metavariable is constrained to be an expression that evaluates to
+    # the metavariable itself, that is equivalent to no constraint beyond
+    # the domain constraint which is maintained separately from the value
+    # constraint, so we consider such a metavariable to be free and its value
+    # may be overwritten.
     _ @ Closure(leftTerm, leftEnv) := left
     _ @ Closure(rightTerm, rightEnv) := right
 
