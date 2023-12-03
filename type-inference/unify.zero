@@ -9,13 +9,6 @@ def unificationError(originals, left, right)
         showTermAndLocation(second(originals)))
 
 
-def recursionError(metavariable, closure, metacontext)
-    error("Type error: recursion in " ++
-        showTermAndLocation(metavariable) ++ "\n" ++
-        showTerm(metavariable) ++ " = " ++ showClosure(closure) ++ "\n\n" ++
-        showMetacontext(metacontext))
-
-
 def unifyFailure(originals, metacontext, (left, right))
     unificationError(originals.mapPair(normalize <> resolveLocals(metacontext)),
         normalize(left.resolveLocals(metacontext)),
@@ -33,6 +26,7 @@ def unify'(fail, metacontext, (left, right))
     fail' := fail(metacontext, (left, right))
     left := left.metaevaluate(metacontext)
     right := right.metaevaluate(metacontext)
+
     # if metaevaluate returns a positive metavariable, it must be free.
     # free means value-unconstrained, but it may have a domain constraint.
     # if the metavariable is constrained to be an expression that evaluates to
@@ -40,6 +34,7 @@ def unify'(fail, metacontext, (left, right))
     # the domain constraint which is maintained separately from the value
     # constraint, so we consider such a metavariable to be free and its value
     # may be overwritten.
+
     _ @ Closure(leftTerm, leftEnv) := left
     _ @ Closure(rightTerm, rightEnv) := right
 
@@ -51,10 +46,11 @@ def unify'(fail, metacontext, (left, right))
     if isSameMetavariable(leftTerm, rightTerm)
         return metacontext
 
+    # we don't check for recursion when setting metavariable values because
+    # it is not a problem from a unification standpoint and unify should be
+    # as general as possible.
+
     if leftTerm is Metavariable(tag, index)
-        indices := getMetavariableIndices(right.resolve(metacontext))
-        if indices.contains((=:= index))
-            recursionError(leftTerm, right, metacontext)
         if index is +_ index'
             return metacontext.setMetaValue(index', right)
         if rightTerm is Metavariable(_, index')
@@ -64,9 +60,6 @@ def unify'(fail, metacontext, (left, right))
         fail'
 
     if rightTerm is Metavariable(tag, index)
-        indices := getMetavariableIndices(left.resolve(metacontext))
-        if indices.contains((=:= index))
-            recursionError(rightTerm, left, metacontext)
         if index is +_ index'
             return metacontext.setMetaValue(index', left)
         fail'
