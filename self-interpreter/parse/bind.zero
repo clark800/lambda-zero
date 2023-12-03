@@ -5,7 +5,7 @@ GlobalT ::= {Global(index : ℕ, ast : AST, term : Term)}
 BindingT ::= {Binding(
     tag : TagT,
     closure : ClosureT(Term),
-    annotation : (ClosureT(Term))?,
+    annotations : List(ClosureT(Term)),
     isConstruct : 𝔹
 )}
 
@@ -15,7 +15,7 @@ getGlobalTerm(Global(_, _, term)) := term
 
 getBindingTag(Binding(tag, _, _, _)) := tag
 getBindingClosure(Binding(_, closure, _, _)) := closure
-getBindingAnnotation(Binding(_, _, annotation, _)) := annotation
+getBindingAnnotations(Binding(_, _, annotations, _)) := annotations
 
 
 def pushParameter(parameter, (level, table))
@@ -147,15 +147,17 @@ def bind(getBuiltin, globals, index, parameters, node)
             try leftTerm := bind'(left)
             try rightTerm := bind'(right)
             return Application(tag, leftTerm, rightTerm)
-        case Let(tag, isConstruct, annotation, name, value, scope)
+        case Let(tag, isConstruct, annotations, name, value, scope)
             if not isName(name)
                 error showInternalError("non-name in let", getTag(node))
             if isConstruct
                 error showAstSyntaxError(
                     "type constructors must be at the top level", node)
             try domain := (
-                if annotation is Just(type)
-                    bind'(type)
+                if annotations is type :: annotations'
+                    if annotations' is []
+                        bind'(type)
+                    error showAstSyntaxError("too many annotations", node)
                 return Unknown(tag)
             )
             try bodyTerm := scope.bind''(name)
@@ -199,16 +201,16 @@ def bind(getBuiltin, globals, index, parameters, node)
             bind'(function)
 
 
-def bindDefinition(getBuiltin, state, (tag, node, annotation, isConstruct))
+def bindDefinition(getBuiltin, state, (tag, node, annotations, isConstruct))
     (bindings, parameters, globals, environment) := state
     bindNode := bind(getBuiltin, globals, getSize(environment), parameters)
     try term := bindNode(node)
     # note: operations can only be defined at the top level
     definiens := bindOperation(getBuiltin, tag, term) ?? term
     closure := Closure(definiens, environment)
-    try annotationTerm := annotation.tryMapJust(bindNode)
-    annotation' := annotationTerm.mapJust(`Closure(environment))
-    bindings' := Binding(tag, closure, annotation', isConstruct) :: bindings
+    try annotationTerms := annotations.tryMap(bindNode)
+    annotations' := annotationTerms.map(`Closure(environment))
+    bindings' := Binding(tag, closure, annotations', isConstruct) :: bindings
 
     parameters' := parameters.pushParameter(Name(tag))
     (index, environment') := environment.append(closure)
@@ -218,9 +220,9 @@ def bindDefinition(getBuiltin, state, (tag, node, annotation, isConstruct))
 
 
 def getDefinitions(node)
-    if node is Let(tag, isConstruct, annotation, name, value, scope)
-        (getTag(name), value, annotation, isConstruct) :: getDefinitions(scope)
-    [(veil(getTag(node)), node, Void, False)]
+    if node is Let(tag, isConstruct, annotations, name, value, scope)
+        (getTag(name), value, annotations, isConstruct) :: getDefinitions(scope)
+    [(veil(getTag(node)), node, [], False)]
 
 
 def bindAST(getBuiltin, node)

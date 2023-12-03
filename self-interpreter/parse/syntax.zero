@@ -90,10 +90,10 @@ def reduceIfIs(tag, asPattern, thenBlock)
 
 
 def addSignature(tag, signature, let)
-    if let is Let(tag, isConstruct, annotation, name, value, scope)
-        if isVoid(annotation) and not isConstruct
-            Let(tag, isConstruct, Just(signature), name, value, scope)
-        syntaxError("duplicate signature", tag)
+    if let is Let(tag, isConstruct, annotations, name, value, scope)
+        if isConstruct
+            syntaxError("invalid signature", tag)
+        Let(tag, isConstruct, signature :: annotations, name, value, scope)
     syntaxError("expected definition after", tag)
 
 

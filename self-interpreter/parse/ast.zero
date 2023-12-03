@@ -11,7 +11,7 @@ AST ::= {
     Arrow(tag : TagT, type : ArrowType, cases : List(AST && ℕ),
         parameter : AST, annotation : (AST)?, body : AST),
     Juxtaposition(tag : TagT, left : AST, right : AST),
-    Let(tag : TagT, isConstruct : 𝔹, annotation : (AST)?,
+    Let(tag : TagT, isConstruct : 𝔹, annotations : List(AST),
         name : AST, value : AST, scope : AST),
     Number(tag : TagT, value : ℕ),
     PreInference(tag : TagT),

@@ -12,10 +12,10 @@ def isTuple(node)
 
 def applyPlainDefinition(tag, left, value, scope)
     if isName(left)
-        Let(tag, False, Void, left, value, scope)
+        Let(tag, False, [], left, value, scope)
     if left is ColonPair(_, name, annotation)
         if isName(name)
-            Let(tag, False, Just(annotation), name, value, scope)
+            Let(tag, False, [annotation], name, value, scope)
         pass
     Juxtaposition(tag, newArrow(left, scope), value)
 
@@ -151,10 +151,23 @@ def getCaseType(adtType, returnType, form)
         newReconstructorType(returnType, form))
 
 
+def getConstructorAnnotation(form)
+    if form is For(_, form', parameter)
+        getConstructorAnnotation(form')
+    if form is ColonPair(tag, _, annotation)
+        Just(annotation)
+    Void
+
+
 def getConstructorType(adtForm, form)
     adtType := removeAnnotations(adtForm)
-    type := getCaseType(adtType, adtType, form)
-    getArguments(adtForm).fold(TailArrow, type)
+    caseType := getCaseType(adtType, adtType, form)
+    generalType := getArguments(adtForm).fold(TailArrow, caseType)
+    if getConstructorAnnotation(form) is Just(annotation)
+        caseType' := getCaseType(adtType, annotation, form)
+        specifiedType := getArguments(adtForm).fold(TailArrow, caseType')
+        [generalType, specifiedType]
+    [generalType]
 
 
 def newConstruction(tag, adtType, forms)
@@ -208,7 +221,7 @@ def newConstructorDefinition(tag, adtForm, n, (j, form), scope)
     adtName := getHead(adtForm)
     constructor := Constructor(getTag(name), adtName, function, n, j + 1, arity)
     name' := Name(getTag(name))
-    newConstructDefinition(tag, Just(type), name', constructor, scope)
+    newConstructDefinition(tag, type, name', constructor, scope)
 
 
 def newFallbackCase(tag, m)
@@ -250,7 +263,7 @@ def newDeconstructorDefinition(tag, adtForm, n, ms, (j, form), scope)
     name := Name(addPrefix(constructorTag, '@'))
     deconstructor := newDeconstructorFunction(constructorTag, n, ms, j)
     type := getDeconstructorType(constructorTag, adtForm, form)
-    newConstructDefinition(tag, Just(type), name, deconstructor, scope)
+    newConstructDefinition(tag, [type], name, deconstructor, scope)
 
 
 def newConstructorDefinitions(tag, adtForm, n, ms, formj, scope)
@@ -284,7 +297,7 @@ def applyADTDefinition(tag, adtForm, setbuilder, scope)
         adt := newADT(removeAnnotations(adtForm), forms)
         (name, parameters) := splitArguments(adtForm)
         value := parameters.fold(SingleArrowDefault(Top(tag)), adt)
-        newConstructDefinition(tag, Void, name, value, scope')
+        newConstructDefinition(tag, [], name, value, scope')
     internalError("expected set notation", getTag(setbuilder))
 
 
