@@ -20,8 +20,8 @@ def applyPlainDefinition(tag, left, value, scope)
     Juxtaposition(tag, newArrow(left, scope), value)
 
 
-def newConstructDefinition(tag, type, name, value, scope)
-    Let(tag, True, type, name, value, scope)
+def newConstructDefinition(tag, annotations, name, value, scope)
+    Let(tag, True, annotations, name, value, scope)
 
 
 def applyMaybeDefinition(tag, name, value, scope)
@@ -159,7 +159,7 @@ def getConstructorAnnotation(form)
     Void
 
 
-def getConstructorType(adtForm, form)
+def getConstructorAnnotations(adtForm, form)
     adtType := removeAnnotations(adtForm)
     caseType := getCaseType(adtType, adtType, form)
     generalType := getArguments(adtForm).fold(TailArrow, caseType)
@@ -216,12 +216,12 @@ def newConstructorDefinition(tag, adtForm, n, (j, form), scope)
     function := getConstructorFunction(name, parameters', n, j)
     if not isPreterm(function)
         astSyntaxError("invalid constructor", name)   # force errors
-    type := getConstructorType(adtForm, form)
+    annotations := getConstructorAnnotations(adtForm, form)
     arity := length(parameters)
     adtName := getHead(adtForm)
     constructor := Constructor(getTag(name), adtName, function, n, j + 1, arity)
     name' := Name(getTag(name))
-    newConstructDefinition(tag, type, name', constructor, scope)
+    newConstructDefinition(tag, annotations, name', constructor, scope)
 
 
 def newFallbackCase(tag, m)
