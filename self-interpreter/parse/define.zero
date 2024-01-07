@@ -151,6 +151,12 @@ def getCaseType(adtType, returnType, form)
         newReconstructorType(returnType, form))
 
 
+def getForBinderNames(form)
+    if form is For(tag, form', parameter)
+        removeAnnotation(parameter) :: getForBinderNames(form')
+    []
+
+
 def getConstructorAnnotation(form)
     if form is For(_, form', parameter)
         getConstructorAnnotation(form')
@@ -243,11 +249,11 @@ def getDeconstructorType'(tag, adtForm, constructorForm, returnType)
     addGADTEquationConstraint(adtType, constructorForm, type)
 
 
-def getDeconstructorType(tag, adtForm, constructorForm)
+def getDeconstructorAnnotations(tag, adtForm, constructorForm)
     # todo: change name from "r" so it can't clash with user's names
     returnType := FixedName(tag, "r")
     type := getDeconstructorType'(tag, adtForm, constructorForm, returnType)
-    TailArrow(returnType, getArguments(adtForm).fold(TailArrow, type))
+    [TailArrow(returnType, getArguments(adtForm).fold(TailArrow, type))]
 
 
 def newDeconstructorFunction(tag, n, ms, j)
@@ -259,11 +265,21 @@ def newDeconstructorFunction(tag, n, ms, j)
 
 
 def newDeconstructorDefinition(tag, adtForm, n, ms, (j, form), scope)
+    if getConstructorAnnotation(form) is Just(annotation)
+        # first check to make sure none of the for-binder names are equivalent
+        # to any of the ADT parameter names, which is not only a redundant name
+        # but would also complicate type checking due to transitive constraints
+        adtParameterNames := getArguments(adtForm).map(removeAnnotation)
+        redundantNames := getForBinderNames(form).filter(
+            n -> adtParameterNames.any(isSameLexeme(n)))
+        if redundantNames is name :: _
+            syntaxError("redundant 'for' variable", tag)
+        pass
     constructorTag := getTag(getHead(removeAnnotation(removeFor(form))))
     name := Name(addPrefix(constructorTag, '@'))
     deconstructor := newDeconstructorFunction(constructorTag, n, ms, j)
-    type := getDeconstructorType(constructorTag, adtForm, form)
-    newConstructDefinition(tag, [type], name, deconstructor, scope)
+    annotations := getDeconstructorAnnotations(constructorTag, adtForm, form)
+    newConstructDefinition(tag, annotations, name, deconstructor, scope)
 
 
 def newConstructorDefinitions(tag, adtForm, n, ms, formj, scope)
