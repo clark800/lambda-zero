@@ -12,17 +12,7 @@ def getFixType(tag)
 def renameUniversals(closure)
     (either, metacontext) := instantiate(closure, emptyMetacontext)
     try closure' := either
-    generalize(closure', metacontext).mapRight(enclose)
-
-
-def unifyTypes(a, b)
-    (a', metacontext) := instantiate(a, emptyMetacontext)
-    try a'' := a'
-    (b', metacontext') := instantiate(b, metacontext)
-    try b'' := b'
-    (either, _) := unify(a'', b'', metacontext')
-    try metacontext'' := either
-    generalize(a'', metacontext'').mapRight(enclose)
+    closure'.generalize(metacontext).mapRight(enclose)
 
 
 def getType(types, Binding(tag, closure, annotations, isConstruct))
@@ -30,8 +20,7 @@ def getType(types, Binding(tag, closure, annotations, isConstruct))
         lift return enclose(getFixType(tag))
     _ @ Closure(term, environment) := closure
     context := (environment, types)
-    if annotations is firstAnnotation :: annotations'
-        try type <- lift annotations'.tryCascade(unifyTypes, firstAnnotation)
+    if annotations is type :: _   # todo: combine annotations
         try _ <- getTerm(type).inferType(context) # typecheck the type
         if isConstruct  # skip check for constructors and deconstructors
             lift renameUniversals(type)
