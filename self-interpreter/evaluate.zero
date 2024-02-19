@@ -15,11 +15,9 @@ def evaluate(metacontext, stack, closure @ Closure(term, environment))
 
     match term
         case Metavariable(tag, index)
-            if index is +_ index'
-                if metacontext.getMetaValue(index') is Just(closure')
-                    metacontext' := metacontext.clearMetaValue(index')
-                    evaluate(metacontext', stack, closure')
-                done(tag)
+            if metacontext.getMetaValue(index) is Just(closure')
+                metacontext' := metacontext.clearMetaValue(index)
+                evaluate(metacontext', stack, closure')
             done(tag)
         case Type(tag, index) -> done(tag)
         case Variable(tag, index)

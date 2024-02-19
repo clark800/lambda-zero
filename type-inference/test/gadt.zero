@@ -55,7 +55,7 @@ def vlength
     case x ::: xs' -> up vlength(xs')
 
 sig forall(n : Nat) >-> forall(m : Nat) >-> forall(a) >->
-    Vector(n, a) => Vector(m, a) => Vector(n + m , a)
+    Vector(n, a) => Vector(m, a) => Vector(n + m, a)
 def concatenate(xs, ys)
     match xs
         case Nil -> ys

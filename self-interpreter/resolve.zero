@@ -18,13 +18,11 @@ def resolve'(keepGlobals, metacontext, metaindices, depth, closure)
 
     match term
         case Metavariable(tag, index)
-            if index is +_ index'
-                if metacontext.getMetaValue(index') is Just(closure')
-                    if metaindices.contains((= index'))
-                        resolveError(term, metacontext)
-                    # todo: setLocation of term in closure' to tag
-                    resolveBase(index' :: metaindices, 0, closure')
-                term
+            if metacontext.getMetaValue(index) is Just(closure')
+                if metaindices.contains((=:= index))
+                    resolveError(term, metacontext)
+                # todo: setLocation of term in closure' to tag
+                resolveBase(index :: metaindices, 0, closure')
             term
         case Type(tag, index) -> term
         case Variable(tag, index)

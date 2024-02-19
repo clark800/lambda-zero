@@ -54,14 +54,14 @@ def newNegativeMetavariable(tag, Metacontext(positives, negatives, domains))
 
 
 def getMetaValue(index, Metacontext(positives, negatives, domains))
-    positives.get(index) ?? Void
+    match index
+        case +_ index' -> positives.get(index') ?? Void
+        case -_ index' -> negatives.get(index') ?? Void
 
 
 def getMetavariableValue(metavariable, metacontext)
     if metavariable is Metavariable(tag, index)
-        if index is +_ index'
-            getMetaValue(index', metacontext)
-        Void
+        getMetaValue(index, metacontext)
     Void
 
 
@@ -78,7 +78,11 @@ def setMetaValue(index, value, Metacontext(positives, negatives, domains))
 
 
 def clearMetaValue(index, Metacontext(positives, negatives, domains))
-    Metacontext(positives.set(index, Void), negatives, domains)
+    match index
+        case +_ index'
+            Metacontext(positives.set(index', Void), negatives, domains)
+        case -_ index'
+            Metacontext(positives, negatives.set(index', Void), domains)
 
 
 def clearMetaValues(indices, metacontext)
@@ -86,7 +90,7 @@ def clearMetaValues(indices, metacontext)
 
 
 def getMetacontextUpdates(metacontext, metacontext')
-    indices := upto(getSize(getPositives(metacontext)))
+    indices := upto(getSize(getPositives(metacontext))).map((+_))
     indices.filter(index ->
         isVoid(getMetaValue(index, metacontext)) and
         not isVoid(getMetaValue(index, metacontext')))
