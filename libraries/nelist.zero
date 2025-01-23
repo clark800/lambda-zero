@@ -1,0 +1,16 @@
+#@ nelist.zero
+
+NonEmptyList(a) ⩴ {Last(last : a), (head : a) :| (tail : NonEmptyList(a))}
+
+foldNE(f, z, xs) := xs |> (case Last(x) -> f(x, z);
+    case x :| xs' -> f(x, foldNE(f, z, xs')))
+toListNE(xs) := xs.foldNE((::), [])
+lengthNE(xs) := xs.foldNE(const((↑)), 0)
+concatNE(xs, ys) := xs.foldNE((:|), ys)
+mapNE(f, xs) := xs |> (case Last(x) -> Last(f(x));
+    case x :| xs' -> f(x) :| mapNE(f, xs'))
+dropLastNE(xs) := xs |> (case Last(x) -> [];
+    case x :| xs' -> x :: dropLastNE(xs'))
+lastNE(xs) := xs |> (case Last(x) -> x; case x :| xs' -> lastNE(xs'))
+
+#@

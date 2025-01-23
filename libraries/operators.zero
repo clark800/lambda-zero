@@ -41,6 +41,7 @@ syntax(|:) ≔ infixL(30)
 syntax(..) ≔ infix(30)
 
 syntax(::) ≔ infixR(40)
+syntax(:|) ≔ infixR(40)
 syntax(++) ≔ infixR(40)
 
 syntax(+) ≔ infixL(50)
