@@ -2,6 +2,7 @@
 
 NonEmptyList(a) ⩴ {Last(last : a), (head : a) :| (tail : NonEmptyList(a))}
 
+headNE(xs) := xs |> (case Last(x) -> x; case x :| xs' -> x)
 foldNE(f, z, xs) := xs |> (case Last(x) -> f(x, z);
     case x :| xs' -> f(x, foldNE(f, z, xs')))
 toListNE(xs) := xs.foldNE((::), [])
