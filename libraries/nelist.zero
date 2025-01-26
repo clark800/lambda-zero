@@ -19,5 +19,7 @@ reverseNE(xs) := xs |> (case Last(x) -> Last(x);
     case x :| xs' -> reverseNE'(Last(x), xs')) where
     reverseNE'(acc) := (case Last(x') -> x' :| acc;
         case x' :| xs' -> reverseNE'(x' :| acc, xs'))
+joinNE(xss) := xss |> (case Last(xs) -> xs;
+    case xs :| xss' -> concatNE(xs, joinNE(xss')))
 
 #@
