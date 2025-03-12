@@ -132,6 +132,9 @@ xs[n, n′] ≔ xs.drop(n).take(n′ ∸ n)
 slice(n, n′, xs) ≔ xs[n, n′]
 pop(xs) ≔ xs ⦊ (case [] ↦ Void; case x ∷ _ ↦ Just(x))
 pick(n, xs) ≔ pop(xs.drop(n))
+extract(p, xs) ≔ xs ⦊ (case [] ↦ Void; case x ∷ xs′ ↦
+    if p(x) then Just((x, xs′)) else
+    extract(p, xs′).mapJust((x′, xs″) ↦ (x′, x ∷ xs″)))
 dropLast(xs) ≔ xs ⦊ (case [] ↦ [];
     case x ∷ xs′ ↦ if isNil(xs′) then [] else x ∷ dropLast(xs′))
 dropIf(p, ns) ≔ ns ⦊ (case [] ↦ []; case n ∷ ns′ ↦ if p(n) then ns′ else ns)
