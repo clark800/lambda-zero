@@ -7,6 +7,8 @@ toNEList(x, xs) := xs |> (case [] -> Last(x); case x' :: xs' ->
 headNE(xs) := xs |> (case Last(x) -> x; case x :| xs' -> x)
 foldNE(f, z, xs) := xs |> (case Last(x) -> f(x, z);
     case x :| xs' -> f(x, foldNE(f, z, xs')))
+reduceNE(f, xs) := xs |> (case Last(x) -> x;
+    case x :| xs' -> f(x, reduceNE(f, xs')))
 toListNE(xs) := xs.foldNE((::), [])
 lengthNE(xs) := xs.foldNE(const((↑)), 0)
 concatNE(xs, ys) := xs.foldNE((:|), ys)
@@ -21,5 +23,6 @@ reverseNE(xs) := xs |> (case Last(x) -> Last(x);
         case x' :| xs' -> reverseNE'(x' :| acc, xs'))
 joinNE(xss) := xss |> (case Last(xs) -> xs;
     case xs :| xss' -> concatNE(xs, joinNE(xss')))
+crossNE(xs, ys) := xs.mapNE(x -> ys.mapNE(y -> (x, y))).joinNE
 
 #@
