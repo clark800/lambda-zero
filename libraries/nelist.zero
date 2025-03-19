@@ -24,5 +24,7 @@ reverseNE(xs) := xs |> (case Last(x) -> Last(x);
 joinNE(xss) := xss |> (case Last(xs) -> xs;
     case xs :| xss' -> concatNE(xs, joinNE(xss')))
 crossNE(xs, ys) := xs.mapNE(x -> ys.mapNE(y -> (x, y))).joinNE
+anyNE(p, xs) := xs.mapNE(p).foldNE((or), False)
+allNE(p, xs) := xs.mapNE(p).foldNE((and), True)
 
 #@
